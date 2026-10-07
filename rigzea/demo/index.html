@@ -1,0 +1,652 @@
+<!doctype html>
+<html lang="ka">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#f1f3ed" />
+  <meta name="description" content="რიგზეა — საოპერაციო სამუშაო სისტემა ბინების მმართველებისთვის." />
+  <title>რიგზეა · საოპერაციო სამუშაო სივრცე</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='7' fill='%231f503e'/%3E%3Cpath d='M10 12h20M10 20h15M10 28h20' stroke='%23fff' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body class="app-body">
+  <!-- Top Application Control Bar -->
+  <header class="app-top-header">
+    <div class="app-brand-group">
+      <a class="wordmark" href="/" aria-label="მთავარზე დაბრუნება">რიგზეა<i>.</i></a>
+      <span class="app-env-badge">საოპერაციო დემო</span>
+    </div>
+    <div class="app-header-controls">
+      <button class="btn secondary smallbtn" id="btn-quick-new-task" title="სწრაფი საქმის შექმნა">+ ახალი საქმე</button>
+      <button class="btn secondary smallbtn" id="btn-reset-demo" title="დემოს განულება">განულება</button>
+      <a class="btn link smallbtn" href="/" style="font-size:12px">საიტი ↗</a>
+    </div>
+  </header>
+
+  <div class="app-container-layout">
+    <!-- Desktop Operational Navigation Sidebar -->
+    <aside class="app-sidebar">
+      <div class="sidebar-portfolio-label">
+        <span>სამუშაო პორტფელი</span>
+        <strong id="portfolio-label-text">გუნდი · 4 ბინა</strong>
+      </div>
+      <nav class="app-nav-list" aria-label="სისტემური ნავიგაცია">
+        <button class="app-nav-button active" data-view="dashboard">
+          <span class="nav-icon">◫</span>
+          <span>მთავარი</span>
+        </button>
+        <button class="app-nav-button" data-view="apartments">
+          <span class="nav-icon">▤</span>
+          <span>ბინები</span>
+        </button>
+        <button class="app-nav-button" data-view="tasks">
+          <span class="nav-icon">≡</span>
+          <span>საქმეები</span>
+        </button>
+        <button class="app-nav-button" data-view="owners">
+          <span class="nav-icon">◯</span>
+          <span>მფლობელები</span>
+        </button>
+        <button class="app-nav-button" data-view="reports">
+          <span class="nav-icon">▦</span>
+          <span>ანგარიშები</span>
+        </button>
+      </nav>
+
+      <div class="app-sidebar-foot">
+        <strong>სტატუსი: რიგზეა</strong>
+        <div>1 ღია თანხმობა</div>
+      </div>
+    </aside>
+
+    <!-- Main Workspace Area -->
+    <main class="app-main-canvas">
+
+      <!-- ===================================================================
+           SCREEN 1: მთავარი (DASHBOARD) - Answers: რას უნდა მივხედო დღეს?
+           =================================================================== -->
+      <section class="app-screen-view active" id="view-dashboard" aria-label="მთავარი დაფა">
+        <div class="view-header-strip">
+          <div>
+            <span class="view-subtitle">საოპერაციო ცენტრი / მთავარი</span>
+            <h1>რას უნდა მივხედო დღეს?</h1>
+          </div>
+          <div class="view-actions-cluster">
+            <button class="btn smallbtn" data-nav="tasks">+ საქმის დამატება</button>
+          </div>
+        </div>
+
+        <div class="dashboard-grid-layout">
+          <!-- Left Column: Actions required & Today's Schedule -->
+          <div style="display:flex;flex-direction:column;gap:20px">
+            <!-- 1. ყურადღებას საჭიროებს -->
+            <div class="app-panel">
+              <div class="app-panel-header">
+                <h2>ყურადღებას საჭიროებს</h2>
+                <span class="status-pill wait" id="dash-action-count">2 საკითხი</span>
+              </div>
+              <div class="app-panel-body" id="dash-attention-container">
+                <!-- Item 1: Orbi City (Interactive Approval Trigger) -->
+                <div class="action-required-card" id="dash-orbi-urgent">
+                  <div class="action-required-info">
+                    <strong>Orbi City · 1204 — კონდიციონერის შეკეთება</strong>
+                    <p id="dash-orbi-state-text">₾170 რემონტი ელოდება მფლობელის თანხმობას</p>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:10px">
+                    <span class="amount-badge num-tabular">₾170</span>
+                    <button class="btn smallbtn" id="btn-dash-open-approval">თანხმობა ↗</button>
+                  </div>
+                </div>
+
+                <!-- Item 2: Vake Residence -->
+                <div class="action-required-card danger">
+                  <div class="action-required-info">
+                    <strong>Vake Residence · 18 — სანტექნიკოსი</strong>
+                    <p>დაგვიანებულია · ვიზიტი იყო ჩანიშნული 11:00-ზე</p>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:10px">
+                    <span class="amount-badge">დაგვიანებული</span>
+                    <button class="btn secondary smallbtn" data-nav="apartments" data-apt="vake">ნახვა</button>
+                  </div>
+                </div>
+
+                <!-- Item 3: Old Batumi -->
+                <div class="action-required-card" style="border-left-color:var(--muted);background:var(--surface-subtle);margin-bottom:0">
+                  <div class="action-required-info">
+                    <strong>Old Batumi · 7 — დასუფთავება</strong>
+                    <p>ჯერ არ დასრულებულა · Check-in დაგეგმილია 18:00-ზე</p>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:10px">
+                    <span class="status-pill neutral">პროცესშია</span>
+                    <button class="btn secondary smallbtn" data-nav="apartments" data-apt="batumi">ნახვა</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 2. დღეს -->
+            <div class="app-panel">
+              <div class="app-panel-header">
+                <h2>დღეს დაგეგმილი განრიგი</h2>
+                <span style="font-size:11px;color:var(--muted)">3 ვიზიტი</span>
+              </div>
+              <div class="data-table-wrapper">
+                <table class="operational-table">
+                  <thead>
+                    <tr>
+                      <th style="width:70px">დრო</th>
+                      <th>საქმე</th>
+                      <th>ბინა</th>
+                      <th>პასუხისმგებელი</th>
+                      <th>სტატუსი</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><time class="num-tabular" style="font-weight:700">14:00</time></td>
+                      <td><strong>დასუფთავება</strong></td>
+                      <td>Orbi City · 1204</td>
+                      <td>მარიამი</td>
+                      <td><span class="status-pill neutral">დაგეგმილი</span></td>
+                    </tr>
+                    <tr>
+                      <td><time class="num-tabular" style="font-weight:700">16:30</time></td>
+                      <td><strong>სანტექნიკოსი</strong></td>
+                      <td>Vake Residence · 18</td>
+                      <td>გიორგი</td>
+                      <td><span class="status-pill wait">დაგვიანებული</span></td>
+                    </tr>
+                    <tr>
+                      <td><time class="num-tabular" style="font-weight:700">18:00</time></td>
+                      <td><strong>Check-in</strong></td>
+                      <td>Old Batumi · 7</td>
+                      <td>სტუმარი (2 კაცი)</td>
+                      <td><span class="status-pill done">მზადაა</span></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Column: Recent Activity (ბოლო განახლებები) & Mini Quick Glance -->
+          <div style="display:flex;flex-direction:column;gap:20px">
+            <div class="app-panel">
+              <div class="app-panel-header">
+                <h2>ბოლო განახლებები</h2>
+                <span style="font-size:11px;color:var(--muted)">ოპერაციული ისტორია</span>
+              </div>
+              <div class="app-panel-body">
+                <div class="timeline-events-list" id="dash-recent-activity">
+                  <!-- Dynamic activity items rendered via JS -->
+                </div>
+              </div>
+            </div>
+
+            <!-- Month Quick Financial Card -->
+            <div class="app-panel">
+              <div class="app-panel-header">
+                <h2>სექტემბრის ფინანსური სურათი</h2>
+                <button class="btn link smallbtn" data-nav="reports">სრული რეესტრი ↗</button>
+              </div>
+              <div class="app-panel-body" style="padding:14px 18px">
+                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;text-align:center">
+                  <div style="border-right:1px solid var(--line);padding-right:6px">
+                    <span style="font-size:10px;color:var(--muted);display:block">შემოსავალი</span>
+                    <strong class="num-tabular" style="font-size:16px;color:var(--ink)">₾1,840</strong>
+                  </div>
+                  <div style="border-right:1px solid var(--line);padding-right:6px">
+                    <span style="font-size:10px;color:var(--muted);display:block">ხარჯები</span>
+                    <strong class="num-tabular" id="dash-kpi-expense" style="font-size:16px;color:var(--amber)">₾320</strong>
+                  </div>
+                  <div>
+                    <span style="font-size:10px;color:var(--muted);display:block">წმინდა</span>
+                    <strong class="num-tabular" id="dash-kpi-net" style="font-size:16px;color:var(--green)">₾1,520</strong>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================================================================
+           SCREEN 2: ბინები (APARTMENTS & SIGNATURE TIMELINE)
+           =================================================================== -->
+      <section class="app-screen-view" id="view-apartments" aria-label="ბინების რეესტრი">
+        <div class="view-header-strip">
+          <div>
+            <span class="view-subtitle">საოპერაციო ცენტრი / ბინები</span>
+            <h1>ბინების რეესტრი და ისტორია</h1>
+          </div>
+          <div class="view-actions-cluster">
+            <span style="font-size:12px;color:var(--muted);align-self:center">არჩეულია: <strong id="apt-badge-name" style="color:var(--ink)">Orbi City 1204</strong></span>
+          </div>
+        </div>
+
+        <div class="apartments-workspace-grid">
+          <!-- Left: Apartment Selector Directory -->
+          <div>
+            <div class="apartment-search-box">
+              <input type="text" class="search-input-field" id="apt-search-input" placeholder="მოძებნე ბინა, მფლობელი ან ქალაქი..." />
+            </div>
+
+            <div id="apartments-list-mount">
+              <!-- Dynamically populated apartments rows -->
+            </div>
+          </div>
+
+          <!-- Right: Signature Operational Apartment Ledger & Timeline -->
+          <div class="app-panel" id="apartment-main-card">
+            <!-- Apartment Header -->
+            <div class="apartment-header-bar">
+              <div class="apt-title-group">
+                <h3 id="current-apt-title">Orbi City · 1204</h3>
+                <div class="apt-subtitle" id="current-apt-sub">ბათუმი · მფლობელი: ნინო ქ. (+995 599 12 34 56)</div>
+              </div>
+              <span class="status-pill wait" id="current-apt-status-pill">ელოდება პასუხს</span>
+            </div>
+
+            <!-- Quick Summary Bar -->
+            <div class="apt-summary-bar">
+              <div class="summary-metric">
+                ღია საქმე
+                <strong id="current-apt-open-tasks">1 აქტიური</strong>
+              </div>
+              <div class="summary-metric">
+                დასადასტურებელი
+                <strong class="num-tabular" id="current-apt-pending-cost" style="color:var(--amber)">₾170</strong>
+              </div>
+              <div class="summary-metric">
+                შემდეგი დასუფთავება
+                <strong id="current-apt-next-clean">ხვალ, 12:00</strong>
+              </div>
+            </div>
+
+            <!-- Detail Tabs -->
+            <div class="apt-detail-nav-tabs">
+              <button class="apt-tab-btn active" data-apt-tab="timeline">ოპერაციული ქრონოლოგია</button>
+              <button class="apt-tab-btn" data-apt-tab="tasks">აქტიური საქმეები</button>
+              <button class="apt-tab-btn" data-apt-tab="expenses">ხარჯები და ქვითრები</button>
+            </div>
+
+            <!-- Tab Content Mount -->
+            <div class="app-panel-body" id="apt-tab-content">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================================================================
+           SCREEN 3: საქმეები (TASKS & TELEGRAM INPUT)
+           =================================================================== -->
+      <section class="app-screen-view" id="view-tasks" aria-label="საქმეები">
+        <div class="view-header-strip">
+          <div>
+            <span class="view-subtitle">საოპერაციო ცენტრი / საქმეები</span>
+            <h1>საქმეების მართვა და შეტყობინებები</h1>
+          </div>
+          <div class="view-actions-cluster">
+            <span class="status-pill done" id="task-total-badge">3 საქმე რეესტრში</span>
+          </div>
+        </div>
+
+        <div class="tasks-split-layout">
+          <!-- Left: Task Operational Table -->
+          <div class="app-panel">
+            <div class="app-panel-header">
+              <h2>საქმეების აქტიური სია</h2>
+              <div style="display:flex;gap:6px">
+                <button class="btn link smallbtn" id="filter-tasks-all" style="font-weight:700">ყველა</button>
+              </div>
+            </div>
+            <div class="data-table-wrapper">
+              <table class="operational-table">
+                <thead>
+                  <tr>
+                    <th>საქმე</th>
+                    <th>ბინა</th>
+                    <th>თანხა</th>
+                    <th>სტატუსი</th>
+                    <th>მოქმედება</th>
+                  </tr>
+                </thead>
+                <tbody id="tasks-table-tbody">
+                  <!-- Populated by JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Right: Telegram to Structured Task Parser Tool -->
+          <div class="app-panel">
+            <div class="app-panel-header">
+              <h2>Telegram-იდან პირდაპირ საქმეში</h2>
+              <span class="status-pill neutral">სწრაფი შეყვანა</span>
+            </div>
+            <div class="app-panel-body">
+              <p style="font-size:12px;color:var(--ink-secondary);margin:0 0 12px">
+                დაწერე ჩვეულებრივი შეტყობინების სახით. სისტემა ამოიცნობს ბინის ნომერსა და თანხას და მიაბამს რეესტრს.
+              </p>
+
+              <div class="telegram-input-tool">
+                <textarea id="telegram-input-box" placeholder="მაგალითად: 1204-ში კონდიციონერი გაფუჭდა, 170 ლარია.">1204-ში კონდიციონერი აღარ აგრილებს, 170 ლარია.</textarea>
+                <div class="tool-meta-tip">სცადე ასევე: „18-ში სანტექნიკა გაფუჭდა, 90 ლარი“ ან „7-ში დასუფთავება“</div>
+                <button class="btn smallbtn" id="btn-parse-telegram" style="width:100%">საქმის შექმნა ↗</button>
+              </div>
+
+              <div id="parse-result-notice" style="display:none;margin-top:14px;padding:12px;border-radius:var(--r-sm);font-size:12px"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================================================================
+           SCREEN 4: მფლობელები (OWNERS & APPROVAL PORTAL)
+           =================================================================== -->
+      <section class="app-screen-view" id="view-owners" aria-label="მფლობელები">
+        <div class="view-header-strip">
+          <div>
+            <span class="view-subtitle">საოპერაციო ცენტრი / მფლობელები</span>
+            <h1>მფლობელთა რეესტრი და თანხმობები</h1>
+          </div>
+          <div class="view-actions-cluster">
+            <button class="btn secondary smallbtn" id="btn-open-owner-preview">მფლობელის ხედვის სიმულაცია ↗</button>
+          </div>
+        </div>
+
+        <div class="owners-grid-layout">
+          <!-- Left: Owners List -->
+          <div class="app-panel">
+            <div class="app-panel-header">
+              <h2>მფლობელები</h2>
+              <span style="font-size:11px;color:var(--muted)">3 აქტიური მესაკუთრე</span>
+            </div>
+            <div class="data-table-wrapper">
+              <table class="operational-table">
+                <thead>
+                  <tr>
+                    <th>მფლობელი</th>
+                    <th>ბინა</th>
+                    <th>კონტაქტი</th>
+                    <th>თანხმობა</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="clickable" id="owner-row-nino">
+                    <td><strong>ნინო ქ.</strong></td>
+                    <td>Orbi City · 1204</td>
+                    <td>+995 599 12 34 56</td>
+                    <td><span class="status-pill wait" id="nino-status-pill">1 ელოდება</span></td>
+                  </tr>
+                  <tr class="clickable">
+                    <td><strong>ლევან დ.</strong></td>
+                    <td>Vake Residence · 18</td>
+                    <td>+995 595 22 33 44</td>
+                    <td><span class="status-pill done">რიგზეა</span></td>
+                  </tr>
+                  <tr class="clickable">
+                    <td><strong>თამარ მ.</strong></td>
+                    <td>Old Batumi · 7</td>
+                    <td>+995 577 88 99 00</td>
+                    <td><span class="status-pill done">რიგზეა</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Right: Owner View Simulator -->
+          <div class="app-panel">
+            <div class="app-panel-header">
+              <h2>რას ხედავს მფლობელი</h2>
+              <span class="status-pill done">დაცული გვერდი</span>
+            </div>
+            <div class="app-panel-body">
+              <div class="owner-preview-frame">
+                <div class="owner-preview-topbar">
+                  <span>მფლობელის პორტალი · Orbi City 1204</span>
+                  <span>ნინო ქ.</span>
+                </div>
+                <div style="padding:16px">
+                  <div style="font-size:11px;color:var(--muted);text-transform:uppercase;margin-bottom:6px">დასადასტურებელი საკითხი</div>
+                  <h3 style="margin:0 0 6px;font-size:16px">კონდიციონერის შეკეთება</h3>
+                  <p style="font-size:12px;color:var(--ink-secondary);margin:0 0 14px">
+                    კონდიციონერი აღარ აგრილებს. ხელოსნის შეფასებით საჭიროა გაგრილების სარქველის შეცვლა.
+                  </p>
+                  
+                  <div style="background:var(--surface-inset);padding:10px 14px;border-radius:var(--r-sm);display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+                    <span style="font-size:12px;color:var(--ink)">ხარჯის შეფასება</span>
+                    <strong class="num-tabular" style="font-size:16px;color:var(--amber)">₾170</strong>
+                  </div>
+
+                  <div id="owner-sim-actions" style="display:flex;gap:8px">
+                    <button class="btn smallbtn" id="btn-owner-sim-approve" style="flex:1">თანხმობა (₾170) ✓</button>
+                    <button class="btn secondary smallbtn" id="btn-owner-sim-reject">უარი</button>
+                  </div>
+                  <div id="owner-sim-feedback" style="display:none;font-size:12px;font-weight:600;padding:8px 12px;border-radius:4px;margin-top:10px"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================================================================
+           SCREEN 5: ანგარიშები (REPORTS & FINANCIAL LEDGER)
+           =================================================================== -->
+      <section class="app-screen-view" id="view-reports" aria-label="ანგარიშები">
+        <div class="view-header-strip">
+          <div>
+            <span class="view-subtitle">საოპერაციო ცენტრი / ანგარიშები</span>
+            <h1>თვის ფინანსური რეესტრი და ანგარიშგება</h1>
+          </div>
+          <div class="view-actions-cluster">
+            <button class="btn secondary smallbtn" id="btn-print-report">ბეჭდვა / PDF ↗</button>
+          </div>
+        </div>
+
+        <div class="reports-dashboard-layout">
+          <!-- Filter and Selector Bar -->
+          <div class="report-filter-bar">
+            <div style="display:flex;align-items:center;gap:12px">
+              <label style="font-size:12px;font-weight:600" for="report-month-select">პერიოდი:</label>
+              <select class="filter-select" id="report-month-select">
+                <option value="2026-09" selected>სექტემბერი 2026</option>
+                <option value="2026-08">აგვისტო 2026</option>
+              </select>
+
+              <label style="font-size:12px;font-weight:600;margin-left:12px" for="report-apt-select">ბინა:</label>
+              <select class="filter-select" id="report-apt-select">
+                <option value="orbi" selected>Orbi City · 1204</option>
+                <option value="vake">Vake Residence · 18</option>
+                <option value="batumi">Old Batumi · 7</option>
+              </select>
+            </div>
+            <span class="status-pill done">ანგარიში დამოწმებულია</span>
+          </div>
+
+          <!-- Report Document Frame -->
+          <div class="app-panel" id="printable-report-area">
+            <div class="owner-report-header">
+              <div>
+                <h4 id="report-doc-title">სექტემბრის ანგარიში · Orbi City 1204</h4>
+                <span id="report-doc-sub">მფლობელი: ნინო ქ. · გენერირებულია: რიგზეა</span>
+              </div>
+              <span class="status-pill done">მზადაა მფლობელისთვის</span>
+            </div>
+
+            <div class="owner-kpi-row">
+              <div class="owner-kpi-item">
+                <span>ჯამური შემოსავალი</span>
+                <strong class="num-tabular" id="report-val-income">₾1,840</strong>
+              </div>
+              <div class="owner-kpi-item">
+                <span>დადასტურებული ხარჯები</span>
+                <strong class="num-tabular" id="report-val-expense" style="color:var(--amber)">₾320</strong>
+              </div>
+              <div class="owner-kpi-item net">
+                <span>წმინდა გადასარიცხი შედეგი</span>
+                <strong class="num-tabular" id="report-val-net">₾1,520</strong>
+              </div>
+            </div>
+
+            <div class="owner-expense-table">
+              <h5>დადასტურებული ხარჯების რეესტრი</h5>
+              <div id="report-entries-mount">
+                <!-- Dynamically populated entries -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Mobile Bottom Application Bar -->
+  <nav class="mobile-app-bottom-nav" aria-label="მობილური ნავიგაცია">
+    <button class="mobile-bottom-btn active" data-view="dashboard">
+      <span class="nav-icon">◫</span>
+      <span>მთავარი</span>
+    </button>
+    <button class="mobile-bottom-btn" data-view="apartments">
+      <span class="nav-icon">▤</span>
+      <span>ბინები</span>
+    </button>
+    <button class="mobile-bottom-btn" data-view="tasks">
+      <span class="nav-icon">≡</span>
+      <span>საქმეები</span>
+    </button>
+    <button class="mobile-bottom-btn" data-view="owners">
+      <span class="nav-icon">◯</span>
+      <span>მფლობელი</span>
+    </button>
+    <button class="mobile-bottom-btn" data-view="reports">
+      <span class="nav-icon">▦</span>
+      <span>ანგარიში</span>
+    </button>
+  </nav>
+
+  <!-- Interactive Owner Approval Modal -->
+  <div class="modal-overlay" id="approval-modal" role="dialog" aria-modal="true" aria-labelledby="modal-apt-header">
+    <div class="modal-window">
+      <div class="modal-head">
+        <h3 id="modal-apt-header">ხარჯის დადასტურება</h3>
+        <button class="btn link smallbtn" id="btn-modal-close" style="font-size:18px">✕</button>
+      </div>
+      <div class="modal-body">
+        <strong style="font-size:15px;display:block;margin-bottom:6px" id="modal-task-title">კონდიციონერის შეკეთება</strong>
+        <p style="font-size:12px;color:var(--ink-secondary);margin:0" id="modal-task-desc">
+          კონდიციონერი აღარ აგრილებს. ხელოსნის შეფასებით საჭიროა დეტალის შეცვლა.
+        </p>
+
+        <div class="modal-meta-grid">
+          <div class="modal-meta-item">
+            <span>ბინა</span>
+            <strong id="modal-apt-name">Orbi City · 1204</strong>
+          </div>
+          <div class="modal-meta-item">
+            <span>მფლობელი</span>
+            <strong id="modal-owner-name">ნინო ქ.</strong>
+          </div>
+          <div class="modal-meta-item">
+            <span>შეფასებული თანხა</span>
+            <strong class="num-tabular" id="modal-amount-val" style="color:var(--amber)">₾170</strong>
+          </div>
+          <div class="modal-meta-item">
+            <span>სტატუსი</span>
+            <span class="status-pill wait" id="modal-pill-status">ელოდება თანხმობას</span>
+          </div>
+        </div>
+
+        <div style="font-size:11px;color:var(--muted);background:var(--surface-subtle);padding:8px 12px;border-radius:var(--r-sm)">
+          დადასტურების შემდეგ საქმე გადადის შესრულებაში, თანხა კი ავტომატურად აისახება თვის ანგარიშში.
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn secondary smallbtn" id="btn-modal-reject">უარი</button>
+        <button class="btn smallbtn" id="btn-modal-approve">თანხმობა (₾170) ✓</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Receipt Inspection Modal -->
+  <div class="modal-overlay" id="receipt-modal" role="dialog" aria-modal="true" aria-labelledby="receipt-modal-title">
+    <div class="modal-window">
+      <div class="modal-head">
+        <h3 id="receipt-modal-title">ქვითრის დათვალიერება · #INV-841</h3>
+        <button class="btn link smallbtn" id="btn-receipt-modal-close" style="font-size:18px">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="receipt-sheet-preview">
+          <div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--line);padding-bottom:10px;margin-bottom:12px">
+            <div>
+              <strong style="font-size:14px;color:var(--ink)">შპს კლიმატ სერვის ჯგუფი</strong>
+              <div style="font-size:11px;color:var(--muted)">ს/კ: 405128994 · თბილისი/ბათუმი</div>
+            </div>
+            <span class="receipt-stamp">გადახდილია ✓</span>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:11px;margin-bottom:14px">
+            <div>ობიექტი: <strong>Orbi City · 1204</strong></div>
+            <div>თარიღი: <strong>19 სექტემბერი 2026</strong></div>
+            <div>შემსრულებელი: <strong>დავით კ.</strong></div>
+            <div>ოპერაცია: <strong>სარქველის შეცვლა</strong></div>
+          </div>
+
+          <div style="border-top:1px solid var(--line);padding-top:10px;display:flex;justify-content:space-between;align-items:baseline">
+            <span style="font-weight:600">სულ გადახდილი თანხა:</span>
+            <strong class="num-tabular" style="font-size:18px;color:var(--ink)">₾170.00</strong>
+          </div>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn secondary smallbtn" id="btn-receipt-modal-dismiss">დახურვა</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick New Task Modal -->
+  <div class="modal-overlay" id="quick-task-modal" role="dialog" aria-modal="true" aria-labelledby="quick-task-title">
+    <div class="modal-window">
+      <div class="modal-head">
+        <h3 id="quick-task-title">ახალი საქმის დამატება</h3>
+        <button class="btn link smallbtn" id="btn-quick-task-close" style="font-size:18px">✕</button>
+      </div>
+      <div class="modal-body">
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div>
+            <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px" for="modal-quick-title">საქმის დასახელება:</label>
+            <input type="text" class="search-input-field" id="modal-quick-title" placeholder="მაგ: კონდიციონერის შეკეთება, დასუფთავება..." />
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div>
+              <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px" for="modal-quick-apt">ბინა:</label>
+              <select class="filter-select" id="modal-quick-apt" style="width:100%">
+                <option value="orbi">Orbi City · 1204</option>
+                <option value="vake">Vake Residence · 18</option>
+                <option value="batumi">Old Batumi · 7</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px" for="modal-quick-amount">თანხა (₾):</label>
+              <input type="number" class="search-input-field" id="modal-quick-amount" placeholder="0" />
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn secondary smallbtn" id="btn-quick-task-cancel">გაუქმება</button>
+        <button class="btn smallbtn" id="btn-quick-task-submit">დამატება ↗</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast notification -->
+  <div class="app-toast" id="app-toast" role="status"></div>
+
+  <script src="/demo.js" defer></script>
+</body>
+</html>

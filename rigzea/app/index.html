@@ -1,0 +1,1322 @@
+<!doctype html>
+<html lang="ka">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#121214" />
+  <title>რიგზეა · საოპერაციო სამუშაო სივრცე</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='7' fill='%230a5c44'/%3E%3Cpath d='M10 12h20M10 20h15M10 28h20' stroke='%23fff' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="/style.css" />
+  <script>
+    // Initialize Theme immediately to prevent flash
+    const savedTheme = localStorage.getItem('rigzea_theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', savedTheme);
+  </script>
+</head>
+<body class="app-body">
+
+  <!-- =========================================================================
+       1. AUTHENTICATION & ONBOARDING FULLSCREEN OVERLAYS
+       ========================================================================= -->
+  <div id="auth-screen" class="auth-wrapper" style="display:none">
+    <div class="auth-card glow-card">
+      <div class="auth-brand">
+        <a class="wordmark" href="/" style="font-size:22px">რიგზეა<i>.</i></a>
+        <span class="status-pill done" style="font-size:11px">საოპერაციო სისტემა</span>
+      </div>
+
+      <!-- Sign In View -->
+      <div id="auth-signin-view">
+        <h2 class="auth-title">სისტემაში შესვლა</h2>
+        <p class="auth-subtitle">შეიყვანე შენი სამუშაო ელფოსტა და პაროლი</p>
+        
+        <form id="form-signin" onsubmit="return false;">
+          <div class="form-group">
+            <label for="signin-email">ელფოსტა</label>
+            <input type="email" id="signin-email" class="form-input" placeholder="name@company.ge" required autocomplete="email" />
+          </div>
+          <div class="form-group">
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+              <label for="signin-password" style="margin:0">პაროლი</label>
+              <a href="#" id="link-forgot-pass" style="font-size:12px;color:var(--green)">დაგავიწყდა?</a>
+            </div>
+            <input type="password" id="signin-password" class="form-input" placeholder="••••••••" required autocomplete="current-password" />
+          </div>
+          
+          <button type="submit" class="btn" id="btn-submit-signin" style="width:100%;margin-top:8px">შესვლა ↗</button>
+        </form>
+
+        <div style="margin-top:20px;text-align:center;font-size:13px;color:var(--muted)">
+          არ გაქვს ანგარიში? <a href="#" id="link-goto-signup" style="font-weight:600;color:var(--ink)">რეგისტრაცია</a>
+        </div>
+      </div>
+
+      <!-- Sign Up View -->
+      <div id="auth-signup-view" style="display:none">
+        <h2 class="auth-title">ანგარიშის შექმნა</h2>
+        <p class="auth-subtitle">დაიწყე ბინების მართვა მოწესრიგებულად</p>
+        
+        <form id="form-signup" onsubmit="return false;">
+          <div class="form-group">
+            <label for="signup-name">შენი სახელი და გვარი</label>
+            <input type="text" id="signup-name" class="form-input" placeholder="გიორგი ბერიძე" required autocomplete="name" />
+          </div>
+          <div class="form-group">
+            <label for="signup-email">სამუშაო ელფოსტა</label>
+            <input type="email" id="signup-email" class="form-input" placeholder="name@company.ge" required autocomplete="email" />
+          </div>
+          <div class="form-group">
+            <label for="signup-password">პაროლი (მინიმუმ 6 სიმბოლო)</label>
+            <input type="password" id="signup-password" class="form-input" placeholder="••••••••" minlength="6" required autocomplete="new-password" />
+          </div>
+          
+          <button type="submit" class="btn" id="btn-submit-signup" style="width:100%;margin-top:8px">რეგისტრაცია და დაწყება ↗</button>
+        </form>
+
+        <div style="margin-top:20px;text-align:center;font-size:13px;color:var(--muted)">
+          უკვე გაქვს ანგარიში? <a href="#" id="link-goto-signin" style="font-weight:600;color:var(--ink)">შესვლა</a>
+        </div>
+      </div>
+
+      <!-- Password Reset View -->
+      <div id="auth-reset-view" style="display:none">
+        <h2 class="auth-title">პაროლის აღდგენა</h2>
+        <p class="auth-subtitle">შეიყვანე ელფოსტა და გამოგიგზავნით აღდგენის ბმულს</p>
+        
+        <form id="form-reset" onsubmit="return false;">
+          <div class="form-group">
+            <label for="reset-email">ელფოსტა</label>
+            <input type="email" id="reset-email" class="form-input" placeholder="name@company.ge" required />
+          </div>
+          <button type="submit" class="btn" id="btn-submit-reset" style="width:100%;margin-top:8px">აღდგენის ბმულის გაგზავნა</button>
+        </form>
+
+        <div style="margin-top:20px;text-align:center;font-size:13px;color:var(--muted)">
+          <a href="#" id="link-reset-to-signin" style="font-weight:600;color:var(--ink)">← შესვლაზე დაბრუნება</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Onboarding Wizard Screen (For new accounts without an organization) -->
+  <div id="onboarding-screen" class="auth-wrapper" style="display:none">
+    <div class="auth-card glow-card" style="width:min(520px, 100%)">
+      <div class="auth-brand">
+        <a class="wordmark" href="/" style="font-size:22px">რიგზეა<i>.</i></a>
+        <span class="status-pill wait" style="font-size:11px">საწყისი გამართვა</span>
+      </div>
+
+      <div id="onboarding-step-1">
+        <h2 class="auth-title">კეთილი იყოს შენი მობრძანება</h2>
+        <p class="auth-subtitle">შექმენი შენი კომპანიის ან გუნდის სამუშაო სივრცე</p>
+        
+        <form id="form-onboarding-org" onsubmit="return false;">
+          <div class="form-group">
+            <label for="onboard-org-name">კომპანიის / გუნდის დასახელება</label>
+            <input type="text" id="onboard-org-name" class="form-input" placeholder="მაგ: Batumi Stay Management, Vake Apartments" required />
+          </div>
+          <div class="form-group">
+            <label for="onboard-city">ძირითადი ქალაქი</label>
+            <select id="onboard-city" class="form-input" required>
+              <option value="თბილისი">თბილისი</option>
+              <option value="ბათუმი" selected>ბათუმი</option>
+              <option value="სხვა">სხვა რეგიონი</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="onboard-portfolio-size">სავარაუდო ბინების რაოდენობა</label>
+            <select id="onboard-portfolio-size" class="form-input">
+              <option value="1-5">1 – 5 ბინა</option>
+              <option value="6-20" selected>6 – 20 ბინა</option>
+              <option value="21-50">21 – 50 ბინა</option>
+              <option value="50+">50+ ბინა</option>
+            </select>
+          </div>
+          
+          <button type="submit" class="btn" id="btn-submit-onboard-org" style="width:100%;margin-top:12px">გაგრძელება: პირველი ბინის დამატება ↗</button>
+        </form>
+      </div>
+
+      <div id="onboarding-step-2" style="display:none">
+        <h2 class="auth-title">პირველი ბინა დაამატე</h2>
+        <p class="auth-subtitle">შეიყვანე ერთი ბინის ძირითადი მონაცემები სამუშაოდ</p>
+        
+        <form id="form-onboarding-first-apt" onsubmit="return false;">
+          <div class="form-group">
+            <label for="onboard-apt-name">ბინის სახელწოდება</label>
+            <input type="text" id="onboard-apt-name" class="form-input" placeholder="მაგ: Orbi City · 1204" required />
+          </div>
+          <div class="form-group">
+            <label for="onboard-apt-address">მისამართი და ბინის ნომერი</label>
+            <input type="text" id="onboard-apt-address" class="form-input" placeholder="მაგ: შერიფ ხიმშიაშვილის 7, ბინა 1204" required />
+          </div>
+          <div class="form-group">
+            <label for="onboard-owner-name">მფლობელის სახელი (არასავალდებულო)</label>
+            <input type="text" id="onboard-owner-name" class="form-input" placeholder="მაგ: ნინო ქ." />
+          </div>
+          
+          <div style="display:flex;gap:10px;margin-top:16px">
+            <button type="button" class="btn secondary" id="btn-skip-first-apt">მოგვიანებით</button>
+            <button type="submit" class="btn" id="btn-submit-first-apt" style="flex:1">დამატება და სისტემაში შესვლა ↗</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       2. MAIN APP SHELL (PROTECTED)
+       ========================================================================= -->
+  <div id="app-shell" style="display:none">
+    <!-- Top Header -->
+    <header class="app-top-header">
+      <div class="app-brand-group">
+        <button class="mobile-sidebar-toggle-btn" id="btn-mobile-sidebar-toggle" title="მენიუ" aria-label="მენიუს გახსნა">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
+        </button>
+        <a class="wordmark" href="/app/" aria-label="მთავარზე დაბრუნება">რიგზეა<i>.</i></a>
+        <div style="display:flex;align-items:center;gap:8px;margin-left:14px" class="header-org-container">
+          <select id="header-org-select" class="filter-select" style="height:34px;padding:0 10px;font-size:12px;font-weight:600;background:var(--surface-subtle)">
+            <!-- Populated by JS -->
+          </select>
+        </div>
+      </div>
+
+      <div class="app-header-controls" style="display:flex;align-items:center;gap:10px">
+        <!-- Global Search Trigger -->
+        <button class="btn secondary smallbtn" id="btn-global-search-trigger" data-tooltip="ძებნა (/)" title="ძებნა (დააჭირე /)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.75"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <span class="btn-text-hide-mobile">ძებნა</span> <kbd style="background:var(--surface-inset);padding:1px 5px;border-radius:4px;font-size:11px">/</kbd>
+        </button>
+
+        <!-- Dark Mode Toggle Button -->
+        <button class="theme-toggle-btn" id="btn-theme-toggle" data-tooltip="თემის შეცვლა" title="თემის შეცვლა (Dark/Light)" aria-label="თემის შეცვლა">
+          <svg class="icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+          <svg class="icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+        </button>
+
+        <!-- Quick New Task -->
+        <button class="btn smallbtn" id="btn-quick-new-task">+ ახალი საქმე</button>
+
+        <!-- Notification Bell -->
+        <div style="position:relative">
+          <button class="notif-btn-badge" id="btn-notif-bell" data-tooltip="შეტყობინებები" title="შეტყობინებები" aria-label="შეტყობინებები">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+            <span class="notif-count-dot" id="notif-badge-count" style="display:none">0</span>
+          </button>
+          <!-- Notification Dropdown Panel -->
+          <div class="notif-dropdown-panel" id="notif-panel">
+            <div style="padding:12px 16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center">
+              <strong style="font-size:13px">შეტყობინებები</strong>
+              <button class="btn link smallbtn" id="btn-mark-all-read" style="font-size:11px">ყველას წაკითხვა</button>
+            </div>
+            <div id="notif-items-mount" style="max-height:300px;overflow-y:auto">
+              <div style="padding:20px;text-align:center;color:var(--muted);font-size:12px">შეტყობინებები არ არის</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- User Profile Dropdown / Sign Out -->
+        <div class="user-profile-widget" id="user-menu-trigger">
+          <div class="user-avatar" id="user-avatar-initials">მ</div>
+          <span id="user-display-name" style="font-weight:600">მმართველი</span>
+          <button class="btn link smallbtn" id="btn-signout" title="გამოსვლა" style="color:var(--muted);font-size:12px;margin-left:4px">გამოსვლა</button>
+        </div>
+      </div>
+    </header>
+
+    <div class="app-container-layout">
+      <!-- Mobile Backdrop -->
+      <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+
+      <!-- Sidebar Navigation -->
+      <aside class="app-sidebar" id="app-sidebar-drawer">
+        <div class="mobile-sidebar-head">
+          <a class="wordmark" href="/app/">რიგზეა<i>.</i></a>
+          <button class="btn link smallbtn" id="btn-mobile-sidebar-close" aria-label="დახურვა" style="font-size:18px;color:var(--muted)">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+          </button>
+        </div>
+
+        <div class="sidebar-portfolio-label">
+          <span>სამუშაო პორტფელი</span>
+          <strong id="portfolio-label-text">იტვირთება...</strong>
+        </div>
+
+        <nav class="app-nav-list" aria-label="სისტემური ნავიგაცია">
+          <button class="app-nav-button active" data-view="dashboard">
+            <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1.5"/><rect width="7" height="5" x="14" y="3" rx="1.5"/><rect width="7" height="9" x="14" y="12" rx="1.5"/><rect width="7" height="5" x="3" y="16" rx="1.5"/></svg></span>
+            <span>მთავარი</span>
+          </button>
+          <button class="app-nav-button" data-view="apartments">
+            <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="20" x="4" y="2" rx="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M12 6h.01"/><path d="M12 10h.01"/><path d="M12 14h.01"/><path d="M16 10h.01"/><path d="M16 14h.01"/><path d="M8 10h.01"/><path d="M8 14h.01"/></svg></span>
+            <span>ბინები</span>
+          </button>
+          <button class="app-nav-button" data-view="tasks">
+            <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>
+            <span>საქმეები</span>
+          </button>
+          <button class="app-nav-button" data-view="owners">
+            <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+            <span>მფლობელები</span>
+          </button>
+          <button class="app-nav-button" data-view="reports">
+            <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg></span>
+            <span>ანგარიშები</span>
+          </button>
+          <button class="app-nav-button" data-view="settings">
+            <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg></span>
+            <span>პარამეტრები</span>
+          </button>
+        </nav>
+
+        <div class="app-sidebar-foot">
+          <strong style="color:var(--green);display:block;margin-bottom:2px">სტატუსი: რიგზეა</strong>
+          <div id="sidebar-approval-status-label" style="color:var(--ink-secondary)">0 ღია თანხმობა</div>
+        </div>
+      </aside>
+
+      <!-- Main Canvas -->
+      <main class="app-main-canvas">
+
+        <!-- ===================================================================
+             VIEW 1: მთავარი (DASHBOARD)
+             =================================================================== -->
+        <section class="app-screen-view active" id="view-dashboard" aria-label="მთავარი დაფა">
+          <div class="view-header-strip">
+            <div>
+              <span class="view-subtitle">მთავარი / დღის ოპერაციული სურათი</span>
+              <h1>რას უნდა მივხედო დღეს?</h1>
+            </div>
+            <div class="view-actions-cluster">
+              <button class="btn smallbtn" id="btn-dash-add-task">+ საქმის დამატება</button>
+            </div>
+          </div>
+
+          <div class="dashboard-grid-layout">
+            <!-- Left: Needs Attention & Today's Schedule -->
+            <div style="display:flex;flex-direction:column;gap:20px">
+              <!-- 1. ყურადღებას საჭიროებს -->
+              <div class="app-panel glow-card">
+                <div class="app-panel-header">
+                  <h2>ყურადღებას საჭიროებს</h2>
+                  <span class="status-pill wait" id="dash-action-count">0 საკითხი</span>
+                </div>
+                <div class="app-panel-body" id="dash-attention-container">
+                  <!-- Rendered dynamically with action button -->
+                </div>
+              </div>
+
+              <!-- 2. დღეს დაგეგმილი -->
+              <div class="app-panel">
+                <div class="app-panel-header">
+                  <h2>დღეს დაგეგმილი განრიგი</h2>
+                  <span style="font-size:11px;color:var(--muted)" id="dash-today-count">0 საქმე</span>
+                </div>
+                <div class="data-table-wrapper">
+                  <table class="operational-table">
+                    <thead>
+                      <tr>
+                        <th style="width:70px">დრო</th>
+                        <th>საქმე</th>
+                        <th>ბინა</th>
+                        <th>პასუხისმგებელი</th>
+                        <th>სტატუსი</th>
+                      </tr>
+                    </thead>
+                    <tbody id="dash-today-table-body">
+                      <!-- Rendered dynamically with action button -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right: Live Activity Stream & Month KPI -->
+            <div style="display:flex;flex-direction:column;gap:20px">
+              <!-- Month Quick KPI -->
+              <div class="app-panel glow-card">
+                <div class="app-panel-header">
+                  <h2>მიმდინარე თვის ფინანსური სურათი</h2>
+                  <button class="btn link smallbtn" id="btn-dash-goto-reports">სრული რეესტრი ↗</button>
+                </div>
+                <div class="app-panel-body" style="padding:18px 22px">
+                  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;text-align:center">
+                    <div style="border-right:1px solid var(--line);padding-right:6px">
+                      <span style="font-size:11px;color:var(--muted);display:block">შემოსავალი</span>
+                      <strong class="num-tabular" id="dash-kpi-income" style="font-size:18px;color:var(--ink)">₾0</strong>
+                    </div>
+                    <div style="border-right:1px solid var(--line);padding-right:6px">
+                      <span style="font-size:11px;color:var(--muted);display:block">ხარჯები</span>
+                      <strong class="num-tabular" id="dash-kpi-expense" style="font-size:18px;color:var(--amber)">₾0</strong>
+                    </div>
+                    <div>
+                      <span style="font-size:11px;color:var(--muted);display:block">წმინდა</span>
+                      <strong class="num-tabular" id="dash-kpi-net" style="font-size:18px;color:var(--green)">₾0</strong>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Recent Activity -->
+              <div class="app-panel">
+                <div class="app-panel-header">
+                  <h2>ბოლო განახლებები</h2>
+                  <span style="font-size:11px;color:var(--muted)">ოპერაციული ისტორია</span>
+                </div>
+                <div class="app-panel-body">
+                  <div class="timeline-events-list" id="dash-recent-activity">
+                    <!-- Rendered dynamically -->
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===================================================================
+             VIEW 2: ბინები (APARTMENTS & SIGNATURE TIMELINE)
+             =================================================================== -->
+        <section class="app-screen-view" id="view-apartments" aria-label="ბინების რეესტრი">
+          <div class="view-header-strip">
+            <div>
+              <span class="view-subtitle">ბინები / მართვაში არსებული ობიექტები</span>
+              <h1>ბინების რეესტრი და ისტორია</h1>
+            </div>
+            <div class="view-actions-cluster">
+              <button class="btn smallbtn" id="btn-add-apartment-modal">+ ბინის დამატება</button>
+            </div>
+          </div>
+
+          <div class="apartments-workspace-grid">
+            <!-- Left: Apartment Selector -->
+            <div>
+              <div class="apartment-search-box" style="display:flex;gap:8px">
+                <input type="text" class="search-input-field" id="apt-search-input" placeholder="მოძებნე ბინა, მფლობელი..." style="flex:1" />
+                <select class="filter-select" id="apt-filter-city" style="width:110px">
+                  <option value="all">ყველა ქალაქი</option>
+                  <option value="თბილისი">თბილისი</option>
+                  <option value="ბათუმი">ბათუმი</option>
+                </select>
+              </div>
+
+              <div id="apartments-list-mount">
+                <!-- Dynamically populated apartment cards -->
+              </div>
+            </div>
+
+            <!-- Right: Selected Apartment Ledger & Timeline -->
+            <div class="app-panel glow-card" id="apartment-main-card">
+              <!-- Header -->
+              <div class="apartment-header-bar" style="display:flex;justify-content:space-between;align-items:flex-start">
+                <div class="apt-title-group">
+                  <h3 id="current-apt-title">აირჩიე ბინა რეესტრიდან</h3>
+                  <div class="apt-subtitle" id="current-apt-sub">—</div>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span class="status-pill done" id="current-apt-status-pill">აქტიური</span>
+                  <button class="btn secondary smallbtn" id="btn-apt-quick-edit" data-tooltip="ბინის რედაქტირება" title="რედაქტირება">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Rule: Persistent 5 Core Actions on Apartment Page -->
+              <div class="apt-quick-actions-bar" id="apt-action-bar-strip">
+                <button class="btn primary-action" id="btn-apt-act-new-task">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                  + ახალი საქმე
+                </button>
+                <button class="btn secondary" id="btn-apt-act-add-expense">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 18V6"/></svg>
+                  + ხარჯის დამატება
+                </button>
+                <button class="btn secondary" id="btn-apt-act-add-repair">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+                  + რემონტის დამატება
+                </button>
+                <button class="btn secondary" id="btn-apt-act-add-photo">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+                  + ფოტოს დამატება
+                </button>
+                <button class="btn secondary" id="btn-apt-act-send-owner">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+                  მფლობელისთვის გაგზავნა
+                </button>
+              </div>
+
+              <!-- Quick Metrics -->
+              <div class="apt-summary-bar">
+                <div class="summary-metric">
+                  ღია საქმე
+                  <strong id="current-apt-open-tasks">0 აქტიური</strong>
+                </div>
+                <div class="summary-metric">
+                  დასადასტურებელი
+                  <strong class="num-tabular" id="current-apt-pending-cost" style="color:var(--amber)">₾0</strong>
+                </div>
+                <div class="summary-metric">
+                  შემდეგი დასუფთავება
+                  <strong id="current-apt-next-clean">—</strong>
+                </div>
+              </div>
+
+              <!-- Sub-tabs (6 Core Sections) -->
+              <div class="apt-detail-nav-tabs">
+                <button class="apt-tab-btn active" data-apt-tab="overview">მიმოხილვა</button>
+                <button class="apt-tab-btn" data-apt-tab="timeline">ისტორია</button>
+                <button class="apt-tab-btn" data-apt-tab="tasks">საქმეები</button>
+                <button class="apt-tab-btn" data-apt-tab="expenses">ხარჯები</button>
+                <button class="apt-tab-btn" data-apt-tab="files">ფაილები</button>
+                <button class="apt-tab-btn" data-apt-tab="reports">ანგარიშები</button>
+              </div>
+
+              <!-- Sub-tab Content -->
+              <div class="app-panel-body" id="apt-tab-content">
+                <!-- Rendered dynamically by JS -->
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===================================================================
+             VIEW 3: საქმეები (TASKS & TELEGRAM NLP PARSER)
+             =================================================================== -->
+        <section class="app-screen-view" id="view-tasks" aria-label="საქმეები">
+          <div class="view-header-strip">
+            <div>
+              <span class="view-subtitle">საოპერაციო ცენტრი / საქმეები</span>
+              <h1>საქმეების მართვა და შეტყობინებები</h1>
+            </div>
+            <div class="view-actions-cluster">
+              <button class="btn smallbtn" id="btn-open-task-create-modal">+ საქმის დამატება</button>
+            </div>
+          </div>
+
+          <div class="tasks-split-layout">
+            <!-- Left: Task Operational Table -->
+            <div class="app-panel">
+              <div class="app-panel-header" style="display:flex;justify-content:space-between;align-items:center">
+                <h2>საქმეების აქტიური სია</h2>
+                <div style="display:flex;gap:6px">
+                  <select class="filter-select" id="task-filter-status" style="height:34px;font-size:12px">
+                    <option value="all">ყველა სტატუსი</option>
+                    <option value="new">ახალი</option>
+                    <option value="in_progress">პროცესშია</option>
+                    <option value="pending_approval">ელოდება თანხმობას</option>
+                    <option value="completed">დასრულებული</option>
+                  </select>
+                </div>
+              </div>
+              <div class="data-table-wrapper">
+                <table class="operational-table">
+                  <thead>
+                    <tr>
+                      <th>საქმე</th>
+                      <th>ბინა</th>
+                      <th>ტიპი</th>
+                      <th>პრიორიტეტი</th>
+                      <th>სტატუსი</th>
+                      <th style="text-align:right">მოქმედება</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tasks-table-tbody">
+                    <!-- Populated by JS -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Right: Telegram NLP Input Parser -->
+            <div class="app-panel glow-card">
+              <div class="app-panel-header">
+                <h2>Telegram-იდან პირდაპირ საქმეში</h2>
+                <span class="status-pill neutral">ჭკვიანი ამოცნობა</span>
+              </div>
+              <div class="app-panel-body">
+                <p style="font-size:12px;color:var(--ink-secondary);margin:0 0 12px">
+                  დაწერე ჩვეულებრივი ქართული შეტყობინების სახით. სისტემა ამოიცნობს ბინას, თანხასა და საკითხს.
+                </p>
+
+                <div class="telegram-input-tool">
+                  <textarea id="telegram-input-box" placeholder="მაგ: 1204-ში კონდიციონერი გაფუჭდა, 170 ლარია.">1204-ში კონდიციონერი გაფუჭდა, 170 ლარია.</textarea>
+                  <div class="tool-meta-tip">სცადე ასევე: „18-ში სანტექნიკოსი 90 ლარი“ ან „7-ში დასუფთავება“</div>
+                  <button class="btn smallbtn" id="btn-parse-telegram" style="width:100%">საქმის დამუშავება ↗</button>
+                </div>
+
+                <!-- Structured Preview Box -->
+                <div id="parse-result-notice" style="display:none;margin-top:14px;padding:16px;border:1px solid var(--line);border-radius:var(--r-md);background:var(--surface-subtle)">
+                  <div style="font-size:11px;color:var(--muted);margin-bottom:8px;font-weight:600">ამოცნობილი სტრუქტურა:</div>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px;margin-bottom:12px">
+                    <div>ბინა: <strong id="parsed-apt-name">—</strong></div>
+                    <div>თანხა: <strong id="parsed-amount-val" class="num-tabular" style="color:var(--amber)">—</strong></div>
+                    <div style="grid-column:1/-1">საკითხი: <strong id="parsed-issue-title">—</strong></div>
+                  </div>
+                  <button class="btn smallbtn" id="btn-confirm-parsed-task" style="width:100%">შექმნა და ბაზაში შენახვა</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===================================================================
+             VIEW 4: მფლობელები (OWNERS & PUBLIC APPROVAL LINKS)
+             =================================================================== -->
+        <section class="app-screen-view" id="view-owners" aria-label="მფლობელები">
+          <div class="view-header-strip">
+            <div>
+              <span class="view-subtitle">საოპერაციო ცენტრი / მფლობელები</span>
+              <h1>მფლობელთა რეესტრი და თანხმობები</h1>
+            </div>
+            <div class="view-actions-cluster">
+              <button class="btn smallbtn" id="btn-add-owner-modal">+ მფლობელის დამატება</button>
+            </div>
+          </div>
+
+          <div class="owners-grid-layout">
+            <!-- Left: Owners Table -->
+            <div class="app-panel">
+              <div class="app-panel-header">
+                <h2>მფლობელები</h2>
+                <span style="font-size:11px;color:var(--muted)" id="owners-count-badge">0 მესაკუთრე</span>
+              </div>
+              <div class="data-table-wrapper">
+                <table class="operational-table">
+                  <thead>
+                    <tr>
+                      <th>მფლობელი</th>
+                      <th>ტელეფონი / ელფოსტა</th>
+                      <th>ბინები</th>
+                      <th>მოქმედება</th>
+                    </tr>
+                  </thead>
+                  <tbody id="owners-table-tbody">
+                    <!-- Populated by JS -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Right: Owner Profile & Active Approval Links -->
+            <div class="app-panel glow-card" id="owner-detail-panel">
+              <div class="app-panel-header">
+                <h2 id="owner-detail-title">მფლობელის პროფილი</h2>
+                <span class="status-pill done" id="owner-detail-status-pill">აქტიური</span>
+              </div>
+              <div class="app-panel-body" id="owner-detail-body">
+                <div style="text-align:center;padding:40px 0;color:var(--muted);font-size:13px">
+                  დააწკაპუნე მფლობელს მარცხენა ცხრილში დეტალებისა და თანხმობის ბმულების სანახავად
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===================================================================
+             VIEW 5: ანგარიშები (REPORTS & FINANCIAL LEDGER)
+             =================================================================== -->
+        <section class="app-screen-view" id="view-reports" aria-label="ანგარიშები">
+          <div class="view-header-strip">
+            <div>
+              <span class="view-subtitle">საოპერაციო ცენტრი / ანგარიშები</span>
+              <h1>თვის ფინანსური რეესტრი და ანგარიშგება</h1>
+            </div>
+            <div class="view-actions-cluster">
+              <button class="btn secondary smallbtn" id="btn-add-income-modal">+ შემოსავლის ჩაწერა</button>
+              <button class="btn secondary smallbtn" id="btn-add-expense-modal">+ ხარჯის ჩაწერა</button>
+              <button class="btn smallbtn" id="btn-print-report">ბეჭდვა / PDF ↗</button>
+            </div>
+          </div>
+
+          <div class="reports-dashboard-layout">
+            <!-- Filter Bar -->
+            <div class="report-filter-bar">
+              <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+                <label style="font-size:12px;font-weight:600" for="report-period-select">პერიოდი:</label>
+                <select class="filter-select" id="report-period-select">
+                  <option value="2026-10" selected>ოქტომბერი 2026</option>
+                  <option value="2026-09">სექტემბერი 2026</option>
+                  <option value="2026-08">აგვისტო 2026</option>
+                </select>
+
+                <label style="font-size:12px;font-weight:600;margin-left:8px" for="report-apt-select">ბინა:</label>
+                <select class="filter-select" id="report-apt-select">
+                  <!-- Populated by JS -->
+                </select>
+              </div>
+
+              <div style="display:flex;align-items:center;gap:8px">
+                <span class="status-pill done" id="report-finalized-badge">დინამიური რეესტრი</span>
+                <button class="btn secondary smallbtn" id="btn-finalize-snapshot" style="font-size:12px">დაფიქსირება (Snapshot)</button>
+              </div>
+            </div>
+
+            <!-- Printable Sheet Area -->
+            <div class="app-panel glow-card" id="printable-report-area">
+              <div class="owner-report-header">
+                <div>
+                  <h4 id="report-doc-title">თვის ანგარიში</h4>
+                  <span id="report-doc-sub">მფლობელი: — · სისტემა: რიგზეა</span>
+                </div>
+                <span class="status-pill done">მზადაა მფლობელისთვის</span>
+              </div>
+
+              <div class="owner-kpi-row">
+                <div class="owner-kpi-item">
+                  <span>ჯამური შემოსავალი</span>
+                  <strong class="num-tabular" id="report-val-income">₾0</strong>
+                </div>
+                <div class="owner-kpi-item">
+                  <span>დადასტურებული ხარჯები</span>
+                  <strong class="num-tabular" id="report-val-expense" style="color:var(--amber)">₾0</strong>
+                </div>
+                <div class="owner-kpi-item net">
+                  <span>წმინდა შედეგი</span>
+                  <strong class="num-tabular" id="report-val-net">₾0</strong>
+                </div>
+              </div>
+
+              <div class="owner-expense-table">
+                <h5>დაფიქსირებული ხარჯების ჩამონათვალი</h5>
+                <div id="report-entries-mount">
+                  <!-- Dynamically populated entries -->
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===================================================================
+             VIEW 6: მდგომარეობის აქტები (CONDITION REPORTS)
+             =================================================================== -->
+        <section class="app-screen-view" id="view-condition" aria-label="მდგომარეობის აქტები">
+          <div class="view-header-strip">
+            <div>
+              <span class="view-subtitle">საოპერაციო ცენტრი / შემოწმება</span>
+              <h1>მდგომარეობის და მიღება-ჩაბარების აქტები</h1>
+            </div>
+            <div class="view-actions-cluster">
+              <button class="btn smallbtn" id="btn-create-condition-modal">+ ახალი აქტის შექმნა</button>
+            </div>
+          </div>
+
+          <div class="dashboard-grid-layout">
+            <!-- Left: Saved Reports Table -->
+            <div class="app-panel">
+              <div class="app-panel-header">
+                <h2>შენახული აქტები</h2>
+                <span style="font-size:11px;color:var(--muted)" id="condition-count-badge">0 აქტი</span>
+              </div>
+              <div class="data-table-wrapper">
+                <table class="operational-table">
+                  <thead>
+                    <tr>
+                      <th>თარიღი</th>
+                      <th>ბინა</th>
+                      <th>ტიპი</th>
+                      <th>შემმოწმებელი</th>
+                      <th>მოქმედება</th>
+                    </tr>
+                  </thead>
+                  <tbody id="condition-reports-tbody">
+                    <!-- Populated by JS -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Right: Condition Report Document Viewer -->
+            <div class="app-panel glow-card" id="condition-view-panel">
+              <div class="app-panel-header">
+                <h2 id="condition-view-title">აქტის დოკუმენტი</h2>
+                <button class="btn secondary smallbtn" id="btn-print-condition">ბეჭდვა ↗</button>
+              </div>
+              <div class="app-panel-body" id="condition-view-body">
+                <div style="text-align:center;padding:40px 0;color:var(--muted);font-size:13px">
+                  აირჩიე აქტი მარცხენა სიიდან სანახავად ან შექმენი ახალი
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===================================================================
+             VIEW 7: პარამეტრები (SETTINGS)
+             =================================================================== -->
+        <section class="app-screen-view" id="view-settings" aria-label="პარამეტრები">
+          <div class="view-header-strip">
+            <div>
+              <span class="view-subtitle">საოპერაციო ცენტრი / პარამეტრები</span>
+              <h1>სისტემური პარამეტრები და გუნდი</h1>
+            </div>
+          </div>
+
+          <div class="app-panel glow-card">
+            <div class="apt-detail-nav-tabs" style="padding:12px 20px;border-bottom:1px solid var(--line)">
+              <button class="apt-tab-btn active" data-settings-tab="company">კომპანია</button>
+              <button class="apt-tab-btn" data-settings-tab="team">გუნდი და როლები</button>
+              <button class="apt-tab-btn" data-settings-tab="telegram">Telegram ინტეგრაცია</button>
+              <button class="apt-tab-btn" data-settings-tab="plans">გამოწერა და ლიმიტები</button>
+            </div>
+
+            <div class="app-panel-body" id="settings-tab-content" style="padding:28px">
+              <!-- Rendered dynamically by JS -->
+            </div>
+          </div>
+        </section>
+
+      </main>
+    </div>
+
+    <!-- Mobile Bottom App Bar -->
+    <nav class="mobile-app-bottom-nav" aria-label="მობილური ნავიგაცია">
+      <button class="mobile-bottom-btn active" data-view="dashboard">
+        <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1.5"/><rect width="7" height="5" x="14" y="3" rx="1.5"/><rect width="7" height="9" x="14" y="12" rx="1.5"/><rect width="7" height="5" x="3" y="16" rx="1.5"/></svg></span>
+        <span>მთავარი</span>
+      </button>
+      <button class="mobile-bottom-btn" data-view="apartments">
+        <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="20" x="4" y="2" rx="2"/><path d="M9 22v-4h6v4"/></svg></span>
+        <span>ბინები</span>
+      </button>
+      <button class="mobile-bottom-btn" data-view="tasks">
+        <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>
+        <span>საქმეები</span>
+      </button>
+      <button class="mobile-bottom-btn" data-view="owners">
+        <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></span>
+        <span>მფლობელი</span>
+      </button>
+      <button class="mobile-bottom-btn" data-view="reports">
+        <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg></span>
+        <span>ანგარიში</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- =========================================================================
+       3. MODALS (APARTMENT, TASK, EXPENSE, INCOME, TEAM, APPROVAL, SEARCH)
+       ========================================================================= -->
+
+  <!-- Modal: Add / Edit Apartment -->
+  <div class="modal-overlay" id="modal-apartment" role="dialog" aria-modal="true" style="display:none">
+    <div class="modal-window glow-card">
+      <div class="modal-head">
+        <h3 id="modal-apt-title-header">ახალი ბინის დამატება</h3>
+        <button class="btn link smallbtn modal-close-btn" style="font-size:18px" aria-label="დახურვა">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="form-apartment-save" onsubmit="return false;">
+          <input type="hidden" id="edit-apt-id" value="" />
+          <div class="form-group">
+            <label for="apt-name-input">ბინის სახელწოდება</label>
+            <input type="text" id="apt-name-input" class="form-input" placeholder="მაგ: Orbi City · 1204" required />
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div class="form-group">
+              <label for="apt-city-select">ქალაქი</label>
+              <select id="apt-city-select" class="form-input" required>
+                <option value="ბათუმი">ბათუმი</option>
+                <option value="თბილისი">თბილისი</option>
+                <option value="სხვა">სხვა</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="apt-unit-input">ბინის / კარის ნომერი</label>
+              <input type="text" id="apt-unit-input" class="form-input" placeholder="1204" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="apt-address-input">მისამართი</label>
+            <input type="text" id="apt-address-input" class="form-input" placeholder="შერიფ ხიმშიაშვილის 7" required />
+          </div>
+          <div class="form-group">
+            <label for="apt-owner-select">მფლობელი</label>
+            <select id="apt-owner-select" class="form-input">
+              <option value="">— მფლობელის გარეშე —</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="apt-access-input">წვდომის კოდი / ინსტრუქცია</label>
+            <input type="text" id="apt-access-input" class="form-input" placeholder="მაგ: სეიფის კოდი 4921, კარის ჩიპი" />
+          </div>
+        </form>
+      </div>
+      <div class="modal-foot">
+        <button class="btn secondary smallbtn modal-cancel-btn">გაუქმება</button>
+        <button class="btn smallbtn" id="btn-save-apartment-submit">შენახვა ↗</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Add / Edit Task -->
+  <div class="modal-overlay" id="modal-task" role="dialog" aria-modal="true" style="display:none">
+    <div class="modal-window glow-card">
+      <div class="modal-head">
+        <h3 id="modal-task-title-header">ახალი საქმის დამატება</h3>
+        <button class="btn link smallbtn modal-close-btn" style="font-size:18px" aria-label="დახურვა">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="form-task-save" onsubmit="return false;">
+          <input type="hidden" id="edit-task-id" value="" />
+          <div class="form-group">
+            <label for="task-title-input">საქმის დასახელება</label>
+            <input type="text" id="task-title-input" class="form-input" placeholder="მაგ: კონდიციონერის შეკეთება, დასუფთავება" required />
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div class="form-group">
+              <label for="task-apt-select">ბინა</label>
+              <select id="task-apt-select" class="form-input" required>
+                <!-- Populated by JS -->
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="task-type-select">ტიპი</label>
+              <select id="task-type-select" class="form-input">
+                <option value="cleaning">დასუფთავება</option>
+                <option value="repair">რემონტი</option>
+                <option value="inspection">შემოწმება</option>
+                <option value="payment">გადახდა</option>
+                <option value="other">სხვა</option>
+              </select>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div class="form-group">
+              <label for="task-assignee-input">შემსრულებელი</label>
+              <input type="text" id="task-assignee-input" class="form-input" placeholder="მაგ: მარიამი, გიორგი" />
+            </div>
+            <div class="form-group">
+              <label for="task-cost-input">სავარაუდო თანხა (₾)</label>
+              <input type="number" id="task-cost-input" class="form-input" placeholder="0" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="task-desc-input">დეტალური აღწერა</label>
+            <textarea id="task-desc-input" class="form-textarea" placeholder="დამატებითი დეტალები..."></textarea>
+          </div>
+        </form>
+      </div>
+      <div class="modal-foot">
+        <button class="btn secondary smallbtn modal-cancel-btn">გაუქმება</button>
+        <button class="btn smallbtn" id="btn-save-task-submit">დამატება ↗</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Add / Edit Owner -->
+  <div class="modal-overlay" id="modal-owner" role="dialog" aria-modal="true" style="display:none">
+    <div class="modal-window glow-card">
+      <div class="modal-head">
+        <h3 id="modal-owner-title-header">ახალი მფლობელის დამატება</h3>
+        <button class="btn link smallbtn modal-close-btn" style="font-size:18px" aria-label="დახურვა">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="form-owner-save" onsubmit="return false;">
+          <input type="hidden" id="edit-owner-id" value="" />
+          <div class="form-group">
+            <label for="owner-name-input">მფლობელის სახელი და გვარი</label>
+            <input type="text" id="owner-name-input" class="form-input" placeholder="მაგ: ნინო ქორიძე" required />
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div class="form-group">
+              <label for="owner-phone-input">ტელეფონი</label>
+              <input type="text" id="owner-phone-input" class="form-input" placeholder="+995 599 12 34 56" />
+            </div>
+            <div class="form-group">
+              <label for="owner-email-input">ელფოსტა</label>
+              <input type="email" id="owner-email-input" class="form-input" placeholder="owner@gmail.com" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="owner-lang-select">სასურველი ენა</label>
+            <select id="owner-lang-select" class="form-input">
+              <option value="ka" selected>ქართული</option>
+              <option value="en">English</option>
+              <option value="ru">Русский</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="owner-notes-input">შენიშვნა</label>
+            <input type="text" id="owner-notes-input" class="form-input" placeholder="მაგ: ანგარიშს ითხოვს ყოველი თვის 5 რიცხვში" />
+          </div>
+        </form>
+      </div>
+      <div class="modal-foot">
+        <button class="btn secondary smallbtn modal-cancel-btn">გაუქმება</button>
+        <button class="btn smallbtn" id="btn-save-owner-submit">შენახვა ↗</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Add Expense -->
+  <div class="modal-overlay" id="modal-expense" role="dialog" aria-modal="true" style="display:none">
+    <div class="modal-window glow-card">
+      <div class="modal-head">
+        <h3>ხარჯის ჩაწერა</h3>
+        <button class="btn link smallbtn modal-close-btn" style="font-size:18px" aria-label="დახურვა">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="form-expense-save" onsubmit="return false;">
+          <div class="form-group">
+            <label for="exp-apt-select">ბინა</label>
+            <select id="exp-apt-select" class="form-input" required></select>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div class="form-group">
+              <label for="exp-amount-input">თანხა (₾)</label>
+              <input type="number" id="exp-amount-input" class="form-input" placeholder="170" step="0.5" required />
+            </div>
+            <div class="form-group">
+              <label for="exp-category-select">კატეგორია</label>
+              <select id="exp-category-select" class="form-input">
+                <option value="რემონტი">რემონტი</option>
+                <option value="დასუფთავება">დასუფთავება</option>
+                <option value="კომუნალური">კომუნალური</option>
+                <option value="მარაგი">მარაგი</option>
+                <option value="სხვა">სხვა</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="exp-desc-input">ხარჯის აღწერა</label>
+            <input type="text" id="exp-desc-input" class="form-input" placeholder="მაგ: კონდიციონერის სარქველის შეცვლა" required />
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div class="form-group">
+              <label for="exp-vendor-input">მიმღები / ოსტატი</label>
+              <input type="text" id="exp-vendor-input" class="form-input" placeholder="შპს კლიმატ სერვისი" />
+            </div>
+            <div class="form-group">
+              <label for="exp-date-input">თარიღი</label>
+              <input type="date" id="exp-date-input" class="form-input" required />
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-foot">
+        <button class="btn secondary smallbtn modal-cancel-btn">გაუქმება</button>
+        <button class="btn smallbtn" id="btn-save-expense-submit">ხარჯის დაფიქსირება ↗</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Add Income -->
+  <div class="modal-overlay" id="modal-income" role="dialog" aria-modal="true" style="display:none">
+    <div class="modal-window glow-card">
+      <div class="modal-head">
+        <h3>შემოსავლის ჩაწერა</h3>
+        <button class="btn link smallbtn modal-close-btn" style="font-size:18px" aria-label="დახურვა">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="form-income-save" onsubmit="return false;">
+          <div class="form-group">
+            <label for="inc-apt-select">ბინა</label>
+            <select id="inc-apt-select" class="form-input" required></select>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div class="form-group">
+              <label for="inc-amount-input">მიღებული თანხა (₾)</label>
+              <input type="number" id="inc-amount-input" class="form-input" placeholder="1840" step="1" required />
+            </div>
+            <div class="form-group">
+              <label for="inc-source-select">წყარო</label>
+              <select id="inc-source-select" class="form-input">
+                <option value="Airbnb">Airbnb</option>
+                <option value="Booking.com">Booking.com</option>
+                <option value="გრძელვადიანი">გრძელვადიანი იჯარა</option>
+                <option value="პირდაპირი">პირდაპირი ჯავშანი</option>
+              </select>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div class="form-group">
+              <label for="inc-desc-input">აღწერა</label>
+              <input type="text" id="inc-desc-input" class="form-input" placeholder="სექტემბრის ჯავშნები (12 ღამე)" />
+            </div>
+            <div class="form-group">
+              <label for="inc-date-input">თარიღი</label>
+              <input type="date" id="inc-date-input" class="form-input" required />
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-foot">
+        <button class="btn secondary smallbtn modal-cancel-btn">გაუქმება</button>
+        <button class="btn smallbtn" id="btn-save-income-submit">შემოსავლის შენახვა ↗</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Create Approval / Repair Request -->
+  <div class="modal-overlay" id="modal-create-approval" role="dialog" aria-modal="true" style="display:none">
+    <div class="modal-window glow-card">
+      <div class="modal-head">
+        <h3>მფლობელის თანხმობის მოთხოვნა</h3>
+        <button class="btn link smallbtn modal-close-btn" style="font-size:18px" aria-label="დახურვა">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size:12px;color:var(--ink-secondary);margin:0 0 14px">
+          გენერირდება დაცული უნიკალური ბმული, რომლის საშუალებითაც მფლობელი რეგისტრაციის გარეშე 1 კლიკით დაადასტურებს ხარჯს.
+        </p>
+        <form id="form-approval-create" onsubmit="return false;">
+          <div class="form-group">
+            <label for="appr-apt-select">ბინა</label>
+            <select id="appr-apt-select" class="form-input" required></select>
+          </div>
+          <div class="form-group">
+            <label for="appr-issue-input">საკითხი / რემონტი</label>
+            <input type="text" id="appr-issue-input" class="form-input" placeholder="მაგ: კონდიციონერის შეკეთება" required />
+          </div>
+          <div class="form-group">
+            <label for="appr-amount-input">თანხა (₾)</label>
+            <input type="number" id="appr-amount-input" class="form-input" placeholder="170" required />
+          </div>
+          <div class="form-group">
+            <label for="appr-desc-input">დეტალური განმარტება მფლობელისთვის</label>
+            <textarea id="appr-desc-input" class="form-textarea" placeholder="ხელოსნის შეფასებით საჭიროა გაგრილების სარქველის შეცვლა..."></textarea>
+          </div>
+        </form>
+      </div>
+      <div class="modal-foot">
+        <button class="btn secondary smallbtn modal-cancel-btn">გაუქმება</button>
+        <button class="btn smallbtn" id="btn-save-approval-submit">მოთხოვნის შექმნა და ბმული ↗</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Create Condition Report -->
+  <div class="modal-overlay" id="modal-condition" role="dialog" aria-modal="true" style="display:none">
+    <div class="modal-window glow-card" style="width:min(680px, 100%)">
+      <div class="modal-head">
+        <h3>ახალი მდგომარეობის აქტი</h3>
+        <button class="btn link smallbtn modal-close-btn" style="font-size:18px" aria-label="დახურვა">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
+      </div>
+      <div class="modal-body" style="max-height:75vh;overflow-y:auto">
+        <form id="form-condition-save" onsubmit="return false;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div class="form-group">
+              <label for="cond-apt-select">ბინა</label>
+              <select id="cond-apt-select" class="form-input" required></select>
+            </div>
+            <div class="form-group">
+              <label for="cond-type-select">აქტის ტიპი</label>
+              <select id="cond-type-select" class="form-input">
+                <option value="move_in">შესახლება (Move-in)</option>
+                <option value="move_out">გასვლა (Move-out)</option>
+                <option value="inspection">პერიოდული შემოწმება</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="checklist-section-box">
+            <strong style="font-size:13px;display:block;margin-bottom:8px">ოთახებისა და ინვენტარის შემოწმება:</strong>
+            
+            <div class="checklist-item-row">
+              <span>მისაღები ოთახი:</span>
+              <select class="form-input cond-item-status" data-room="living_room" style="height:34px">
+                <option value="იდეალური">იდეალური</option>
+                <option value="დამაკმაყოფილებელი">დამაკმაყოფილებელი</option>
+                <option value="დაზიანება">დაზიანება</option>
+              </select>
+              <input type="text" class="form-input cond-item-note" data-room="living_room" placeholder="შენიშვნა..." style="height:34px" />
+            </div>
+
+            <div class="checklist-item-row">
+              <span>საძინებელი:</span>
+              <select class="form-input cond-item-status" data-room="bedroom" style="height:34px">
+                <option value="იდეალური">იდეალური</option>
+                <option value="დამაკმაყოფილებელი">დამაკმაყოფილებელი</option>
+                <option value="დაზიანება">დაზიანება</option>
+              </select>
+              <input type="text" class="form-input cond-item-note" data-room="bedroom" placeholder="შენიშვნა..." style="height:34px" />
+            </div>
+
+            <div class="checklist-item-row">
+              <span>სამზარეულო:</span>
+              <select class="form-input cond-item-status" data-room="kitchen" style="height:34px">
+                <option value="იდეალური">იდეალური</option>
+                <option value="დამაკმაყოფილებელი">დამაკმაყოფილებელი</option>
+                <option value="დაზიანება">დაზიანება</option>
+              </select>
+              <input type="text" class="form-input cond-item-note" data-room="kitchen" placeholder="შენიშვნა..." style="height:34px" />
+            </div>
+
+            <div class="checklist-item-row">
+              <span>აბაზანა:</span>
+              <select class="form-input cond-item-status" data-room="bathroom" style="height:34px">
+                <option value="იდეალური">იდეალური</option>
+                <option value="დამაკმაყოფილებელი">დამაკმაყოფილებელი</option>
+                <option value="დაზიანება">დაზიანება</option>
+              </select>
+              <input type="text" class="form-input cond-item-note" data-room="bathroom" placeholder="შენიშვნა..." style="height:34px" />
+            </div>
+          </div>
+
+          <div class="checklist-section-box">
+            <strong style="font-size:13px;display:block;margin-bottom:8px">მრიცხველების ჩვენებები:</strong>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+              <div>
+                <label style="font-size:11px;color:var(--muted)">ელექტროენერგია (kWh):</label>
+                <input type="text" id="meter-electric" class="form-input" placeholder="004821" style="height:34px" />
+              </div>
+              <div>
+                <label style="font-size:11px;color:var(--muted)">წყალი (m³):</label>
+                <input type="text" id="meter-water" class="form-input" placeholder="0182" style="height:34px" />
+              </div>
+              <div>
+                <label style="font-size:11px;color:var(--muted)">ბუნებრივი აირი (m³):</label>
+                <input type="text" id="meter-gas" class="form-input" placeholder="0312" style="height:34px" />
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-foot">
+        <button class="btn secondary smallbtn modal-cancel-btn">გაუქმება</button>
+        <button class="btn smallbtn" id="btn-save-condition-submit">აქტის შენახვა ↗</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Send Report / Status to Owner (Rule 6) -->
+  <div class="modal-overlay" id="modal-send-owner-report" role="dialog" aria-modal="true" style="display:none">
+    <div class="modal-window glow-card" style="max-width:540px">
+      <div class="modal-head">
+        <div>
+          <h3 id="send-owner-modal-title">მფლობელისთვის ანგარიშის გაგზავნა</h3>
+          <span style="font-size:12px;color:var(--muted)" id="send-owner-apt-sub">ბინა: —</span>
+        </div>
+        <button class="btn link smallbtn modal-close-btn" style="font-size:18px" aria-label="დახურვა">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div style="margin-bottom:16px">
+          <label style="font-size:12px;font-weight:600;display:block;margin-bottom:6px">მზა ტექსტი WhatsApp / Telegram-ისთვის:</label>
+          <textarea id="send-owner-summary-text" class="form-textarea" style="height:140px;font-size:13px;line-height:1.5" readonly></textarea>
+        </div>
+
+        <div style="background:var(--surface-subtle);border:1px solid var(--line);border-radius:var(--r-md);padding:14px;margin-bottom:16px">
+          <strong style="font-size:12px;display:block;margin-bottom:4px">მფლობელის 1-Click თანხმობის ბმული:</strong>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input type="text" id="send-owner-approval-link" class="form-input" style="height:36px;font-size:12px" readonly value="" />
+            <button class="btn secondary smallbtn" id="btn-copy-approval-link" style="white-space:nowrap">კოპირება</button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn secondary smallbtn modal-cancel-btn">დახურვა</button>
+        <button class="btn smallbtn" id="btn-copy-owner-summary">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+          ტექსტის კოპირება WhatsApp-ისთვის
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Upload Photo / Receipt (Rule 6) -->
+  <div class="modal-overlay" id="modal-upload-receipt" role="dialog" aria-modal="true" style="display:none">
+    <div class="modal-window glow-card">
+      <div class="modal-head">
+        <div>
+          <h3>ფოტოს ან ქვითრის ატვირთვა</h3>
+          <span style="font-size:12px;color:var(--muted)" id="upload-receipt-apt-sub">ბინა: —</span>
+        </div>
+        <button class="btn link smallbtn modal-close-btn" style="font-size:18px" aria-label="დახურვა">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="form-upload-receipt-doc" onsubmit="return false;">
+          <div class="form-group">
+            <label for="receipt-title-input">აღწერა / სათაური</label>
+            <input type="text" id="receipt-title-input" class="form-input" placeholder="მაგ: კონდიციონერის შეკეთების ქვითარი ან ფოტო" required />
+          </div>
+          <div class="form-group">
+            <label for="receipt-file-input">ფაილის არჩევა (ფოტო, PDF ან ქვითარი)</label>
+            <input type="file" id="receipt-file-input" class="form-input" accept="image/*,application/pdf" style="padding-top:8px" required />
+          </div>
+          <div class="form-group">
+            <label for="receipt-amount-input">თანხა (₾, არასავალდებულო ხარჯის ჩასაწერად)</label>
+            <input type="number" id="receipt-amount-input" class="form-input" placeholder="0.00" step="0.5" />
+          </div>
+        </form>
+      </div>
+      <div class="modal-foot">
+        <button class="btn secondary smallbtn modal-cancel-btn">გაუქმება</button>
+        <button class="btn smallbtn" id="btn-submit-receipt-upload">ატვირთვა და შენახვა ↗</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Global Search Overlay -->
+  <div class="modal-overlay" id="modal-global-search" role="dialog" aria-modal="true" style="display:none">
+    <div class="search-modal-container glow-card">
+      <div class="search-modal-header">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--muted)"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="text" id="global-search-input" class="search-modal-input" placeholder="მოძებნე ბინა, მფლობელი, საქმე..." autocomplete="off" />
+        <button class="btn link smallbtn modal-close-btn" style="font-size:18px" aria-label="დახურვა">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
+      </div>
+      <div class="search-results-list" id="global-search-results">
+        <div style="padding:24px;text-align:center;color:var(--muted);font-size:13px">აკრიფე საძიებო სიტყვა...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Invite Team Member -->
+  <div class="modal-overlay" id="modal-invite-member" role="dialog" aria-modal="true" style="display:none">
+    <div class="modal-window glow-card">
+      <div class="modal-head">
+        <h3>გუნდის წევრის მოწვევა</h3>
+        <button class="btn link smallbtn modal-close-btn" style="font-size:18px" aria-label="დახურვა">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="form-invite-save" onsubmit="return false;">
+          <div class="form-group">
+            <label for="invite-email-input">თანამშრომლის ელფოსტა</label>
+            <input type="email" id="invite-email-input" class="form-input" placeholder="colleague@company.ge" required />
+          </div>
+          <div class="form-group">
+            <label for="invite-role-select">როლი და წვდომა</label>
+            <select id="invite-role-select" class="form-input">
+              <option value="manager" selected>მენეჯერი (სრული ოპერაციები)</option>
+              <option value="staff">დამლაგებელი / თანამშრომელი (მხოლოდ საქმეები)</option>
+              <option value="admin">ადმინისტრატორი (ფინანსები და გუნდი)</option>
+            </select>
+          </div>
+        </form>
+      </div>
+      <div class="modal-foot">
+        <button class="btn secondary smallbtn modal-cancel-btn">გაუქმება</button>
+        <button class="btn smallbtn" id="btn-submit-invite">მოწვევის გაგზავნა ↗</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification System -->
+  <div class="app-toast" id="app-toast" role="status"></div>
+
+  <!-- Scripts -->
+  <script src="/js/supabase.js"></script>
+  <script src="/js/config.js"></script>
+  <script src="/app/app.js"></script>
+</body>
+</html>

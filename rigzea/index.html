@@ -1,0 +1,595 @@
+<!doctype html>
+<html lang="ka">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#f5f5f0" />
+  <meta name="description" content="რიგზეა — ბინების საოპერაციო სისტემა. მართე ბინები, რემონტი, ხარჯები და მფლობელებთან კომუნიკაცია ერთ ადგილას — ჩათებში ძებნის გარეშე." />
+  <title>რიგზეა — ყველა ბინა. ყველა საქმე. რიგზეა.</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='7' fill='%231f503e'/%3E%3Cpath d='M10 12h20M10 20h15M10 28h20' stroke='%23fff' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <!-- Global Header -->
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="wordmark" href="/" aria-label="რიგზეა მთავარი გვერდი">რიგზეა<i>.</i></a>
+      <nav class="header-nav" id="mobile-nav" aria-label="მთავარი მენიუ">
+        <a href="#problem">პრობლემა</a>
+        <a href="#how">როგორ მუშაობს</a>
+        <a href="#timeline">ბინის ისტორია</a>
+        <a href="#owner">მფლობელის ანგარიში</a>
+        <a href="#pricing">ფასები</a>
+      </nav>
+      <div class="header-actions">
+        <a class="btn secondary smallbtn" href="/app/">შესვლა</a>
+        <a class="btn smallbtn" href="/app/">სცადე რიგზეა <span class="arr">↗</span></a>
+        <button class="mobile-toggle" id="mobile-toggle" aria-label="მენიუს გახსნა" aria-expanded="false">☰</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- 1. Hero Section -->
+    <section class="container hero">
+      <div class="hero-grid">
+        <div class="hero-copy">
+          <span class="eyebrow">საოპერაციო სისტემა</span>
+          <h1>ყველა ბინა.<br/>ყველა საქმე.<br/><em>რიგზეა.</em></h1>
+          <p>მართე ბინები, რემონტი, ხარჯები და მფლობელებთან კომუნიკაცია ერთ ადგილას — ჩათებში ძებნის გარეშე.</p>
+          <div class="hero-buttons">
+            <a class="btn" href="/app/">სცადე რიგზეა <span class="arr">↗</span></a>
+            <a class="btn secondary" href="#how">ნახე როგორ მუშაობს <span class="arr">↓</span></a>
+          </div>
+          <div class="hero-facts">
+            <div>
+              <strong>20+ ბინა</strong>
+              <span>ერთიანი საოპერაციო კონტროლი</span>
+            </div>
+            <div>
+              <strong>0 დაკარგული ხარჯი</strong>
+              <span>ქვითარი და თანხმობა რეესტრში</span>
+            </div>
+            <div>
+              <strong>100% ნდობა</strong>
+              <span>გამჭვირვალე ანგარიში მფლობელს</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Actual operational software screen -->
+        <div class="product-frame" aria-label="რიგზეას სამუშაო გარემოს ეკრანი">
+          <div class="frame-topbar">
+            <div class="frame-controls">
+              <span></span><span></span><span></span>
+            </div>
+            <div class="frame-title">რიგზეა · საოპერაციო სამუშაო სივრცე</div>
+            <div class="frame-badge">აქტიური</div>
+          </div>
+          <div class="hero-app-content">
+            <aside class="hero-app-sidebar">
+              <div class="sidebar-logo">რიგზეა.</div>
+              <div class="sidebar-item active">◫ მთავარი</div>
+              <div class="sidebar-item">▤ ბინები</div>
+              <div class="sidebar-item">≡ საქმეები</div>
+              <div class="sidebar-item">◯ მფლობელები</div>
+              <div class="sidebar-item">▦ ანგარიშები</div>
+            </aside>
+            <div class="hero-app-body">
+              <div class="hero-app-header">
+                <div>
+                  <small>დღის სურათი</small>
+                  <h3>რას უნდა მივხედო დღეს?</h3>
+                </div>
+                <span class="status-pill wait">1 მოქმედება</span>
+              </div>
+
+              <div>
+                <div class="section-label">ყურადღებას საჭიროებს</div>
+                <div class="hero-urgent-row">
+                  <div>
+                    <strong>Orbi City · 1204</strong>
+                    <span>კონდიციონერის შეკეთება — ელოდება ნინო ქ.-ის თანხმობას</span>
+                  </div>
+                  <span class="badge-cost">₾170</span>
+                </div>
+              </div>
+
+              <div>
+                <div class="section-label">დღეს</div>
+                <div class="hero-schedule">
+                  <div class="schedule-row">
+                    <time>14:00</time>
+                    <div><span class="task-name">დასუფთავება</span><span class="apt-name">· Orbi City 1204</span></div>
+                    <span class="status-pill neutral">დაგეგმილი</span>
+                  </div>
+                  <div class="schedule-row">
+                    <time>16:30</time>
+                    <div><span class="task-name">სანტექნიკოსი</span><span class="apt-name">· Vake Residence 18</span></div>
+                    <span class="status-pill wait">დაგვიანებული</span>
+                  </div>
+                  <div class="schedule-row">
+                    <time>18:00</time>
+                    <div><span class="task-name">Check-in</span><span class="apt-name">· Old Batumi 7</span></div>
+                    <span class="status-pill done">მზადაა</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="hero-report-snippet">
+                <strong>სექტემბრის ანგარიში · Orbi City 1204</strong>
+                <span>წმინდა: ₾1,520 ↗</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. Problem Section -->
+    <section class="landing-section" id="problem">
+      <div class="container">
+        <div class="section-head">
+          <span class="eyebrow">რეალობა</span>
+          <h2>როცა 20 ბინას მართავ,<br/>ჩათი უკვე სისტემა აღარ არის.</h2>
+          <p>ერთი რემონტი პირად მიმოწერაში იწყება, ქვითარი გალერეაში რჩება, ხარჯი ცხრილში დაგვიანებით ხვდება, მფლობელი კი თვის ბოლოს გაკვირვებული გირეკავს.</p>
+        </div>
+
+        <div class="problem-ledger">
+          <div class="problem-col">
+            <span class="problem-index">01 / მიმოწერის ქაოსი</span>
+            <h3>„ვინ დაწერა ამის შესახებ?“</h3>
+            <p>შეტყობინება მოდის პირად ჩათში, მაგრამ არ არის მიბმული კონკრეტულ ბინასა და საქმესთან.</p>
+            <div class="problem-mock">
+              <div class="chat-bubble-mock">1204-ში კონდიციონერი აღარ აგრილებს...</div>
+              <div class="chat-bubble-mock out">ხელოსანი ნახავს, 170 ლარია</div>
+            </div>
+          </div>
+
+          <div class="problem-col">
+            <span class="problem-index">02 / ხელით გადაწერა</span>
+            <h3>„ეს ხარჯი სად ჩავწერე?“</h3>
+            <p>ერთი და იგივე თანხა ხელით გადადის ჩათიდან Excel-ში, მერე კი თვიურ ანგარიშში.</p>
+            <div class="problem-mock">
+              <div class="sheet-mock">
+                <div class="sheet-mock-row head"><span>#</span><span>ბინა</span><span>ხარჯი</span></div>
+                <div class="sheet-mock-row"><span>18</span><span>1204</span><span class="num-tabular">₾170</span></div>
+                <div class="sheet-mock-row"><span>19</span><span>18</span><span>—</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="problem-col">
+            <span class="problem-index">03 / დაკარგული ქვითრები</span>
+            <h3>„ქვითარი ვის გავუგზავნე?“</h3>
+            <p>თვის ბოლოს მფლობელს უხსნი, სად წავიდა ფული, ფოტოები კი ტელეფონის გალერეაშია გაფანტული.</p>
+            <div class="problem-mock">
+              <div class="receipt-lost-mock">
+                <div class="receipt-icon-box">📄</div>
+                <div>
+                  <strong>IMG_8421.jpg</strong>
+                  <div style="color:var(--muted);font-size:10px">რომელ ბინას ეკუთვნის ეს ქვითარი?</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. Core Workflow -->
+    <section class="landing-section" id="how">
+      <div class="container">
+        <div class="section-head">
+          <span class="eyebrow">სამუშაო პროცესი</span>
+          <h2>როგორ მუშაობს</h2>
+          <p>შეტყობინებიდან დადასტურებულ ანგარიშამდე — ყოველგვარი ზედმეტი გადაწერისა და ჩათებში ძებნის გარეშე.</p>
+        </div>
+
+        <div class="workflow-row">
+          <div class="workflow-step">
+            <span class="workflow-num">01</span>
+            <h4>შეტყობინება</h4>
+            <p>პრობლემა ფიქსირდება მარტივი შეტყობინებით.</p>
+          </div>
+          <div class="workflow-step">
+            <span class="workflow-num">02</span>
+            <h4>საქმე</h4>
+            <p>ბინას ებმება კონკრეტული ამოცანა, ხარჯი და პასუხისმგებელი.</p>
+          </div>
+          <div class="workflow-step">
+            <span class="workflow-num">03</span>
+            <h4>თანხმობა</h4>
+            <p>მფლობელი ადასტურებს რემონტის ხარჯს ერთი დაჭერით.</p>
+          </div>
+          <div class="workflow-step">
+            <span class="workflow-num">04</span>
+            <h4>შესრულება</h4>
+            <p>ხელოსანი ასრულებს საქმეს; ქვითარი ინახება ბინის ისტორიაში.</p>
+          </div>
+          <div class="workflow-step">
+            <span class="workflow-num">05</span>
+            <h4>ანგარიში</h4>
+            <p>ხარჯი ავტომატურად ასახულია თვის ფინანსურ რეესტრში.</p>
+          </div>
+        </div>
+
+        <div class="workflow-cta-note">
+          <span>გამოსცადე ეს პროცესი რეალურ დემოში:</span>
+          <a href="/demo/">გახსენი სამუშაო გარემო ↗</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. Apartment Timeline - The Product Signature -->
+    <section class="landing-section" id="timeline">
+      <div class="container">
+        <div class="timeline-section-grid">
+          <div class="timeline-feature-desc">
+            <span class="eyebrow">საფირმო ხედვა</span>
+            <h2>ბინის ისტორია</h2>
+            <p>როცა ბინას ხსნი, მაშინვე ხედავ მის მიმდინარე მდგომარეობასა და სრულ ოპერაციულ ქრონოლოგიას. აღარ მოგიწევს ძველ ჩათებში ძებნა.</p>
+            
+            <div class="timeline-bullets">
+              <div class="timeline-bullet">
+                <span style="color:var(--green)">—</span>
+                <div>
+                  <strong>ყველა მოვლენა ერთ ადგილას</strong>
+                  <span>რემონტი, ხარჯი, დასუფთავება, ქვითრები და მფლობელის თანხმობები.</span>
+                </div>
+              </div>
+              <div class="timeline-bullet">
+                <span style="color:var(--green)">—</span>
+                <div>
+                  <strong>დოკუმენტური სიზუსტე</strong>
+                  <span>ყოველ ხარჯს თან ერთვის თარიღი, ხელოსნის შეფასება და ქვითრის ფოტო.</span>
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-top:28px">
+              <a class="btn" href="/demo/?view=apartments">ნახე ბინის ისტორია დემოში <span class="arr">↗</span></a>
+            </div>
+          </div>
+
+          <!-- Signature Apartment Ledger UI -->
+          <div class="apartment-card-signature">
+            <div class="apartment-header-bar">
+              <div class="apt-title-group">
+                <h3>Orbi City · 1204</h3>
+                <div class="apt-subtitle">ბათუმი · მფლობელი: ნინო ქ.</div>
+              </div>
+              <span class="status-pill wait">ელოდება პასუხს</span>
+            </div>
+
+            <div class="apt-summary-bar">
+              <div class="summary-metric">
+                ღია საქმე
+                <strong>1 აქტიური</strong>
+              </div>
+              <div class="summary-metric">
+                დასადასტურებელი
+                <strong class="num-tabular" style="color:var(--amber)">₾170</strong>
+              </div>
+              <div class="summary-metric">
+                შემდეგი დასუფთავება
+                <strong>ხვალ, 12:00</strong>
+              </div>
+            </div>
+
+            <div class="ledger-timeline">
+              <div class="timeline-date-label">დღეს</div>
+              <div class="timeline-events-list">
+                <div class="timeline-event-row accent">
+                  <time>15:23</time>
+                  <div class="timeline-rail"></div>
+                  <div class="timeline-details">
+                    <strong>ქვითარი დაემატა</strong>
+                    <p>ელექტრონული ქვითარი #INV-841 მიბმულია ხარჯთან</p>
+                    <span class="receipt-tag">📄 ქვითარი მიმაგრებულია</span>
+                  </div>
+                </div>
+
+                <div class="timeline-event-row accent">
+                  <time>15:20</time>
+                  <div class="timeline-rail"></div>
+                  <div class="timeline-details">
+                    <strong>რემონტი დასრულდა</strong>
+                    <p>კონდიციონერის შეკეთება — ხელოსანი დათო</p>
+                  </div>
+                </div>
+
+                <div class="timeline-event-row">
+                  <time>11:42</time>
+                  <div class="timeline-rail"></div>
+                  <div class="timeline-details">
+                    <strong>ნინო ქ.-მ ₾170 დაადასტურა</strong>
+                    <p>მფლობელმა თანხმობა გასცა დაცული ბმულით</p>
+                  </div>
+                </div>
+
+                <div class="timeline-event-row">
+                  <time>11:08</time>
+                  <div class="timeline-rail"></div>
+                  <div class="timeline-details">
+                    <strong>რემონტის მოთხოვნა გაეგზავნა მფლობელს</strong>
+                    <p>შეტყობინება დადასტურების ბმულით</p>
+                  </div>
+                </div>
+
+                <div class="timeline-event-row">
+                  <time>11:05</time>
+                  <div class="timeline-rail"></div>
+                  <div class="timeline-details">
+                    <strong>ხელოსნის შეფასება — ₾170</strong>
+                    <p>საჭიროა დეტალის შეცვლა</p>
+                  </div>
+                </div>
+
+                <div class="timeline-event-row">
+                  <time>10:42</time>
+                  <div class="timeline-rail"></div>
+                  <div class="timeline-details">
+                    <strong>კონდიციონერი აღარ აგრილებს</strong>
+                    <p>საკითხი ბინას დაემატა პირველადი შეტყობინებიდან</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. Owner Trust / Commercial Value -->
+    <section class="owner-section-dark" id="owner">
+      <div class="container">
+        <div class="owner-grid">
+          <div>
+            <span class="eyebrow">პროფესიონალიზმი და ნდობა</span>
+            <h2>მფლობელს აღარ უნდა აუხსნა, სად წავიდა ფული.</h2>
+            <p>თვის ბოლოს მფლობელი იღებს არა გაურკვეველ შეტყობინებებს, არამედ გამჭვირვალე, დალაგებულ ანგარიშს — ყველა ხარჯით, ქვითრითა და წინასწარი დადასტურებით.</p>
+            <div style="margin-top:24px">
+              <a class="btn light" href="/demo/?view=reports">ნახე მფლობელის ანგარიში <span class="arr">↗</span></a>
+            </div>
+          </div>
+
+          <!-- Clean Owner Report Ledger -->
+          <div class="owner-report-sheet">
+            <div class="owner-report-header">
+              <div>
+                <h4>სექტემბრის ანგარიში</h4>
+                <span>Orbi City · 1204 · მფლობელი: ნინო ქ.</span>
+              </div>
+              <span class="status-pill done">მზადაა</span>
+            </div>
+
+            <div class="owner-kpi-row">
+              <div class="owner-kpi-item">
+                <span>შემოსავალი</span>
+                <strong class="num-tabular">₾1,840</strong>
+              </div>
+              <div class="owner-kpi-item">
+                <span>ხარჯები</span>
+                <strong class="num-tabular" style="color:var(--amber)">₾320</strong>
+              </div>
+              <div class="owner-kpi-item net">
+                <span>წმინდა შედეგი</span>
+                <strong class="num-tabular">₾1,520</strong>
+              </div>
+            </div>
+
+            <div class="owner-expense-table">
+              <h5>ხარჯების დეტალური ჩამონათვალი</h5>
+              
+              <div class="expense-entry-row">
+                <time>12 სექ</time>
+                <div class="exp-desc">
+                  <strong>დასუფთავება</strong>
+                  <span>მიბმულია ქვითარი</span>
+                </div>
+                <div class="exp-amount num-tabular">₾80</div>
+              </div>
+
+              <div class="expense-entry-row">
+                <time>19 სექ</time>
+                <div class="exp-desc">
+                  <strong>კონდიციონერის შეკეთება</strong>
+                  <span>მფლობელის მიერ დადასტურებული · მიბმულია ქვითარი</span>
+                </div>
+                <div class="exp-amount num-tabular">₾170</div>
+              </div>
+
+              <div class="expense-entry-row">
+                <time>24 სექ</time>
+                <div class="exp-desc">
+                  <strong>საყოფაცხოვრებო სახარჯი მასალები</strong>
+                  <span>მიბმულია ქვითარი</span>
+                </div>
+                <div class="exp-amount num-tabular">₾70</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. Telegram Workflow -->
+    <section class="landing-section" id="telegram">
+      <div class="container">
+        <div class="telegram-transform-grid">
+          <div>
+            <span class="eyebrow">სწრაფი შეყვანა</span>
+            <h2>არაფერი გადაიწერო ხელით.</h2>
+            <p style="font-size:16px;font-weight:600;color:var(--ink);margin:12px 0 8px">Telegram-ში დაწერე ჩვეულებრივად. რიგზეა თვითონ დაალაგებს.</p>
+            <p style="color:var(--ink-secondary);font-size:14px;line-height:1.7;margin:0 0 20px">არ გჭირდება რთულ ფორმებში მონაცემების შეყვანა. გაგზავნე მოკლე შეტყობინება ისე, როგორც ყოველდღიურად წერ — სისტემა თავად ამოიცნობს ბინას, თანხას და შექმნის საქმეს.</p>
+            <div class="telegram-roadmap-note">
+              <span>● საჩვენებელი ფუნქციონალი აქტიურია დემოში; სრული ბოტი მალე დაემატება</span>
+            </div>
+          </div>
+
+            <div class="telegram-sample-pills" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px">
+              <button class="telegram-pill-btn active" data-msg-idx="0">1204 · კონდიციონერი</button>
+              <button class="telegram-pill-btn" data-msg-idx="1">ვაკე 18 · სანტექნიკა</button>
+              <button class="telegram-pill-btn" data-msg-idx="2">ბათუმი 7 · დასუფთავება</button>
+            </div>
+
+            <!-- Structured Transformation Visual -->
+            <div class="transform-visual">
+              <div class="telegram-msg-source">
+                <div class="msg-meta">
+                  <span id="tg-preview-channel">Telegram შეტყობინება</span>
+                  <span id="tg-preview-time">11:02</span>
+                </div>
+                <div class="msg-text" id="tg-preview-text">„1204-ში კონდიციონერი გაფუჭდა, 170 ლარია.“</div>
+              </div>
+
+              <div class="transform-arrow">
+                <span>↓ რიგზეა ქმნის სტრუქტურირებულ ჩანაწერს</span>
+              </div>
+
+              <div class="structured-record-target">
+                <div class="structured-grid">
+                  <div class="struct-item">
+                    <span>ბინა</span>
+                    <strong id="tg-target-apt">Orbi City · 1204</strong>
+                  </div>
+                  <div class="struct-item">
+                    <span>საკითხი</span>
+                    <strong id="tg-target-issue">კონდიციონერის შეკეთება</strong>
+                  </div>
+                  <div class="struct-item">
+                    <span>თანხა</span>
+                    <strong class="num-tabular" id="tg-target-cost">₾170</strong>
+                  </div>
+                  <div class="struct-item">
+                    <span>სტატუსი</span>
+                    <span class="status-pill wait" id="tg-target-status" style="font-size:10px">ელოდება თანხმობას</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7. Pricing - 3 Plans -->
+    <section class="pricing-section" id="pricing">
+      <div class="container">
+        <div class="pricing-top">
+          <div>
+            <span class="eyebrow">ტარიფები</span>
+            <h2 style="font-size:clamp(28px, 3.4vw, 42px);font-weight:700;margin:6px 0 8px;letter-spacing:-0.03em">ფასები</h2>
+            <p style="color:var(--ink-secondary);margin:0;font-size:14px">მარტივი ტარიფები ლარში, შენი პორტფელის ზომის მიხედვით.</p>
+          </div>
+          <div class="billing-toggle" aria-label="გადახდის პერიოდი">
+            <button class="active" data-billing="monthly" aria-pressed="true">თვეში</button>
+            <button data-billing="yearly" aria-pressed="false">წელიწადში (-17%)</button>
+          </div>
+        </div>
+
+        <div class="pricing-table-3">
+          <!-- Plan 1: მცირე -->
+          <div class="pricing-col">
+            <div class="plan-header">
+              <div class="plan-header-top">
+                <h3>მცირე</h3>
+              </div>
+              <div class="plan-price num-tabular" data-monthly="₾99" data-yearly="₾990">₾99 <small>/ თვე</small></div>
+              <div class="plan-capacity">10 ბინამდე</div>
+              <p class="plan-desc">საქმეები, ხარჯები და ანგარიშები ერთ სამუშაო სივრცეში.</p>
+            </div>
+            <ul class="plan-features-list">
+              <li>ბინების რეესტრი</li>
+              <li>მფლობელების ბაზა</li>
+              <li>საქმეები და რემონტი</li>
+              <li>ხარჯების აღრიცხვა</li>
+              <li>თვის ანგარიშები</li>
+            </ul>
+            <a class="btn secondary" href="/app/">სცადე მცირე <span class="arr">↗</span></a>
+          </div>
+
+          <!-- Plan 2: გუნდი (Primary / Most Popular) -->
+          <div class="pricing-col popular">
+            <div class="plan-header">
+              <div class="plan-header-top">
+                <h3>გუნდი</h3>
+                <span class="plan-popular-badge">ყველაზე პოპულარული</span>
+              </div>
+              <div class="plan-price num-tabular" data-monthly="₾199" data-yearly="₾1,990">₾199 <small>/ თვე</small></div>
+              <div class="plan-capacity">40 ბინამდე</div>
+              <p class="plan-desc">გუნდისა და მფლობელების ყოველდღიური საოპერაციო კოორდინაცია.</p>
+            </div>
+            <ul class="plan-features-list">
+              <li>ყველაფერი „მცირე“-დან</li>
+              <li>გუნდური წვდომა</li>
+              <li>მფლობელის თანხმობები</li>
+              <li>მფლობელის გვერდი</li>
+              <li>დეტალური ანგარიშები</li>
+              <li>ბინის მდგომარეობის ისტორია</li>
+            </ul>
+            <a class="btn" href="/app/">სცადე გუნდი <span class="arr">↗</span></a>
+          </div>
+
+          <!-- Plan 3: დიდი პორტფელი -->
+          <div class="pricing-col">
+            <div class="plan-header">
+              <div class="plan-header-top">
+                <h3>დიდი პორტფელი</h3>
+              </div>
+              <div class="plan-price" style="font-size:26px;letter-spacing:-0.02em">დაგვიკავშირდი</div>
+              <div class="plan-capacity">40+ ბინა</div>
+              <p class="plan-desc">სააგენტოებისა და დიდი მმართველი გუნდებისთვის.</p>
+            </div>
+            <ul class="plan-features-list">
+              <li>ყველაფერი „გუნდი“-დან</li>
+              <li>სააგენტოს გაფართოებული უფლებები</li>
+              <li>ინდივიდუალური ლიმიტები</li>
+              <li>მორგებული დანერგვის მხარდაჭერა</li>
+              <li>პერსონალური მენეჯერი</li>
+            </ul>
+            <a class="btn secondary" href="/app/">კონსულტაცია <span class="arr">↗</span></a>
+          </div>
+        </div>
+
+        <!-- Strong Sales Onboarding Banner (No public setup fee obstacle) -->
+        <div class="pricing-assistance-banner">
+          <div>
+            <h4>პორტფელის გადმოტანაში ჩვენ დაგეხმარებით.</h4>
+            <p>თუ ბინები უკვე გაქვს Excel-ში ან ჩათებში, ჩვენი გუნდი დაგეხმარება მონაცემების გადმოტანასა და სისტემის გამართვაში.</p>
+          </div>
+          <a class="btn secondary smallbtn" href="/app/">გაიგე მეტი <span class="arr">↗</span></a>
+        </div>
+      </div>
+    </section>
+
+    <!-- 8. Final CTA -->
+    <section class="final-cta-section">
+      <div class="container final-cta-inner">
+        <div>
+          <h2>შენი ბინებიც რიგზე იყოს.</h2>
+          <p>გახსენი სამუშაო სივრცე და გამოსცადე ბინების მართვის რეალური პროცესი.</p>
+        </div>
+        <a class="btn light" href="/app/">დაიწყე <span class="arr">↗</span></a>
+      </div>
+    </section>
+  </main>
+
+  <!-- Global Footer -->
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <a class="wordmark" href="/" style="font-size:18px">რიგზეა<i>.</i></a>
+      <div>© 2026 რიგზეა · თბილისი / ბათუმი</div>
+      <div class="footer-links">
+        <a href="#how">როგორ მუშაობს</a>
+        <a href="#timeline">ბინის ისტორია</a>
+        <a href="#pricing">ფასები</a>
+        <a href="/app/">სისტემაში შესვლა</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/site.js" defer></script>
+</body>
+</html>

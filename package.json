@@ -1,0 +1,21 @@
+{
+  "name": "rigzea-website",
+  "version": "1.0.0",
+  "description": "რიგზეა (Rigzea) — ბინების საოპერაციო სისტემა",
+  "private": true,
+  "scripts": {
+    "dev": "python serve.py",
+    "deploy": "npx vercel --prod",
+    "vercel-build": "echo 'Static build ready'"
+  },
+  "keywords": [
+    "rigzea",
+    "property-management",
+    "georgia",
+    "tbilisi",
+    "supabase",
+    "vercel"
+  ],
+  "author": "Nikolozi Akhalaia",
+  "license": "MIT"
+}
