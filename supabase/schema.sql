@@ -286,5 +286,257 @@ create policy if not exists "Users can read/update own notifications"
   on public.notifications for all
   using (user_id = auth.uid());
 
--- Storage Bucket setup (run in Supabase dashboard storage)
--- insert into storage.buckets (id, name, public) values ('rigzea-files', 'rigzea-files', true) on conflict do nothing;
+-- =============================================================================
+-- 15. TELEGRAM BOT INTEGRATION & APPROVAL RPCS
+-- =============================================================================
+
+-- Telegram Chats Table
+create table if not exists public.telegram_chats (
+    chat_id bigint primary key,
+    organization_id uuid references public.organizations(id) on delete cascade,
+    user_name text,
+    linked_at timestamp with time zone default now()
+);
+
+alter table public.telegram_chats enable row level security;
+drop policy if exists "Allow all on telegram_chats" on public.telegram_chats;
+create policy "Allow all on telegram_chats" on public.telegram_chats for all using (true) with check (true);
+
+-- Link Telegram Chat RPC
+create or replace function public.link_telegram_chat(p_chat_id bigint, p_org_id uuid, p_user_name text default null)
+returns jsonb
+language plpgsql
+security definer
+as $$
+declare
+  v_org public.organizations%rowtype;
+begin
+  select * into v_org from public.organizations where id = p_org_id;
+  if not found then
+    return jsonb_build_object('success', false, 'error', 'Organization not found');
+  end if;
+
+  insert into public.telegram_chats (chat_id, organization_id, user_name, linked_at)
+  values (p_chat_id, p_org_id, p_user_name, now())
+  on conflict (chat_id) do update
+  set organization_id = excluded.organization_id,
+      user_name = coalesce(excluded.user_name, public.telegram_chats.user_name),
+      linked_at = now();
+
+  return jsonb_build_object(
+    'success', true,
+    'org_id', v_org.id,
+    'org_name', v_org.name,
+    'city', v_org.city
+  );
+end;
+$$;
+
+-- Get Linked Telegram Org RPC
+create or replace function public.get_linked_telegram_org(p_chat_id bigint)
+returns jsonb
+language plpgsql
+security definer
+as $$
+declare
+  v_rec record;
+begin
+  select tc.chat_id, tc.organization_id, o.name as org_name, o.city
+  into v_rec
+  from public.telegram_chats tc
+  join public.organizations o on o.id = tc.organization_id
+  where tc.chat_id = p_chat_id;
+
+  if not found then
+    return null;
+  end if;
+
+  return jsonb_build_object(
+    'orgId', v_rec.organization_id,
+    'orgName', v_rec.org_name,
+    'city', v_rec.city
+  );
+end;
+$$;
+
+-- Get Telegram Org RPC
+create or replace function public.get_telegram_org(p_org_id uuid)
+returns table (
+  id uuid,
+  name text,
+  city text
+)
+language sql
+security definer
+as $$
+  select id, name, city
+  from public.organizations
+  where id = p_org_id;
+$$;
+
+-- Get Telegram Apartments RPC
+create or replace function public.get_telegram_apartments(p_org_id uuid)
+returns table (
+  id uuid,
+  name text,
+  address text,
+  unit_number text,
+  status text
+)
+language sql
+security definer
+as $$
+  select 
+    id,
+    name,
+    address,
+    unit_number,
+    status
+  from public.apartments
+  where organization_id = p_org_id and coalesce(is_archived, false) = false
+  order by created_at desc;
+$$;
+
+-- Telegram Create Task Record RPC
+create or replace function public.telegram_create_task_record(
+  p_org_id uuid,
+  p_apt_id uuid,
+  p_title text,
+  p_description text,
+  p_cost numeric default 0,
+  p_source text default 'Telegram'
+)
+returns jsonb
+language plpgsql
+security definer
+as $$
+declare
+  v_task_id uuid;
+  v_repair_id uuid;
+  v_owner_id uuid;
+  v_approval_id uuid;
+  v_token text;
+begin
+  select owner_id into v_owner_id from public.apartments where id = p_apt_id;
+
+  insert into public.tasks (
+    organization_id, apartment_id, title, description, type, priority, status
+  ) values (
+    p_org_id, p_apt_id, p_title, p_description, 'repair', 'high', 'pending'
+  ) returning id into v_task_id;
+
+  if coalesce(p_cost, 0) > 0 then
+    v_token := encode(gen_random_bytes(16), 'hex');
+
+    insert into public.repairs (
+      organization_id, apartment_id, task_id, issue, description,
+      estimate_amount, requires_owner_approval, approval_status, status
+    ) values (
+      p_org_id, p_apt_id, v_task_id, p_title, p_description,
+      p_cost, true, 'pending', 'pending'
+    ) returning id into v_repair_id;
+
+    insert into public.approvals (
+      organization_id, apartment_id, repair_id, owner_id, amount,
+      description, token, status
+    ) values (
+      p_org_id, p_apt_id, v_repair_id, v_owner_id, p_cost,
+      p_description, v_token, 'pending'
+    ) returning id into v_approval_id;
+  end if;
+
+  insert into public.activity_events (
+    organization_id, apartment_id, actor_name, event_type, title, description
+  ) values (
+    p_org_id, p_apt_id, 'Telegram ბოტი', 'telegram_task_created', p_title, p_description
+  );
+
+  return jsonb_build_object(
+    'task_id', v_task_id,
+    'repair_id', v_repair_id,
+    'approval_id', v_approval_id,
+    'token', v_token
+  );
+end;
+$$;
+
+-- Get Public Approval RPC
+create or replace function public.get_public_approval(p_token text)
+returns jsonb
+language plpgsql
+security definer
+as $$
+declare
+  v_appr record;
+  v_apt record;
+  v_owner record;
+  v_org record;
+  v_repair record;
+begin
+  select * into v_appr from public.approvals where token = p_token;
+  if not found then
+    return jsonb_build_object('success', false, 'error', 'Approval not found');
+  end if;
+
+  select * into v_apt from public.apartments where id = v_appr.apartment_id;
+  select * into v_owner from public.owners where id = v_appr.owner_id;
+  select * into v_org from public.organizations where id = v_appr.organization_id;
+  select * into v_repair from public.repairs where id = v_appr.repair_id;
+
+  return jsonb_build_object(
+    'success', true,
+    'approval', row_to_json(v_appr),
+    'apartment', coalesce(row_to_json(v_apt), '{}'::json),
+    'owner', coalesce(row_to_json(v_owner), json_build_object('name', 'მესაკუთრე')),
+    'organization', coalesce(row_to_json(v_org), '{}'::json),
+    'repair', coalesce(row_to_json(v_repair), '{}'::json)
+  );
+end;
+$$;
+
+-- Respond Public Approval RPC
+create or replace function public.respond_public_approval(
+  p_token text,
+  p_decision text,
+  p_note text default null
+)
+returns jsonb
+language plpgsql
+security definer
+as $$
+declare
+  v_appr public.approvals%rowtype;
+  v_status text;
+begin
+  select * into v_appr from public.approvals where token = p_token;
+  if not found then
+    return jsonb_build_object('success', false, 'error', 'Approval not found');
+  end if;
+
+  v_status := case when p_decision in ('approved', 'accept') then 'approved' else 'rejected' end;
+
+  update public.approvals
+  set status = v_status,
+      response_note = p_note,
+      responded_at = now()
+  where id = v_appr.id;
+
+  if v_appr.repair_id is not null then
+    update public.repairs
+    set approval_status = v_status
+    where id = v_appr.repair_id;
+  end if;
+
+  insert into public.activity_events (
+    organization_id, apartment_id, actor_name, event_type, title, description
+  ) values (
+    v_appr.organization_id, v_appr.apartment_id, 'მესაკუთრე',
+    'approval_response',
+    case when v_status = 'approved' then 'ხარჯი დადასტურებულია' else 'ხარჯზე დაფიქსირდა უარი' end,
+    coalesce(p_note, 'მესაკუთრემ დააფიქსირა პასუხი')
+  );
+
+  return jsonb_build_object('success', true, 'status', v_status);
+end;
+$$;
+
