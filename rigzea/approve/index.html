@@ -2,289 +2,128 @@
 <html lang="ka">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="theme-color" content="#121214" />
-  <title>ხარჯის დადასტურება · რიგზეა</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0a5c44" />
+  <meta name="robots" content="noindex" />
+  <title>ხარჯის თანხმობა · რიგზეა</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='7' fill='%230a5c44'/%3E%3Cpath d='M10 12h20M10 20h15M10 28h20' stroke='%23fff' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E" />
-  <link rel="stylesheet" href="/style.css" />
-  <script>
-    (function() {
-      const savedTheme = localStorage.getItem('rigzea_theme');
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
-        document.documentElement.setAttribute('data-theme', 'dark');
-      } else {
-        document.documentElement.setAttribute('data-theme', 'light');
-      }
-    })();
-  </script>
+  <link rel="stylesheet" href="/app/app.css" />
   <style>
-    body {
-      background: radial-gradient(circle at 50% 15%, #e7f3ed 0%, #f4f7f9 70%);
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 30px 16px;
-      font-family: 'FiraGO', sans-serif !important;
-      color: var(--ink);
-    }
-    [data-theme="dark"] body {
-      background: radial-gradient(circle at 50% 15%, #1e1e22 0%, #121214 70%);
-      color: #f4f4f5;
-    }
-    .approval-container {
-      width: min(500px, 100%);
-      background: #ffffff;
-      border-radius: 24px;
-      border: 1px solid rgba(12, 26, 41, 0.1);
-      box-shadow: 0 24px 64px -12px rgba(12, 26, 41, 0.14), 0 0 0 1px rgba(12, 26, 41, 0.06);
-      overflow: hidden;
-      animation: modalPop 0.28s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    [data-theme="dark"] .approval-container {
-      background: #18181b;
-      border-color: rgba(255, 255, 255, 0.1);
-      box-shadow: 0 24px 64px -12px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.08);
-    }
-    @keyframes modalPop {
-      0% { transform: scale(0.96) translateY(12px); opacity: 0; }
-      100% { transform: scale(1) translateY(0); opacity: 1; }
-    }
-    .approval-header {
-      background: #18181b;
-      color: #ffffff;
-      padding: 28px 32px;
-      position: relative;
-    }
-    [data-theme="dark"] .approval-header {
-      background: #141416;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    }
-    .approval-body {
-      padding: 32px;
-    }
-    .amount-highlight {
-      background: #fff6ec;
-      border: 1px solid #f8d6b0;
-      border-radius: 14px;
-      padding: 18px 22px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin: 20px 0;
-      box-shadow: 0 2px 8px -2px rgba(178, 86, 9, 0.08);
-    }
-    [data-theme="dark"] .amount-highlight {
-      background: rgba(245, 158, 11, 0.1);
-      border-color: rgba(245, 158, 11, 0.28);
-      box-shadow: none;
-    }
-    .action-btn-group {
-      display: flex;
-      gap: 12px;
-      margin-top: 24px;
-    }
-    .action-btn-group .btn {
-      flex: 1;
-      height: 46px;
-      border-radius: 12px;
-      font-size: 14px;
-      font-weight: 600;
-    }
-    .status-banner {
-      padding: 16px 20px;
-      border-radius: 14px;
-      font-size: 13.5px;
-      font-weight: 600;
-      text-align: center;
-      margin-top: 20px;
-      animation: modalPop 0.2s ease;
-    }
-    @media (max-width: 480px) {
-      body {
-        padding: 14px 10px;
-        justify-content: flex-start;
-      }
-      .approval-container {
-        border-radius: 18px;
-      }
-      .approval-header {
-        padding: 20px 18px;
-      }
-      .approval-body {
-        padding: 20px 18px;
-      }
-      .amount-highlight {
-        padding: 14px 16px;
-      }
-      .action-btn-group {
-        flex-direction: column-reverse;
-        gap: 10px;
-      }
-      .action-btn-group .btn {
-        width: 100%;
-        height: 48px;
-        font-size: 15px;
-      }
-    }
+    .ap { max-width: 520px; margin: 0 auto; padding: 20px 16px 40px; }
+    .ap-org { color: var(--muted); font-size: 13px; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+    .ap-amount { font-size: 32px; font-weight: 700; font-variant-numeric: tabular-nums; margin: 4px 0 2px; }
+    .ap-question { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
+    .ap-actions { display: flex; flex-direction: column; gap: 12px; margin-top: 4px; }
+    .ap-actions .btn { min-height: 52px; font-size: 16px; }
+    .ap-confirm { padding: 14px; border-radius: var(--r); border: 2px solid var(--line-strong); }
+    .ap-result { padding: 16px; border-radius: var(--r); font-size: 15px; }
+    .ap-result.ok { background: var(--ok-bg); color: var(--ok); }
+    .ap-result.no { background: var(--danger-bg); color: var(--danger); }
   </style>
 </head>
 <body>
-  <div class="approval-container" id="approval-card">
-    <div class="approval-header">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <a class="wordmark" href="/" style="color:#fff;font-size:18px">რიგზეა<i>.</i></a>
-        <span style="font-size:11px;color:#9cd4aa;background:rgba(255,255,255,0.1);padding:2px 8px;border-radius:999px">მფლობელის პორტალი</span>
-      </div>
-      <h1 style="font-size:20px;margin:0 0 4px;letter-spacing:-0.02em" id="header-apt-name">ბინის ხარჯის დადასტურება</h1>
-      <div style="font-size:12px;color:#a9b8c9" id="header-org-name">საოპერაციო მოთხოვნა</div>
-    </div>
-
-    <div class="approval-body">
-      <div id="loading-state" style="text-align:center;padding:40px 0;color:var(--muted)">
-        <div style="font-size:18px;font-weight:600;margin-bottom:8px">იტვირთება მონაცემები...</div>
-        <div>გთხოვთ დაელოდოთ</div>
-      </div>
-
-      <div id="error-state" style="display:none;text-align:center;padding:30px 0">
-        <div style="width:48px;height:48px;border-radius:50%;background:rgba(239,68,68,0.12);color:var(--red);display:flex;align-items:center;justify-content:center;margin:0 auto 12px">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        </div>
-        <h3 style="font-size:17px;color:var(--red);margin:0 0 8px" id="error-message">მოთხოვნა ვერ მოიძებნა</h3>
-        <p style="font-size:13px;color:var(--muted)">ბმული შესაძლოა ვადაგასულია ან არასწორია.</p>
-      </div>
-
-      <div id="content-state" style="display:none">
-        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;margin-bottom:4px">საკითხი / რემონტი</div>
-        <h2 style="font-size:18px;margin:0 0 8px" id="repair-issue-title">კონდიციონერის შეკეთება</h2>
-        <p style="font-size:13px;color:var(--ink-secondary);line-height:1.6;margin:0" id="repair-desc-text">
-          დეტალური აღწერა
-        </p>
-
-        <div class="amount-highlight">
-          <div>
-            <span style="font-size:11px;color:var(--muted);display:block">შეთავაზებული ხარჯი:</span>
-            <span style="font-size:12px;color:var(--ink)" id="contractor-name-label">ხელოსნის შეფასება</span>
-          </div>
-          <strong class="num-tabular" style="font-size:24px;color:var(--amber)" id="approval-amount-label">₾0.00</strong>
-        </div>
-
-        <div style="font-size:12px;color:var(--ink-secondary);background:var(--surface-subtle);border:1px solid var(--line);padding:12px;border-radius:10px">
-          <div>ობიექტის მისამართი: <strong id="apt-address-label">ბათუმი, ორბი სითი</strong></div>
-          <div style="margin-top:4px">მფლობელი: <strong id="owner-name-label">ნინო ქ.</strong></div>
-        </div>
-
-        <!-- Note input -->
-        <div id="action-inputs-area" style="margin-top:18px">
-          <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px" for="owner-response-note">შენიშვნა (არასავალდებულო):</label>
-          <input type="text" class="search-input-field" id="owner-response-note" placeholder="მაგ: დამატებითი დეტალები..." />
-
-          <div class="action-btn-group">
-            <button class="btn secondary" id="btn-public-decline">უარი</button>
-            <button class="btn" id="btn-public-approve">დადასტურება ↗</button>
-          </div>
-        </div>
-
-        <!-- Result Banner -->
-        <div id="result-status-banner" style="display:none" class="status-banner"></div>
-      </div>
-    </div>
-  </div>
+  <main class="ap" id="ap" aria-live="polite">
+    <div class="ap-org"><span class="brand-mark" style="width:22px;height:22px;border-radius:5px;background:var(--brand)"></span>რიგზეა · ხარჯის თანხმობა</div>
+    <div class="card"><div class="skeleton" aria-label="იტვირთება"><i></i><i></i><i></i></div></div>
+  </main>
 
   <script src="/js/supabase.js"></script>
   <script src="/js/config.js"></script>
+  <script src="/js/core.js"></script>
   <script>
-    (async () => {
-      const urlParams = new URLSearchParams(window.location.search);
-      const token = urlParams.get('token');
+  (() => {
+    const { sb, esc, money } = R;
+    const root = document.getElementById('ap');
+    const head = root.firstElementChild.outerHTML;
+    const token = new URLSearchParams(location.search).get('token');
+    let data = null;
 
-      const loadingEl = document.getElementById('loading-state');
-      const errorEl = document.getElementById('error-state');
-      const contentEl = document.getElementById('content-state');
-      const errorMsgEl = document.getElementById('error-message');
+    const show = (html) => { root.innerHTML = head + html; };
 
-      if (!token) {
-        loadingEl.style.display = 'none';
-        errorEl.style.display = 'block';
-        errorMsgEl.textContent = 'მოთხოვნის ტოკენი არ არის მითითებული.';
-        return;
+    function errorView(msg, retry) {
+      show(`<div class="card"><div class="error-state"><p>${esc(msg)}</p>${retry ? '<button type="button" class="btn btn-primary btn-lg" id="retry">ხელახლა ცდა</button>' : ''}</div></div>`);
+      document.getElementById('retry')?.addEventListener('click', load);
+    }
+
+    async function load() {
+      if (!token) return errorView('ბმული არასრულია. სთხოვეთ მმართველს ბმულის ხელახლა გამოგზავნა.');
+      show('<div class="card"><div class="skeleton"><i></i><i></i><i></i></div></div>');
+      try {
+        const { data: res, error } = await sb.rpc('get_public_approval', { p_token: token });
+        if (error) throw error;
+        if (!res?.success) return errorView(res?.error || 'მოთხოვნა ვერ მოიძებნა. შესაძლოა გაუქმდა — დაუკავშირდით მმართველს.');
+        data = res;
+        render();
+      } catch (err) {
+        errorView('ინფორმაცია ვერ ჩაიტვირთა. ' + R.friendlyError(err), true);
+      }
+    }
+
+    function render(state = {}) {
+      const a = data.approval, apt = data.apartment || {}, org = data.organization || {}, owner = data.owner || {};
+      const [title, ...rest] = String(a.description || '').split('\n');
+      const details = rest.join('\n').trim();
+      const photos = (a.photos || []).map(p => typeof p === 'string' ? p : p?.url).filter(Boolean);
+      const expired = a.status === 'pending' && a.expires_at && new Date(a.expires_at) < new Date();
+      const contact = org.contact_phone ? `<a href="tel:${esc(org.contact_phone)}">${esc(org.contact_phone)}</a>` : '';
+
+      let action = '';
+      if (a.status === 'approved') action = `<div class="ap-result ok"><strong>ხარჯი დადასტურებულია.</strong>${a.responded_at ? ` (${esc(R.dateTime(a.responded_at))})` : ''} მმართველი შეასრულებს სამუშაოს და ქვითარს ამონაწერში ნახავთ.</div>`;
+      else if (a.status === 'declined') action = `<div class="ap-result no"><strong>ხარჯზე უარი დაფიქსირდა.</strong>${a.responded_at ? ` (${esc(R.dateTime(a.responded_at))})` : ''} მმართველი დაგიკავშირდებათ ალტერნატივით.</div>`;
+      else if (a.status === 'cancelled') action = `<div class="ap-result" style="background:var(--neutral-bg)">მმართველმა ეს მოთხოვნა გააუქმა. პასუხი აღარ არის საჭირო.</div>`;
+      else if (expired) action = `<div class="ap-result" style="background:var(--neutral-bg)">მოთხოვნის ვადა ამოიწურა. სთხოვეთ მმართველს ახალი ბმული.</div>`;
+      else if (state.confirm) {
+        const yes = state.confirm === 'approved';
+        action = `<div class="ap-confirm">
+          <p class="ap-question">${yes ? `ადასტურებთ ${money(a.amount)}-ის ხარჯს?` : 'უარს ამბობთ ამ ხარჯზე?'}</p>
+          <p class="muted" style="margin-bottom:12px">${yes ? 'მმართველი მიიღებს თანხმობას და დაიწყებს სამუშაოს.' : 'სამუშაო არ შესრულდება, სანამ მმართველთან არ შეთანხმდებით.'}</p>
+          ${state.error ? `<div class="form-error" role="alert">${esc(state.error)}</div>` : ''}
+          <label class="field" style="margin-bottom:12px"><span class="field-label">კომენტარი მმართველისთვის <span class="muted">(არასავალდებულო)</span></span><textarea id="note" rows="2">${esc(state.note || '')}</textarea></label>
+          <div class="ap-actions"><button type="button" class="btn ${yes ? 'btn-primary' : 'btn-danger'}" id="send">${yes ? 'დიახ, ვადასტურებ' : 'დიახ, უარს ვამბობ'}</button><button type="button" class="btn btn-ghost" id="back">უკან</button></div></div>`;
+      } else {
+        action = `<div class="ap-actions"><button type="button" class="btn btn-primary" data-d="approved">დადასტურება · ${money(a.amount)}</button><button type="button" class="btn btn-danger-outline" data-d="declined">უარყოფა</button></div>`;
       }
 
-      // Fetch public approval data via RPC
-      const { data, error } = await window.supabaseClient.rpc('get_public_approval', { p_token: token });
+      show(`<div class="card"><div class="card-body form-stack">
+        <div><p class="muted">${esc(owner.name ? owner.name + ', ' : '')}${esc(org.name || 'მმართველი კომპანია')} გთხოვთ თანხმობას ხარჯზე:</p>
+          <h1 style="font-size:20px;margin-top:6px">${esc(title || 'ხარჯი')}</h1>
+          <div class="ap-amount">${money(a.amount)}</div>
+          <p class="muted">${esc(apt.name || '')}${apt.city ? ', ' + esc(apt.city) : ''} · მოთხოვნილია ${esc(R.dateTime(a.created_at))}</p></div>
+        ${details ? `<div><div class="section-title">განმარტება</div><p style="white-space:pre-wrap">${esc(details)}</p></div>` : ''}
+        ${photos.length ? `<div class="photos">${photos.map(u => `<a class="photo" href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u)}" alt="ფოტო" /></a>`).join('')}</div>` : ''}
+        ${a.response_note && a.status !== 'pending' ? `<p class="muted">თქვენი კომენტარი: „${esc(a.response_note)}“</p>` : ''}
+        ${action}
+        ${contact ? `<p class="small muted">კითხვა გაქვთ? დაურეკეთ მმართველს: ${contact}</p>` : ''}
+      </div></div>`);
 
-      loadingEl.style.display = 'none';
-
-      if (error || !data || !data.success) {
-        errorEl.style.display = 'block';
-        errorMsgEl.textContent = data?.error || 'მოთხოვნა ვერ მოიძებნა ან ვადაგასულია.';
-        return;
-      }
-
-      contentEl.style.display = 'block';
-
-      const approval = data.approval;
-      const apt = data.apartment;
-      const owner = data.owner;
-      const org = data.organization;
-      const repair = data.repair;
-
-      document.getElementById('header-apt-name').textContent = apt.name || 'ბინის ხარჯი';
-      document.getElementById('header-org-name').textContent = org.name ? `მმართველი: ${org.name}` : 'საოპერაციო მოთხოვნა';
-      document.getElementById('repair-issue-title').textContent = repair.issue || approval.description;
-      document.getElementById('repair-desc-text').textContent = approval.description || '';
-      document.getElementById('contractor-name-label').textContent = repair.contractor_name ? `ხელოსანი: ${repair.contractor_name}` : 'შეფასებული თანხა';
-      document.getElementById('approval-amount-label').textContent = `₾${Number(approval.amount).toLocaleString('ka-GE')}`;
-      document.getElementById('apt-address-label').textContent = `${apt.city}, ${apt.address}${apt.unit_number ? ` · ბინა ${apt.unit_number}` : ''}`;
-      document.getElementById('owner-name-label').textContent = owner.name;
-
-      const actionArea = document.getElementById('action-inputs-area');
-      const banner = document.getElementById('result-status-banner');
-
-      if (approval.status !== 'pending') {
-        actionArea.style.display = 'none';
-        banner.style.display = 'block';
-        if (approval.status === 'approved') {
-          banner.style.background = 'var(--green-light)';
-          banner.style.color = 'var(--green)';
-          banner.textContent = '✓ ეს ხარჯი უკვე დადასტურებულია თქვენს მიერ.';
-        } else {
-          banner.style.background = 'var(--red-light)';
-          banner.style.color = 'var(--red)';
-          banner.textContent = '✕ ამ მოთხოვნაზე თქვენ დააფიქსირეთ უარი.';
+      root.querySelectorAll('[data-d]').forEach(b => b.addEventListener('click', () => render({ confirm: b.dataset.d })));
+      document.getElementById('back')?.addEventListener('click', () => render());
+      document.getElementById('send')?.addEventListener('click', async (e) => {
+        const btn = e.currentTarget;
+        if (btn.dataset.busy) return;
+        btn.dataset.busy = '1'; btn.disabled = true; btn.classList.add('is-busy');
+        const note = document.getElementById('note').value.trim();
+        try {
+          const { data: res, error } = await sb.rpc('respond_public_approval', { p_token: token, p_decision: state.confirm, p_note: note || null });
+          if (error) throw error;
+          if (!res?.success) {
+            // Already answered elsewhere: reload to show the recorded decision.
+            if (/უკვე/.test(res?.error || '')) return load();
+            throw new Error(res?.error || 'პასუხი ვერ დაფიქსირდა.');
+          }
+          data.approval.status = res.status;
+          data.approval.responded_at = new Date().toISOString();
+          data.approval.response_note = note || null;
+          render();
+          document.querySelector('.ap-result')?.focus?.();
+        } catch (err) {
+          render({ ...state, note, error: R.friendlyError(err) + ' პასუხი არ დაფიქსირებულა — სცადეთ ხელახლა.' });
         }
-      }
+      });
+    }
 
-      const sendResponse = async (decision) => {
-        const note = document.getElementById('owner-response-note').value.trim();
-        actionArea.style.opacity = '0.5';
-        actionArea.style.pointerEvents = 'none';
-
-        const res = await window.supabaseClient.rpc('respond_public_approval', {
-          p_token: token,
-          p_decision: decision,
-          p_note: note || null
-        });
-
-        actionArea.style.display = 'none';
-        banner.style.display = 'block';
-
-        if (decision === 'approved') {
-          banner.style.background = 'var(--green-light)';
-          banner.style.color = 'var(--green)';
-          banner.textContent = '✓ მადლობა! თანხმობა წარმატებით დაფიქსირდა და გადაეცა მმართველს.';
-        } else {
-          banner.style.background = 'var(--red-light)';
-          banner.style.color = 'var(--red)';
-          banner.textContent = '✕ უარი დაფიქსირდა. მმართველი გადახედავს შეფასებას.';
-        }
-      };
-
-      document.getElementById('btn-public-approve').addEventListener('click', () => sendResponse('approved'));
-      document.getElementById('btn-public-decline').addEventListener('click', () => sendResponse('declined'));
-    })();
+    load();
+  })();
   </script>
 </body>
 </html>

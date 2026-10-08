@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "python serve.py",
     "deploy": "npx vercel --prod",
-    "vercel-build": "echo 'Static build ready'"
+    "vercel-build": "echo 'Static build ready'",
+    "test": "NODE_PATH=$(npm root -g) node tests/e2e.js",
+    "screenshots": "NODE_PATH=$(npm root -g) node tests/screenshots.js screenshots"
   },
   "keywords": [
     "rigzea",
