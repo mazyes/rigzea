@@ -1,27 +1,33 @@
 /**
  * RIGZEA 3.0 — LUXURY MOTION & INTERACTION ENGINE
  * 60fps Hardware-Accelerated Scroll Choreography, Bento Motion, & Reactive UI
+ * Inspired by scroll-world and Apple product showcases
  */
 
 (() => {
   'use strict';
 
+  // System capability & accessibility detection
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const isCoarse = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+
   // =========================================================================
-  // 1. HEADER SCROLL STATE & MOBILE MENU
+  // 1. UNIFIED 60FPS LERP SCROLL SCRUBBER & HEADER CHOREOGRAPHY
   // =========================================================================
   const header = document.querySelector('.lx-header');
   const mobileToggle = document.querySelector('.lx-mobile-toggle');
   const navLinks = document.querySelector('.lx-nav-links');
 
-  window.addEventListener('scroll', () => {
-    if (header) {
-      if (window.scrollY > 40) {
-        header.classList.add('scrolled');
-      } else {
-        header.classList.remove('scrolled');
-      }
+  let headerScrolled = false;
+
+  function updateHeader(y) {
+    if (!header) return;
+    const shouldScroll = y > 40;
+    if (shouldScroll !== headerScrolled) {
+      headerScrolled = shouldScroll;
+      header.classList.toggle('scrolled', shouldScroll);
     }
-  }, { passive: true });
+  }
 
   if (mobileToggle && navLinks) {
     mobileToggle.addEventListener('click', () => {
@@ -42,77 +48,266 @@
   }
 
   // =========================================================================
-  // 2. RADIAL MOUSE SPOTLIGHT (CARD HOVER COORDINATES)
+  // 2. RADIAL MOUSE SPOTLIGHT (PERFORMANCE-TUNED WITH rAF THROTTLE)
   // =========================================================================
   const cards = document.querySelectorAll('.lx-spotlight-card, .lx-bento-card, .lx-pricing-card, .lx-card-rigzea-way');
 
   cards.forEach(card => {
+    let rect = null;
+    let rAFId = null;
+
+    card.addEventListener('pointerenter', () => {
+      rect = card.getBoundingClientRect();
+    });
+
     card.addEventListener('pointermove', (e) => {
-      const rect = card.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      card.style.setProperty('--mouse-x', `${x}px`);
-      card.style.setProperty('--mouse-y', `${y}px`);
+      if (!rect) rect = card.getBoundingClientRect();
+      const clientX = e.clientX;
+      const clientY = e.clientY;
+
+      if (rAFId) cancelAnimationFrame(rAFId);
+      rAFId = requestAnimationFrame(() => {
+        if (!rect) return;
+        const x = clientX - rect.left;
+        const y = clientY - rect.top;
+        card.style.setProperty('--mouse-x', `${x.toFixed(1)}px`);
+        card.style.setProperty('--mouse-y', `${y.toFixed(1)}px`);
+        rAFId = null;
+      });
+    });
+
+    card.addEventListener('pointerleave', () => {
+      rect = null;
+      if (rAFId) {
+        cancelAnimationFrame(rAFId);
+        rAFId = null;
+      }
     });
   });
 
   // =========================================================================
   // 3. HORIZONTAL PIN-SCROLL CHOREOGRAPHY (BENTO SHOWCASE)
+  //    60fps LERP Scrubber with linear interpolation & smooth camera gliding
   // =========================================================================
   const pinWrap = document.querySelector('.lx-pin-scroll-wrap');
+  const horizontalViewport = document.querySelector('.lx-horizontal-viewport');
   const horizontalTrack = document.querySelector('.lx-horizontal-track');
   const progressBarFill = document.querySelector('.lx-pin-progress-bar-fill');
   const stepCounter = document.querySelector('.lx-pin-step-counter');
+  const bentoCards = document.querySelectorAll('.lx-horizontal-track .lx-bento-card');
+  const pinDots = document.querySelectorAll('.lx-pin-dot');
 
-  let ticking = false;
+  // Cached layout metrics to avoid layout thrashing during scroll
+  let isMobileMode = window.innerWidth <= 900;
+  let laidOutW = window.innerWidth;
+  let wrapTop = 0;
+  let scrollDistance = 0;
+  let maxHorizontalScroll = 0;
 
-  function updatePinScroll() {
-    ticking = false;
-    if (!pinWrap || !horizontalTrack || window.innerWidth <= 900) return;
+  // LERP interpolation state
+  let targetProgress = 0;
+  let currentProgress = 0;
+  let currentTranslateX = 0;
+  let isLoopActive = false;
+  let activeStep = 0;
 
-    const wrapRect = pinWrap.getBoundingClientRect();
+  const LERP_FACTOR = prefersReducedMotion ? 1.0 : 0.10;
+
+  function measureLayout() {
+    laidOutW = window.innerWidth;
+    isMobileMode = laidOutW <= 900;
+
+    if (!pinWrap || !horizontalTrack) return;
+
+    if (isMobileMode) {
+      // Clear desktop inline transforms on mobile for native momentum scrolling
+      horizontalTrack.style.transform = '';
+      bentoCards.forEach(c => {
+        c.style.transform = '';
+        c.style.opacity = '';
+      });
+      syncMobileState();
+      return;
+    }
+
+    const rect = pinWrap.getBoundingClientRect();
+    const currentY = window.scrollY || window.pageYOffset;
+    wrapTop = rect.top + currentY;
     const wrapHeight = pinWrap.offsetHeight;
     const windowHeight = window.innerHeight;
 
-    // Total distance the wrap stays pinned
-    const scrollDistance = wrapHeight - windowHeight;
-    if (scrollDistance <= 0) return;
-
-    // How far the top of the wrap has scrolled past the top of viewport
-    const scrolledPastTop = -wrapRect.top;
-    const progress = Math.max(0, Math.min(1, scrolledPastTop / scrollDistance));
-
-    // Calculate maximum horizontal travel
+    scrollDistance = Math.max(1, wrapHeight - windowHeight);
     const trackWidth = horizontalTrack.scrollWidth;
-    const viewportWidth = window.innerWidth;
-    const maxHorizontalScroll = trackWidth - viewportWidth + 80;
+    maxHorizontalScroll = Math.max(0, trackWidth - laidOutW + 80);
 
-    if (maxHorizontalScroll > 0) {
-      const translateX = progress * maxHorizontalScroll;
-      horizontalTrack.style.transform = `translate3d(-${translateX}px, 0, 0)`;
+    // Compute targetProgress from current scroll position
+    const pastTop = currentY - wrapTop;
+    targetProgress = Math.max(0, Math.min(1, pastTop / scrollDistance));
+
+    if (prefersReducedMotion) {
+      currentProgress = targetProgress;
     }
 
-    // Update progress bar
+    renderScrubFrame(true);
+  }
+
+  function renderScrubFrame(force = false) {
+    if (isMobileMode || !horizontalTrack) return;
+
+    // Apply smooth hardware-accelerated glide
+    currentTranslateX = currentProgress * maxHorizontalScroll;
+    horizontalTrack.style.transform = `translate3d(-${currentTranslateX.toFixed(2)}px, 0, 0)`;
+
+    // Update GPU-accelerated progress bar fill via transform: scaleX
     if (progressBarFill) {
-      progressBarFill.style.width = `${20 + progress * 80}%`;
+      const scale = 0.2 + currentProgress * 0.8;
+      progressBarFill.style.transform = `scaleX(${scale.toFixed(4)})`;
     }
 
-    // Update step counter (1 to 5)
-    if (stepCounter) {
-      const step = Math.min(5, Math.max(1, Math.floor(progress * 5) + 1));
-      stepCounter.textContent = `0${step} / 05`;
+    // Determine nearest active feature (0 to 4)
+    const nearest = Math.min(4, Math.max(0, Math.round(currentProgress * 4)));
+    if (nearest !== activeStep || force) {
+      activeStep = nearest;
+      if (stepCounter) {
+        stepCounter.textContent = `0${activeStep + 1} / 05`;
+      }
+      pinDots.forEach((dot, k) => {
+        dot.classList.toggle('active', k === activeStep);
+      });
+    }
+
+    // Authored focal depth: active feature shines in the center spotlight
+    if (!prefersReducedMotion && bentoCards.length) {
+      bentoCards.forEach((card, i) => {
+        const cardCenterProgress = i / 4;
+        const dist = Math.abs(currentProgress - cardCenterProgress);
+        // Normalize focal radius: 1 at dead center, 0 at dist >= 0.28
+        const rawFocus = Math.max(0, 1 - dist / 0.28);
+        const smoothFocus = rawFocus * rawFocus * (3 - 2 * rawFocus);
+
+        const scale = (0.975 + 0.025 * smoothFocus).toFixed(4);
+        const opacity = (0.70 + 0.30 * smoothFocus).toFixed(3);
+
+        card.style.transform = `scale(${scale})`;
+        card.style.opacity = opacity;
+        card.classList.toggle('is-active-feature', smoothFocus > 0.65);
+      });
     }
   }
 
+  function scrubTick() {
+    if (isMobileMode) {
+      isLoopActive = false;
+      return;
+    }
+
+    const delta = targetProgress - currentProgress;
+
+    if (Math.abs(delta) > 0.0003) {
+      currentProgress += delta * LERP_FACTOR;
+      renderScrubFrame();
+      requestAnimationFrame(scrubTick);
+    } else {
+      currentProgress = targetProgress;
+      renderScrubFrame();
+      isLoopActive = false;
+    }
+  }
+
+  function wakeScrubLoop() {
+    if (!isLoopActive && !isMobileMode) {
+      isLoopActive = true;
+      requestAnimationFrame(scrubTick);
+    }
+  }
+
+  // Unified scroll handler: pure math, zero layout queries
   window.addEventListener('scroll', () => {
-    if (!ticking) {
-      window.requestAnimationFrame(updatePinScroll);
-      ticking = true;
+    const y = window.scrollY || window.pageYOffset;
+    updateHeader(y);
+
+    if (!isMobileMode && scrollDistance > 0) {
+      const pastTop = y - wrapTop;
+      targetProgress = Math.max(0, Math.min(1, pastTop / scrollDistance));
+      wakeScrubLoop();
     }
   }, { passive: true });
 
-  window.addEventListener('resize', updatePinScroll, { passive: true });
-  updatePinScroll();
+  // Mobile momentum scroll synchronization
+  function syncMobileState() {
+    if (!isMobileMode || !horizontalViewport || !bentoCards.length) return;
+
+    const scrollLeft = horizontalViewport.scrollLeft;
+    const card = bentoCards[0];
+    const cardWidth = card ? card.offsetWidth : 300;
+    const gap = 16;
+    const stride = cardWidth + gap;
+
+    const nearestIdx = Math.min(4, Math.max(0, Math.round(scrollLeft / stride)));
+
+    if (stepCounter) {
+      stepCounter.textContent = `0${nearestIdx + 1} / 05`;
+    }
+    if (progressBarFill) {
+      const scale = 0.2 + (nearestIdx / 4) * 0.8;
+      progressBarFill.style.transform = `scaleX(${scale.toFixed(4)})`;
+    }
+    pinDots.forEach((dot, k) => {
+      dot.classList.toggle('active', k === nearestIdx);
+    });
+    bentoCards.forEach((c, idx) => {
+      c.classList.toggle('is-active-feature', idx === nearestIdx);
+    });
+  }
+
+  let mobileScrollTicking = false;
+  if (horizontalViewport) {
+    horizontalViewport.addEventListener('scroll', () => {
+      if (!mobileScrollTicking) {
+        requestAnimationFrame(() => {
+          mobileScrollTicking = false;
+          syncMobileState();
+        });
+        mobileScrollTicking = true;
+      }
+    }, { passive: true });
+  }
+
+  // Dot navigation buttons (Click to glide on desktop, snap on mobile)
+  pinDots.forEach((dot, k) => {
+    dot.addEventListener('click', () => {
+      if (isMobileMode) {
+        if (bentoCards[k] && horizontalViewport) {
+          const targetX = bentoCards[k].offsetLeft - 20;
+          horizontalViewport.scrollTo({
+            left: targetX,
+            behavior: prefersReducedMotion ? 'auto' : 'smooth'
+          });
+        }
+      } else {
+        if (scrollDistance > 0) {
+          const targetY = wrapTop + (k / 4) * scrollDistance;
+          window.scrollTo({
+            top: targetY,
+            behavior: prefersReducedMotion ? 'auto' : 'smooth'
+          });
+        }
+      }
+    });
+  });
+
+  // Mobile browsers fire resize on address bar slide. Ignore height-only resize on touch.
+  function handleResize() {
+    if (isCoarse && window.innerWidth === laidOutW) return;
+    measureLayout();
+  }
+
+  window.addEventListener('resize', handleResize, { passive: true });
+  window.addEventListener('orientationchange', measureLayout);
+  window.addEventListener('load', measureLayout);
+
+  // Initial layout measurement
+  measureLayout();
 
   // =========================================================================
   // 4. HERO INTERACTIVE PHONE VIEW TOGGLE (/p/ RENTER LINK)
@@ -376,7 +571,12 @@
         const targetEl = document.querySelector(targetId);
         if (targetEl) {
           e.preventDefault();
-          targetEl.scrollIntoView({ behavior: 'smooth' });
+          const behavior = prefersReducedMotion ? 'auto' : 'smooth';
+          if (targetId === '#features' && !isMobileMode && wrapTop > 0) {
+            window.scrollTo({ top: wrapTop, behavior });
+          } else {
+            targetEl.scrollIntoView({ behavior });
+          }
         }
       }
     });
