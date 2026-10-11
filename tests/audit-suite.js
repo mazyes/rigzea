@@ -229,7 +229,7 @@ async function runAudit() {
       await page.locator('.p-slide').first().click();
       await page.locator('#lightbox.open').waitFor();
       await page.locator('#lightbox-close').click();
-      await page.locator('#lightbox:not(.open)').waitFor();
+      await page.locator('#lightbox.open').waitFor({ state: 'hidden' });
 
       // Language Switcher KA -> EN -> KA
       await page.locator('#lang-en').click();

@@ -176,7 +176,7 @@
     if (state.phase === 'awaiting') {
       orbiUrgent.style.display = 'flex';
       orbiStateText.textContent = '₾170 რემონტი ელოდება მფლობელის თანხმობას';
-      btnApproval.textContent = 'თანხმობა ↗';
+      btnApproval.textContent = 'თანხმობა';
       btnApproval.className = 'btn smallbtn';
       countBadge.textContent = '2 საკითხი';
     } else if (state.phase === 'approved') {
@@ -191,7 +191,7 @@
     } else if (state.phase === 'rejected') {
       orbiUrgent.style.display = 'flex';
       orbiStateText.textContent = 'მფლობელმა უარი თქვა · საკითხი განხილვაშია';
-      btnApproval.textContent = 'დეტალები ↗';
+      btnApproval.textContent = 'დეტალები';
       btnApproval.className = 'btn secondary smallbtn';
       countBadge.textContent = '2 საკითხი';
     }
@@ -440,7 +440,7 @@
         <td><span class="status-pill ${row.statusClass}">${escapeHtml(row.status)}</span></td>
         <td>
           ${row.id === 'orbi-repair' && state.phase === 'awaiting'
-            ? `<button class="btn smallbtn" id="btn-task-approve-action" style="padding:4px 8px;font-size:11px">თანხმობა ↗</button>`
+            ? `<button class="btn smallbtn" id="btn-task-approve-action" style="padding:4px 8px;font-size:11px">თანხმობა</button>`
             : row.id === 'orbi-repair' && state.phase === 'approved'
               ? `<button class="btn smallbtn" id="btn-task-complete-action" style="padding:4px 8px;font-size:11px">დასრულება ✓</button>`
               : `<span style="font-size:11px;color:var(--muted)">—</span>`}

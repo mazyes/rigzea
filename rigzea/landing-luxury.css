@@ -1600,7 +1600,8 @@ body.luxury-theme::before {
 
 .lx-comparison-title-box {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
   gap: 12px;
 }
 
@@ -1616,13 +1617,16 @@ body.luxury-theme::before {
   background: var(--lx-red-dim);
   color: var(--lx-red-text);
   border: 1px solid var(--lx-red-border);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .lx-comparison-title-box h3 {
-  font-size: 20px;
+  font-size: clamp(19px, 2.2vw, 22px);
   font-weight: 700;
   color: #fff;
   letter-spacing: -0.01em;
+  margin: 0;
 }
 
 .lx-points-list {
@@ -1687,6 +1691,8 @@ body.luxury-theme::before {
   background: rgba(0, 245, 155, 0.14);
   color: var(--lx-mint-neon);
   border: 1px solid rgba(0, 245, 155, 0.35);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .lx-point-icon-green,

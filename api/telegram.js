@@ -210,7 +210,7 @@ async function handleUpdate(update) {
     let response = `📊 <b>დღის საოპერაციო მდგომარეობა — ${userOrg.orgName}</b>\n\n`;
     response += `• 🏢 <b>ბინების რაოდენობა:</b> ${aptCount}\n`;
     response += `• 🤖 <b>Telegram ასისტენტი:</b> აქტიურია (Serverless 24/7)\n\n`;
-    response += `🔗 <a href="${BASE_APP_URL}/app/">სისტემაში გახსნა ↗</a>`;
+    response += `🔗 <a href="${BASE_APP_URL}/app/">სისტემაში გახსნა</a>`;
 
     await sendMessage(chatId, response);
     return;
@@ -264,7 +264,7 @@ async function handleUpdate(update) {
       `<i>(გადაუგზავნეთ ეს ბმული მესაკუთრეს დასადასტურებლად)</i>`;
   } else {
     confirmation += `📋 <b>სტატუსი:</b> ახალი\n` +
-      `🔗 <a href="${BASE_APP_URL}/app/">სისტემაში ნახვა ↗</a>`;
+      `🔗 <a href="${BASE_APP_URL}/app/">სისტემაში ნახვა</a>`;
   }
 
   await sendMessage(chatId, confirmation);
