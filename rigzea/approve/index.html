@@ -23,7 +23,13 @@
 </head>
 <body>
   <main class="ap" id="ap" aria-live="polite">
-    <div class="ap-org"><a class="brand" href="/" style="font-size:15px;text-decoration:none"><span class="brand-mark" style="width:22px;height:22px;border-radius:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><path d="M5 6.5h14M5 12h10M5 17.5h14"/></svg></span><span class="brand-text">რიგზეა<i>.</i></span></a> <span style="color:var(--muted)">· ხარჯის თანხმობა</span></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <div class="ap-org" style="margin-bottom:0"><a class="brand" href="/" style="font-size:15px;text-decoration:none"><span class="brand-mark" style="width:22px;height:22px;border-radius:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><path d="M5 6.5h14M5 12h10M5 17.5h14"/></svg></span><span class="brand-text">რიგზეა<i>.</i></span></a> <span style="color:var(--muted)" id="ap-sub">· ხარჯის თანხმობა</span></div>
+      <div class="lang-switcher" style="display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:2px;background:var(--surface)">
+        <button type="button" class="lang-btn active" id="btn-ap-ka" style="border:0;background:var(--brand);color:#fff;font-size:11.5px;font-weight:600;padding:3px 8px;border-radius:999px;cursor:pointer">KA</button>
+        <button type="button" class="lang-btn" id="btn-ap-en" style="border:0;background:none;color:var(--muted);font-size:11.5px;font-weight:600;padding:3px 8px;border-radius:999px;cursor:pointer">EN</button>
+      </div>
+    </div>
     <div class="card"><div class="skeleton" aria-label="იტვირთება"><i></i><i></i><i></i></div></div>
   </main>
 
@@ -37,29 +43,116 @@
     const head = root.firstElementChild.outerHTML;
     const token = new URLSearchParams(location.search).get('token');
     let data = null;
+    let lang = localStorage.getItem('rigzea_ap_lang') || 'ka';
 
-    const show = (html) => { root.innerHTML = head + html; };
+    const I18N = {
+      ka: {
+        sub: '· ხარჯის თანხმობა',
+        reqBy: (o, org) => `${o ? o + ', ' : ''}${org || 'მმართველი კომპანია'} გთხოვთ თანხმობას ხარჯზე:`,
+        expense: 'ხარჯი',
+        reqAt: 'მოთხოვნილია',
+        details: 'განმარტება',
+        comment: 'თქვენი კომენტარი',
+        approve: 'დადასტურება',
+        decline: 'უარყოფა',
+        yesApprove: 'დიახ, ვადასტურებ',
+        yesDecline: 'დიახ, უარს ვამბობ',
+        back: 'უკან',
+        commentField: 'კომენტარი მმართველისთვის (არასავალდებულო)',
+        confirmApprove: (amt) => `ადასტურებთ ${amt}-ის ხარჯს?`,
+        confirmDecline: 'უარს ამბობთ ამ ხარჯზე?',
+        noteApprove: 'მმართველი მიიღებს თანხმობას და დაიწყებს სამუშაოს.',
+        noteDecline: 'სამუშაო არ შესრულდება, სანამ მმართველთან არ შეთანხმდებით.',
+        approvedMsg: 'ხარჯი დადასტურებულია.',
+        declinedMsg: 'ხარჯზე უარი დაფიქსირდა.',
+        approvedFollow: 'მმართველი შეასრულებს სამუშაოს და ქვითარს ამონაწერში ნახავთ.',
+        declinedFollow: 'მმართველი დაგიკავშირდებათ ალტერნატივით.',
+        cancelledMsg: 'მმართველმა ეს მოთხოვნა გააუქმა. პასუხი აღარ არის საჭირო.',
+        expiredMsg: 'მოთხოვნის ვადა ამოიწურა. სთხოვეთ მმართველს ახალი ბმული.',
+        callPrompt: 'კითხვა გაქვთ? დაურეკეთ მმართველს:',
+        invalidLink: 'ბმული არასრულია. სთხოვეთ მმართველს ბმულის ხელახლა გამოგზავნა.',
+        notFound: 'მოთხოვნა ვერ მოიძებნა. შესაძლოა გაუქმდა — დაუკავშირდით მმართველს.',
+        retry: 'ხელახლა ცდა',
+      },
+      en: {
+        sub: '· Expense Approval',
+        reqBy: (o, org) => `${o ? o + ', ' : ''}${org || 'Property Manager'} requests your approval for:`,
+        expense: 'Expense',
+        reqAt: 'Requested on',
+        details: 'Description',
+        comment: 'Your comment',
+        approve: 'Approve',
+        decline: 'Decline',
+        yesApprove: 'Yes, Approve',
+        yesDecline: 'Yes, Decline',
+        back: 'Back',
+        commentField: 'Comment for property manager (optional)',
+        confirmApprove: (amt) => `Approve expense of ${amt}?`,
+        confirmDecline: 'Decline this expense?',
+        noteApprove: 'The manager will receive approval and proceed with the maintenance.',
+        noteDecline: 'Work will be put on hold until you coordinate with the manager.',
+        approvedMsg: 'Expense approved.',
+        declinedMsg: 'Expense declined.',
+        approvedFollow: 'The manager will proceed with the repair and attach receipts to your monthly statement.',
+        declinedFollow: 'The manager will follow up with alternative solutions.',
+        cancelledMsg: 'This request was cancelled by the manager.',
+        expiredMsg: 'This request has expired. Please ask the manager for an updated link.',
+        callPrompt: 'Questions? Call host/manager:',
+        invalidLink: 'Incomplete link. Please request a new link from your property manager.',
+        notFound: 'Approval request not found or cancelled. Please contact your manager.',
+        retry: 'Retry',
+      }
+    };
+
+    const show = (html) => {
+      root.innerHTML = head + html;
+      bindLang();
+    };
+
+    function bindLang() {
+      const bKa = document.getElementById('btn-ap-ka');
+      const bEn = document.getElementById('btn-ap-en');
+      if (bKa && bEn) {
+        bKa.onclick = () => { lang = 'ka'; localStorage.setItem('rigzea_ap_lang', 'ka'); updateLangUI(); render(); };
+        bEn.onclick = () => { lang = 'en'; localStorage.setItem('rigzea_ap_lang', 'en'); updateLangUI(); };
+        updateLangUI();
+      }
+    }
+
+    function updateLangUI() {
+      const bKa = document.getElementById('btn-ap-ka');
+      const bEn = document.getElementById('btn-ap-en');
+      const sub = document.getElementById('ap-sub');
+      if (bKa && bEn) {
+        bKa.style.background = lang === 'ka' ? 'var(--brand)' : 'none';
+        bKa.style.color = lang === 'ka' ? '#fff' : 'var(--muted)';
+        bEn.style.background = lang === 'en' ? 'var(--brand)' : 'none';
+        bEn.style.color = lang === 'en' ? '#fff' : 'var(--muted)';
+      }
+      if (sub) sub.textContent = I18N[lang].sub;
+    }
 
     function errorView(msg, retry) {
-      show(`<div class="card"><div class="error-state"><p>${esc(msg)}</p>${retry ? '<button type="button" class="btn btn-primary btn-lg" id="retry">ხელახლა ცდა</button>' : ''}</div></div>`);
+      show(`<div class="card"><div class="error-state"><p>${esc(msg)}</p>${retry ? `<button type="button" class="btn btn-primary btn-lg" id="retry">${I18N[lang].retry}</button>` : ''}</div></div>`);
       document.getElementById('retry')?.addEventListener('click', load);
     }
 
     async function load() {
-      if (!token) return errorView('ბმული არასრულია. სთხოვეთ მმართველს ბმულის ხელახლა გამოგზავნა.');
+      if (!token) return errorView(I18N[lang].invalidLink);
       show('<div class="card"><div class="skeleton"><i></i><i></i><i></i></div></div>');
       try {
         const { data: res, error } = await sb.rpc('get_public_approval', { p_token: token });
         if (error) throw error;
-        if (!res?.success) return errorView(res?.error || 'მოთხოვნა ვერ მოიძებნა. შესაძლოა გაუქმდა — დაუკავშირდით მმართველს.');
+        if (!res?.success) return errorView(res?.error || I18N[lang].notFound);
         data = res;
         render();
       } catch (err) {
-        errorView('ინფორმაცია ვერ ჩაიტვირთა. ' + R.friendlyError(err), true);
+        errorView('Network error. ' + R.friendlyError(err), true);
       }
     }
 
     function render(state = {}) {
+      const t = I18N[lang];
       const a = data.approval, apt = data.apartment || {}, org = data.organization || {}, owner = data.owner || {};
       const [first, ...rest] = String(a.description || '').split('\n');
       const title = a.title || first;
@@ -69,32 +162,32 @@
       const contact = org.contact_phone ? `<a href="tel:${esc(org.contact_phone)}">${esc(org.contact_phone)}</a>` : '';
 
       let action = '';
-      if (a.status === 'approved') action = `<div class="ap-result ok"><strong>ხარჯი დადასტურებულია.</strong>${a.responded_at ? ` (${esc(R.dateTime(a.responded_at))})` : ''} მმართველი შეასრულებს სამუშაოს და ქვითარს ამონაწერში ნახავთ.</div>`;
-      else if (a.status === 'declined') action = `<div class="ap-result no"><strong>ხარჯზე უარი დაფიქსირდა.</strong>${a.responded_at ? ` (${esc(R.dateTime(a.responded_at))})` : ''} მმართველი დაგიკავშირდებათ ალტერნატივით.</div>`;
-      else if (a.status === 'cancelled') action = `<div class="ap-result" style="background:var(--neutral-bg)">მმართველმა ეს მოთხოვნა გააუქმა. პასუხი აღარ არის საჭირო.</div>`;
-      else if (expired) action = `<div class="ap-result" style="background:var(--neutral-bg)">მოთხოვნის ვადა ამოიწურა. სთხოვეთ მმართველს ახალი ბმული.</div>`;
+      if (a.status === 'approved') action = `<div class="ap-result ok"><strong>${t.approvedMsg}</strong>${a.responded_at ? ` (${esc(R.dateTime(a.responded_at))})` : ''} ${t.approvedFollow}</div>`;
+      else if (a.status === 'declined') action = `<div class="ap-result no"><strong>${t.declinedMsg}</strong>${a.responded_at ? ` (${esc(R.dateTime(a.responded_at))})` : ''} ${t.declinedFollow}</div>`;
+      else if (a.status === 'cancelled') action = `<div class="ap-result" style="background:var(--neutral-bg)">${t.cancelledMsg}</div>`;
+      else if (expired) action = `<div class="ap-result" style="background:var(--neutral-bg)">${t.expiredMsg}</div>`;
       else if (state.confirm) {
         const yes = state.confirm === 'approved';
         action = `<div class="ap-confirm">
-          <p class="ap-question">${yes ? `ადასტურებთ ${money(a.amount)}-ის ხარჯს?` : 'უარს ამბობთ ამ ხარჯზე?'}</p>
-          <p class="muted" style="margin-bottom:12px">${yes ? 'მმართველი მიიღებს თანხმობას და დაიწყებს სამუშაოს.' : 'სამუშაო არ შესრულდება, სანამ მმართველთან არ შეთანხმდებით.'}</p>
+          <p class="ap-question">${yes ? t.confirmApprove(money(a.amount)) : t.confirmDecline}</p>
+          <p class="muted" style="margin-bottom:12px">${yes ? t.noteApprove : t.noteDecline}</p>
           ${state.error ? `<div class="form-error" role="alert">${esc(state.error)}</div>` : ''}
-          <label class="field" style="margin-bottom:12px"><span class="field-label">კომენტარი მმართველისთვის <span class="muted">(არასავალდებულო)</span></span><textarea id="note" rows="2">${esc(state.note || '')}</textarea></label>
-          <div class="ap-actions"><button type="button" class="btn ${yes ? 'btn-primary' : 'btn-danger'}" id="send">${yes ? 'დიახ, ვადასტურებ' : 'დიახ, უარს ვამბობ'}</button><button type="button" class="btn btn-ghost" id="back">უკან</button></div></div>`;
+          <label class="field" style="margin-bottom:12px"><span class="field-label">${t.commentField}</span><textarea id="note" rows="2">${esc(state.note || '')}</textarea></label>
+          <div class="ap-actions"><button type="button" class="btn ${yes ? 'btn-primary' : 'btn-danger'}" id="send">${yes ? t.yesApprove : t.yesDecline}</button><button type="button" class="btn btn-ghost" id="back">${t.back}</button></div></div>`;
       } else {
-        action = `<div class="ap-actions"><button type="button" class="btn btn-primary" data-d="approved">დადასტურება · ${money(a.amount)}</button><button type="button" class="btn btn-danger-outline" data-d="declined">უარყოფა</button></div>`;
+        action = `<div class="ap-actions"><button type="button" class="btn btn-primary" data-d="approved">${t.approve} · ${money(a.amount)}</button><button type="button" class="btn btn-danger-outline" data-d="declined">${t.decline}</button></div>`;
       }
 
       show(`<div class="card"><div class="card-body form-stack">
-        <div><p class="muted">${esc(owner.name ? owner.name + ', ' : '')}${esc(org.name || 'მმართველი კომპანია')} გთხოვთ თანხმობას ხარჯზე:</p>
-          <h1 style="font-size:20px;margin-top:6px">${esc(title || 'ხარჯი')}</h1>
+        <div><p class="muted">${t.reqBy(owner.name, org.name)}</p>
+          <h1 style="font-size:20px;margin-top:6px">${esc(title || t.expense)}</h1>
           <div class="ap-amount">${money(a.amount)}</div>
-          <p class="muted">${esc(apt.name || '')}${apt.city ? ', ' + esc(apt.city) : ''} · მოთხოვნილია ${esc(R.dateTime(a.created_at))}</p></div>
-        ${details ? `<div><div class="section-title">განმარტება</div><p style="white-space:pre-wrap">${esc(details)}</p></div>` : ''}
-        ${photos.length ? `<div class="photos">${photos.map(u => `<a class="photo" href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u)}" alt="ფოტო" /></a>`).join('')}</div>` : ''}
-        ${a.response_note && a.status !== 'pending' ? `<p class="muted">თქვენი კომენტარი: „${esc(a.response_note)}“</p>` : ''}
+          <p class="muted">${esc(apt.name || '')}${apt.city ? ', ' + esc(apt.city) : ''} · ${t.reqAt} ${esc(R.dateTime(a.created_at))}</p></div>
+        ${details ? `<div><div class="section-title">${t.details}</div><p style="white-space:pre-wrap">${esc(details)}</p></div>` : ''}
+        ${photos.length ? `<div class="photos">${photos.map(u => `<a class="photo" href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u)}" alt="Photo" /></a>`).join('')}</div>` : ''}
+        ${a.response_note && a.status !== 'pending' ? `<p class="muted">${t.comment}: „${esc(a.response_note)}“</p>` : ''}
         ${action}
-        ${contact ? `<p class="small muted">კითხვა გაქვთ? დაურეკეთ მმართველს: ${contact}</p>` : ''}
+        ${contact ? `<p class="small muted">${t.callPrompt} ${contact}</p>` : ''}
       </div></div>`);
 
       root.querySelectorAll('[data-d]').forEach(b => b.addEventListener('click', () => render({ confirm: b.dataset.d })));
@@ -108,21 +201,18 @@
           const { data: res, error } = await sb.rpc('respond_public_approval', { p_token: token, p_decision: state.confirm, p_note: note || null });
           if (error) throw error;
           if (!res?.success) {
-            // Already answered elsewhere: reload to show the recorded decision.
-            if (/უკვე/.test(res?.error || '')) return load();
-            throw new Error(res?.error || 'პასუხი ვერ დაფიქსირდა.');
+            render({ confirm: state.confirm, note, error: res?.error || 'შეცდომა დაფიქსირდა.' });
+            return;
           }
-          data.approval.status = res.status;
+          data.approval.status = state.confirm;
+          data.approval.response_note = note;
           data.approval.responded_at = new Date().toISOString();
-          data.approval.response_note = note || null;
           render();
-          document.querySelector('.ap-result')?.focus?.();
         } catch (err) {
-          render({ ...state, note, error: R.friendlyError(err) + ' პასუხი არ დაფიქსირებულა — სცადეთ ხელახლა.' });
+          render({ confirm: state.confirm, note, error: R.friendlyError(err) });
+        } finally {
+          btn.dataset.busy = ''; btn.disabled = false; btn.classList.remove('is-busy');
         }
-      });
-    }
-
     load();
   })();
   </script>

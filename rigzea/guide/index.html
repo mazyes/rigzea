@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="ka">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0a5c44" />
+  <title>სტუმრის გზამკვლევი · რიგზეა</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='7' fill='%230a5c44'/%3E%3Cpath d='M10 12h20M10 20h15M10 28h20' stroke='%23fff' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="/app/app.css" />
+  <style>
+    .guide-page { max-width: 580px; margin: 0 auto; padding: 16px 16px 64px; }
+    .guide-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .lang-switcher { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 2px; background: var(--surface); }
+    .lang-btn { border: 0; background: none; font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 999px; cursor: pointer; color: var(--muted); }
+    .lang-btn.active { background: var(--brand); color: #fff; }
+    
+    .guide-hero {
+      background: linear-gradient(135deg, #0a5c44 0%, #06392a 100%);
+      color: #fff; border-radius: var(--r); padding: 24px 20px; margin-bottom: 16px;
+      box-shadow: 0 4px 16px rgba(10, 92, 68, 0.2);
+    }
+    .guide-hero .welcome-tag { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.85; margin-bottom: 6px; font-weight: 600; }
+    .guide-hero h1 { font-size: 24px; margin: 0 0 6px; font-weight: 700; color: #fff; }
+    .guide-hero .address-sub { font-size: 14px; opacity: 0.9; display: flex; align-items: center; gap: 6px; }
+
+    .feature-card {
+      background: var(--surface); border: 1px solid var(--line); border-radius: var(--r);
+      padding: 18px 20px; margin-bottom: 14px; box-shadow: var(--shadow);
+    }
+    .feature-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .feature-card-header h2 { font-size: 16px; font-weight: 600; margin: 0; display: flex; align-items: center; gap: 8px; }
+    .feature-card-header h2 .icon { color: var(--brand); }
+
+    .wifi-box { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center; background: var(--surface-2); padding: 12px 14px; border-radius: var(--r-sm); border: 1px solid var(--line); }
+    .wifi-detail small { display: block; font-size: 11.5px; color: var(--muted); font-weight: 500; }
+    .wifi-detail strong { font-size: 15px; font-family: monospace; letter-spacing: 0.5px; }
+
+    .door-box { text-align: center; padding: 16px; background: var(--brand-soft); border-radius: var(--r-sm); border: 1px solid var(--brand); margin-bottom: 10px; }
+    .door-box small { display: block; font-size: 12px; color: var(--brand); font-weight: 600; margin-bottom: 4px; }
+    .door-code { font-size: 32px; font-weight: 700; font-family: monospace; letter-spacing: 4px; color: var(--brand); }
+
+    .times-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+    .time-item { padding: 10px 12px; border-radius: var(--r-sm); background: var(--surface-2); border: 1px solid var(--line); }
+    .time-item small { display: block; font-size: 11px; color: var(--muted); }
+    .time-item strong { font-size: 15px; }
+
+    .rules-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; }
+    .rules-list li { display: flex; align-items: flex-start; gap: 10px; font-size: 14px; }
+    .rules-list li span.badge { flex: none; margin-top: 1px; }
+
+    .contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+
+    /* Print card styling */
+    .print-banner { margin-top: 24px; text-align: center; padding: 16px; border: 1px dashed var(--line-strong); border-radius: var(--r); background: var(--surface-2); }
+    
+    @media print {
+      body { background: #fff !important; color: #000 !important; }
+      .guide-top, .lang-switcher, .print-banner, #toast-host { display: none !important; }
+      .guide-page { max-width: 100% !important; padding: 0 !important; }
+      .guide-hero { background: #fff !important; color: #000 !important; border: 2px solid #000 !important; box-shadow: none !important; }
+      .guide-hero h1 { color: #000 !important; }
+      .guide-hero .welcome-tag { color: #555 !important; }
+      .feature-card { border: 1px solid #ccc !important; box-shadow: none !important; break-inside: avoid; }
+      .door-box { background: #f0f0f0 !important; border-color: #333 !important; }
+      .door-code { color: #000 !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="guide-page" id="guide">
+    <div class="guide-top">
+      <a class="brand" href="/" style="font-size:16px;text-decoration:none">
+        <span class="brand-mark" style="width:24px;height:24px;border-radius:6px">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><path d="M5 6.5h14M5 12h10M5 17.5h14"/></svg>
+        </span>
+        <span class="brand-text">რიგზეა<i>.</i></span>
+      </a>
+      <div class="lang-switcher">
+        <button type="button" class="lang-btn active" id="btn-lang-ka" data-lang="ka">ქართული</button>
+        <button type="button" class="lang-btn" id="btn-lang-en" data-lang="en">English</button>
+      </div>
+    </div>
+
+    <div id="guide-content">
+      <div class="card"><div class="skeleton" style="height:320px"><i></i><i></i><i></i></div></div>
+    </div>
+  </main>
+
+  <script src="/js/supabase.js"></script>
+  <script src="/js/config.js"></script>
+  <script src="/js/core.js"></script>
+  <script>
+  (() => {
+    'use strict';
+    const { sb, esc, icon, copyText } = R;
+    let currentLang = localStorage.getItem('rigzea_guide_lang') || 'ka';
+    let aptData = null;
+
+    const I18N = {
+      ka: {
+        welcome: 'კეთილი იყოს თქვენი მობრძანება',
+        wifiTitle: 'ინტერნეტი და Wi-Fi',
+        wifiNet: 'ქსელი (Network)',
+        wifiPass: 'პაროლი (Password)',
+        copyPass: 'კოპირება',
+        copied: 'პაროლი დაკოპირდა!',
+        accessTitle: 'ბინაში შესვლა და გასაღები',
+        doorCodeLabel: 'კარის კოდი',
+        instructionsLabel: 'ინსტრუქცია',
+        checkIn: 'შესვლა (Check-in)',
+        checkOut: 'გასვლა (Check-out)',
+        rulesTitle: 'ბინის წესები',
+        noSmoking: 'მოწევა აკრძალულია',
+        quietHours: 'სიჩუმის საათები: 23:00 – 08:00',
+        trash: 'ნაგავი გთხოვთ ჩაიტანოთ სადარბაზოს კონტეინერში',
+        supportTitle: 'კონტაქტი და დახმარება',
+        callHost: 'მმართველთან დარეკვა',
+        emergency: 'გადაუდებელი დახმარება: 112',
+        printBtn: '🖨 ბინის ბარათის ბეჭდვა (A5)',
+        printNote: 'ამობეჭდე ეს ბარათი და დადე ბინის მაგიდაზე სტუმრებისთვის',
+        notFound: 'ბინა ვერ მოიძებნა. გთხოვთ შეამოწმოთ ბმული.',
+      },
+      en: {
+        welcome: 'Welcome to your stay',
+        wifiTitle: 'Internet & Wi-Fi',
+        wifiNet: 'Wi-Fi Network',
+        wifiPass: 'Password',
+        copyPass: 'Copy',
+        copied: 'Password copied!',
+        accessTitle: 'Access & Door Code',
+        doorCodeLabel: 'Door Access Code',
+        instructionsLabel: 'Instructions',
+        checkIn: 'Check-in from',
+        checkOut: 'Check-out by',
+        rulesTitle: 'House Rules',
+        noSmoking: 'Strictly No Smoking inside',
+        quietHours: 'Quiet hours: 23:00 – 08:00',
+        trash: 'Please dispose trash in the building bins',
+        supportTitle: 'Host & Emergency Contact',
+        callHost: 'Call Host / Manager',
+        emergency: 'Emergency Services: 112',
+        printBtn: '🖨 Print Tabletop Card (A5)',
+        printNote: 'Print this card and place it on the apartment table for guests',
+        notFound: 'Apartment not found. Please check your link.',
+      }
+    };
+
+    function setLanguage(lang) {
+      currentLang = lang;
+      localStorage.setItem('rigzea_guide_lang', lang);
+      document.querySelectorAll('.lang-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.lang === lang);
+      });
+      render();
+    }
+
+    async function loadData() {
+      const params = new URLSearchParams(location.search);
+      const aptId = params.get('apt') || params.get('id');
+
+      if (!aptId) {
+        // Fallback demo apartment if testing
+        aptData = {
+          name: 'Orbi City · 1204',
+          city: 'ბათუმი / Batumi',
+          address: 'შერიფ ხიმშიაშვილის გამზ. 7, კორპუსი C',
+          unit_number: '1204',
+          wifi_name: 'OrbiCity_1204_5G',
+          wifi_password: 'sea-view-batumi-2026',
+          door_code: '4821#',
+          checkin_time: '14:00',
+          checkout_time: '12:00',
+          access_instructions: 'შესასვლელი კარი კოდურია. აკრიფეთ 4821# და სახელური ჩამოწიეთ დაბლა.',
+          contact_phone: '+995 555 12 34 56',
+        };
+        render();
+        return;
+      }
+
+      try {
+        const { data, error } = await sb.from('apartments').select('*').eq('id', aptId).single();
+        if (error || !data) throw error || new Error('Not found');
+        aptData = data;
+        render();
+      } catch (err) {
+        document.getElementById('guide-content').innerHTML = `
+          <div class="card" style="text-align:center;padding:32px 16px">
+            <p>${I18N[currentLang].notFound}</p>
+          </div>
+        `;
+      }
+    }
+
+    function render() {
+      if (!aptData) return;
+      const t = I18N[currentLang];
+      const root = document.getElementById('guide-content');
+
+      root.innerHTML = `
+        <div class="guide-hero">
+          <div class="welcome-tag">${t.welcome}</div>
+          <h1>${esc(aptData.name)}</h1>
+          <div class="address-sub">${icon('mapPin', 16)} ${esc(aptData.address || aptData.city || '')}${aptData.unit_number ? ' · Unit ' + esc(aptData.unit_number) : ''}</div>
+        </div>
+
+        <!-- Wi-Fi Card -->
+        <section class="feature-card">
+          <div class="feature-card-header">
+            <h2>${icon('sparkle', 18)} ${t.wifiTitle}</h2>
+          </div>
+          <div class="wifi-box">
+            <div class="wifi-detail">
+              <small>${t.wifiNet}</small>
+              <strong>${esc(aptData.wifi_name || 'Apartment_WiFi')}</strong>
+            </div>
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-copy-net">${icon('copy', 14)}</button>
+          </div>
+          <div class="wifi-box" style="margin-top:8px">
+            <div class="wifi-detail">
+              <small>${t.wifiPass}</small>
+              <strong>${esc(aptData.wifi_password || 'Welcome2026')}</strong>
+            </div>
+            <button type="button" class="btn btn-primary btn-sm" id="btn-copy-pass">${icon('copy', 14)} ${t.copyPass}</button>
+          </div>
+        </section>
+
+        <!-- Access Card -->
+        <section class="feature-card">
+          <div class="feature-card-header">
+            <h2>${icon('key', 18)} ${t.accessTitle}</h2>
+          </div>
+          ${aptData.door_code ? `
+          <div class="door-box">
+            <small>${t.doorCodeLabel}</small>
+            <div class="door-code">${esc(aptData.door_code)}</div>
+          </div>` : ''}
+          ${aptData.access_instructions ? `
+          <p style="font-size:13.5px;color:var(--ink-2);margin:8px 0;line-height:1.4">
+            <strong>${t.instructionsLabel}:</strong> ${esc(aptData.access_instructions)}
+          </p>` : ''}
+          <div class="times-grid">
+            <div class="time-item">
+              <small>${t.checkIn}</small>
+              <strong>${esc(aptData.checkin_time || '14:00')}</strong>
+            </div>
+            <div class="time-item">
+              <small>${t.checkOut}</small>
+              <strong>${esc(aptData.checkout_time || '12:00')}</strong>
+            </div>
+          </div>
+        </section>
+
+        <!-- Rules Card -->
+        <section class="feature-card">
+          <div class="feature-card-header">
+            <h2>${icon('file', 18)} ${t.rulesTitle}</h2>
+          </div>
+          <ul class="rules-list">
+            <li><span class="badge badge-danger">✕</span> <span>${t.noSmoking}</span></li>
+            <li><span class="badge badge-warn">🌙</span> <span>${t.quietHours}</span></li>
+            <li><span class="badge badge-ok">✓</span> <span>${t.trash}</span></li>
+          </ul>
+        </section>
+
+        <!-- Support Card -->
+        <section class="feature-card">
+          <div class="feature-card-header">
+            <h2>${icon('phone', 18)} ${t.supportTitle}</h2>
+          </div>
+          <div class="contact-grid">
+            ${aptData.contact_phone ? `
+            <a class="btn btn-secondary btn-block" href="tel:${esc(aptData.contact_phone)}">${icon('phone', 16)} ${t.callHost}</a>` : ''}
+            <a class="btn btn-secondary btn-block" href="tel:112">${icon('alert', 16)} 112</a>
+          </div>
+        </section>
+
+        <!-- Print Tabletop Card Trigger -->
+        <div class="print-banner">
+          <button type="button" class="btn btn-primary" id="btn-print">${t.printBtn}</button>
+          <p style="font-size:12px;color:var(--muted);margin:6px 0 0">${t.printNote}</p>
+        </div>
+      `;
+
+      document.getElementById('btn-copy-pass')?.addEventListener('click', () => {
+        copyText(aptData.wifi_password || '', t.copied);
+      });
+      document.getElementById('btn-copy-net')?.addEventListener('click', () => {
+        copyText(aptData.wifi_name || '', 'Copied');
+      });
+      document.getElementById('btn-print')?.addEventListener('click', () => {
+        window.print();
+      });
+    }
+
+    document.getElementById('btn-lang-ka').onclick = () => setLanguage('ka');
+    document.getElementById('btn-lang-en').onclick = () => setLanguage('en');
+
+    loadData();
+  })();
+  </script>
+</body>
+</html>
