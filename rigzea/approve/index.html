@@ -209,10 +209,14 @@
           data.approval.responded_at = new Date().toISOString();
           render();
         } catch (err) {
-          render({ confirm: state.confirm, note, error: R.friendlyError(err) });
+          const notRecorded = lang === 'en' ? 'Decision not recorded — please try again.' : 'პასუხი არ დაფიქსირებულა — სცადეთ ხელახლა.';
+          render({ confirm: state.confirm, note, error: `${R.friendlyError(err)} ${notRecorded}` });
         } finally {
           btn.dataset.busy = ''; btn.disabled = false; btn.classList.remove('is-busy');
         }
+      });
+    }
+
     load();
   })();
   </script>

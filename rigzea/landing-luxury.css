@@ -76,8 +76,8 @@
   --lx-r-xl: 28px;
   --lx-r-pill: 9999px;
 
-  /* Font */
-  --lx-font: 'FiraGO', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  /* Font Stack with Bulletproof CDN Fallback */
+  --lx-font: 'FiraGO', 'Noto Sans Georgian', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
   /* Spotlight cursor tracking defaults */
   --mouse-x: 50%;
@@ -121,24 +121,62 @@ body.luxury-theme::before {
   width: 100%;
   height: 100%;
   background: 
-    radial-gradient(ellipse 90% 60% at 50% -10%, rgba(10, 92, 68, 0.35), transparent 70%),
-    radial-gradient(ellipse 60% 50% at 80% 50%, rgba(16, 117, 87, 0.15), transparent 60%),
-    radial-gradient(ellipse 50% 50% at 20% 80%, rgba(0, 245, 155, 0.08), transparent 65%);
+    radial-gradient(ellipse 90% 60% at 50% -10%, rgba(10, 92, 68, 0.25), transparent 70%),
+    radial-gradient(ellipse 60% 50% at 80% 50%, rgba(16, 117, 87, 0.10), transparent 60%);
   pointer-events: none;
   z-index: 0;
 }
 
-body.luxury-theme::after {
-  content: '';
+/* Ambient Canvas & Hardware-Accelerated Parallax Orbs */
+.lx-ambient-canvas {
   position: fixed;
-  top: 0;
-  left: 0;
+  inset: 0;
   width: 100%;
   height: 100%;
-  background-image: radial-gradient(rgba(0, 245, 155, 0.05) 1px, transparent 1px);
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.lx-ambient-orb {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  will-change: transform;
+  filter: blur(85px);
+}
+
+.lx-orb-primary {
+  top: -120px;
+  left: 25%;
+  width: 640px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(10, 92, 68, 0.45) 0%, rgba(16, 117, 87, 0.16) 60%, transparent 80%);
+}
+
+.lx-orb-secondary {
+  top: 36%;
+  right: -100px;
+  width: 520px;
+  height: 480px;
+  background: radial-gradient(circle, rgba(0, 245, 155, 0.13) 0%, rgba(10, 92, 68, 0.08) 60%, transparent 80%);
+}
+
+.lx-orb-tertiary {
+  bottom: -100px;
+  left: 10%;
+  width: 600px;
+  height: 520px;
+  background: radial-gradient(circle, rgba(6, 56, 42, 0.40) 0%, transparent 75%);
+}
+
+.lx-ambient-grid {
+  position: absolute;
+  inset: -60px;
+  background-image: radial-gradient(rgba(0, 245, 155, 0.065) 1.2px, transparent 1.2px);
   background-size: 36px 36px;
   pointer-events: none;
-  z-index: 1;
+  will-change: transform;
 }
 
 .luxury-layout {
@@ -264,9 +302,20 @@ body.luxury-theme::after {
   font-weight: 600;
   text-decoration: none;
   cursor: pointer;
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   border: 1px solid transparent;
   white-space: nowrap;
+  position: relative;
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+  transition: background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease, color 0.2s ease;
+}
+
+.lx-btn > * {
+  pointer-events: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .lx-btn-primary {
@@ -277,8 +326,7 @@ body.luxury-theme::after {
 
 .lx-btn-primary:hover {
   background: linear-gradient(135deg, #38ef7d 0%, #059669 100%);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55);
-  transform: translateY(-2px);
+  box-shadow: 0 8px 26px rgba(0, 245, 155, 0.25), 0 4px 14px rgba(0, 0, 0, 0.55);
   color: #041810;
 }
 
@@ -293,8 +341,7 @@ body.luxury-theme::after {
   background: rgba(255, 255, 255, 0.09);
   border-color: var(--lx-border-mint);
   color: var(--lx-mint-neon);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35), 0 0 12px rgba(0, 245, 155, 0.12);
 }
 
 .lx-btn-sm {
@@ -501,15 +548,18 @@ body.luxury-theme::after {
     0 30px 80px -15px rgba(0, 0, 0, 0.9),
     0 0 0 1px rgba(255, 255, 255, 0.08),
     inset 0 0 24px rgba(0, 0, 0, 0.6);
-  transform: rotate3d(1, -1, 0, 4deg);
-  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.5s ease;
+  transform: perspective(1000px) rotateX(4deg) rotateY(-5deg);
+  transform-style: preserve-3d;
+  will-change: transform;
+  transition: box-shadow 0.45s ease, border-color 0.4s ease;
 }
 
 .lx-phone-mockup:hover {
-  transform: rotate3d(0, 0, 0, 0deg) translateY(-6px);
   box-shadow: 
-    0 40px 100px -10px rgba(0, 0, 0, 0.95),
-    0 0 0 1px rgba(255, 255, 255, 0.14);
+    0 42px 100px -10px rgba(0, 0, 0, 0.95),
+    0 0 32px -6px rgba(0, 245, 155, 0.22),
+    0 0 0 1px rgba(255, 255, 255, 0.16);
+  border-color: rgba(0, 245, 155, 0.35);
 }
 
 .lx-phone-screen {
@@ -960,12 +1010,110 @@ body.luxury-theme::after {
   font-weight: 600;
   color: var(--lx-mint-neon);
   cursor: pointer;
-  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+  transition: background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease, transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .lx-copy-btn:hover {
   background: rgba(0, 245, 155, 0.25);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4), 0 0 12px rgba(0, 245, 155, 0.2);
+}
+
+.lx-copy-btn:active {
+  transform: scale(0.96);
+}
+
+.lx-copy-btn.copied {
+  background: rgba(0, 245, 155, 0.28) !important;
+  border-color: rgba(0, 245, 155, 0.75) !important;
+  box-shadow: 0 0 20px rgba(0, 245, 155, 0.4) !important;
+}
+
+.lx-btn-ripple {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  transform: translate(-50%, -50%) scale(0);
+  background: radial-gradient(circle, rgba(0, 245, 155, 0.6) 0%, rgba(56, 239, 125, 0.2) 55%, transparent 75%);
+  width: 140px;
+  height: 140px;
+  animation: lx-ripple-pulse 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  z-index: 10;
+}
+
+@keyframes lx-ripple-pulse {
+  0% {
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 0.85;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(2.2);
+    opacity: 0;
+  }
+}
+
+.lx-check-icon-anim {
+  display: inline-block;
+  vertical-align: -2px;
+  margin-right: 4px;
+}
+
+.lx-check-icon-anim .lx-check-path {
+  stroke-dasharray: 26;
+  stroke-dashoffset: 26;
+  animation: lx-check-draw 0.38s cubic-bezier(0.16, 1, 0.3, 1) 0.04s forwards;
+}
+
+@keyframes lx-check-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Glass Shine Ray Sweep Effect */
+.lx-glass-shine {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: hidden;
+  border-radius: inherit;
+  z-index: 4;
+}
+
+.lx-glass-shine::before {
+  content: '';
+  position: absolute;
+  top: -60%;
+  left: -140%;
+  width: 70%;
+  height: 220%;
+  background: linear-gradient(
+    112deg,
+    transparent 15%,
+    rgba(255, 255, 255, 0.02) 35%,
+    rgba(0, 245, 155, 0.09) 45%,
+    rgba(255, 255, 255, 0.32) 50%,
+    rgba(0, 245, 155, 0.09) 55%,
+    rgba(255, 255, 255, 0.02) 65%,
+    transparent 85%
+  );
+  transform: rotate(22deg) translate3d(0, 0, 0);
+  transition: transform 0.9s cubic-bezier(0.19, 1, 0.22, 1), opacity 0.4s ease;
+  will-change: transform;
+  opacity: 0;
+}
+
+.lx-spotlight-card:hover .lx-glass-shine::before,
+.lx-bento-card:hover .lx-glass-shine::before,
+.lx-pricing-card:hover .lx-glass-shine::before,
+.lx-card-rigzea-way:hover .lx-glass-shine::before {
+  transform: translateX(440%) rotate(22deg);
+  opacity: 1;
 }
 
 /* Feature 2: Bilingual Lease Agreement */
@@ -1199,15 +1347,29 @@ body.luxury-theme::after {
 
 /* Old Way Card */
 .lx-card-old-way {
-  background: rgba(25, 16, 16, 0.6);
+  background: rgba(25, 16, 16, 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--lx-red-border);
   border-radius: var(--lx-r-xl);
-  padding: 36px;
+  padding: 38px 34px;
   display: flex;
   flex-direction: column;
   gap: 24px;
   position: relative;
   overflow: hidden;
+  box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.lx-card-old-way::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 42%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0) 100%);
+  pointer-events: none;
 }
 
 .lx-comparison-title-box {
@@ -1217,10 +1379,14 @@ body.luxury-theme::after {
 }
 
 .lx-tag-old {
-  padding: 4px 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
   border-radius: var(--lx-r-pill);
   font-size: 11.5px;
   font-weight: 700;
+  letter-spacing: 0.02em;
   background: var(--lx-red-dim);
   color: var(--lx-red-text);
   border: 1px solid var(--lx-red-border);
@@ -1230,6 +1396,7 @@ body.luxury-theme::after {
   font-size: 20px;
   font-weight: 700;
   color: #fff;
+  letter-spacing: -0.01em;
 }
 
 .lx-points-list {
@@ -1248,40 +1415,76 @@ body.luxury-theme::after {
   color: var(--lx-text-silver);
 }
 
-.lx-point-icon-red {
-  color: #ef4444;
-  font-size: 15px;
-  line-height: 1.3;
-}
-
-/* Rigzea Way Card */
+/* Rigzea Way Card - Elevated Luxury Craft */
 .lx-card-rigzea-way {
-  background: var(--lx-obsidian-card);
-  border: 1px solid var(--lx-border-mint);
+  background: linear-gradient(145deg, rgba(16, 32, 24, 0.88) 0%, rgba(9, 17, 13, 0.94) 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(0, 245, 155, 0.4);
   border-radius: var(--lx-r-xl);
-  padding: 36px;
+  padding: 42px 38px;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 28px;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 20px 48px -12px rgba(0, 0, 0, 0.7);
+  box-shadow: 0 24px 60px -12px rgba(0, 0, 0, 0.85), 0 0 40px -10px rgba(0, 245, 155, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s ease, border-color 0.35s ease;
+}
+
+.lx-card-rigzea-way::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 48%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.09) 0%, rgba(255, 255, 255, 0) 100%);
+  pointer-events: none;
+}
+
+.lx-card-rigzea-way:hover {
+  transform: translateY(-4px);
+  border-color: rgba(0, 245, 155, 0.7);
+  box-shadow: 0 32px 76px -16px rgba(0, 0, 0, 0.95), inset 0 1px 0 rgba(0, 245, 155, 0.35);
 }
 
 .lx-tag-rigzea {
-  padding: 4px 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
   border-radius: var(--lx-r-pill);
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 700;
-  background: var(--lx-mint-badge);
+  letter-spacing: 0.02em;
+  background: rgba(0, 245, 155, 0.14);
   color: var(--lx-mint-neon);
-  border: 1px solid var(--lx-border-mint);
+  border: 1px solid rgba(0, 245, 155, 0.35);
+}
+
+.lx-point-icon-green,
+.lx-point-icon-red {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 2px;
 }
 
 .lx-point-icon-green {
+  background: rgba(0, 245, 155, 0.16);
   color: var(--lx-mint-neon);
-  font-size: 16px;
-  line-height: 1.3;
+  border: 1px solid rgba(0, 245, 155, 0.35);
+}
+
+.lx-point-icon-red {
+  background: rgba(239, 68, 68, 0.14);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.32);
 }
 
 /* ==========================================================================
@@ -1376,6 +1579,12 @@ body.luxury-theme::after {
   gap: 6px;
   padding-bottom: 18px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  position: relative;
+  transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.lx-calc-metric-highlight.is-ticking {
+  border-color: rgba(0, 245, 155, 0.45);
 }
 
 .lx-calc-metric-highlight span {
@@ -1392,6 +1601,13 @@ body.luxury-theme::after {
   color: var(--lx-mint-neon);
   letter-spacing: -0.03em;
   line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  transition: transform 0.15s ease;
+  will-change: transform;
+}
+
+.lx-calc-metric-highlight.is-ticking strong {
+  transform: scale(1.02);
 }
 
 .lx-calc-submetrics-grid {
@@ -1573,8 +1789,11 @@ body.luxury-theme::after {
 
 .lx-check-icon {
   color: var(--lx-mint-neon);
-  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
+  margin-top: 2px;
 }
 
 /* ==========================================================================
@@ -1804,8 +2023,130 @@ body.luxury-theme::after {
   .lx-pin-progress-bar-fill,
   .lx-pin-dot,
   .lx-spotlight-card,
-  .lx-phone-mockup {
+  .lx-phone-mockup,
+  .lx-btn,
+  .lx-btn > *,
+  .lx-copy-btn,
+  .lx-btn-ripple,
+  .lx-glass-shine::before,
+  .lx-ambient-orb,
+  .lx-ambient-grid,
+  .lx-calc-metric-highlight strong {
     transition: none !important;
     animation: none !important;
+    transform: none !important;
   }
 }
+
+/* ==========================================================================
+   PRINT STYLESHEET
+   ========================================================================== */
+@media print {
+  body.luxury-theme {
+    background: #ffffff !important;
+    color: #0f172a !important;
+  }
+
+  body.luxury-theme::before,
+  body.luxury-theme::after,
+  .lx-ambient-orb,
+  .lx-ambient-grid,
+  .lx-header,
+  .lx-mobile-toggle,
+  .lx-nav-links,
+  .lx-phone-wrapper,
+  .lx-btn,
+  .lx-copy-bar,
+  .lx-range-slider,
+  #calc-split {
+    display: none !important;
+  }
+
+  .luxury-layout {
+    width: 100% !important;
+  }
+
+  .lx-container {
+    max-width: 100% !important;
+    padding: 0 !important;
+  }
+
+  .lx-hero {
+    padding: 20px 0 !important;
+  }
+
+  .lx-hero-title,
+  .lx-hero-title span {
+    color: #0f172a !important;
+  }
+
+  .lx-hero-desc {
+    color: #334155 !important;
+  }
+
+  .lx-pin-scroll-wrap {
+    height: auto !important;
+  }
+
+  .lx-pin-sticky-container {
+    position: static !important;
+    height: auto !important;
+    padding: 0 !important;
+  }
+
+  .lx-horizontal-viewport {
+    overflow: visible !important;
+  }
+
+  .lx-horizontal-track {
+    display: block !important;
+    transform: none !important;
+  }
+
+  .lx-bento-card,
+  .lx-spotlight-card,
+  .lx-pricing-card,
+  .lx-calc-box,
+  .lx-card-old-way,
+  .lx-card-rigzea-way {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    background: #ffffff !important;
+    color: #0f172a !important;
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: none !important;
+    margin-bottom: 20px !important;
+    transform: none !important;
+    opacity: 1 !important;
+  }
+
+  .lx-bento-card h3,
+  .lx-plan-name,
+  .lx-plan-amount {
+    color: #0f172a !important;
+  }
+
+  .lx-bento-card p,
+  .lx-plan-desc {
+    color: #475569 !important;
+  }
+
+  .lx-post-box {
+    background: #f8fafc !important;
+    color: #0f172a !important;
+    border: 1px solid #e2e8f0 !important;
+    white-space: pre-wrap !important;
+  }
+
+  .lx-footer {
+    border-top: 1px solid #cbd5e1 !important;
+    background: #ffffff !important;
+    color: #64748b !important;
+  }
+
+  .lx-footer-copy,
+  .lx-footer-links a {
+    color: #64748b !important;
+  }
+}
+

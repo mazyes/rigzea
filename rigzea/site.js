@@ -3,6 +3,7 @@
   const toggle = document.querySelector('#mobile-toggle');
   
   toggle?.addEventListener('click', () => {
+    if (!menu) return;
     const open = menu.classList.toggle('open');
     toggle.setAttribute('aria-expanded', String(open));
     toggle.setAttribute('aria-label', open ? 'მენიუს დახურვა' : 'მენიუს გახსნა');

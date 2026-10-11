@@ -144,11 +144,11 @@
 
     let nextBtn = '';
     if (d.stage === 'active') {
-      nextBtn = `<button type="button" class="btn btn-ghost btn-sm" data-deal-advance="${d.id}" data-next-stage="viewing">📅 ნახვის დანიშვნა</button>`;
+      nextBtn = `<button type="button" class="btn btn-ghost btn-sm" data-deal-advance="${d.id}" data-next-stage="viewing"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-right:5px;vertical-align:-2px"><rect x="3" y="4" width="18" height="18" rx="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>ნახვის დანიშვნა</button>`;
     } else if (d.stage === 'viewing') {
-      nextBtn = `<button type="button" class="btn btn-ghost btn-sm" data-deal-advance="${d.id}" data-next-stage="deposit">💵 დეპოზიტი</button>`;
+      nextBtn = `<button type="button" class="btn btn-ghost btn-sm" data-deal-advance="${d.id}" data-next-stage="deposit"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-right:5px;vertical-align:-2px"><rect x="2" y="6" width="20" height="12" rx="2"></rect><circle cx="12" cy="12" r="2"></circle><path d="M6 12h.01M18 12h.01"></path></svg>დეპოზიტი</button>`;
     } else if (d.stage === 'deposit') {
-      nextBtn = `<button type="button" class="btn btn-primary btn-sm" data-deal-advance="${d.id}" data-next-stage="closed">🎉 დახურვა & საკომისიო</button>`;
+      nextBtn = `<button type="button" class="btn btn-primary btn-sm" data-deal-advance="${d.id}" data-next-stage="closed"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-right:5px;vertical-align:-2px"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M10 14.66V17c0 .55-.45 1-1 1H7c-.55 0-1 .45-1 1v1h12v-1c0-.55-.45-1-1-1h-2c-.55 0-1-.45-1-1v-2.34"></path><path d="M18 4H6v7a6 6 0 0 0 12 0V4z"></path></svg>დახურვა & საკომისიო</button>`;
     }
 
     return `
@@ -267,17 +267,17 @@
 
           <label class="field"><span class="field-label">ეტაპი (Stage)</span>
             <select name="stage">
-              <option value="active" ${v.stage === 'active' ? 'selected' : ''}>📋 აქტიური დაინტერესება</option>
-              <option value="viewing" ${v.stage === 'viewing' ? 'selected' : ''}>📅 ნახვა დანიშნულია</option>
-              <option value="deposit" ${v.stage === 'deposit' ? 'selected' : ''}>💵 დეპოზიტი შეტანილია</option>
-              <option value="closed" ${v.stage === 'closed' ? 'selected' : ''}>🏆 დახურული (წარმატებული)</option>
-              <option value="lost" ${v.stage === 'lost' ? 'selected' : ''}>❌ ჩაშლილი</option>
+              <option value="active" ${v.stage === 'active' ? 'selected' : ''}>აქტიური დაინტერესება</option>
+              <option value="viewing" ${v.stage === 'viewing' ? 'selected' : ''}>ნახვა დანიშნულია</option>
+              <option value="deposit" ${v.stage === 'deposit' ? 'selected' : ''}>დეპოზიტი შეტანილია</option>
+              <option value="closed" ${v.stage === 'closed' ? 'selected' : ''}>დახურული (წარმატებული)</option>
+              <option value="lost" ${v.stage === 'lost' ? 'selected' : ''}>ჩაშლილი</option>
             </select>
           </label>
 
           <!-- Commission Calculator Section -->
           <div class="form-section span-2" style="background:var(--surface-2);padding:14px;border-radius:var(--r);border:1px solid var(--line)">
-            <div class="form-section-title" style="margin-bottom:10px;font-weight:700">💰 საკომისიო და ბონუსის კალკულატორი</div>
+            <div class="form-section-title" style="margin-bottom:10px;font-weight:700;display:flex;align-items:center;gap:6px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg> საკომისიო და ბონუსის კალკულატორი</div>
             <div class="form-grid">
               <label class="field"><span class="field-label">საკომისიო (%)</span><input type="number" id="deal-comm-pct" name="commission_percent" min="0" max="100" step="5" value="${esc(v.commission_percent ?? 50)}" /><span class="field-hint">სტანდარტული: 50% (1-ლი თვე)</span></label>
               <label class="field"><span class="field-label">მესაკუთრის ბონუსი ($/₾)</span><input type="number" id="deal-bonus" name="owner_bonus" min="0" step="10" value="${esc(v.owner_bonus || 0)}" /><span class="field-hint">დამატებითი ბონუსი მესაკუთრისგან</span></label>
@@ -400,7 +400,7 @@
     const cities = [...new Set(apts.map(a => a.city).filter(Boolean))];
 
     return R.dialog({
-      title: '🎯 კლიენტის მატჩმეიკერი (Client Matchmaker)',
+      title: 'კლიენტის მატჩმეიკერი (Client Matchmaker)',
       wide: true,
       submitLabel: 'დახურვა',
       body: `
@@ -426,7 +426,7 @@
             <label class="field"><span class="field-label">შინაური ცხოველები</span>
               <select id="mm-pets">
                 <option value="">სულერთია</option>
-                <option value="1">🐾 მხოლოდ Pet Friendly</option>
+                <option value="1">მხოლოდ Pet Friendly</option>
               </select>
             </label>
           </div>
@@ -472,7 +472,7 @@
                   <span style="font-size:12.5px;color:var(--muted)">
                     ${esc([a.city, a.district, a.address].filter(Boolean).join(', '))} · 
                     ${a.rooms || 2} ოთახი · 
-                    ${a.pets_allowed ? '🐾 Pet Friendly' : 'ცხოველების გარეშე'}
+                    ${a.pets_allowed ? '<span style="display:inline-flex;align-items:center;gap:3px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="15" r="3"/><circle cx="6" cy="11" r="2"/><circle cx="10" cy="6" r="2"/><circle cx="14" cy="6" r="2"/><circle cx="18" cy="11" r="2"/></svg> Pet Friendly</span>' : 'ცხოველების გარეშე'}
                   </span>
                 </div>
                 <div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
@@ -500,8 +500,8 @@
         };
 
         ['mm-city', 'mm-price', 'mm-rooms', 'mm-pets'].forEach(id => {
-          $(`#${id}`, form).addEventListener('input', updateList);
-          $(`#${id}`, form).addEventListener('change', updateList);
+          $(`#${id}`, form)?.addEventListener('input', updateList);
+          $(`#${id}`, form)?.addEventListener('change', updateList);
         });
 
         updateList();
@@ -578,14 +578,14 @@ ${publicUrl}
 თუ მოგეწონებათ, შემიძლია ნახვა დაგიჯავშნოთ!`;
 
     return R.dialog({
-      title: '📱 WhatsApp & FB პოსტის გენერატორი',
+      title: 'WhatsApp & FB პოსტის გენერატორი',
       wide: true,
       submitLabel: 'დახურვა',
       body: `
         <div style="margin-bottom:14px;display:flex;gap:8px;flex-wrap:wrap">
-          <button type="button" class="btn btn-secondary btn-sm" id="gen-tab-ka" style="font-weight:700">🇬🇪 ქართული პოსტი (FB/Telegram)</button>
-          <button type="button" class="btn btn-ghost btn-sm" id="gen-tab-en">🇬🇧 English Post (Expats)</button>
-          <button type="button" class="btn btn-ghost btn-sm" id="gen-tab-wa">💬 WhatsApp Direct კლიენტისთვის</button>
+          <button type="button" class="btn btn-secondary btn-sm" id="gen-tab-ka" style="font-weight:700">ქართული პოსტი (FB/Telegram)</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="gen-tab-en">English Post (Expats)</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="gen-tab-wa" style="display:inline-flex;align-items:center;gap:4px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>WhatsApp Direct კლიენტისთვის</button>
         </div>
 
         <div style="position:relative">
@@ -597,8 +597,8 @@ ${publicUrl}
             <button type="button" class="btn btn-primary" id="btn-copy-post">
               ${icon('copy', 16)} ტექსტის კოპირება
             </button>
-            <button type="button" class="btn btn-secondary" id="btn-copy-wl">
-              🛡️ White-Label ბმულის კოპირება
+            <button type="button" class="btn btn-secondary" id="btn-copy-wl" style="display:inline-flex;align-items:center;gap:5px">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg> White-Label ბმულის კოპირება
             </button>
           </div>
           <a class="btn btn-ghost" href="${publicUrl}" target="_blank">
@@ -656,7 +656,7 @@ ${publicUrl}
     const endDateStr = R.date(oneYearLater, { withYear: true });
 
     return R.dialog({
-      title: '📄 საიჯარო ხელშეკრულება (Lease Agreement Generator)',
+      title: 'საიჯარო ხელშეკრულება (Lease Agreement Generator)',
       wide: true,
       submitLabel: 'დახურვა',
       body: `

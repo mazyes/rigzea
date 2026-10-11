@@ -249,14 +249,17 @@
         </div>
       </div>`;
 
-    $('#a-task').onclick = () => App.openTaskForm({ apartmentId: id });
-    $('#a-exp').onclick = () => App.openExpenseForm({ apartmentId: id });
-    $('#a-res').onclick = $('#a-res2').onclick = () => openReservationForm({ apartmentId: id });
-    $('#a-edit').onclick = () => openApartmentForm(a);
+    $('#a-task')?.addEventListener('click', () => App.openTaskForm({ apartmentId: id }));
+    $('#a-exp')?.addEventListener('click', () => App.openExpenseForm({ apartmentId: id }));
+    const onRes = () => openReservationForm({ apartmentId: id });
+    $('#a-res')?.addEventListener('click', onRes);
+    $('#a-res2')?.addEventListener('click', onRes);
+    $('#a-edit')?.addEventListener('click', () => openApartmentForm(a));
     $('#a-set-owner')?.addEventListener('click', () => openApartmentForm(a));
     $('#a-approval')?.addEventListener('click', () => App.openApprovalForm({ apartmentId: id }));
-    $('#a-period').onchange = (e) => { aptPeriod[id] = e.target.value; App.render(); };
-    $('#a-all-tasks').onclick = (e) => { e.preventDefault(); App.setTaskFilter({ apt: id, status: 'all' }); App.go('#/tasks'); };
+    const aPeriod = $('#a-period');
+    if (aPeriod) aPeriod.onchange = (e) => { aptPeriod[id] = e.target.value; App.render(); };
+    $('#a-all-tasks')?.addEventListener('click', (e) => { e.preventDefault(); App.setTaskFilter({ apt: id, status: 'all' }); App.go('#/tasks'); });
     
     // Marketing Showcase & Deals Bindings
     $('#btn-share-renter')?.addEventListener('click', () => App.copyRenterLink(id, false));

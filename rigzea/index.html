@@ -16,10 +16,23 @@
   
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='9' fill='%230a5c44'/%3E%3Cpath d='M10 12h20M10 20h15M10 28h20' stroke='%2300f59b' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E" />
   
+  <!-- High-Performance Typography: Noto Sans Georgian & Plus Jakarta Sans CDN -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
   <!-- Luxury Emerald Design System Stylesheet -->
   <link rel="stylesheet" href="landing-luxury.css" />
 </head>
 <body class="luxury-theme">
+
+  <!-- Hardware-Accelerated Ambient Backdrop (Parallax Orbs & Grid) -->
+  <div class="lx-ambient-canvas" aria-hidden="true">
+    <div class="lx-ambient-orb lx-orb-primary"></div>
+    <div class="lx-ambient-orb lx-orb-secondary"></div>
+    <div class="lx-ambient-orb lx-orb-tertiary"></div>
+    <div class="lx-ambient-grid"></div>
+  </div>
 
   <div class="luxury-layout">
     <!-- 1. Luxury Glass Header -->
@@ -46,7 +59,7 @@
         <div class="lx-header-actions">
           <a class="lx-btn lx-btn-secondary lx-btn-sm" href="/app/">შესვლა</a>
           <a class="lx-btn lx-btn-primary lx-btn-sm" href="/app/">დაიწყე 0 ₾ ↗</a>
-          <button class="lx-mobile-toggle" aria-label="მენიუს გახსნა">☰</button>
+          <button class="lx-mobile-toggle" aria-label="მენიუს გახსნა"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></button>
         </div>
       </div>
     </header>
@@ -61,7 +74,7 @@
             <div>
               <div class="lx-badge">
                 <span class="lx-badge-dot"></span>
-                <span>⚡ შექმნილია თბილისელი და ბათუმელი აგენტებისთვის</span>
+                <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-2px;margin-right:4px"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>შექმნილია თბილისელი და ბათუმელი აგენტებისთვის</span>
               </div>
             </div>
 
@@ -79,7 +92,7 @@
             <!-- CTA Actions -->
             <div class="lx-hero-actions">
               <a class="lx-btn lx-btn-primary" href="/app/">დაიწყე უფასოდ — 0 ₾ ↗</a>
-              <a class="lx-btn lx-btn-secondary" href="#features">ნახე დემო ბმული (/p/) ⚡</a>
+              <a class="lx-btn lx-btn-secondary" href="#features">ნახე დემო ბმული (/p/) <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-2px;margin-left:4px"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg></a>
             </div>
 
             <!-- Social Proof -->
@@ -92,7 +105,7 @@
                 <span>+450</span>
               </div>
               <div class="lx-social-proof-text">
-                🔥 <strong>450+ აქტიური აგენტი</strong> თბილისსა და ბათუმში უკვე იყენებს Rigzea-ს
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#00f59b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:4px"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg><strong>450+ აქტიური აგენტი</strong> თბილისსა და ბათუმში უკვე იყენებს Rigzea-ს
               </div>
             </div>
           </div>
@@ -125,7 +138,7 @@
                   <div class="lx-phone-details">
                     <div class="lx-phone-title-row">
                       <span class="lx-phone-title">ვაკე · ჭავჭავაძის გამზ. #42</span>
-                      <span class="lx-mint-text" style="font-size:12px;font-weight:700">★ ექსკლუზივი</span>
+                      <span class="lx-mint-text" style="font-size:12px;font-weight:700;display:inline-flex;align-items:center;gap:4px"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>ექსკლუზივი</span>
                     </div>
                     <div class="lx-phone-loc">თბილისი · ვაკის პარკთან · ახალაშენებული</div>
 
@@ -134,15 +147,15 @@
                       <span class="lx-phone-chip">2 ოთახი</span>
                       <span class="lx-phone-chip">1 საძინებელი</span>
                       <span class="lx-phone-chip">ცენტრ. გათბობა</span>
-                      <span class="lx-phone-chip">ცხოველები: კი 🐾</span>
+                      <span class="lx-phone-chip">ცხოველები: კი <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px;margin-left:3px"><path d="M12 5c.67 0 1.2.53 1.2 1.2v.6a1.2 1.2 0 1 1-2.4 0v-.6C10.8 5.53 11.33 5 12 5zm-4 3c.67 0 1.2.53 1.2 1.2v.6a1.2 1.2 0 1 1-2.4 0v-.6C6.8 8.53 7.33 8 8 8zm8 0c.67 0 1.2.53 1.2 1.2v.6a1.2 1.2 0 1 1-2.4 0v-.6c0-.67.53-1.2 1.2-1.2zm-4 5.5c2.2 0 4 1.8 4 4 0 1.1-.9 2-2 2h-4c-1.1 0-2-.9-2-2 0-2.2 1.8-4 4-4z"/></svg></span>
                     </div>
 
                     <div class="lx-phone-cta-bar">
                       <a class="lx-phone-action-btn lx-btn-wa" href="https://wa.me/" target="_blank" rel="noopener">
-                        <span>💬 WhatsApp</span>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px;margin-right:2px"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg><span>WhatsApp</span>
                       </a>
                       <a class="lx-phone-action-btn lx-btn-call" href="tel:+995599000000">
-                        <span>📞 დარეკვა</span>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px;margin-right:2px"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg><span>დარეკვა</span>
                       </a>
                     </div>
                   </div>
@@ -150,7 +163,7 @@
 
                 <!-- Phone Content: Agent View (Hidden by default, toggled via pills) -->
                 <div class="lx-phone-content" id="phone-agent-view" style="display:none;padding:14px 10px">
-                  <div style="font-size:12px;color:var(--lx-mint-neon);font-weight:700;margin-bottom:10px">● რეალურ დროში ანალიტიკა</div>
+                  <div style="font-size:12px;color:var(--lx-mint-neon);font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:6px"><span class="lx-badge-dot" style="position:static"></span>რეალურ დროში ანალიტიკა</div>
                   <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,0.08);margin-bottom:14px">
                     <div>
                       <div style="font-size:12px;color:var(--lx-text-muted)">ბმულის ნახვები</div>
@@ -325,7 +338,7 @@
                   </div>
 
                   <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px">
-                    <span style="font-size:11.5px;color:var(--lx-mint-neon)">✓ მზადაა დასაბეჭდად / PDF ექსპორტისთვის</span>
+                    <span style="font-size:11.5px;color:var(--lx-mint-neon);display:inline-flex;align-items:center;gap:5px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg> მზადაა დასაბეჭდად / PDF ექსპორტისთვის</span>
                     <a class="lx-btn lx-btn-secondary lx-btn-sm" href="/app/">შექმენი ხელშეკრულება ↗</a>
                   </div>
                 </div>
@@ -354,7 +367,7 @@
                       <span>კლიენტის კრიტერიუმები:</span>
                       <span style="color:var(--lx-mint-neon)">აქტიური ძებნა</span>
                     </div>
-                    <div class="lx-match-req-text" id="match-req-text">ვაკე, ჭავჭავაძე · $950-მდე · 2 ოთახი · ძაღლით 🐶</div>
+                    <div class="lx-match-req-text" id="match-req-text">ვაკე, ჭავჭავაძე · $950-მდე · 2 ოთახი · ძაღლით</div>
                   </div>
 
                   <div class="lx-match-results" id="match-results-container">
@@ -376,7 +389,7 @@
                   </div>
 
                   <div style="margin-top:auto;padding-top:10px;font-size:11.5px;color:var(--lx-text-muted)">
-                    ⚡ კლიენტს მომენტალურად ეგზავნება ჭკვიანი შეთავაზება 1 კლიკით
+                    <span style="display:inline-flex;align-items:center;gap:5px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>კლიენტს მომენტალურად ეგზავნება ჭკვიანი შეთავაზება 1 კლიკით</span>
                   </div>
                 </div>
               </div>
@@ -394,7 +407,7 @@
 
                 <div class="lx-bento-preview-stage">
                   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-                    <span style="font-size:11.5px;color:var(--lx-mint-neon);font-weight:600">🔗 rigzea.ge/p/selection-mariam</span>
+                    <span class="lx-badge" style="font-size:11px;padding:3px 10px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display:inline-block;vertical-align:-1px;margin-right:3px"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>rigzea.ge/p/selection-mariam</span>
                     <span style="font-size:11px;color:var(--lx-text-muted)">3 ბინა შერჩეული</span>
                   </div>
 
@@ -402,7 +415,9 @@
                     <!-- Option 1 -->
                     <div class="lx-pitch-card-mini">
                       <div>
-                        <div class="lx-pitch-mini-img">🏢</div>
+                        <div class="lx-pitch-mini-img">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00f59b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v8h4"/><path d="M18 9h2a2 2 0 0 1 2 2v11h-4"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg>
+                        </div>
                         <div class="lx-pitch-mini-title">ვაკე Loft #42</div>
                         <div style="font-size:12px;color:var(--lx-text-muted)">85 მ² · 2 ოთახი</div>
                       </div>
@@ -412,7 +427,9 @@
                     <!-- Option 2 -->
                     <div class="lx-pitch-card-mini">
                       <div>
-                        <div class="lx-pitch-mini-img">🌿</div>
+                        <div class="lx-pitch-mini-img">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#38ef7d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22v-7"/><path d="M8.5 10c0-3.5 3.5-7 3.5-7s3.5 3.5 3.5 7a3.5 3.5 0 0 1-7 0Z"/><path d="M5 14a4 4 0 0 1 4-4"/><path d="M19 14a4 4 0 0 0-4-4"/></svg>
+                        </div>
                         <div class="lx-pitch-mini-title">ვერა Residence</div>
                         <div style="font-size:12px;color:var(--lx-text-muted)">70 მ² · 2 ოთახი</div>
                       </div>
@@ -422,7 +439,9 @@
                     <!-- Option 3 -->
                     <div class="lx-pitch-card-mini">
                       <div>
-                        <div class="lx-pitch-mini-img">🏙️</div>
+                        <div class="lx-pitch-mini-img">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00f59b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M8 10h.01"/><path d="M16 10h.01"/><path d="M8 14h.01"/><path d="M16 14h.01"/></svg>
+                        </div>
                         <div class="lx-pitch-mini-title">საბურთალო Tower</div>
                         <div style="font-size:12px;color:var(--lx-text-muted)">65 მ² · 2 ოთახი</div>
                       </div>
@@ -451,7 +470,9 @@
                 <div class="lx-bento-preview-stage">
                   <div class="lx-pipeline-steps">
                     <div class="lx-pipeline-row">
-                      <div class="lx-pipeline-row-icon">📅</div>
+                      <div class="lx-pipeline-row-icon">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+                      </div>
                       <div style="flex:1">
                         <div style="font-size:12px;font-weight:700;color:#fff">ხელშეკრულება გაფორმდა</div>
                         <div style="font-size:12px;color:var(--lx-text-muted)">ვადა: 12 თვე · მეპატრონე: ნინო ქ.</div>
@@ -460,7 +481,9 @@
                     </div>
 
                     <div class="lx-pipeline-row alert">
-                      <div class="lx-pipeline-row-icon" style="color:var(--lx-mint-neon)">🔔</div>
+                      <div class="lx-pipeline-row-icon" style="color:var(--lx-mint-neon)">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00f59b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+                      </div>
                       <div style="flex:1">
                         <div style="font-size:12px;font-weight:700;color:var(--lx-mint-neon)">30 დღით ადრე შეხსენება</div>
                         <div style="font-size:12px;color:var(--lx-text-silver)">ავტომატური Telegram გაფრთხილება აგენტს</div>
@@ -469,7 +492,9 @@
                     </div>
 
                     <div class="lx-pipeline-row">
-                      <div class="lx-pipeline-row-icon">💰</div>
+                      <div class="lx-pipeline-row-icon">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00f59b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="12" x="2" y="6" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg>
+                      </div>
                       <div style="flex:1">
                         <div style="font-size:12px;font-weight:700;color:#fff">ხელშეკრულების გაგრძელება / ახალი ქირა</div>
                         <div style="font-size:12px;color:var(--lx-text-muted)">ახალი 50%-იანი საკომისიოს დაფიქსირება</div>
@@ -503,62 +528,64 @@
             <!-- Old Way -->
             <div class="lx-card-old-way">
               <div class="lx-comparison-title-box">
-                <span class="lx-tag-old">ძველი მეთოდი</span>
+                <span class="lx-tag-old"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg> ძველი მეთოდი</span>
                 <h3>როგორ მუშაობდი აქამდე</h3>
               </div>
 
               <ul class="lx-points-list">
                 <li>
-                  <span class="lx-point-icon-red">✕</span>
+                  <span class="lx-point-icon-red"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></span>
                   <span>WhatsApp-სა და Viber-ში 40 დაბალი ხარისხის ფოტოს ჩაყრა, რაც კლიენტის მობილურს ჭედავს.</span>
                 </li>
                 <li>
-                  <span class="lx-point-icon-red">✕</span>
+                  <span class="lx-point-icon-red"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></span>
                   <span>მდგმურის მესიჯები: „რომელი სართულია? პარკინგი აქვს? კომუნალურები შედის?“ — ათჯერ გამეორება.</span>
                 </li>
                 <li>
-                  <span class="lx-point-icon-red">✕</span>
+                  <span class="lx-point-icon-red"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></span>
                   <span>ტელეფონის გადავსებული მეხსიერება და ჩატებში ჩაკარგული ლოკაციები.</span>
                 </li>
                 <li>
-                  <span class="lx-point-icon-red">✕</span>
+                  <span class="lx-point-icon-red"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></span>
                   <span>არაპროფესიონალური იმიჯი — კლიენტი ვერ ხედავს შენს პრემიუმ სტატუსს და ხშირად „იკარგება“.</span>
                 </li>
               </ul>
 
-              <div style="margin-top:auto;padding-top:16px;border-top:1px solid rgba(239,68,68,0.2);font-size:13px;color:var(--lx-red-text)">
-                ⚠️ შედეგი: დაკარგული დრო, გაღიზიანებული კლიენტი და ჩაშლილი გარიგებები.
+              <div style="margin-top:auto;padding-top:16px;border-top:1px solid rgba(239,68,68,0.2);font-size:13px;color:var(--lx-red-text);display:flex;align-items:center;gap:6px">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                <span>შედეგი: დაკარგული დრო, გაღიზიანებული კლიენტი და ჩაშლილი გარიგებები.</span>
               </div>
             </div>
 
             <!-- Rigzea Way -->
             <div class="lx-card-rigzea-way lx-spotlight-card">
               <div class="lx-comparison-title-box">
-                <span class="lx-tag-rigzea">Rigzea-ს სტანდარტი</span>
+                <span class="lx-tag-rigzea"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg> Rigzea-ს სტანდარტი</span>
                 <h3>როგორ მუშაობ Rigzea-თი (/p/ ლინკი)</h3>
               </div>
 
               <ul class="lx-points-list">
                 <li>
-                  <span class="lx-point-icon-green">✓</span>
+                  <span class="lx-point-icon-green"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
                   <span>ერთი სუფთა, ელვისებური ბმული (მაგ: <strong>rigzea.ge/p/vake-loft-42</strong>), რომელიც მყისიერად იხსნება.</span>
                 </li>
                 <li>
-                  <span class="lx-point-icon-green">✓</span>
+                  <span class="lx-point-icon-green"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
                   <span>HD გალერეა, ზუსტი ლოკაცია რუკაზე, დეტალური პირობები (დეპოზიტი, ცხოველები, გათბობა).</span>
                 </li>
                 <li>
-                  <span class="lx-point-icon-green">✓</span>
+                  <span class="lx-point-icon-green"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
                   <span>შენი პირადი საკონტაქტო ბარათი: 1-Click WhatsApp & Call პირდაპირ ჭკვიანი ბმულიდან.</span>
                 </li>
                 <li>
-                  <span class="lx-point-icon-green">✓</span>
+                  <span class="lx-point-icon-green"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
                   <span>ნულოვანი ბარიერი მდგმურისთვის — არანაირი რეგისტრაცია, იხსნება ნებისმიერ ტელეფონზე.</span>
                 </li>
               </ul>
 
-              <div style="margin-top:auto;padding-top:16px;border-top:1px solid rgba(0,245,155,0.25);font-size:13px;color:var(--lx-mint-neon);font-weight:600">
-                ⚡ შედეგი: 3-ჯერ უფრო სწრაფად დახურული გარიგება და 100% პროფესიონალური იმიჯი.
+              <div style="margin-top:auto;padding-top:16px;border-top:1px solid rgba(0,245,155,0.25);font-size:13px;color:var(--lx-mint-neon);font-weight:600;display:flex;align-items:center;gap:6px">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                <span>შედეგი: 3-ჯერ უფრო სწრაფად დახურული გარიგება და 100% პროფესიონალური იმიჯი.</span>
               </div>
             </div>
           </div>
@@ -639,8 +666,9 @@
                 </div>
               </div>
 
-              <div style="padding-top:12px;border-top:1px solid rgba(255,255,255,0.08);font-size:12px;color:var(--lx-text-silver);line-height:1.5">
-                💡 32 საათის დაზოგვა გაძლევს საშუალებას, თვეში მინიმუმ <strong>2 დამატებითი გარიგება</strong> დახურო.
+              <div style="padding-top:12px;border-top:1px solid rgba(255,255,255,0.08);font-size:12px;color:var(--lx-text-silver);line-height:1.5;display:flex;align-items:center;gap:6px">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#00f59b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
+                <span>32 საათის დაზოგვა გაძლევს საშუალებას, თვეში მინიმუმ <strong>2 დამატებითი გარიგება</strong> დახურო.</span>
               </div>
             </div>
 
@@ -680,11 +708,11 @@
               </div>
 
               <ul class="lx-features-list">
-                <li><span class="lx-check-icon">✓</span> 10 აქტიური ობიექტი</li>
-                <li><span class="lx-check-icon">✓</span> ულიმიტო ჭკვიანი ბმულები (/p/)</li>
-                <li><span class="lx-check-icon">✓</span> ძირითადი WhatsApp გაზიარება</li>
-                <li><span class="lx-check-icon">✓</span> 1-Click Facebook პოსტის გენერატორი</li>
-                <li><span class="lx-check-icon">✓</span> საკომისიოს საბაზისო კალკულატორი</li>
+                <li><span class="lx-check-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span> 10 აქტიური ობიექტი</li>
+                <li><span class="lx-check-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span> ულიმიტო ჭკვიანი ბმულები (/p/)</li>
+                <li><span class="lx-check-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span> ძირითადი WhatsApp გაზიარება</li>
+                <li><span class="lx-check-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span> 1-Click Facebook პოსტის გენერატორი</li>
+                <li><span class="lx-check-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span> საკომისიოს საბაზისო კალკულატორი</li>
               </ul>
 
               <a class="lx-btn lx-btn-secondary" href="/app/">დაიწყე 0 ₾-ად ↗</a>
@@ -703,13 +731,13 @@
               </div>
 
               <ul class="lx-features-list">
-                <li><span class="lx-check-icon">✓</span> 50 აქტიური ობიექტი</li>
-                <li><span class="lx-check-icon">✓</span> ყველაფერი Starter-იდან</li>
-                <li><span class="lx-check-icon">✓</span> 1-Click ორენოვანი (KA/EN) ხელშეკრულებები</li>
-                <li><span class="lx-check-icon">✓</span> Client Matchmaker (ავტომატური მეჩინგი)</li>
-                <li><span class="lx-check-icon">✓</span> Lease Expiry შეხსენებები Telegram/SMS</li>
-                <li><span class="lx-check-icon">✓</span> პირადი ბრენდირებული პროფილი & ლოგო</li>
-                <li><span class="lx-check-icon">✓</span> 50/50 Co-Brokering აღრიცხვა</li>
+                <li><span class="lx-check-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span> 50 აქტიური ობიექტი</li>
+                <li><span class="lx-check-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span> ყველაფერი Starter-იდან</li>
+                <li><span class="lx-check-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span> 1-Click ორენოვანი (KA/EN) ხელშეკრულებები</li>
+                <li><span class="lx-check-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span> Client Matchmaker (ავტომატური მეჩინგი)</li>
+                <li><span class="lx-check-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span> Lease Expiry შეხსენებები Telegram/SMS</li>
+                <li><span class="lx-check-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span> პირადი ბრენდირებული პროფილი & ლოგო</li>
+                <li><span class="lx-check-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span> 50/50 Co-Brokering აღრიცხვა</li>
               </ul>
 
               <a class="lx-btn lx-btn-primary" href="/app/">გააქტიურე Pro ↗</a>
@@ -727,13 +755,13 @@
               </div>
 
               <ul class="lx-features-list">
-                <li><span class="lx-check-icon">✓</span> 150 აქტიური ობიექტი</li>
-                <li><span class="lx-check-icon">✓</span> ყველაფერი Pro-დან</li>
-                <li><span class="lx-check-icon">✓</span> Multi-Property Pitch (მრავალობიექტიანი)</li>
-                <li><span class="lx-check-icon">✓</span> 3 სამუშაო ადგილი (Sub-accounts)</li>
-                <li><span class="lx-check-icon">✓</span> მოწინავე საკომისიოების ანალიტიკა</li>
-                <li><span class="lx-check-icon">✓</span> პრიორიტეტული მხარდაჭერა 24/7</li>
-                <li><span class="lx-check-icon">✓</span> მონაცემების ექსპორტი Excel/PDF</li>
+                <li><span class="lx-check-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span> 150 აქტიური ობიექტი</li>
+                <li><span class="lx-check-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span> ყველაფერი Pro-დან</li>
+                <li><span class="lx-check-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span> Multi-Property Pitch (მრავალობიექტიანი)</li>
+                <li><span class="lx-check-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span> 3 სამუშაო ადგილი (Sub-accounts)</li>
+                <li><span class="lx-check-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span> მოწინავე საკომისიოების ანალიტიკა</li>
+                <li><span class="lx-check-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span> პრიორიტეტული მხარდაჭერა 24/7</li>
+                <li><span class="lx-check-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span> მონაცემების ექსპორტი Excel/PDF</li>
               </ul>
 
               <a class="lx-btn lx-btn-secondary" href="/app/">გახდი ტოპ აგენტი ↗</a>
@@ -751,12 +779,12 @@
               </div>
 
               <ul class="lx-features-list">
-                <li><span class="lx-check-icon">✓</span> ულიმიტო აქტიური ობიექტები</li>
-                <li><span class="lx-check-icon">✓</span> 10+ აგენტის სამუშაო ადგილი & როლები</li>
-                <li><span class="lx-check-icon">✓</span> სააგენტოს შიდა საერთო ბაზა</li>
-                <li><span class="lx-check-icon">✓</span> სრული White-label ლინკები</li>
-                <li><span class="lx-check-icon">✓</span> გუნდური KPI და გაყიდვების რეპორტინგი</li>
-                <li><span class="lx-check-icon">✓</span> პერსონალური მენეჯერი & ტრენინგი</li>
+                <li><span class="lx-check-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span> ულიმიტო აქტიური ობიექტები</li>
+                <li><span class="lx-check-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span> 10+ აგენტის სამუშაო ადგილი & როლები</li>
+                <li><span class="lx-check-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span> სააგენტოს შიდა საერთო ბაზა</li>
+                <li><span class="lx-check-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span> სრული White-label ლინკები</li>
+                <li><span class="lx-check-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span> გუნდური KPI და გაყიდვების რეპორტინგი</li>
+                <li><span class="lx-check-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span> პერსონალური მენეჯერი & ტრენინგი</li>
               </ul>
 
               <a class="lx-btn lx-btn-secondary" href="/app/">სააგენტოს პაკეტი ↗</a>
@@ -815,6 +843,11 @@
       </div>
     </footer>
   </div>
+
+  <!-- Luxury Motion Stack: Lenis Smooth Scroll + GSAP 3.12 + ScrollTrigger -->
+  <script src="https://unpkg.com/lenis@1.1.18/dist/lenis.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
 
   <!-- Luxury Motion & Interaction Scripts -->
   <script src="landing-luxury.js" defer></script>

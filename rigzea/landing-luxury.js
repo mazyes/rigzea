@@ -1,38 +1,143 @@
 /**
  * RIGZEA 3.0 — LUXURY MOTION & INTERACTION ENGINE
- * 60fps Hardware-Accelerated Scroll Choreography, Bento Motion, & Reactive UI
- * Inspired by scroll-world and Apple product showcases
+ * Elite Creative-Technologist Motion Suite
+ * Lenis Smooth Scroll + GSAP 3.12 + ScrollTrigger Architecture
+ * 
+ * Features:
+ * 1. Lenis 1.1 + GSAP ScrollTrigger Integration with Hardware rAF Synced Ticker
+ * 2. Magnetic Button Physics with 2.5D Multilayer Depth (.lx-btn-primary, .lx-btn-secondary)
+ * 3. Dynamic 3D Perspective Card Tilt on Bento Cards, Pricing Cards, and Phone Mockup
+ * 4. Specular Diamond Glass Shine Ray Sweep on Hover
+ * 5. Interactive Cursor Ripple & Animated SVG Checkmark on Copy CTAs
+ * 6. Fluid Numeric Odometer / Count-Up Spring Ticker on ROI Calculator
+ * 7. Hardware-Accelerated Ambient Mesh & Glow Orbs Parallax on Scroll
+ * 8. Horizontal Bento Showcase 60fps LERP Scrubber & Mobile Momentum Tracking
+ * 9. Respects @media (prefers-reduced-motion) and Coarse Pointer Detection
  */
 
 (() => {
   'use strict';
 
-  // System capability & accessibility detection
+  // =========================================================================
+  // 0. CAPABILITY & ACCESSIBILITY DETECTION
+  // =========================================================================
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const isCoarse = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
 
   // =========================================================================
-  // 1. UNIFIED 60FPS LERP SCROLL SCRUBBER & HEADER CHOREOGRAPHY
+  // 1. LENIS SMOOTH SCROLL + GSAP SCROLLTRIGGER ENGINE
+  // =========================================================================
+  let lenis = null;
+
+  if (typeof window.Lenis !== 'undefined' && !prefersReducedMotion) {
+    try {
+      lenis = new window.Lenis({
+        lerp: 0.08,
+        smoothWheel: true,
+        wheelMultiplier: 0.95
+      });
+
+      if (typeof window.gsap !== 'undefined' && typeof window.ScrollTrigger !== 'undefined') {
+        window.gsap.registerPlugin(window.ScrollTrigger);
+        lenis.on('scroll', window.ScrollTrigger.update);
+        window.gsap.ticker.add((time) => {
+          lenis.raf(time * 1000);
+        });
+        window.gsap.ticker.lagSmoothing(0);
+      } else {
+        const lenisRaf = (time) => {
+          lenis.raf(time);
+          requestAnimationFrame(lenisRaf);
+        };
+        requestAnimationFrame(lenisRaf);
+      }
+    } catch (err) {
+      console.warn('Lenis init fallback:', err);
+    }
+  }
+
+  // =========================================================================
+  // 2. BUTTER-SMOOTH BACKGROUND MESH & AMBIENT ORBS PARALLAX
+  // =========================================================================
+  const orbPrimary = document.querySelector('.lx-orb-primary');
+  const orbSecondary = document.querySelector('.lx-orb-secondary');
+  const orbTertiary = document.querySelector('.lx-orb-tertiary');
+  const ambientGrid = document.querySelector('.lx-ambient-grid');
+
+  let currentScrollY = 0;
+  let targetOrb1Y = 0, currentOrb1Y = 0;
+  let targetOrb2Y = 0, currentOrb2Y = 0;
+  let targetOrb3Y = 0, currentOrb3Y = 0;
+  let targetGridY = 0, currentGridY = 0;
+  let isParallaxTicking = false;
+
+  function renderParallaxFrame() {
+    if (prefersReducedMotion) return;
+
+    currentOrb1Y += (targetOrb1Y - currentOrb1Y) * 0.10;
+    currentOrb2Y += (targetOrb2Y - currentOrb2Y) * 0.10;
+    currentOrb3Y += (targetOrb3Y - currentOrb3Y) * 0.10;
+    currentGridY += (targetGridY - currentGridY) * 0.12;
+
+    if (orbPrimary) {
+      orbPrimary.style.transform = `translate3d(0, ${currentOrb1Y.toFixed(2)}px, 0)`;
+    }
+    if (orbSecondary) {
+      orbSecondary.style.transform = `translate3d(0, ${currentOrb2Y.toFixed(2)}px, 0)`;
+    }
+    if (orbTertiary) {
+      orbTertiary.style.transform = `translate3d(0, ${currentOrb3Y.toFixed(2)}px, 0)`;
+    }
+    if (ambientGrid) {
+      ambientGrid.style.transform = `translate3d(0, ${currentGridY.toFixed(2)}px, 0)`;
+    }
+
+    const delta = Math.abs(targetOrb1Y - currentOrb1Y) + Math.abs(targetOrb2Y - currentOrb2Y);
+    if (delta > 0.05) {
+      requestAnimationFrame(renderParallaxFrame);
+    } else {
+      isParallaxTicking = false;
+    }
+  }
+
+  function updateParallax(y) {
+    if (prefersReducedMotion) return;
+    currentScrollY = y;
+    targetOrb1Y = -y * 0.06;
+    targetOrb2Y = y * 0.08;
+    targetOrb3Y = -y * 0.04;
+    targetGridY = (y * 0.12) % 36;
+
+    if (!isParallaxTicking) {
+      isParallaxTicking = true;
+      requestAnimationFrame(renderParallaxFrame);
+    }
+  }
+
+  // =========================================================================
+  // 3. HEADER SCROLL & MOBILE DRAWER NAVIGATION
   // =========================================================================
   const header = document.querySelector('.lx-header');
   const mobileToggle = document.querySelector('.lx-mobile-toggle');
   const navLinks = document.querySelector('.lx-nav-links');
-
   let headerScrolled = false;
 
   function updateHeader(y) {
     if (!header) return;
-    const shouldScroll = y > 40;
+    const shouldScroll = y > 35;
     if (shouldScroll !== headerScrolled) {
       headerScrolled = shouldScroll;
       header.classList.toggle('scrolled', shouldScroll);
     }
   }
 
+  const ICON_MENU = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>';
+  const ICON_CLOSE = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
+
   if (mobileToggle && navLinks) {
     mobileToggle.addEventListener('click', () => {
       const isOpen = navLinks.classList.toggle('open');
-      mobileToggle.textContent = isOpen ? '✕' : '☰';
+      mobileToggle.innerHTML = isOpen ? ICON_CLOSE : ICON_MENU;
       mobileToggle.setAttribute('aria-expanded', String(isOpen));
     });
 
@@ -40,7 +145,7 @@
       link.addEventListener('click', () => {
         navLinks.classList.remove('open');
         if (mobileToggle) {
-          mobileToggle.textContent = '☰';
+          mobileToggle.innerHTML = ICON_MENU;
           mobileToggle.setAttribute('aria-expanded', 'false');
         }
       });
@@ -48,11 +153,11 @@
   }
 
   // =========================================================================
-  // 2. RADIAL MOUSE SPOTLIGHT (PERFORMANCE-TUNED WITH rAF THROTTLE)
+  // 4. RADIAL MOUSE SPOTLIGHT (HARDWARE-ACCELERATED VIA rAF THROTTLE)
   // =========================================================================
-  const cards = document.querySelectorAll('.lx-spotlight-card, .lx-bento-card, .lx-pricing-card, .lx-card-rigzea-way');
+  const spotlightCards = document.querySelectorAll('.lx-spotlight-card, .lx-bento-card, .lx-pricing-card, .lx-card-rigzea-way');
 
-  cards.forEach(card => {
+  spotlightCards.forEach(card => {
     let rect = null;
     let rAFId = null;
 
@@ -86,8 +191,403 @@
   });
 
   // =========================================================================
-  // 3. HORIZONTAL PIN-SCROLL CHOREOGRAPHY (BENTO SHOWCASE)
-  //    60fps LERP Scrubber with linear interpolation & smooth camera gliding
+  // 5. GLASS SHINE RAY SWEEP EFFECT ON CARDS
+  // =========================================================================
+  spotlightCards.forEach(card => {
+    if (!card.querySelector('.lx-glass-shine')) {
+      const shine = document.createElement('div');
+      shine.className = 'lx-glass-shine';
+      shine.setAttribute('aria-hidden', 'true');
+      card.appendChild(shine);
+    }
+  });
+
+  // =========================================================================
+  // 6. MAGNETIC BUTTON PHYSICS (.lx-btn-primary, .lx-btn-secondary)
+  // =========================================================================
+  if (!prefersReducedMotion && !isCoarse) {
+    const magneticButtons = document.querySelectorAll('.lx-btn-primary, .lx-btn-secondary');
+
+    magneticButtons.forEach(btn => {
+      let rect = null;
+      let targetX = 0, targetY = 0;
+      let currX = 0, currY = 0;
+      let isHovered = false;
+      let animId = null;
+      const isPrimary = btn.classList.contains('lx-btn-primary');
+      const pullFactor = isPrimary ? 0.30 : 0.22;
+      const maxDist = 14;
+
+      const innerElements = btn.querySelectorAll(':scope > *');
+
+      function updateMagnetic() {
+        currX += (targetX - currX) * 0.18;
+        currY += (targetY - currY) * 0.18;
+
+        btn.style.transform = `translate3d(${currX.toFixed(2)}px, ${currY.toFixed(2)}px, 0)`;
+
+        if (innerElements.length) {
+          const innerX = (currX * 0.28).toFixed(2);
+          const innerY = (currY * 0.28).toFixed(2);
+          innerElements.forEach(el => {
+            el.style.transform = `translate3d(${innerX}px, ${innerY}px, 0)`;
+          });
+        }
+
+        const delta = Math.abs(targetX - currX) + Math.abs(targetY - currY);
+        if (isHovered || delta > 0.04) {
+          animId = requestAnimationFrame(updateMagnetic);
+        } else {
+          currX = 0;
+          currY = 0;
+          btn.style.transform = '';
+          innerElements.forEach(el => { el.style.transform = ''; });
+          animId = null;
+        }
+      }
+
+      btn.addEventListener('pointerenter', () => {
+        rect = btn.getBoundingClientRect();
+        isHovered = true;
+        if (!animId) animId = requestAnimationFrame(updateMagnetic);
+      });
+
+      btn.addEventListener('pointermove', (e) => {
+        if (!rect) rect = btn.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        const dx = (e.clientX - centerX) * pullFactor;
+        const dy = (e.clientY - centerY) * pullFactor;
+
+        targetX = Math.max(-maxDist, Math.min(maxDist, dx));
+        targetY = Math.max(-maxDist, Math.min(maxDist, dy));
+
+        if (!animId) animId = requestAnimationFrame(updateMagnetic);
+      });
+
+      btn.addEventListener('pointerleave', () => {
+        isHovered = false;
+        targetX = 0;
+        targetY = 0;
+        rect = null;
+      });
+    });
+  }
+
+  // =========================================================================
+  // 7. DYNAMIC 3D CARD TILT ON HOVER (BENTO CARDS & PHONE MOCKUP)
+  //    Aceternity 3D Perspective + Smooth LERP Physics Reset
+  // =========================================================================
+  if (!prefersReducedMotion && !isCoarse) {
+    // 7A. Hero Phone Mockup 3D Tilt
+    const phone = document.querySelector('.lx-phone-mockup');
+    const phoneContainer = document.querySelector('#hero-phone-container') || phone;
+
+    if (phone) {
+      const restRotX = 4.0;
+      const restRotY = -5.0;
+      const restTransY = 0;
+
+      let targetRotX = restRotX;
+      let targetRotY = restRotY;
+      let targetTransY = restTransY;
+
+      let currRotX = restRotX;
+      let currRotY = restRotY;
+      let currTransY = restTransY;
+
+      let phoneTicking = false;
+      let phoneHovered = false;
+      let phoneRect = null;
+
+      function renderPhoneTilt() {
+        currRotX += (targetRotX - currRotX) * 0.12;
+        currRotY += (targetRotY - currRotY) * 0.12;
+        currTransY += (targetTransY - currTransY) * 0.12;
+
+        phone.style.transform = `perspective(1000px) rotateX(${currRotX.toFixed(2)}deg) rotateY(${currRotY.toFixed(2)}deg) translateY(${currTransY.toFixed(2)}px)`;
+
+        const delta = Math.abs(targetRotX - currRotX) + Math.abs(targetRotY - currRotY) + Math.abs(targetTransY - currTransY);
+        if (phoneHovered || delta > 0.05) {
+          requestAnimationFrame(renderPhoneTilt);
+        } else {
+          currRotX = restRotX;
+          currRotY = restRotY;
+          currTransY = restTransY;
+          phone.style.transform = `perspective(1000px) rotateX(${restRotX}deg) rotateY(${restRotY}deg) translateY(${restTransY}px)`;
+          phoneTicking = false;
+        }
+      }
+
+      function wakePhoneLoop() {
+        if (!phoneTicking) {
+          phoneTicking = true;
+          requestAnimationFrame(renderPhoneTilt);
+        }
+      }
+
+      phoneContainer.addEventListener('pointerenter', () => {
+        phoneRect = phone.getBoundingClientRect();
+        phoneHovered = true;
+        targetTransY = -8;
+        wakePhoneLoop();
+      });
+
+      phoneContainer.addEventListener('pointermove', (e) => {
+        if (!phoneRect) phoneRect = phone.getBoundingClientRect();
+        const normX = (e.clientX - phoneRect.left - phoneRect.width / 2) / (phoneRect.width / 2);
+        const normY = (e.clientY - phoneRect.top - phoneRect.height / 2) / (phoneRect.height / 2);
+
+        targetRotX = -normY * 7.5;
+        targetRotY = normX * 8.5;
+        targetTransY = -8;
+
+        wakePhoneLoop();
+      });
+
+      phoneContainer.addEventListener('pointerleave', () => {
+        phoneHovered = false;
+        phoneRect = null;
+        targetRotX = restRotX;
+        targetRotY = restRotY;
+        targetTransY = restTransY;
+      });
+    }
+
+    // 7B. Bento Feature Cards 3D Perspective Tilt
+    const bentoTiltCards = document.querySelectorAll('.lx-bento-card, .lx-pricing-card, .lx-card-rigzea-way');
+
+    bentoTiltCards.forEach(card => {
+      let rect = null;
+      let targetRotX = 0, targetRotY = 0;
+      let currRotX = 0, currRotY = 0;
+      let isHovered = false;
+      let tiltAnimId = null;
+      const maxTilt = card.classList.contains('lx-bento-card') ? 6.5 : 4.5;
+
+      function updateCardTilt() {
+        currRotX += (targetRotX - currRotX) * 0.12;
+        currRotY += (targetRotY - currRotY) * 0.12;
+
+        const baseScale = card._bentoScale || 1.0;
+        card.style.transform = `perspective(1000px) rotateX(${currRotX.toFixed(2)}deg) rotateY(${currRotY.toFixed(2)}deg) scale(${baseScale})`;
+
+        const delta = Math.abs(targetRotX - currRotX) + Math.abs(targetRotY - currRotY);
+        if (isHovered || delta > 0.04) {
+          tiltAnimId = requestAnimationFrame(updateCardTilt);
+        } else {
+          currRotX = 0;
+          currRotY = 0;
+          card.style.transform = baseScale !== 1.0 ? `scale(${baseScale})` : '';
+          tiltAnimId = null;
+        }
+      }
+
+      card.addEventListener('pointerenter', () => {
+        rect = card.getBoundingClientRect();
+        isHovered = true;
+        if (!tiltAnimId) tiltAnimId = requestAnimationFrame(updateCardTilt);
+      });
+
+      card.addEventListener('pointermove', (e) => {
+        if (!rect) rect = card.getBoundingClientRect();
+        const normX = (e.clientX - rect.left - rect.width / 2) / (rect.width / 2);
+        const normY = (e.clientY - rect.top - rect.height / 2) / (rect.height / 2);
+
+        targetRotX = -normY * maxTilt;
+        targetRotY = normX * maxTilt;
+
+        if (!tiltAnimId) tiltAnimId = requestAnimationFrame(updateCardTilt);
+      });
+
+      card.addEventListener('pointerleave', () => {
+        isHovered = false;
+        targetRotX = 0;
+        targetRotY = 0;
+        rect = null;
+      });
+    });
+  }
+
+  // =========================================================================
+  // 8. INTERACTIVE RIPPLE & ANIMATED SVG CHECKMARK ON COPY CTAS
+  // =========================================================================
+  const copyButtons = document.querySelectorAll('.lx-copy-btn');
+
+  copyButtons.forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      // 8A. Precise Cursor Radiating Ripple
+      const rect = btn.getBoundingClientRect();
+      const rippleX = e.clientX - rect.left;
+      const rippleY = e.clientY - rect.top;
+
+      const ripple = document.createElement('span');
+      ripple.className = 'lx-btn-ripple';
+      ripple.style.left = `${rippleX}px`;
+      ripple.style.top = `${rippleY}px`;
+      btn.appendChild(ripple);
+
+      setTimeout(() => { ripple.remove(); }, 620);
+
+      // 8B. Clipboard Content Copy
+      const targetBox = document.querySelector('#post-preview-box');
+      if (targetBox) {
+        try {
+          if (navigator.clipboard?.writeText) {
+            await navigator.clipboard.writeText(targetBox.textContent);
+          } else {
+            throw new Error('Clipboard API unavailable');
+          }
+        } catch (err) {
+          const ta = document.createElement('textarea');
+          ta.value = targetBox.textContent;
+          ta.style.position = 'fixed';
+          ta.style.opacity = '0';
+          document.body.appendChild(ta);
+          ta.focus();
+          ta.select();
+          try { document.execCommand('copy'); } catch (_) {}
+          ta.remove();
+        }
+      }
+
+      // 8C. Animated Signature Checkmark
+      if (!btn.classList.contains('copied')) {
+        const originalContent = btn.innerHTML;
+        btn.classList.add('copied');
+        btn.innerHTML = `
+          <svg class="lx-check-icon-anim" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#00f59b" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round">
+            <path class="lx-check-path" d="M20 6L9 17l-5-5"></path>
+          </svg>
+          <span>დაკოპირდა!</span>
+        `;
+
+        setTimeout(() => {
+          btn.innerHTML = originalContent;
+          btn.classList.remove('copied');
+        }, 2200);
+      }
+    });
+  });
+
+  // =========================================================================
+  // 9. FLUID NUMERIC ODOMETER / SPRING TICKER ON ROI CALCULATOR
+  // =========================================================================
+  const rentSlider = document.querySelector('#calc-rent');
+  const dealsSlider = document.querySelector('#calc-deals');
+  const splitSelect = document.querySelector('#calc-split');
+
+  const rentVal = document.querySelector('#calc-rent-val');
+  const dealsVal = document.querySelector('#calc-deals-val');
+
+  const monthlyCommUsd = document.querySelector('#calc-result-monthly-usd');
+  const monthlyCommGel = document.querySelector('#calc-result-monthly-gel');
+  const annualCommUsd = document.querySelector('#calc-result-annual-usd');
+  const hoursSaved = document.querySelector('#calc-result-hours');
+  const calcHighlight = document.querySelector('.lx-calc-metric-highlight');
+
+  // State interpolation for numbers
+  const tickerState = {
+    currRent: 800,
+    targetRent: 800,
+    currDeals: 4,
+    targetDeals: 4,
+    currMonthlyUsd: 1600,
+    targetMonthlyUsd: 1600,
+    currMonthlyGel: 4352,
+    targetMonthlyGel: 4352,
+    currAnnualUsd: 19200,
+    targetAnnualUsd: 19200,
+    currHours: 32,
+    targetHours: 32,
+    isTicking: false
+  };
+
+  function stepTicker() {
+    const s = tickerState;
+    const factor = 0.22;
+
+    s.currRent += (s.targetRent - s.currRent) * factor;
+    s.currDeals += (s.targetDeals - s.currDeals) * factor;
+    s.currMonthlyUsd += (s.targetMonthlyUsd - s.currMonthlyUsd) * factor;
+    s.currMonthlyGel += (s.targetMonthlyGel - s.currMonthlyGel) * factor;
+    s.currAnnualUsd += (s.targetAnnualUsd - s.currAnnualUsd) * factor;
+    s.currHours += (s.targetHours - s.currHours) * factor;
+
+    if (rentVal) rentVal.textContent = `$${Math.round(s.currRent).toLocaleString()}`;
+    if (dealsVal) dealsVal.textContent = `${Math.round(s.currDeals)} გარიგება`;
+    if (monthlyCommUsd) monthlyCommUsd.textContent = `$${Math.round(s.currMonthlyUsd).toLocaleString()}`;
+    if (monthlyCommGel) monthlyCommGel.textContent = `~ ₾${Math.round(s.currMonthlyGel).toLocaleString()}`;
+    if (annualCommUsd) annualCommUsd.textContent = `$${Math.round(s.currAnnualUsd).toLocaleString()}`;
+    if (hoursSaved) hoursSaved.textContent = `${Math.round(s.currHours)} საათი`;
+
+    const maxDelta = Math.max(
+      Math.abs(s.targetMonthlyUsd - s.currMonthlyUsd),
+      Math.abs(s.targetAnnualUsd - s.currAnnualUsd),
+      Math.abs(s.targetRent - s.currRent)
+    );
+
+    if (maxDelta > 0.8) {
+      requestAnimationFrame(stepTicker);
+    } else {
+      // Snap to exact
+      s.currRent = s.targetRent;
+      s.currDeals = s.targetDeals;
+      s.currMonthlyUsd = s.targetMonthlyUsd;
+      s.currMonthlyGel = s.targetMonthlyGel;
+      s.currAnnualUsd = s.targetAnnualUsd;
+      s.currHours = s.targetHours;
+
+      if (rentVal) rentVal.textContent = `$${s.targetRent.toLocaleString()}`;
+      if (dealsVal) dealsVal.textContent = `${s.targetDeals} გარიგება`;
+      if (monthlyCommUsd) monthlyCommUsd.textContent = `$${s.targetMonthlyUsd.toLocaleString()}`;
+      if (monthlyCommGel) monthlyCommGel.textContent = `~ ₾${s.targetMonthlyGel.toLocaleString()}`;
+      if (annualCommUsd) annualCommUsd.textContent = `$${s.targetAnnualUsd.toLocaleString()}`;
+      if (hoursSaved) hoursSaved.textContent = `${s.targetHours} საათი`;
+
+      s.isTicking = false;
+      if (calcHighlight) calcHighlight.classList.remove('is-ticking');
+    }
+  }
+
+  function triggerROIChange() {
+    if (!rentSlider || !dealsSlider) return;
+
+    const rent = parseFloat(rentSlider.value);
+    const deals = parseFloat(dealsSlider.value);
+    const splitRate = splitSelect ? parseFloat(splitSelect.value) : 0.50;
+
+    const monthlyTotal = rent * deals * splitRate;
+    const gelRate = 2.72;
+    const monthlyGel = Math.round(monthlyTotal * gelRate);
+    const annualTotal = monthlyTotal * 12;
+    const saved = deals * 8;
+
+    tickerState.targetRent = rent;
+    tickerState.targetDeals = deals;
+    tickerState.targetMonthlyUsd = Math.round(monthlyTotal);
+    tickerState.targetMonthlyGel = monthlyGel;
+    tickerState.targetAnnualUsd = Math.round(annualTotal);
+    tickerState.targetHours = saved;
+
+    if (calcHighlight) calcHighlight.classList.add('is-ticking');
+
+    if (!tickerState.isTicking) {
+      tickerState.isTicking = true;
+      requestAnimationFrame(stepTicker);
+    }
+  }
+
+  rentSlider?.addEventListener('input', triggerROIChange);
+  dealsSlider?.addEventListener('input', triggerROIChange);
+  splitSelect?.addEventListener('change', triggerROIChange);
+
+  // Initialize initial values
+  triggerROIChange();
+
+  // =========================================================================
+  // 10. HORIZONTAL PIN-SCROLL CHOREOGRAPHY (BENTO SHOWCASE)
+  //     60fps LERP Scrubber with linear interpolation & smooth camera gliding
   // =========================================================================
   const pinWrap = document.querySelector('.lx-pin-scroll-wrap');
   const horizontalViewport = document.querySelector('.lx-horizontal-viewport');
@@ -97,14 +597,12 @@
   const bentoCards = document.querySelectorAll('.lx-horizontal-track .lx-bento-card');
   const pinDots = document.querySelectorAll('.lx-pin-dot');
 
-  // Cached layout metrics to avoid layout thrashing during scroll
   let isMobileMode = window.innerWidth <= 900;
   let laidOutW = window.innerWidth;
   let wrapTop = 0;
   let scrollDistance = 0;
   let maxHorizontalScroll = 0;
 
-  // LERP interpolation state
   let targetProgress = 0;
   let currentProgress = 0;
   let currentTranslateX = 0;
@@ -120,11 +618,11 @@
     if (!pinWrap || !horizontalTrack) return;
 
     if (isMobileMode) {
-      // Clear desktop inline transforms on mobile for native momentum scrolling
       horizontalTrack.style.transform = '';
       bentoCards.forEach(c => {
         c.style.transform = '';
         c.style.opacity = '';
+        c._bentoScale = 1.0;
       });
       syncMobileState();
       return;
@@ -140,7 +638,6 @@
     const trackWidth = horizontalTrack.scrollWidth;
     maxHorizontalScroll = Math.max(0, trackWidth - laidOutW + 80);
 
-    // Compute targetProgress from current scroll position
     const pastTop = currentY - wrapTop;
     targetProgress = Math.max(0, Math.min(1, pastTop / scrollDistance));
 
@@ -154,17 +651,14 @@
   function renderScrubFrame(force = false) {
     if (isMobileMode || !horizontalTrack) return;
 
-    // Apply smooth hardware-accelerated glide
     currentTranslateX = currentProgress * maxHorizontalScroll;
     horizontalTrack.style.transform = `translate3d(-${currentTranslateX.toFixed(2)}px, 0, 0)`;
 
-    // Update GPU-accelerated progress bar fill via transform: scaleX
     if (progressBarFill) {
       const scale = 0.2 + currentProgress * 0.8;
       progressBarFill.style.transform = `scaleX(${scale.toFixed(4)})`;
     }
 
-    // Determine nearest active feature (0 to 4)
     const nearest = Math.min(4, Math.max(0, Math.round(currentProgress * 4)));
     if (nearest !== activeStep || force) {
       activeStep = nearest;
@@ -176,21 +670,24 @@
       });
     }
 
-    // Authored focal depth: active feature shines in the center spotlight
     if (!prefersReducedMotion && bentoCards.length) {
       bentoCards.forEach((card, i) => {
         const cardCenterProgress = i / 4;
         const dist = Math.abs(currentProgress - cardCenterProgress);
-        // Normalize focal radius: 1 at dead center, 0 at dist >= 0.28
         const rawFocus = Math.max(0, 1 - dist / 0.28);
         const smoothFocus = rawFocus * rawFocus * (3 - 2 * rawFocus);
 
         const scale = (0.975 + 0.025 * smoothFocus).toFixed(4);
         const opacity = (0.70 + 0.30 * smoothFocus).toFixed(3);
 
-        card.style.transform = `scale(${scale})`;
+        card._bentoScale = parseFloat(scale);
         card.style.opacity = opacity;
         card.classList.toggle('is-active-feature', smoothFocus > 0.65);
+
+        // If card is not actively hovered by 3D tilt, apply scale
+        if (!card.matches(':hover')) {
+          card.style.transform = `scale(${scale})`;
+        }
       });
     }
   }
@@ -221,10 +718,11 @@
     }
   }
 
-  // Unified scroll handler: pure math, zero layout queries
+  // Unified Scroll Listener (Pure Math, 60fps)
   window.addEventListener('scroll', () => {
     const y = window.scrollY || window.pageYOffset;
     updateHeader(y);
+    updateParallax(y);
 
     if (!isMobileMode && scrollDistance > 0) {
       const pastTop = y - wrapTop;
@@ -233,7 +731,19 @@
     }
   }, { passive: true });
 
-  // Mobile momentum scroll synchronization
+  if (lenis) {
+    lenis.on('scroll', (e) => {
+      const y = e.scroll;
+      updateHeader(y);
+      updateParallax(y);
+      if (!isMobileMode && scrollDistance > 0) {
+        const pastTop = y - wrapTop;
+        targetProgress = Math.max(0, Math.min(1, pastTop / scrollDistance));
+        wakeScrubLoop();
+      }
+    });
+  }
+
   function syncMobileState() {
     if (!isMobileMode || !horizontalViewport || !bentoCards.length) return;
 
@@ -273,7 +783,6 @@
     }, { passive: true });
   }
 
-  // Dot navigation buttons (Click to glide on desktop, snap on mobile)
   pinDots.forEach((dot, k) => {
     dot.addEventListener('click', () => {
       if (isMobileMode) {
@@ -287,16 +796,19 @@
       } else {
         if (scrollDistance > 0) {
           const targetY = wrapTop + (k / 4) * scrollDistance;
-          window.scrollTo({
-            top: targetY,
-            behavior: prefersReducedMotion ? 'auto' : 'smooth'
-          });
+          if (lenis) {
+            lenis.scrollTo(targetY, { duration: 1.2 });
+          } else {
+            window.scrollTo({
+              top: targetY,
+              behavior: prefersReducedMotion ? 'auto' : 'smooth'
+            });
+          }
         }
       }
     });
   });
 
-  // Mobile browsers fire resize on address bar slide. Ignore height-only resize on touch.
   function handleResize() {
     if (isCoarse && window.innerWidth === laidOutW) return;
     measureLayout();
@@ -305,12 +817,10 @@
   window.addEventListener('resize', handleResize, { passive: true });
   window.addEventListener('orientationchange', measureLayout);
   window.addEventListener('load', measureLayout);
-
-  // Initial layout measurement
   measureLayout();
 
   // =========================================================================
-  // 4. HERO INTERACTIVE PHONE VIEW TOGGLE (/p/ RENTER LINK)
+  // 11. HERO INTERACTIVE PHONE VIEW TOGGLE (/p/ RENTER LINK)
   // =========================================================================
   const modePills = document.querySelectorAll('.lx-mode-pill');
   const phoneRenterView = document.querySelector('#phone-renter-view');
@@ -333,7 +843,7 @@
   });
 
   // =========================================================================
-  // 5. BENTO FEATURE 1: SOCIAL POST GENERATOR (TABS & COPY)
+  // 12. BENTO FEATURE 1: SOCIAL POST GENERATOR TABS
   // =========================================================================
   const postTemplates = {
     facebook: `🔥 ქირავდება პრემიუმ ბინა ვაკეში, ჭავჭავაძის გამზირზე!
@@ -384,40 +894,20 @@
 
   const postTabBtns = document.querySelectorAll('.lx-post-tab-btn');
   const postBox = document.querySelector('#post-preview-box');
-  const copyBtn = document.querySelector('#copy-post-btn');
-
-  let activePostKey = 'facebook';
 
   postTabBtns.forEach(btn => {
     btn.addEventListener('click', () => {
       postTabBtns.forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-      activePostKey = btn.dataset.postType || 'facebook';
+      const activePostKey = btn.dataset.postType || 'facebook';
       if (postBox && postTemplates[activePostKey]) {
         postBox.textContent = postTemplates[activePostKey];
       }
     });
   });
 
-  if (copyBtn && postBox) {
-    copyBtn.addEventListener('click', async () => {
-      try {
-        await navigator.clipboard.writeText(postBox.textContent);
-        const originalText = copyBtn.innerHTML;
-        copyBtn.innerHTML = '<span>✓ დაკოპირდა!</span>';
-        copyBtn.style.background = 'rgba(0, 245, 155, 0.35)';
-        setTimeout(() => {
-          copyBtn.innerHTML = originalText;
-          copyBtn.style.background = '';
-        }, 2200);
-      } catch (err) {
-        console.error('Clipboard copy error:', err);
-      }
-    });
-  }
-
   // =========================================================================
-  // 6. BENTO FEATURE 2: BILINGUAL LEASE AGREEMENT (KA / EN / DUAL TOGGLE)
+  // 13. BENTO FEATURE 2: BILINGUAL LEASE AGREEMENT (KA / EN / DUAL)
   // =========================================================================
   const leaseLangBtns = document.querySelectorAll('.lx-lang-btn');
   const leaseClauses = document.querySelectorAll('.lx-clause-item');
@@ -438,7 +928,6 @@
           if (kaText) kaText.style.display = 'block';
           if (enText) enText.style.display = 'none';
         } else {
-          // Dual
           if (kaText) kaText.style.display = 'block';
           if (enText) enText.style.display = 'block';
         }
@@ -447,28 +936,27 @@
   });
 
   // =========================================================================
-  // 7. BENTO FEATURE 3: CLIENT MATCHMAKER (SIMULATOR)
+  // 14. BENTO FEATURE 3: CLIENT MATCHMAKER SIMULATOR
   // =========================================================================
   const matchPills = document.querySelectorAll('.lx-match-pill');
-  const matchResultContainer = document.querySelector('#match-results-container');
   const matchScoreEl = document.querySelector('#match-score-display');
   const matchReqText = document.querySelector('#match-req-text');
 
   const matchData = {
     vake: {
-      req: 'ვაკე, ჭავჭავაძე · $950-მდე · 2 ოთახი · ძაღლით 🐶',
+      req: 'ვაკე, ჭავჭავაძე · $950-მდე · 2 ოთახი · ძაღლით',
       score: '98% იდეალური თანხვედრა',
       title: 'ვაკე, ჭავჭავაძის გამზ. #42',
       details: '85 მ² · $950/თვე · ცხოველები დაშვებულია'
     },
     saburtalo: {
-      req: 'საბურთალო, ყაზბეგი · $700-მდე · 2 ოთახი · მეტროსთან 🚇',
+      req: 'საბურთალო, ყაზბეგი · $700-მდე · 2 ოთახი · მეტროსთან',
       score: '96% იდეალური თანხვედრა',
       title: 'საბურთალო, ალ. ყაზბეგის #14',
       details: '62 მ² · $650/თვე · მეტრო დელისთან 3 წუთი'
     },
     batumi: {
-      req: 'ბათუმი, ორბი სითი · $800-მდე · ზღვის პირველი ზოლი 🌊',
+      req: 'ბათუმი, ორბი სითი · $800-მდე · ზღვის პირველი ზოლი',
       score: '99% იდეალური თანხვედრა',
       title: 'ბათუმი, Orbi City Block A',
       details: '48 მ² · $750/თვე · პანორამული ზღვის ხედი'
@@ -493,49 +981,7 @@
   });
 
   // =========================================================================
-  // 8. DEAL & COMMISSION ROI CALCULATOR
-  // =========================================================================
-  const rentSlider = document.querySelector('#calc-rent');
-  const dealsSlider = document.querySelector('#calc-deals');
-  const splitSelect = document.querySelector('#calc-split');
-
-  const rentVal = document.querySelector('#calc-rent-val');
-  const dealsVal = document.querySelector('#calc-deals-val');
-
-  const monthlyCommUsd = document.querySelector('#calc-result-monthly-usd');
-  const monthlyCommGel = document.querySelector('#calc-result-monthly-gel');
-  const annualCommUsd = document.querySelector('#calc-result-annual-usd');
-  const hoursSaved = document.querySelector('#calc-result-hours');
-
-  function calculateROI() {
-    if (!rentSlider || !dealsSlider) return;
-
-    const rent = parseFloat(rentSlider.value);
-    const deals = parseFloat(dealsSlider.value);
-    const splitRate = splitSelect ? parseFloat(splitSelect.value) : 0.50;
-
-    if (rentVal) rentVal.textContent = `$${rent.toLocaleString()}`;
-    if (dealsVal) dealsVal.textContent = `${deals} გარიგება`;
-
-    const monthlyTotal = rent * deals * splitRate;
-    const gelRate = 2.72; // GEL/USD exchange rate
-    const monthlyGel = Math.round(monthlyTotal * gelRate);
-    const annualTotal = monthlyTotal * 12;
-    const saved = deals * 8; // 8 hours saved per deal on repetitive chaos
-
-    if (monthlyCommUsd) monthlyCommUsd.textContent = `$${Math.round(monthlyTotal).toLocaleString()}`;
-    if (monthlyCommGel) monthlyCommGel.textContent = `~ ₾${monthlyGel.toLocaleString()}`;
-    if (annualCommUsd) annualCommUsd.textContent = `$${Math.round(annualTotal).toLocaleString()}`;
-    if (hoursSaved) hoursSaved.textContent = `${saved} საათი`;
-  }
-
-  rentSlider?.addEventListener('input', calculateROI);
-  dealsSlider?.addEventListener('input', calculateROI);
-  splitSelect?.addEventListener('change', calculateROI);
-  calculateROI();
-
-  // =========================================================================
-  // 9. 4-TIER PRICING BILLING INTERVAL TOGGLE (MONTHLY VS YEARLY)
+  // 15. PRICING BILLING INTERVAL TOGGLE (MONTHLY VS YEARLY)
   // =========================================================================
   const billingButtons = document.querySelectorAll('.lx-billing-toggle-pill button');
   const priceElements = document.querySelectorAll('.lx-plan-amount[data-monthly]');
@@ -562,7 +1008,7 @@
   });
 
   // =========================================================================
-  // 10. SMOOTH SCROLL FOR IN-PAGE ANCHORS
+  // 16. SMOOTH SCROLL FOR IN-PAGE ANCHORS
   // =========================================================================
   document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     anchor.addEventListener('click', function(e) {
@@ -571,11 +1017,18 @@
         const targetEl = document.querySelector(targetId);
         if (targetEl) {
           e.preventDefault();
-          const behavior = prefersReducedMotion ? 'auto' : 'smooth';
           if (targetId === '#features' && !isMobileMode && wrapTop > 0) {
-            window.scrollTo({ top: wrapTop, behavior });
+            if (lenis) {
+              lenis.scrollTo(wrapTop, { duration: 1.2 });
+            } else {
+              window.scrollTo({ top: wrapTop, behavior: prefersReducedMotion ? 'auto' : 'smooth' });
+            }
           } else {
-            targetEl.scrollIntoView({ behavior });
+            if (lenis) {
+              lenis.scrollTo(targetEl, { offset: -30, duration: 1.2 });
+            } else {
+              targetEl.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth' });
+            }
           }
         }
       }
