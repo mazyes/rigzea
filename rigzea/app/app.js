@@ -107,7 +107,7 @@
   });
 
   bindForm($('#form-signup'), async (v) => {
-    const { data, error } = await sb.auth.signUp({ email: v.email.trim(), password: v.password, options: { data: { full_name: v.name.trim() } } });
+    const { data, error } = await sb.auth.signUp({ email: v.email.trim(), password: v.password, options: { data: { full_name: v.name.trim() }, emailRedirectTo: location.origin + '/app/' } });
     if (error) throw error;
     if (!data.session) {
       showAuth('signin');
