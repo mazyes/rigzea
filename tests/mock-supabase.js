@@ -205,7 +205,7 @@
       const apt = T('apartments').find(x => x.id === ap.apartment_id) || {};
       const owner = T('owners').find(x => x.id === ap.owner_id) || {};
       const org = T('organizations').find(x => x.id === ap.organization_id) || {};
-      return { success: true, approval: { id: ap.id, amount: ap.amount, description: ap.description, status: ap.status, photos: ap.photos, created_at: ap.created_at, responded_at: ap.responded_at, response_note: ap.response_note }, apartment: { name: apt.name, address: apt.address, unit_number: apt.unit_number, city: apt.city }, owner: { name: owner.name }, organization: { name: org.name, contact_phone: org.contact_phone }, repair: { issue: null, contractor_name: null } };
+      return { success: true, approval: { id: ap.id, title: ap.title, amount: ap.amount, description: ap.description, status: ap.status, photos: ap.photos, created_at: ap.created_at, responded_at: ap.responded_at, response_note: ap.response_note }, apartment: { name: apt.name, address: apt.address, unit_number: apt.unit_number, city: apt.city }, owner: { name: owner.name }, organization: { name: org.name, contact_phone: org.contact_phone }, repair: { issue: null, contractor_name: null } };
     },
     respond_public_approval(a) {
       const ap = T('approvals').find(x => x.token === a.p_token);

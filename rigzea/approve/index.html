@@ -61,8 +61,9 @@
 
     function render(state = {}) {
       const a = data.approval, apt = data.apartment || {}, org = data.organization || {}, owner = data.owner || {};
-      const [title, ...rest] = String(a.description || '').split('\n');
-      const details = rest.join('\n').trim();
+      const [first, ...rest] = String(a.description || '').split('\n');
+      const title = a.title || first;
+      const details = (a.title && first !== a.title ? a.description : rest.join('\n')).trim();
       const photos = (a.photos || []).map(p => typeof p === 'string' ? p : p?.url).filter(Boolean);
       const expired = a.status === 'pending' && a.expires_at && new Date(a.expires_at) < new Date();
       const contact = org.contact_phone ? `<a href="tel:${esc(org.contact_phone)}">${esc(org.contact_phone)}</a>` : '';
