@@ -32,9 +32,11 @@
   if (typeof window.Lenis !== 'undefined' && !prefersReducedMotion) {
     try {
       lenis = new window.Lenis({
-        lerp: 0.08,
+        lerp: 0.12,
+        wheelMultiplier: 1.0,
+        touchMultiplier: 1.5,
         smoothWheel: true,
-        wheelMultiplier: 0.95
+        smoothTouch: false // Leave mobile touch natural to browser momentum
       });
 
       if (typeof window.gsap !== 'undefined' && typeof window.ScrollTrigger !== 'undefined') {
@@ -609,7 +611,7 @@
   let isLoopActive = false;
   let activeStep = 0;
 
-  const LERP_FACTOR = prefersReducedMotion ? 1.0 : 0.10;
+  const LERP_FACTOR = prefersReducedMotion ? 1.0 : 0.16;
 
   function measureLayout() {
     laidOutW = window.innerWidth;
@@ -719,29 +721,26 @@
   }
 
   // Unified Scroll Listener (Pure Math, 60fps)
-  window.addEventListener('scroll', () => {
-    const y = window.scrollY || window.pageYOffset;
-    updateHeader(y);
-    updateParallax(y);
+  function handleScrollUpdate(scrollY) {
+    updateHeader(scrollY);
+    updateParallax(scrollY);
 
     if (!isMobileMode && scrollDistance > 0) {
-      const pastTop = y - wrapTop;
+      const pastTop = scrollY - wrapTop;
       targetProgress = Math.max(0, Math.min(1, pastTop / scrollDistance));
       wakeScrubLoop();
     }
-  }, { passive: true });
+  }
 
   if (lenis) {
     lenis.on('scroll', (e) => {
-      const y = e.scroll;
-      updateHeader(y);
-      updateParallax(y);
-      if (!isMobileMode && scrollDistance > 0) {
-        const pastTop = y - wrapTop;
-        targetProgress = Math.max(0, Math.min(1, pastTop / scrollDistance));
-        wakeScrubLoop();
-      }
+      handleScrollUpdate(e.scroll);
     });
+  } else {
+    window.addEventListener('scroll', () => {
+      const y = window.scrollY || window.pageYOffset;
+      handleScrollUpdate(y);
+    }, { passive: true });
   }
 
   function syncMobileState() {
@@ -1019,15 +1018,17 @@
           e.preventDefault();
           if (targetId === '#features' && !isMobileMode && wrapTop > 0) {
             if (lenis) {
-              lenis.scrollTo(wrapTop, { duration: 1.2 });
+              lenis.scrollTo(wrapTop, { duration: 0.8 });
             } else {
               window.scrollTo({ top: wrapTop, behavior: prefersReducedMotion ? 'auto' : 'smooth' });
             }
           } else {
             if (lenis) {
-              lenis.scrollTo(targetEl, { offset: -30, duration: 1.2 });
+              lenis.scrollTo(targetEl, { offset: -75, duration: 0.8 });
             } else {
-              targetEl.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth' });
+              const rect = targetEl.getBoundingClientRect();
+              const targetY = window.pageYOffset + rect.top - 75;
+              window.scrollTo({ top: targetY, behavior: prefersReducedMotion ? 'auto' : 'smooth' });
             }
           }
         }
