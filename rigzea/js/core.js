@@ -112,6 +112,8 @@
     source: { airbnb: 'Airbnb', booking: 'Booking.com', direct: 'პირდაპირი', other: 'სხვა' },
     statement: { draft: 'მონახაზი', finalized: 'დასრულებული', sent: 'გაგზავნილი' },
     statementTone: { draft: 'neutral', finalized: 'ok', sent: 'ok' },
+    dealStage: { active: 'აქტიური', viewing: 'ნახვა დანიშნულია', deposit: 'დეპოზიტი შეტანილია', closed: 'დახურული', lost: 'ჩაშლილი' },
+    dealStageTone: { active: 'info', viewing: 'warn', deposit: 'warn', closed: 'ok', lost: 'muted' },
   };
 
   const badge = (text, tone = 'neutral') => `<span class="badge badge-${tone}">${esc(text)}</span>`;
@@ -119,6 +121,7 @@
   const approvalStatus = (a) => (a.status === 'pending' && a.expires_at && new Date(a.expires_at) < new Date()) ? 'expired' : a.status;
   const approvalBadge = (a) => { const s = approvalStatus(a); return badge(L.approval[s] || s, L.approvalTone[s]); };
   const expenseBadge = (s) => badge(L.expense[s] || s, L.expenseTone[s]);
+  const dealBadge = (s) => badge(L.dealStage[s] || s, L.dealStageTone[s]);
 
   // ---------------------------------------------------------------------------
   // Icons (single stroke icon set, 24px grid)
@@ -348,7 +351,7 @@
 
   window.R = {
     sb, $, $$, esc, money, toDate, isoDate, monthKey, time, date, dayLabel, dateTime, relative, elapsed, span, sameDay,
-    MONTHS, WEEKDAYS, L, badge, taskBadge, approvalStatus, approvalBadge, expenseBadge, icon,
+    MONTHS, WEEKDAYS, L, badge, taskBadge, approvalStatus, approvalBadge, expenseBadge, dealBadge, icon,
     friendlyError, q, toast, run, dialog, confirm, ask, uploadFile, copyText, applyTheme, uuid,
     whatsappUrl: (text) => `https://wa.me/?text=${encodeURIComponent(text)}`,
     telegramUrl: (text, url) => `https://t.me/share/url?url=${encodeURIComponent(url || '')}&text=${encodeURIComponent(text || '')}`,

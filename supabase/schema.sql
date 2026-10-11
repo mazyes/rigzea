@@ -71,6 +71,23 @@ create table public.apartments (
   cleaning_minutes integer default 180,
   commission_pct numeric(5,2) default 20,
   rental_type text default 'short_term' check (rental_type in ('short_term', 'long_term', 'hybrid')),
+  district text,
+  currency text default 'USD' check (currency in ('USD', 'GEL')),
+  rooms integer default 2,
+  floor text,
+  total_floors integer,
+  area_sqm numeric(8,2),
+  pets_allowed boolean default false,
+  utilities_estimate numeric(10,2),
+  prepayment_terms text,
+  agent_phone text,
+  agent_commission_percent numeric(5,2) default 50.00,
+  owner_bonus numeric(10,2) default 0,
+  cobroker_split numeric(5,2) default 50.00,
+  photos jsonb not null default '[]'::jsonb,
+  description text,
+  description_en text,
+  amenities jsonb not null default '[]'::jsonb,
   tenant_name text,
   tenant_phone text,
   monthly_rent numeric(10,2),
@@ -102,6 +119,33 @@ create table public.reservations (
   created_at timestamptz default now(),
   updated_at timestamptz default now(),
   check (check_out > check_in)
+);
+
+create table public.deals (
+  id uuid primary key default gen_random_uuid(),
+  organization_id uuid not null references public.organizations(id) on delete cascade,
+  apartment_id uuid references public.apartments(id) on delete set null,
+  client_name text not null,
+  client_phone text,
+  client_email text,
+  stage text not null default 'active' check (stage in ('active', 'viewing', 'deposit', 'closed', 'lost')),
+  deal_amount numeric(10,2) default 0,
+  currency text not null default 'USD' check (currency in ('USD', 'GEL')),
+  commission_percent numeric(5,2) default 50.00,
+  commission_amount numeric(10,2) default 0,
+  owner_bonus numeric(10,2) default 0,
+  partner_agent text,
+  partner_phone text,
+  cobroker_split numeric(5,2) default 50.00,
+  net_commission numeric(10,2) default 0,
+  viewing_date timestamptz,
+  deposit_paid_at timestamptz,
+  closed_at timestamptz,
+  target_move_in date,
+  notes text,
+  created_by uuid references auth.users(id) on delete set null,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
 );
 
 create table public.tasks (
@@ -608,6 +652,56 @@ begin
 end;
 $$;
 
+-- Public property showcase (safe public read; excludes owner phone, door code, wifi, etc.)
+create or replace function public.get_public_showcase(p_apartment_id uuid)
+returns jsonb language plpgsql stable security definer set search_path = public as $$
+declare
+  v_apt record;
+  v_org record;
+begin
+  select * into v_apt from public.apartments where id = p_apartment_id and is_archived = false;
+  if not found then
+    return jsonb_build_object('success', false, 'error', 'ბინა ვერ მოიძებნა ან არააქტიურია');
+  end if;
+
+  select name, contact_phone into v_org from public.organizations where id = v_apt.organization_id;
+
+  return jsonb_build_object(
+    'success', true,
+    'apartment', jsonb_build_object(
+      'id', v_apt.id,
+      'name', v_apt.name,
+      'address', v_apt.address,
+      'city', v_apt.city,
+      'district', v_apt.district,
+      'unit_number', v_apt.unit_number,
+      'rooms', coalesce(v_apt.rooms, v_apt.bedrooms, 1),
+      'bedrooms', v_apt.bedrooms,
+      'floor', v_apt.floor,
+      'total_floors', v_apt.total_floors,
+      'area_sqm', v_apt.area_sqm,
+      'price', coalesce(v_apt.monthly_rent, 0),
+      'monthly_rent', coalesce(v_apt.monthly_rent, 0),
+      'currency', coalesce(v_apt.currency, 'USD'),
+      'pets_allowed', coalesce(v_apt.pets_allowed, false),
+      'utilities_estimate', v_apt.utilities_estimate,
+      'prepayment_terms', coalesce(v_apt.prepayment_terms, '1-ლი და ბოლო თვე'),
+      'deposit_amount', v_apt.deposit_amount,
+      'agent_phone', coalesce(v_apt.agent_phone, v_org.contact_phone),
+      'photos', coalesce(v_apt.photos, '[]'::jsonb),
+      'description', v_apt.description,
+      'description_en', v_apt.description_en,
+      'amenities', coalesce(v_apt.amenities, '[]'::jsonb),
+      'created_at', v_apt.created_at
+    ),
+    'agency', jsonb_build_object(
+      'name', coalesce(v_org.name, 'Rigzea Real Estate'),
+      'phone', coalesce(v_apt.agent_phone, v_org.contact_phone)
+    )
+  );
+end;
+$$;
+
 -- -----------------------------------------------------------------------------
 -- 7. STAFF RPCs (staff never update tasks directly)
 -- -----------------------------------------------------------------------------
@@ -754,6 +848,7 @@ alter table public.organizations enable row level security;
 alter table public.organization_members enable row level security;
 alter table public.owners enable row level security;
 alter table public.apartments enable row level security;
+alter table public.deals enable row level security;
 alter table public.reservations enable row level security;
 alter table public.tasks enable row level security;
 alter table public.repairs enable row level security;
@@ -780,7 +875,7 @@ create policy members_delete on public.organization_members for delete using (pu
 do $$
 declare t text;
 begin
-  foreach t in array array['owners', 'apartments', 'reservations', 'tasks', 'repairs', 'approvals', 'expenses', 'income',
+  foreach t in array array['owners', 'apartments', 'deals', 'reservations', 'tasks', 'repairs', 'approvals', 'expenses', 'income',
                            'condition_reports', 'monthly_reports', 'activity_events', 'invitations'] loop
     execute format('create policy %1$s_insert on public.%1$s for insert with check (public.is_org_manager(organization_id))', t);
     execute format('create policy %1$s_update on public.%1$s for update using (public.is_org_manager(organization_id))', t);
@@ -789,6 +884,7 @@ begin
 end $$;
 
 create policy owners_select on public.owners for select using (public.is_org_manager(organization_id) or user_id = auth.uid());
+create policy deals_select on public.deals for select using (public.is_org_manager(organization_id));
 create policy apartments_select on public.apartments for select using (
   public.is_org_manager(organization_id)
   or owner_id in (select public.my_owner_ids())
@@ -816,8 +912,9 @@ revoke execute on all functions in schema public from public, anon;
 grant execute on all functions in schema public to authenticated;
 revoke execute on function public.notify_user(uuid, uuid, text, text, text, text, text) from authenticated;
 revoke execute on function public.notify_managers(uuid, text, text, text, text, text) from authenticated;
--- Public approval page and Telegram webhook use the anon key
+-- Public approval page, property showcase, and Telegram webhook use the anon key
 grant execute on function public.get_public_approval(text), public.respond_public_approval(text, text, text) to anon;
+grant execute on function public.get_public_showcase(uuid) to anon;
 grant execute on function public.link_telegram_chat(bigint, uuid, text), public.get_linked_telegram_org(bigint), public.get_telegram_org(uuid),
   public.get_telegram_apartments(uuid), public.telegram_create_task_record(uuid, uuid, text, text, numeric, text) to anon;
 

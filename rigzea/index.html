@@ -3,613 +3,820 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="theme-color" content="#f5f5f0" />
-  <meta name="description" content="რიგზეა — ბინების საოპერაციო სისტემა. მართე ბინები, რემონტი, ხარჯები და მფლობელებთან კომუნიკაცია ერთ ადგილას — ჩათებში ძებნის გარეშე." />
-  <title>რიგზეა — ყველა ბინა. ყველა საქმე. რიგზეა.</title>
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='7' fill='%231f503e'/%3E%3Cpath d='M10 12h20M10 20h15M10 28h20' stroke='%23fff' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E" />
-  <link rel="stylesheet" href="/style.css" />
+  <meta name="theme-color" content="#080c0a" />
+  <meta name="description" content="Rigzea 3.0 — უძრავი ქონების პროფესიონალი აგენტების პლატფორმა. მართე ობიექტები, გააგზავნე პრემიუმ ჭკვიანი ბმულები WhatsApp-ში 40 ფოტოს ჩაყრის ნაცვლად, დახურე გარიგებები 3-ჯერ სწრაფად და აკონტროლე საკომისიოები." />
+  <meta name="keywords" content="უძრავი ქონება, მაკლერი, აგენტი თბილისი, ბათუმი ბინები, ქირავდება ბინა, საკომისიო, ქირავნობის ხელშეკრულება, rigzea" />
+  
+  <!-- Open Graph -->
+  <meta property="og:title" content="Rigzea 3.0 — უძრავი ქონების პროფესიონალი აგენტების პლატფორმა" />
+  <meta property="og:description" content="შეწყვიტე WhatsApp-ში 40 ფოტოს ჩაყრა. დახურე გარიგებები 3-ჯერ სწრაფად პრემიუმ ჭკვიანი ბმულებითა და 1-Click ხელშეკრულებებით." />
+  <meta property="og:type" content="website" />
+  
+  <title>Rigzea 3.0 — უძრავი ქონების პროფესიონალი აგენტების პლატფორმა</title>
+  
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='9' fill='%230a5c44'/%3E%3Cpath d='M10 12h20M10 20h15M10 28h20' stroke='%2300f59b' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E" />
+  
+  <!-- Luxury Emerald Design System Stylesheet -->
+  <link rel="stylesheet" href="landing-luxury.css" />
 </head>
-<body>
-  <!-- Global Header -->
-  <header class="site-header">
-    <div class="container header-inner">
-      <a class="wordmark" href="/" aria-label="რიგზეა მთავარი გვერდი">რიგზეა<i>.</i></a>
-      <nav class="header-nav" id="mobile-nav" aria-label="მთავარი მენიუ">
-        <a href="#problem">პრობლემა</a>
-        <a href="#how">როგორ მუშაობს</a>
-        <a href="#timeline">ბინის ისტორია</a>
-        <a href="#owner">მფლობელის ანგარიში</a>
-        <a href="#pricing">ფასები</a>
-      </nav>
-      <div class="header-actions">
-        <a class="btn secondary smallbtn" href="/app/">შესვლა</a>
-        <a class="btn smallbtn" href="/app/">სცადე რიგზეა <span class="arr">↗</span></a>
-        <button class="mobile-toggle" id="mobile-toggle" aria-label="მენიუს გახსნა" aria-expanded="false">☰</button>
-      </div>
-    </div>
-  </header>
+<body class="luxury-theme">
 
-  <main>
-    <!-- 1. Hero Section -->
-    <section class="container hero">
-      <div class="hero-grid">
-        <div class="hero-copy">
-          <span class="eyebrow">საოპერაციო სისტემა</span>
-          <h1>ყველა ბინა.<br/>ყველა საქმე.<br/><em>რიგზეა.</em></h1>
-          <p>მართე დღიური და გრძელვადიანი ბინები, ციფრული QR გზამკვლევი სტუმრებისთვის, რემონტი, ხარჯები და მფლობელებთან კომუნიკაცია ერთ სივრცეში.</p>
-          <div class="hero-buttons">
-            <a class="btn" href="/app/">დაიწყე უფასოდ (1 ბინა 0 ₾) <span class="arr">↗</span></a>
-            <a class="btn secondary" href="/guide/">სტუმრის QR გზამკვლევი <span class="arr">↗</span></a>
+  <div class="luxury-layout">
+    <!-- 1. Luxury Glass Header -->
+    <header class="lx-header">
+      <div class="lx-container lx-header-inner">
+        <a class="lx-brand" href="/" aria-label="Rigzea მთავარი">
+          <div class="lx-brand-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00f59b" stroke-width="2.5" stroke-linecap="round">
+              <rect x="3" y="3" width="18" height="18" rx="4"></rect>
+              <path d="M7 8h10M7 12h7M7 16h10"></path>
+            </svg>
           </div>
-          <div class="hero-facts">
+          <span>რიგზეა<span class="lx-brand-dot">.</span></span>
+        </a>
+
+        <nav class="lx-nav-links" aria-label="მთავარი მენიუ">
+          <a class="lx-nav-link" href="#features">5 ფუნქცია</a>
+          <a class="lx-nav-link" href="#comparison">შედარება</a>
+          <a class="lx-nav-link" href="#calculator">კალკულატორი</a>
+          <a class="lx-nav-link" href="#pricing">ტარიფები</a>
+          <a class="lx-nav-link" href="/demo/">დემო ვერსია</a>
+        </nav>
+
+        <div class="lx-header-actions">
+          <a class="lx-btn lx-btn-secondary lx-btn-sm" href="/app/">შესვლა</a>
+          <a class="lx-btn lx-btn-primary lx-btn-sm" href="/app/">დაიწყე 0 ₾ ↗</a>
+          <button class="lx-mobile-toggle" aria-label="მენიუს გახსნა">☰</button>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <!-- 2. Hero Section with Interactive Phone Preview -->
+      <section class="lx-hero">
+        <div class="lx-container lx-hero-grid">
+          
+          <div class="lx-hero-copy">
+            <!-- Animated Badge -->
             <div>
-              <strong>20+ ბინა</strong>
-              <span>ერთიანი საოპერაციო კონტროლი</span>
-            </div>
-            <div>
-              <strong>0 დაკარგული ხარჯი</strong>
-              <span>ქვითარი და თანხმობა რეესტრში</span>
-            </div>
-            <div>
-              <strong>100% ნდობა</strong>
-              <span>გამჭვირვალე ანგარიში მფლობელს</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Actual operational software screen -->
-        <div class="product-frame" aria-label="რიგზეას სამუშაო გარემოს ეკრანი">
-          <div class="frame-topbar">
-            <div class="frame-controls">
-              <span></span><span></span><span></span>
-            </div>
-            <div class="frame-title">რიგზეა · საოპერაციო სამუშაო სივრცე</div>
-            <div class="frame-badge">აქტიური</div>
-          </div>
-          <div class="hero-app-content">
-            <aside class="hero-app-sidebar">
-              <div class="sidebar-logo">რიგზეა.</div>
-              <div class="sidebar-item active">◫ მთავარი</div>
-              <div class="sidebar-item">▤ ბინები</div>
-              <div class="sidebar-item">≡ საქმეები</div>
-              <div class="sidebar-item">◯ მფლობელები</div>
-              <div class="sidebar-item">▦ ანგარიშები</div>
-            </aside>
-            <div class="hero-app-body">
-              <div class="hero-app-header">
-                <div>
-                  <small>დღის სურათი</small>
-                  <h3>რას უნდა მივხედო დღეს?</h3>
-                </div>
-                <span class="status-pill wait">1 მოქმედება</span>
-              </div>
-
-              <div>
-                <div class="section-label">ყურადღებას საჭიროებს</div>
-                <div class="hero-urgent-row">
-                  <div>
-                    <strong>Orbi City · 1204</strong>
-                    <span>კონდიციონერის შეკეთება — ელოდება ნინო ქ.-ის თანხმობას</span>
-                  </div>
-                  <span class="badge-cost">₾170</span>
-                </div>
-              </div>
-
-              <div>
-                <div class="section-label">დღეს</div>
-                <div class="hero-schedule">
-                  <div class="schedule-row">
-                    <time>14:00</time>
-                    <div><span class="task-name">დასუფთავება</span><span class="apt-name">· Orbi City 1204</span></div>
-                    <span class="status-pill neutral">დაგეგმილი</span>
-                  </div>
-                  <div class="schedule-row">
-                    <time>16:30</time>
-                    <div><span class="task-name">სანტექნიკოსი</span><span class="apt-name">· Vake Residence 18</span></div>
-                    <span class="status-pill wait">დაგვიანებული</span>
-                  </div>
-                  <div class="schedule-row">
-                    <time>18:00</time>
-                    <div><span class="task-name">Check-in</span><span class="apt-name">· Old Batumi 7</span></div>
-                    <span class="status-pill done">მზადაა</span>
-                  </div>
-                </div>
-              </div>
-
-              <div class="hero-report-snippet">
-                <strong>სექტემბრის ანგარიში · Orbi City 1204</strong>
-                <span>წმინდა: ₾1,520 ↗</span>
+              <div class="lx-badge">
+                <span class="lx-badge-dot"></span>
+                <span>⚡ შექმნილია თბილისელი და ბათუმელი აგენტებისთვის</span>
               </div>
             </div>
-          </div>
-        </div>
-      </div>
-    </section>
 
-    <!-- 2. Problem Section -->
-    <section class="landing-section" id="problem">
-      <div class="container">
-        <div class="section-head">
-          <span class="eyebrow">რეალობა</span>
-          <h2>როცა 20 ბინას მართავ,<br/>ჩათი უკვე სისტემა აღარ არის.</h2>
-          <p>ერთი რემონტი პირად მიმოწერაში იწყება, ქვითარი გალერეაში რჩება, ხარჯი ცხრილში დაგვიანებით ხვდება, მფლობელი კი თვის ბოლოს გაკვირვებული გირეკავს.</p>
-        </div>
+            <!-- Headline -->
+            <h1 class="lx-hero-title">
+              შეწყვიტე WhatsApp-ში 40 ფოტოს ჩაყრა.<br/>
+              <span class="lx-gradient-text">დახურე გარიგებები 3-ჯერ სწრაფად.</span>
+            </h1>
 
-        <div class="problem-ledger">
-          <div class="problem-col">
-            <span class="problem-index">01 / მიმოწერის ქაოსი</span>
-            <h3>„ვინ დაწერა ამის შესახებ?“</h3>
-            <p>შეტყობინება მოდის პირად ჩათში, მაგრამ არ არის მიბმული კონკრეტულ ბინასა და საქმესთან.</p>
-            <div class="problem-mock">
-              <div class="chat-bubble-mock">1204-ში კონდიციონერი აღარ აგრილებს...</div>
-              <div class="chat-bubble-mock out">ხელოსანი ნახავს, 170 ლარია</div>
+            <!-- Subheadline -->
+            <p class="lx-hero-desc">
+              Rigzea არის უძრავი ქონების აგენტის ციფრული იარაღი: შექმენი პრემიუმ ჭკვიანი ბმული 30 წამში, გაუგზავნე კლიენტს ერთი ლინკით, დააგენერირე Facebook პოსტები 1 კლიკით და აკონტროლე შენი 50%-იანი საკომისიოები ერთ ეკრანზე.
+            </p>
+
+            <!-- CTA Actions -->
+            <div class="lx-hero-actions">
+              <a class="lx-btn lx-btn-primary" href="/app/">დაიწყე უფასოდ — 0 ₾ ↗</a>
+              <a class="lx-btn lx-btn-secondary" href="#features">ნახე დემო ბმული (/p/) ⚡</a>
             </div>
-          </div>
 
-          <div class="problem-col">
-            <span class="problem-index">02 / ხელით გადაწერა</span>
-            <h3>„ეს ხარჯი სად ჩავწერე?“</h3>
-            <p>ერთი და იგივე თანხა ხელით გადადის ჩათიდან Excel-ში, მერე კი თვიურ ანგარიშში.</p>
-            <div class="problem-mock">
-              <div class="sheet-mock">
-                <div class="sheet-mock-row head"><span>#</span><span>ბინა</span><span>ხარჯი</span></div>
-                <div class="sheet-mock-row"><span>18</span><span>1204</span><span class="num-tabular">₾170</span></div>
-                <div class="sheet-mock-row"><span>19</span><span>18</span><span>—</span></div>
+            <!-- Social Proof -->
+            <div class="lx-social-proof">
+              <div class="lx-avatar-stack">
+                <span>გი</span>
+                <span>ნი</span>
+                <span>და</span>
+                <span>სო</span>
+                <span>+450</span>
+              </div>
+              <div class="lx-social-proof-text">
+                🔥 <strong>450+ აქტიური აგენტი</strong> თბილისსა და ბათუმში უკვე იყენებს Rigzea-ს
               </div>
             </div>
           </div>
 
-          <div class="problem-col">
-            <span class="problem-index">03 / დაკარგული ქვითრები</span>
-            <h3>„ქვითარი ვის გავუგზავნე?“</h3>
-            <p>თვის ბოლოს მფლობელს უხსნი, სად წავიდა ფული, ფოტოები კი ტელეფონის გალერეაშია გაფანტული.</p>
-            <div class="problem-mock">
-              <div class="receipt-lost-mock">
-                <div class="receipt-icon-box">📄</div>
-                <div>
-                  <strong>IMG_8421.jpg</strong>
-                  <div style="color:var(--muted);font-size:10px">რომელ ბინას ეკუთვნის ეს ქვითარი?</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- 3. Core Workflow -->
-    <section class="landing-section" id="how">
-      <div class="container">
-        <div class="section-head">
-          <span class="eyebrow">სამუშაო პროცესი</span>
-          <h2>როგორ მუშაობს</h2>
-          <p>შეტყობინებიდან დადასტურებულ ანგარიშამდე — ყოველგვარი ზედმეტი გადაწერისა და ჩათებში ძებნის გარეშე.</p>
-        </div>
-
-        <div class="workflow-row">
-          <div class="workflow-step">
-            <span class="workflow-num">01</span>
-            <h4>შეტყობინება</h4>
-            <p>პრობლემა ფიქსირდება მარტივი შეტყობინებით.</p>
-          </div>
-          <div class="workflow-step">
-            <span class="workflow-num">02</span>
-            <h4>საქმე</h4>
-            <p>ბინას ებმება კონკრეტული ამოცანა, ხარჯი და პასუხისმგებელი.</p>
-          </div>
-          <div class="workflow-step">
-            <span class="workflow-num">03</span>
-            <h4>თანხმობა</h4>
-            <p>მფლობელი ადასტურებს რემონტის ხარჯს ერთი დაჭერით.</p>
-          </div>
-          <div class="workflow-step">
-            <span class="workflow-num">04</span>
-            <h4>შესრულება</h4>
-            <p>ხელოსანი ასრულებს საქმეს; ქვითარი ინახება ბინის ისტორიაში.</p>
-          </div>
-          <div class="workflow-step">
-            <span class="workflow-num">05</span>
-            <h4>ანგარიში</h4>
-            <p>ხარჯი ავტომატურად ასახულია თვის ფინანსურ რეესტრში.</p>
-          </div>
-        </div>
-
-        <div class="workflow-cta-note">
-          <span>გამოსცადე ეს პროცესი რეალურ დემოში:</span>
-          <a href="/demo/">გახსენი სამუშაო გარემო ↗</a>
-        </div>
-      </div>
-    </section>
-
-    <!-- 4. Apartment Timeline - The Product Signature -->
-    <section class="landing-section" id="timeline">
-      <div class="container">
-        <div class="timeline-section-grid">
-          <div class="timeline-feature-desc">
-            <span class="eyebrow">საფირმო ხედვა</span>
-            <h2>ბინის ისტორია</h2>
-            <p>როცა ბინას ხსნი, მაშინვე ხედავ მის მიმდინარე მდგომარეობასა და სრულ ოპერაციულ ქრონოლოგიას. აღარ მოგიწევს ძველ ჩათებში ძებნა.</p>
+          <!-- Hero Interactive Mobile Phone Frame (/p/ Renter Link) -->
+          <div class="lx-phone-wrapper" id="hero-phone-container">
+            <div class="lx-phone-ambient-glow"></div>
             
-            <div class="timeline-bullets">
-              <div class="timeline-bullet">
-                <span style="color:var(--green)">—</span>
-                <div>
-                  <strong>ყველა მოვლენა ერთ ადგილას</strong>
-                  <span>რემონტი, ხარჯი, დასუფთავება, ქვითრები და მფლობელის თანხმობები.</span>
+            <div class="lx-phone-mockup">
+              <div class="lx-phone-screen">
+                
+                <!-- Phone Top Bar -->
+                <div class="lx-phone-topbar">
+                  <span>9:41</span>
+                  <div class="lx-dynamic-island"></div>
+                  <span>5G 100%</span>
                 </div>
-              </div>
-              <div class="timeline-bullet">
-                <span style="color:var(--green)">—</span>
-                <div>
-                  <strong>დოკუმენტური სიზუსტე</strong>
-                  <span>ყოველ ხარჯს თან ერთვის თარიღი, ხელოსნის შეფასება და ქვითრის ფოტო.</span>
-                </div>
-              </div>
-            </div>
 
-            <div style="margin-top:28px">
-              <a class="btn" href="/demo/?view=apartments">ნახე ბინის ისტორია დემოში <span class="arr">↗</span></a>
+                <!-- Browser URL pill -->
+                <div class="lx-phone-browser-bar">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                  <span>rigzea.ge/p/vake-loft-42</span>
+                </div>
+
+                <!-- Phone Content: Renter View -->
+                <div class="lx-phone-content" id="phone-renter-view">
+                  <div class="lx-phone-hero-img">
+                    <div class="lx-phone-hero-img-bg"></div>
+                    <div class="lx-phone-price-badge">$950 / თვე</div>
+                  </div>
+
+                  <div class="lx-phone-details">
+                    <div class="lx-phone-title-row">
+                      <span class="lx-phone-title">ვაკე · ჭავჭავაძის გამზ. #42</span>
+                      <span class="lx-mint-text" style="font-size:12px;font-weight:700">★ ექსკლუზივი</span>
+                    </div>
+                    <div class="lx-phone-loc">თბილისი · ვაკის პარკთან · ახალაშენებული</div>
+
+                    <div class="lx-phone-chips">
+                      <span class="lx-phone-chip">85 მ²</span>
+                      <span class="lx-phone-chip">2 ოთახი</span>
+                      <span class="lx-phone-chip">1 საძინებელი</span>
+                      <span class="lx-phone-chip">ცენტრ. გათბობა</span>
+                      <span class="lx-phone-chip">ცხოველები: კი 🐾</span>
+                    </div>
+
+                    <div class="lx-phone-cta-bar">
+                      <a class="lx-phone-action-btn lx-btn-wa" href="https://wa.me/" target="_blank" rel="noopener">
+                        <span>💬 WhatsApp</span>
+                      </a>
+                      <a class="lx-phone-action-btn lx-btn-call" href="tel:+995599000000">
+                        <span>📞 დარეკვა</span>
+                      </a>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Phone Content: Agent View (Hidden by default, toggled via pills) -->
+                <div class="lx-phone-content" id="phone-agent-view" style="display:none;padding-top:10px">
+                  <div style="background:#06120c;border:1px solid rgba(0,245,155,0.25);border-radius:14px;padding:14px">
+                    <div style="font-size:11px;color:var(--lx-mint-neon);font-weight:700;margin-bottom:8px">● რეალურ დროში ანალიტიკა</div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                      <div>
+                        <div style="font-size:10px;color:var(--lx-text-muted)">ბმულის ნახვები</div>
+                        <div style="font-size:20px;font-weight:800;color:#fff">142</div>
+                      </div>
+                      <div>
+                        <div style="font-size:10px;color:var(--lx-text-muted)">WhatsApp კლიკები</div>
+                        <div style="font-size:20px;font-weight:800;color:var(--lx-mint-neon)">18</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div style="background:rgba(255,255,255,0.03);border-radius:12px;padding:12px;font-size:11px">
+                    <div style="color:var(--lx-text-muted);margin-bottom:4px">მოსალოდნელი საკომისიო (50%):</div>
+                    <div style="font-size:18px;font-weight:800;color:#fff">$475 <span style="font-size:12px;color:var(--lx-mint-neon)">(₾1,292)</span></div>
+                  </div>
+                </div>
+
+                <!-- Mode Switcher -->
+                <div class="lx-phone-mode-switch">
+                  <button class="lx-mode-pill active" data-phone-mode="renter">მდგმურის ხედი (/p/)</button>
+                  <button class="lx-mode-pill" data-phone-mode="agent">აგენტის ანალიტიკა</button>
+                </div>
+
+              </div>
             </div>
           </div>
 
-          <!-- Signature Apartment Ledger UI -->
-          <div class="apartment-card-signature">
-            <div class="apartment-header-bar">
-              <div class="apt-title-group">
-                <h3>Orbi City · 1204</h3>
-                <div class="apt-subtitle">ბათუმი · მფლობელი: ნინო ქ.</div>
-              </div>
-              <span class="status-pill wait">ელოდება პასუხს</span>
+        </div>
+      </section>
+
+      <!-- 3. Horizontal Pin-Scroll Section: Bento Motion Showcase (5 Killer Features) -->
+      <section class="lx-pin-scroll-wrap" id="features">
+        <div class="lx-pin-sticky-container">
+          
+          <!-- Sticky Header -->
+          <div class="lx-pin-top-header">
+            <div class="lx-pin-top-title-group">
+              <span class="lx-badge" style="margin-bottom:8px">⚡ BENTO MOTION SHOWCASE</span>
+              <h2>უძრავი ქონების 5 ციფრული იარაღი</h2>
+              <p>ჩამოასქროლე და ნახე, როგორ გაზრდის Rigzea შენს შედეგს ყოველ ეტაპზე</p>
             </div>
 
-            <div class="apt-summary-bar">
-              <div class="summary-metric">
-                ღია საქმე
-                <strong>1 აქტიური</strong>
+            <div class="lx-pin-progress-box">
+              <span class="lx-pin-step-counter">01 / 05</span>
+              <div class="lx-pin-progress-bar-track">
+                <div class="lx-pin-progress-bar-fill"></div>
               </div>
-              <div class="summary-metric">
-                დასადასტურებელი
-                <strong class="num-tabular" style="color:var(--amber)">₾170</strong>
+            </div>
+          </div>
+
+          <!-- Horizontal Viewport & Track -->
+          <div class="lx-horizontal-viewport">
+            <div class="lx-horizontal-track">
+
+              <!-- BENTO CARD 1: AI Social Post Generator -->
+              <div class="lx-bento-card lx-spotlight-card">
+                <div class="lx-bento-card-header">
+                  <div class="lx-bento-badge-row">
+                    <span class="lx-badge">1-Click AI სოც-მედია</span>
+                    <span style="font-size:12px;color:var(--lx-text-muted);font-weight:600">FEATURE 01</span>
+                  </div>
+                  <h3>Facebook & WhatsApp Post Generator</h3>
+                  <p>დაგავიწყდეს ყოველ დილით ტექსტების ხელით აკრეფა. ამოარჩიე ობიექტი და მიიღე იდეალურად დაფორმატებული პოსტი ემოჯიებით, ფასით ($/₾), დეპოზიტით და ჰეშთეგებით.</p>
+                </div>
+
+                <div class="lx-bento-preview-stage">
+                  <div class="lx-post-tabs">
+                    <button class="lx-post-tab-btn active" data-post-type="facebook">Facebook ჯგუფი</button>
+                    <button class="lx-post-tab-btn" data-post-type="whatsapp">WhatsApp მესიჯი</button>
+                    <button class="lx-post-tab-btn" data-post-type="cobroker">50/50 Co-Brokering</button>
+                  </div>
+
+                  <pre class="lx-post-box" id="post-preview-box">🔥 ქირავდება პრემიუმ ბინა ვაკეში, ჭავჭავაძის გამზირზე!
+
+📍 ლოკაცია: ვაკე, ჭავჭავაძე (ვაკის პარკთან)
+🏢 კორპუსი: ახალაშენებული, 8/14 სართული
+📐 ფართობი: 85 მ² | 2 ოთახი (1 საძინებელი)
+
+✨ ბინის უპირატესობები:
+• ახალი პრემიუმ ევრორემონტი, უცხოვრებელი
+• ცენტრალური გათბობა, კონდიციონერი, ჭურჭლის სარეცხი მანქანა
+• აივანი ვაკის პარკის ხედით
+
+💳 ფასი: $950 / თვეში
+📌 პირობები: პირველი და ბოლო თვის გადახდით + დეპოზიტი $950
+🐾 შინაური ცხოველები: შეთანხმებით
+
+📸 სრული HD ფოტოები და დეტალები იხილეთ ჭკვიან ბმულზე:
+👉 rigzea.ge/p/vake-loft-42
+
+📞 WhatsApp: +995 599 12 34 56 (გიორგი)</pre>
+
+                  <div class="lx-copy-bar">
+                    <button class="lx-copy-btn" id="copy-post-btn">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                      <span>დააკოპირე პოსტი</span>
+                    </button>
+                  </div>
+                </div>
               </div>
-              <div class="summary-metric">
-                შემდეგი დასუფთავება
-                <strong>ხვალ, 12:00</strong>
+
+              <!-- BENTO CARD 2: 1-Click Bilingual Lease Agreement -->
+              <div class="lx-bento-card lx-spotlight-card">
+                <div class="lx-bento-card-header">
+                  <div class="lx-bento-badge-row">
+                    <span class="lx-badge">იურიდიული სიზუსტე</span>
+                    <span style="font-size:12px;color:var(--lx-text-muted);font-weight:600">FEATURE 02</span>
+                  </div>
+                  <h3>1-Click ქირავნობის ხელშეკრულება (KA/EN)</h3>
+                  <p>სამოქალაქო კოდექსის მუხლი 531-ის შესაბამისი, ორენოვანი იურიდიული დოკუმენტი. შეიყვანე მონაცემები და წამებში მიიღე ბეჭდვისთვის/PDF-ისთვის მზა ფორმატი.</p>
+                </div>
+
+                <div class="lx-bento-preview-stage">
+                  <div class="lx-lease-toggle-bar">
+                    <div style="font-size:11.5px;color:var(--lx-text-muted)">სამოქალაქო კოდექსის მ. 531</div>
+                    <div class="lx-lease-lang-switch">
+                      <button class="lx-lang-btn active" data-lease-lang="ka">ქართული</button>
+                      <button class="lx-lang-btn" data-lease-lang="en">English</button>
+                      <button class="lx-lang-btn" data-lease-lang="dual">ორენოვანი</button>
+                    </div>
+                  </div>
+
+                  <div class="lx-lease-clauses-scroll">
+                    <!-- Clause 1 -->
+                    <div class="lx-clause-item">
+                      <div class="lx-clause-title">
+                        <span>§ 1.</span>
+                        <span>ქირავნობის თანხა და გადახდის წესი (Rent & Terms)</span>
+                      </div>
+                      <div class="clause-text-ka" style="color:var(--lx-text-silver);margin-bottom:4px">
+                        1.1. უძრავი ქონების ყოველთვიური ქირა შეადგენს $950 აშშ დოლარს. გადახდა წარმოებს ყოველი თვის 5 რიცხვამდე.
+                      </div>
+                      <div class="clause-text-en" style="color:var(--lx-text-muted);font-size:11px;display:none">
+                        1.1. The monthly rent for the property is USD 950. Payment shall be made on or before the 5th day of each month.
+                      </div>
+                    </div>
+
+                    <!-- Clause 2 -->
+                    <div class="lx-clause-item">
+                      <div class="lx-clause-title">
+                        <span>§ 2.</span>
+                        <span>უსაფრთხოების დეპოზიტი (Security Deposit)</span>
+                      </div>
+                      <div class="clause-text-ka" style="color:var(--lx-text-silver);margin-bottom:4px">
+                        2.1. ხელმოწერისას დამქირავებელი იხდის უსაფრთხოების დეპოზიტს $950 ოდენობით, რომელიც სრულად უბრუნდება ვადის ამოწურვისას.
+                      </div>
+                      <div class="clause-text-en" style="color:var(--lx-text-muted);font-size:11px;display:none">
+                        2.1. Tenant pays a security deposit of USD 950, fully refundable upon handover if no damages occur.
+                      </div>
+                    </div>
+
+                    <!-- Clause 3 -->
+                    <div class="lx-clause-item">
+                      <div class="lx-clause-title">
+                        <span>§ 3.</span>
+                        <span>შინაური ცხოველები და მოვლის წესი (Pets Policy)</span>
+                      </div>
+                      <div class="clause-text-ka" style="color:var(--lx-text-silver)">
+                        3.1. შინაური ცხოველების ყოლა დაშვებულია გამქირავებლის წერილობითი თანხმობით.
+                      </div>
+                      <div class="clause-text-en" style="color:var(--lx-text-muted);font-size:11px;display:none">
+                        3.1. Keeping pets is permitted with prior written consent of the Landlord.
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px">
+                    <span style="font-size:11.5px;color:var(--lx-mint-neon)">✓ მზადაა დასაბეჭდად / PDF ექსპორტისთვის</span>
+                    <a class="lx-btn lx-btn-secondary lx-btn-sm" href="/app/">შექმენი ხელშეკრულება ↗</a>
+                  </div>
+                </div>
+              </div>
+
+              <!-- BENTO CARD 3: Intelligent Client Matchmaker -->
+              <div class="lx-bento-card lx-spotlight-card">
+                <div class="lx-bento-card-header">
+                  <div class="lx-bento-badge-row">
+                    <span class="lx-badge">ავტომატური მეჩინგი</span>
+                    <span style="font-size:12px;color:var(--lx-text-muted);font-weight:600">FEATURE 03</span>
+                  </div>
+                  <h3>Client Matchmaker — კლიენტის შესაბამისობა</h3>
+                  <p>შეიყვანე კლიენტის მოთხოვნა (უბანი, ბიუჯეტი, ცხოველები) და Rigzea მყისიერად გიჩვენებს შენს ბაზაში არსებულ ყველა იდეალურად შესაბამის ბინას.</p>
+                </div>
+
+                <div class="lx-bento-preview-stage">
+                  <div style="display:flex;gap:6px;margin-bottom:10px">
+                    <button class="lx-match-pill active" data-match-key="vake" style="padding:4px 10px;border-radius:99px;font-size:11px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#fff;cursor:pointer">მოთხოვნა #1: ვაკე</button>
+                    <button class="lx-match-pill" data-match-key="saburtalo" style="padding:4px 10px;border-radius:99px;font-size:11px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#fff;cursor:pointer">მოთხოვნა #2: საბურთალო</button>
+                    <button class="lx-match-pill" data-match-key="batumi" style="padding:4px 10px;border-radius:99px;font-size:11px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#fff;cursor:pointer">მოთხოვნა #3: ბათუმი</button>
+                  </div>
+
+                  <div class="lx-match-req-card">
+                    <div class="lx-match-req-header">
+                      <span>კლიენტის კრიტერიუმები:</span>
+                      <span style="color:var(--lx-mint-neon)">აქტიური ძებნა</span>
+                    </div>
+                    <div class="lx-match-req-text" id="match-req-text">ვაკე, ჭავჭავაძე · $950-მდე · 2 ოთახი · ძაღლით 🐶</div>
+                  </div>
+
+                  <div class="lx-match-results" id="match-results-container">
+                    <div class="lx-match-listing-row">
+                      <div>
+                        <strong id="match-listing-title" style="color:#fff;font-size:13.5px">ვაკე, ჭავჭავაძის გამზ. #42</strong>
+                        <div id="match-listing-desc" style="font-size:11.5px;color:var(--lx-text-muted);margin-top:2px">85 მ² · $950/თვე · ცხოველები დაშვებულია</div>
+                      </div>
+                      <span class="lx-match-score-chip" id="match-score-display">98% იდეალური თანხვედრა</span>
+                    </div>
+
+                    <div class="lx-match-listing-row" style="opacity:0.85">
+                      <div>
+                        <strong style="color:#fff;font-size:13.5px">ვაკე, აბაშიძის #34</strong>
+                        <div style="font-size:11.5px;color:var(--lx-text-muted);margin-top:2px">75 მ² · $900/თვე · აივნით</div>
+                      </div>
+                      <span class="lx-match-score-chip" style="background:rgba(255,255,255,0.06);border-color:rgba(255,255,255,0.15);color:#fff">92% თანხვედრა</span>
+                    </div>
+                  </div>
+
+                  <div style="margin-top:auto;padding-top:10px;font-size:11.5px;color:var(--lx-text-muted)">
+                    ⚡ კლიენტს მომენტალურად ეგზავნება ჭკვიანი შეთავაზება 1 კლიკით
+                  </div>
+                </div>
+              </div>
+
+              <!-- BENTO CARD 4: Multi-Property Pitch -->
+              <div class="lx-bento-card lx-spotlight-card">
+                <div class="lx-bento-card-header">
+                  <div class="lx-bento-badge-row">
+                    <span class="lx-badge">პრემიუმ შეთავაზება</span>
+                    <span style="font-size:12px;color:var(--lx-text-muted);font-weight:600">FEATURE 04</span>
+                  </div>
+                  <h3>Multi-Property Pitch — მრავალობიექტიანი ვიტრინა</h3>
+                  <p>მდგმურს რამდენიმე ვარიანტი აინტერესებს? მონიშნე 3-5 ბინა და გაუგზავნე ერთიანი პერსონალური ვიტრინის ბმული. კლიენტი ერთ გვერდზე შეადარებს ფასებს და ფოტოებს.</p>
+                </div>
+
+                <div class="lx-bento-preview-stage">
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+                    <span style="font-size:11.5px;color:var(--lx-mint-neon);font-weight:600">🔗 rigzea.ge/p/selection-mariam</span>
+                    <span style="font-size:11px;color:var(--lx-text-muted)">3 ბინა შერჩეული</span>
+                  </div>
+
+                  <div class="lx-pitch-compare-grid">
+                    <!-- Option 1 -->
+                    <div class="lx-pitch-card-mini">
+                      <div>
+                        <div class="lx-pitch-mini-img">🏢</div>
+                        <div class="lx-pitch-mini-title">ვაკე Loft #42</div>
+                        <div style="font-size:10px;color:var(--lx-text-muted)">85 მ² · 2 ოთახი</div>
+                      </div>
+                      <div class="lx-pitch-mini-price">$950/თვე</div>
+                    </div>
+
+                    <!-- Option 2 -->
+                    <div class="lx-pitch-card-mini">
+                      <div>
+                        <div class="lx-pitch-mini-img">🌿</div>
+                        <div class="lx-pitch-mini-title">ვერა Residence</div>
+                        <div style="font-size:10px;color:var(--lx-text-muted)">70 მ² · 2 ოთახი</div>
+                      </div>
+                      <div class="lx-pitch-mini-price">$850/თვე</div>
+                    </div>
+
+                    <!-- Option 3 -->
+                    <div class="lx-pitch-card-mini">
+                      <div>
+                        <div class="lx-pitch-mini-img">🏙️</div>
+                        <div class="lx-pitch-mini-title">საბურთალო Tower</div>
+                        <div style="font-size:10px;color:var(--lx-text-muted)">65 მ² · 2 ოთახი</div>
+                      </div>
+                      <div class="lx-pitch-mini-price">$750/თვე</div>
+                    </div>
+                  </div>
+
+                  <div style="margin-top:10px;display:flex;align-items:center;justify-content:space-between">
+                    <span style="font-size:11.5px;color:var(--lx-text-silver)">მდგმური ადარებს ერთ გვერდზე</span>
+                    <span class="lx-badge" style="font-size:11px;padding:3px 10px">100% მობილური UI</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- BENTO CARD 5: Lease Expiry Reminder & Pipeline -->
+              <div class="lx-bento-card lx-spotlight-card">
+                <div class="lx-bento-card-header">
+                  <div class="lx-bento-badge-row">
+                    <span class="lx-badge">განმეორებითი შემოსავალი</span>
+                    <span style="font-size:12px;color:var(--lx-text-muted);font-weight:600">FEATURE 05</span>
+                  </div>
+                  <h3>Lease Expiry Reminder — ვადის გასვლის შეხსენება</h3>
+                  <p>ბინა 6 თვით ან 1 წლით გააქირავე? Rigzea 30 დღით ადრე შეგახსენებს ვადის გასვლას Telegram-ში, რათა დროულად დაუკავშირდე მეპატრონეს და არ დაკარგო საკომისიო.</p>
+                </div>
+
+                <div class="lx-bento-preview-stage">
+                  <div class="lx-pipeline-steps">
+                    <div class="lx-pipeline-row">
+                      <div class="lx-pipeline-row-icon">📅</div>
+                      <div style="flex:1">
+                        <div style="font-size:12px;font-weight:700;color:#fff">ხელშეკრულება გაფორმდა</div>
+                        <div style="font-size:10.5px;color:var(--lx-text-muted)">ვადა: 12 თვე · მეპატრონე: ნინო ქ.</div>
+                      </div>
+                      <span style="font-size:10.5px;color:var(--lx-text-muted)">10 ოქტ</span>
+                    </div>
+
+                    <div class="lx-pipeline-row alert">
+                      <div class="lx-pipeline-row-icon" style="color:var(--lx-mint-neon)">🔔</div>
+                      <div style="flex:1">
+                        <div style="font-size:12px;font-weight:700;color:var(--lx-mint-neon)">30 დღით ადრე შეხსენება</div>
+                        <div style="font-size:10.5px;color:var(--lx-text-silver)">ავტომატური Telegram გაფრთხილება აგენტს</div>
+                      </div>
+                      <span class="lx-badge" style="font-size:10px;padding:2px 8px">აქტიური</span>
+                    </div>
+
+                    <div class="lx-pipeline-row">
+                      <div class="lx-pipeline-row-icon">💰</div>
+                      <div style="flex:1">
+                        <div style="font-size:12px;font-weight:700;color:#fff">ხელშეკრულების გაგრძელება / ახალი ქირა</div>
+                        <div style="font-size:10.5px;color:var(--lx-text-muted)">ახალი 50%-იანი საკომისიოს დაფიქსირება</div>
+                      </div>
+                      <span style="font-size:11px;font-weight:700;color:var(--lx-mint-neon)">+$475</span>
+                    </div>
+                  </div>
+
+                  <div style="margin-top:auto;padding-top:12px;display:flex;align-items:center;justify-content:space-between">
+                    <span style="font-size:12px;font-weight:700;color:#fff">+35% განმეორებითი საკომისიო</span>
+                    <span style="font-size:11.5px;color:var(--lx-text-muted)">0 დაკარგული კონტრაქტი</span>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- 4. Vertical Continuation: Comparison Section (Old Way vs Rigzea Way) -->
+      <section class="lx-comparison-section" id="comparison">
+        <div class="lx-container">
+          <div class="lx-section-header">
+            <span class="lx-badge">რას უგზავნი მდგმურს & მყიდველს?</span>
+            <h2>დაემშვიდობე მესენჯერების ქაოსს და დაკარგულ კლიენტებს</h2>
+            <p>კლიენტი გადაწყვეტილებას იღებს პირველივე შთაბეჭდილებით. შეადარე, როგორ გამოიყურება შენი მუშაობა აქამდე და Rigzea-თი:</p>
+          </div>
+
+          <div class="lx-comparison-grid">
+            <!-- Old Way -->
+            <div class="lx-card-old-way">
+              <div class="lx-comparison-title-box">
+                <span class="lx-tag-old">ძველი მეთოდი</span>
+                <h3>როგორ მუშაობდი აქამდე</h3>
+              </div>
+
+              <ul class="lx-points-list">
+                <li>
+                  <span class="lx-point-icon-red">✕</span>
+                  <span>WhatsApp-სა და Viber-ში 40 დაბალი ხარისხის ფოტოს ჩაყრა, რაც კლიენტის მობილურს ჭედავს.</span>
+                </li>
+                <li>
+                  <span class="lx-point-icon-red">✕</span>
+                  <span>მდგმურის მესიჯები: „რომელი სართულია? პარკინგი აქვს? კომუნალურები შედის?“ — ათჯერ გამეორება.</span>
+                </li>
+                <li>
+                  <span class="lx-point-icon-red">✕</span>
+                  <span>ტელეფონის გადავსებული მეხსიერება და ჩატებში ჩაკარგული ლოკაციები.</span>
+                </li>
+                <li>
+                  <span class="lx-point-icon-red">✕</span>
+                  <span>არაპროფესიონალური იმიჯი — კლიენტი ვერ ხედავს შენს პრემიუმ სტატუსს და ხშირად „იკარგება“.</span>
+                </li>
+              </ul>
+
+              <div style="margin-top:auto;padding-top:16px;border-top:1px solid rgba(239,68,68,0.2);font-size:13px;color:var(--lx-red-text)">
+                ⚠️ შედეგი: დაკარგული დრო, გაღიზიანებული კლიენტი და ჩაშლილი გარიგებები.
               </div>
             </div>
 
-            <div class="ledger-timeline">
-              <div class="timeline-date-label">დღეს</div>
-              <div class="timeline-events-list">
-                <div class="timeline-event-row accent">
-                  <time>15:23</time>
-                  <div class="timeline-rail"></div>
-                  <div class="timeline-details">
-                    <strong>ქვითარი დაემატა</strong>
-                    <p>ელექტრონული ქვითარი #INV-841 მიბმულია ხარჯთან</p>
-                    <span class="receipt-tag">📄 ქვითარი მიმაგრებულია</span>
-                  </div>
-                </div>
+            <!-- Rigzea Way -->
+            <div class="lx-card-rigzea-way lx-spotlight-card">
+              <div class="lx-comparison-title-box">
+                <span class="lx-tag-rigzea">Rigzea-ს სტანდარტი</span>
+                <h3>როგორ მუშაობ Rigzea-თი (/p/ ლინკი)</h3>
+              </div>
 
-                <div class="timeline-event-row accent">
-                  <time>15:20</time>
-                  <div class="timeline-rail"></div>
-                  <div class="timeline-details">
-                    <strong>რემონტი დასრულდა</strong>
-                    <p>კონდიციონერის შეკეთება — ხელოსანი დათო</p>
-                  </div>
-                </div>
+              <ul class="lx-points-list">
+                <li>
+                  <span class="lx-point-icon-green">✓</span>
+                  <span>ერთი სუფთა, ელვისებური ბმული (მაგ: <strong>rigzea.ge/p/vake-loft-42</strong>), რომელიც მყისიერად იხსნება.</span>
+                </li>
+                <li>
+                  <span class="lx-point-icon-green">✓</span>
+                  <span>HD გალერეა, ზუსტი ლოკაცია რუკაზე, დეტალური პირობები (დეპოზიტი, ცხოველები, გათბობა).</span>
+                </li>
+                <li>
+                  <span class="lx-point-icon-green">✓</span>
+                  <span>შენი პირადი საკონტაქტო ბარათი: 1-Click WhatsApp & Call პირდაპირ ჭკვიანი ბმულიდან.</span>
+                </li>
+                <li>
+                  <span class="lx-point-icon-green">✓</span>
+                  <span>ნულოვანი ბარიერი მდგმურისთვის — არანაირი რეგისტრაცია, იხსნება ნებისმიერ ტელეფონზე.</span>
+                </li>
+              </ul>
 
-                <div class="timeline-event-row">
-                  <time>11:42</time>
-                  <div class="timeline-rail"></div>
-                  <div class="timeline-details">
-                    <strong>ნინო ქ.-მ ₾170 დაადასტურა</strong>
-                    <p>მფლობელმა თანხმობა გასცა დაცული ბმულით</p>
-                  </div>
-                </div>
-
-                <div class="timeline-event-row">
-                  <time>11:08</time>
-                  <div class="timeline-rail"></div>
-                  <div class="timeline-details">
-                    <strong>რემონტის მოთხოვნა გაეგზავნა მფლობელს</strong>
-                    <p>შეტყობინება დადასტურების ბმულით</p>
-                  </div>
-                </div>
-
-                <div class="timeline-event-row">
-                  <time>11:05</time>
-                  <div class="timeline-rail"></div>
-                  <div class="timeline-details">
-                    <strong>ხელოსნის შეფასება — ₾170</strong>
-                    <p>საჭიროა დეტალის შეცვლა</p>
-                  </div>
-                </div>
-
-                <div class="timeline-event-row">
-                  <time>10:42</time>
-                  <div class="timeline-rail"></div>
-                  <div class="timeline-details">
-                    <strong>კონდიციონერი აღარ აგრილებს</strong>
-                    <p>საკითხი ბინას დაემატა პირველადი შეტყობინებიდან</p>
-                  </div>
-                </div>
+              <div style="margin-top:auto;padding-top:16px;border-top:1px solid rgba(0,245,155,0.25);font-size:13px;color:var(--lx-mint-neon);font-weight:600">
+                ⚡ შედეგი: 3-ჯერ უფრო სწრაფად დახურული გარიგება და 100% პროფესიონალური იმიჯი.
               </div>
             </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <!-- 5. Owner Trust / Commercial Value -->
-    <section class="owner-section-dark" id="owner">
-      <div class="container">
-        <div class="owner-grid">
-          <div>
-            <span class="eyebrow">პროფესიონალიზმი და ნდობა</span>
-            <h2>მფლობელს აღარ უნდა აუხსნა, სად წავიდა ფული.</h2>
-            <p>თვის ბოლოს მფლობელი იღებს არა გაურკვეველ შეტყობინებებს, არამედ გამჭვირვალე, დალაგებულ ანგარიშს — ყველა ხარჯით, ქვითრითა და წინასწარი დადასტურებით.</p>
-            <div style="margin-top:24px">
-              <a class="btn light" href="/demo/?view=reports">ნახე მფლობელის ანგარიში <span class="arr">↗</span></a>
-            </div>
+      <!-- 5. Interactive Commission & Deal ROI Calculator -->
+      <section class="lx-calc-section" id="calculator">
+        <div class="lx-container">
+          <div class="lx-section-header">
+            <span class="lx-badge">შენი ფინანსური კონტროლი</span>
+            <h2>გამოთვალე შენი დაზოგილი დრო და საკომისიო</h2>
+            <p>ნახე, რამდენ შემოსავალსა და თავისუფალ დროს გაძლევს Rigzea-ს ავტომატიზაცია თვეში:</p>
           </div>
 
-          <!-- Clean Owner Report Ledger -->
-          <div class="owner-report-sheet">
-            <div class="owner-report-header">
-              <div>
-                <h4>სექტემბრის ანგარიში</h4>
-                <span>Orbi City · 1204 · მფლობელი: ნინო ქ.</span>
-              </div>
-              <span class="status-pill done">მზადაა</span>
-            </div>
-
-            <div class="owner-kpi-row">
-              <div class="owner-kpi-item">
-                <span>შემოსავალი</span>
-                <strong class="num-tabular">₾1,840</strong>
-              </div>
-              <div class="owner-kpi-item">
-                <span>ხარჯები</span>
-                <strong class="num-tabular" style="color:var(--amber)">₾320</strong>
-              </div>
-              <div class="owner-kpi-item net">
-                <span>წმინდა შედეგი</span>
-                <strong class="num-tabular">₾1,520</strong>
-              </div>
-            </div>
-
-            <div class="owner-expense-table">
-              <h5>ხარჯების დეტალური ჩამონათვალი</h5>
+          <div class="lx-calc-box lx-spotlight-card">
+            
+            <!-- Sliders Column -->
+            <div class="lx-calc-inputs">
               
-              <div class="expense-entry-row">
-                <time>12 სექ</time>
-                <div class="exp-desc">
-                  <strong>დასუფთავება</strong>
-                  <span>მიბმულია ქვითარი</span>
+              <!-- Slider 1: Rent -->
+              <div class="lx-slider-group">
+                <div class="lx-slider-label-row">
+                  <span>საშუალო ქირა ობიექტზე ($)</span>
+                  <span class="lx-slider-val lx-tabular" id="calc-rent-val">$800</span>
                 </div>
-                <div class="exp-amount num-tabular">₾80</div>
-              </div>
-
-              <div class="expense-entry-row">
-                <time>19 სექ</time>
-                <div class="exp-desc">
-                  <strong>კონდიციონერის შეკეთება</strong>
-                  <span>მფლობელის მიერ დადასტურებული · მიბმულია ქვითარი</span>
-                </div>
-                <div class="exp-amount num-tabular">₾170</div>
-              </div>
-
-              <div class="expense-entry-row">
-                <time>24 სექ</time>
-                <div class="exp-desc">
-                  <strong>საყოფაცხოვრებო სახარჯი მასალები</strong>
-                  <span>მიბმულია ქვითარი</span>
-                </div>
-                <div class="exp-amount num-tabular">₾70</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- 6. Telegram Workflow -->
-    <section class="landing-section" id="telegram">
-      <div class="container">
-        <div class="telegram-transform-grid">
-          <div>
-            <span class="eyebrow">სწრაფი შეყვანა</span>
-            <h2>არაფერი გადაიწერო ხელით.</h2>
-            <p style="font-size:16px;font-weight:600;color:var(--ink);margin:12px 0 8px">Telegram-ში დაწერე ჩვეულებრივად. რიგზეა თვითონ დაალაგებს.</p>
-            <p style="color:var(--ink-secondary);font-size:14px;line-height:1.7;margin:0 0 20px">არ გჭირდება რთულ ფორმებში მონაცემების შეყვანა. გაგზავნე მოკლე შეტყობინება ისე, როგორც ყოველდღიურად წერ — სისტემა თავად ამოიცნობს ბინას, თანხას და შექმნის საქმეს.</p>
-            <div class="telegram-roadmap-note">
-              <span>● საჩვენებელი ფუნქციონალი აქტიურია დემოში; სრული ბოტი მალე დაემატება</span>
-            </div>
-          </div>
-
-            <div class="telegram-sample-pills" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px">
-              <button class="telegram-pill-btn active" data-msg-idx="0">1204 · კონდიციონერი</button>
-              <button class="telegram-pill-btn" data-msg-idx="1">ვაკე 18 · სანტექნიკა</button>
-              <button class="telegram-pill-btn" data-msg-idx="2">ბათუმი 7 · დასუფთავება</button>
-            </div>
-
-            <!-- Structured Transformation Visual -->
-            <div class="transform-visual">
-              <div class="telegram-msg-source">
-                <div class="msg-meta">
-                  <span id="tg-preview-channel">Telegram შეტყობინება</span>
-                  <span id="tg-preview-time">11:02</span>
-                </div>
-                <div class="msg-text" id="tg-preview-text">„1204-ში კონდიციონერი გაფუჭდა, 170 ლარია.“</div>
-              </div>
-
-              <div class="transform-arrow">
-                <span>↓ რიგზეა ქმნის სტრუქტურირებულ ჩანაწერს</span>
-              </div>
-
-              <div class="structured-record-target">
-                <div class="structured-grid">
-                  <div class="struct-item">
-                    <span>ბინა</span>
-                    <strong id="tg-target-apt">Orbi City · 1204</strong>
-                  </div>
-                  <div class="struct-item">
-                    <span>საკითხი</span>
-                    <strong id="tg-target-issue">კონდიციონერის შეკეთება</strong>
-                  </div>
-                  <div class="struct-item">
-                    <span>თანხა</span>
-                    <strong class="num-tabular" id="tg-target-cost">₾170</strong>
-                  </div>
-                  <div class="struct-item">
-                    <span>სტატუსი</span>
-                    <span class="status-pill wait" id="tg-target-status" style="font-size:10px">ელოდება თანხმობას</span>
-                  </div>
+                <input type="range" class="lx-range-slider" id="calc-rent" min="300" max="3000" step="50" value="800" />
+                <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--lx-text-muted)">
+                  <span>$300</span>
+                  <span>$1,500</span>
+                  <span>$3,000</span>
                 </div>
               </div>
+
+              <!-- Slider 2: Deals -->
+              <div class="lx-slider-group">
+                <div class="lx-slider-label-row">
+                  <span>დახურული გარიგებები თვეში</span>
+                  <span class="lx-slider-val lx-tabular" id="calc-deals-val">4 გარიგება</span>
+                </div>
+                <input type="range" class="lx-range-slider" id="calc-deals" min="1" max="15" step="1" value="4" />
+                <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--lx-text-muted)">
+                  <span>1</span>
+                  <span>5</span>
+                  <span>15</span>
+                </div>
+              </div>
+
+              <!-- Split rate select -->
+              <div class="lx-slider-group">
+                <div class="lx-slider-label-row">
+                  <span>საკომისიოს წილი</span>
+                </div>
+                <select id="calc-split" style="background:#070d0a;color:#fff;border:1px solid var(--lx-border-subtle);border-radius:10px;padding:10px 14px;font-size:14px;outline:none;cursor:pointer">
+                  <option value="0.50">50% — სრული საკომისიო (პირველი თვის ნახევარი)</option>
+                  <option value="0.25">25% — Co-Brokering (მეორე აგენტთან 50/50 გაყოფა)</option>
+                </select>
+              </div>
+
+            </div>
+
+            <!-- Results Output Column -->
+            <div class="lx-calc-results">
+              <div class="lx-calc-metric-highlight">
+                <span>თვიური საკომისიო</span>
+                <strong class="lx-tabular" id="calc-result-monthly-usd">$1,600</strong>
+                <div style="font-size:14px;color:var(--lx-mint-bright);font-weight:600" id="calc-result-monthly-gel">~ ₾4,352</div>
+              </div>
+
+              <div class="lx-calc-submetrics-grid">
+                <div class="lx-calc-submetric-box">
+                  <span>წლიური შემოსავალი</span>
+                  <strong class="lx-tabular" id="calc-result-annual-usd">$19,200</strong>
+                </div>
+
+                <div class="lx-calc-submetric-box">
+                  <span>დაზოგილი დრო თვეში</span>
+                  <strong class="lx-tabular" id="calc-result-hours" style="color:var(--lx-mint-neon)">32 საათი</strong>
+                </div>
+              </div>
+
+              <div style="padding-top:12px;border-top:1px solid rgba(255,255,255,0.08);font-size:12px;color:var(--lx-text-silver);line-height:1.5">
+                💡 32 საათის დაზოგვა გაძლევს საშუალებას, თვეში მინიმუმ <strong>2 დამატებითი გარიგება</strong> დახურო.
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      <!-- 6. 4-Tier Transparent Pricing Grid -->
+      <section class="lx-pricing-section" id="pricing">
+        <div class="lx-container">
+          <div class="lx-section-header">
+            <span class="lx-badge">გამჭვირვალე ტარიფები</span>
+            <h2>აირჩიე შენი ზრდის ტემპი</h2>
+            <p>დაიწყე სრულიად უფასოდ და გადადი პროფესიონალურ ხელსაწყოებზე, როცა შენი ბრუნვა გაიზრდება.</p>
+          </div>
+
+          <!-- Billing Toggle -->
+          <div class="lx-billing-toggle-container">
+            <div class="lx-billing-toggle-pill">
+              <button class="active" data-billing="monthly">თვეში</button>
+              <button data-billing="yearly">წელიწადში</button>
+            </div>
+            <span class="lx-discount-badge">-20% (2 თვე საჩუქრად)</span>
+          </div>
+
+          <!-- 4 Pricing Cards -->
+          <div class="lx-pricing-grid-4">
+            
+            <!-- Tier 1: Starter -->
+            <div class="lx-pricing-card lx-spotlight-card">
+              <div>
+                <h3 class="lx-plan-name">დამწყები (Starter)</h3>
+                <p class="lx-plan-desc">იდეალურია ინდივიდუალური მაკლერებისთვის, ვისაც სურს მოსინჯვა.</p>
+                <div class="lx-plan-price-row">
+                  <span class="lx-plan-amount lx-tabular" data-monthly="0 ₾" data-yearly="0 ₾">0 ₾</span>
+                  <span class="lx-plan-period" data-monthly-period>/ სამუდამოდ უფასო</span>
+                </div>
+              </div>
+
+              <ul class="lx-features-list">
+                <li><span class="lx-check-icon">✓</span> 10 აქტიური ობიექტი</li>
+                <li><span class="lx-check-icon">✓</span> ულიმიტო ჭკვიანი ბმულები (/p/)</li>
+                <li><span class="lx-check-icon">✓</span> ძირითადი WhatsApp გაზიარება</li>
+                <li><span class="lx-check-icon">✓</span> 1-Click Facebook პოსტის გენერატორი</li>
+                <li><span class="lx-check-icon">✓</span> საკომისიოს საბაზისო კალკულატორი</li>
+              </ul>
+
+              <a class="lx-btn lx-btn-secondary" href="/app/">დაიწყე 0 ₾-ად ↗</a>
+            </div>
+
+            <!-- Tier 2: Pro Agent (Featured) -->
+            <div class="lx-pricing-card featured lx-spotlight-card">
+              <span class="lx-pricing-featured-badge">ყველაზე პოპულარული</span>
+              <div>
+                <h3 class="lx-plan-name">პრო აგენტი (Pro Agent)</h3>
+                <p class="lx-plan-desc">აქტიური აგენტებისთვის, ვისაც სჭირდება სრული ავტომატიზაცია.</p>
+                <div class="lx-plan-price-row">
+                  <span class="lx-plan-amount lx-tabular" data-monthly="29 ₾" data-yearly="279 ₾">29 ₾</span>
+                  <span class="lx-plan-period" data-monthly-period>/ თვე</span>
+                </div>
+              </div>
+
+              <ul class="lx-features-list">
+                <li><span class="lx-check-icon">✓</span> 50 აქტიური ობიექტი</li>
+                <li><span class="lx-check-icon">✓</span> ყველაფერი Starter-იდან</li>
+                <li><span class="lx-check-icon">✓</span> 1-Click ორენოვანი (KA/EN) ხელშეკრულებები</li>
+                <li><span class="lx-check-icon">✓</span> Client Matchmaker (ავტომატური მეჩინგი)</li>
+                <li><span class="lx-check-icon">✓</span> Lease Expiry შეხსენებები Telegram/SMS</li>
+                <li><span class="lx-check-icon">✓</span> პირადი ბრენდირებული პროფილი & ლოგო</li>
+                <li><span class="lx-check-icon">✓</span> 50/50 Co-Brokering აღრიცხვა</li>
+              </ul>
+
+              <a class="lx-btn lx-btn-primary" href="/app/">გააქტიურე Pro ↗</a>
+            </div>
+
+            <!-- Tier 3: Top Agent & Team -->
+            <div class="lx-pricing-card lx-spotlight-card">
+              <div>
+                <h3 class="lx-plan-name">ტოპ აგენტი (Top Agent)</h3>
+                <p class="lx-plan-desc">მაღალი ბრუნვის რეალტორებისთვის და მცირე პარტნიორობებისთვის (3 აგენტამდე).</p>
+                <div class="lx-plan-price-row">
+                  <span class="lx-plan-amount lx-tabular" data-monthly="69 ₾" data-yearly="660 ₾">69 ₾</span>
+                  <span class="lx-plan-period" data-monthly-period>/ თვე</span>
+                </div>
+              </div>
+
+              <ul class="lx-features-list">
+                <li><span class="lx-check-icon">✓</span> 150 აქტიური ობიექტი</li>
+                <li><span class="lx-check-icon">✓</span> ყველაფერი Pro-დან</li>
+                <li><span class="lx-check-icon">✓</span> Multi-Property Pitch (მრავალობიექტიანი)</li>
+                <li><span class="lx-check-icon">✓</span> 3 სამუშაო ადგილი (Sub-accounts)</li>
+                <li><span class="lx-check-icon">✓</span> მოწინავე საკომისიოების ანალიტიკა</li>
+                <li><span class="lx-check-icon">✓</span> პრიორიტეტული მხარდაჭერა 24/7</li>
+                <li><span class="lx-check-icon">✓</span> მონაცემების ექსპორტი Excel/PDF</li>
+              </ul>
+
+              <a class="lx-btn lx-btn-secondary" href="/app/">გახდი ტოპ აგენტი ↗</a>
+            </div>
+
+            <!-- Tier 4: Agency Elite -->
+            <div class="lx-pricing-card lx-spotlight-card">
+              <div>
+                <h3 class="lx-plan-name">სააგენტო (Agency Elite)</h3>
+                <p class="lx-plan-desc">უძრავი ქონების სააგენტოებისთვის თბილისსა და ბათუმში.</p>
+                <div class="lx-plan-price-row">
+                  <span class="lx-plan-amount lx-tabular" data-monthly="149 ₾" data-yearly="1,430 ₾">149 ₾</span>
+                  <span class="lx-plan-period" data-monthly-period>/ თვე</span>
+                </div>
+              </div>
+
+              <ul class="lx-features-list">
+                <li><span class="lx-check-icon">✓</span> ულიმიტო აქტიური ობიექტები</li>
+                <li><span class="lx-check-icon">✓</span> 10+ აგენტის სამუშაო ადგილი & როლები</li>
+                <li><span class="lx-check-icon">✓</span> სააგენტოს შიდა საერთო ბაზა</li>
+                <li><span class="lx-check-icon">✓</span> სრული White-label ლინკები</li>
+                <li><span class="lx-check-icon">✓</span> გუნდური KPI და გაყიდვების რეპორტინგი</li>
+                <li><span class="lx-check-icon">✓</span> პერსონალური მენეჯერი & ტრენინგი</li>
+              </ul>
+
+              <a class="lx-btn lx-btn-secondary" href="/app/">სააგენტოს პაკეტი ↗</a>
+            </div>
+
+          </div>
+
+          <!-- Onboarding Support Banner -->
+          <div style="margin-top:40px;background:rgba(255,255,255,0.03);border:1px solid var(--lx-border-subtle);border-radius:20px;padding:28px 36px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:20px">
+            <div>
+              <h4 style="font-size:18px;font-weight:700;color:#fff;margin-bottom:4px">პორტფელის გადმოტანაში ჩვენ დაგეხმარებით — უფასოდ.</h4>
+              <p style="font-size:13.5px;color:var(--lx-text-silver);margin:0">თუ ბინები უკვე გაქვს Excel-ში ან ჩათებში, ჩვენი გუნდი დაგეხმარება მონაცემების გადმოტანასა და სისტემის გამართვაში.</p>
+            </div>
+            <a class="lx-btn lx-btn-secondary lx-btn-sm" href="/app/">დაგვიკავშირდით WhatsApp-ში ↗</a>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- 7. High-Converting Final CTA -->
+      <section class="lx-final-cta-section">
+        <div class="lx-container">
+          <div class="lx-final-cta-box">
+            <span class="lx-badge">დაიწყე 30 წამში</span>
+            <h2>შენი გარიგებებიც რიგზე იყოს.</h2>
+            <p>გახსენი სამუშაო სივრცე, შექმენი შენი პირველი ჭკვიანი ბმული და ნახე, როგორ იცვლება კლიენტებთან კომუნიკაცია პირველივე დღიდან.</p>
+            <div style="display:flex;gap:14px;flex-wrap:wrap;justify-content:center">
+              <a class="lx-btn lx-btn-primary" href="/app/">დაიწყე უფასოდ — 0 ₾ ↗</a>
+              <a class="lx-btn lx-btn-secondary" href="/demo/">ნახე დემო ვერსია</a>
             </div>
           </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- 8. Global Luxury Footer -->
+    <footer class="lx-footer">
+      <div class="lx-container lx-footer-inner">
+        <a class="lx-brand" href="/" style="font-size:19px">
+          <div class="lx-brand-icon" style="width:26px;height:26px">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00f59b" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="4"></rect></svg>
+          </div>
+          <span>რიგზეა<span class="lx-brand-dot">.</span></span>
+        </a>
+
+        <div class="lx-footer-copy">
+          © 2026 Rigzea · თბილისი / ბათუმი · უძრავი ქონების პროფესიონალი აგენტების პლატფორმა
+        </div>
+
+        <div class="lx-footer-links">
+          <a href="#features">ფუნქციები</a>
+          <a href="#comparison">შედარება</a>
+          <a href="#calculator">კალკულატორი</a>
+          <a href="#pricing">ტარიფები</a>
+          <a href="/app/">სისტემაში შესვლა</a>
         </div>
       </div>
-    </section>
+    </footer>
+  </div>
 
-    <!-- 7. Pricing - 3 Plans -->
-    <section class="pricing-section" id="pricing">
-      <div class="container">
-        <div class="pricing-top">
-          <div>
-            <span class="eyebrow">ტარიფები</span>
-            <h2 style="font-size:clamp(28px, 3.4vw, 42px);font-weight:700;margin:6px 0 8px;letter-spacing:-0.03em">ფასები</h2>
-            <p style="color:var(--ink-secondary);margin:0;font-size:14px">ყველა ტარიფზე მოქმედებს <strong>14-დღიანი უფასო საცდელი პერიოდი</strong> — საბანკო ბარათის გარეშე.</p>
-          </div>
-          <div class="billing-toggle" aria-label="გადახდის პერიოდი">
-            <button class="active" data-billing="monthly" aria-pressed="true">თვეში</button>
-            <button data-billing="yearly" aria-pressed="false">წელიწადში (-17%)</button>
-          </div>
-        </div>
-
-        <div class="pricing-table-4">
-          <!-- Plan 1: დამწყები (Free Starter) -->
-          <div class="pricing-col">
-            <div class="plan-header">
-              <div class="plan-header-top">
-                <h3>დამწყები</h3>
-              </div>
-              <div class="plan-price num-tabular" data-monthly="₾0" data-yearly="₾0">₾0 <small>/ სამუდამოდ</small></div>
-              <div class="plan-capacity">1 ბინა უფასოდ</div>
-              <p class="plan-desc">იდეალურია ინდივიდუალური მასპინძლისთვის და დასაწყებად.</p>
-            </div>
-            <ul class="plan-features-list">
-              <li>1 ბინა სამუდამოდ უფასოდ</li>
-              <li>სტუმრის ციფრული QR გზამკვლევი</li>
-              <li>დღიური & გრძელვადიანი რეჟიმი</li>
-              <li>ხარჯებისა და შემოსავლების აღრიცხვა</li>
-              <li>თვის ფინანსური შეჯამება</li>
-            </ul>
-            <a class="btn secondary" href="/app/">დაიწყე 0 ₾-ით <span class="arr">↗</span></a>
-          </div>
-
-          <!-- Plan 2: მცირე (Mini Host) -->
-          <div class="pricing-col">
-            <div class="plan-header">
-              <div class="plan-header-top">
-                <h3>მცირე</h3>
-              </div>
-              <div class="plan-price num-tabular" data-monthly="₾29" data-yearly="₾290">₾29 <small>/ თვე</small></div>
-              <div class="plan-capacity">3 ბინამდე</div>
-              <p class="plan-desc">რამდენიმე ბინის მფლობელებისთვის და მასპინძლებისთვის.</p>
-            </div>
-            <ul class="plan-features-list">
-              <li>ყველაფერი „დამწყები“-დან</li>
-              <li>3 ბინის სრული მართვა</li>
-              <li>1-Click WhatsApp & Telegram თანხმობები</li>
-              <li>ქვითრების ფოტო-არქივი</li>
-              <li>ბინის მდგომარეობის ისტორია</li>
-            </ul>
-            <a class="btn secondary" href="/app/">14 დღე უფასოდ <span class="arr">↗</span></a>
-          </div>
-
-          <!-- Plan 3: გაზრდა (Growth - Popular) -->
-          <div class="pricing-col popular">
-            <div class="plan-header">
-              <div class="plan-header-top">
-                <h3>გაზრდა</h3>
-                <span class="plan-popular-badge">ყველაზე პოპულარული</span>
-              </div>
-              <div class="plan-price num-tabular" data-monthly="₾69" data-yearly="₾690">₾69 <small>/ თვე</small></div>
-              <div class="plan-capacity">10 ბინამდე</div>
-              <p class="plan-desc">აქტიური მმართველი მასპინძლებისა და გუნდებისთვის.</p>
-            </div>
-            <ul class="plan-features-list">
-              <li>ყველაფერი „მცირე“-დან</li>
-              <li>10 ბინის სრული მართვა</li>
-              <li>გრძელვადიანი გაქირავება & ქირის ვადები</li>
-              <li>დამლაგებლებისა და პერსონალის პორტალი</li>
-              <li>ორენოვანი KA / EN რეჟიმი უცხოელებისთვის</li>
-              <li>მფლობელის ექსკლუზიური გვერდი</li>
-            </ul>
-            <a class="btn" href="/app/">14 დღე უფასოდ <span class="arr">↗</span></a>
-          </div>
-
-          <!-- Plan 4: პრო & სააგენტო (Agency) -->
-          <div class="pricing-col">
-            <div class="plan-header">
-              <div class="plan-header-top">
-                <h3>პრო & სააგენტო</h3>
-              </div>
-              <div class="plan-price num-tabular" data-monthly="₾149" data-yearly="₾1,490">₾149 <small>/ თვე</small></div>
-              <div class="plan-capacity">25+ ბინა</div>
-              <p class="plan-desc">სააგენტოებისა და დიდი მმართველი კომპანიებისთვის.</p>
-            </div>
-            <ul class="plan-features-list">
-              <li>ყველაფერი „გაზრდა“-დან</li>
-              <li>შეუზღუდავი თანამშრომლები & როლები</li>
-              <li>Excel ექსპორტი და იმპორტი</li>
-              <li>მორგებული ბრენდინგი სტუმრებისთვის</li>
-              <li>პრიორიტეტული ქართულენოვანი მხარდაჭერა</li>
-            </ul>
-            <a class="btn secondary" href="/app/">დაიწყე ახლავე <span class="arr">↗</span></a>
-          </div>
-        </div>
-
-        <!-- Strong Sales Onboarding Banner (No public setup fee obstacle) -->
-        <div class="pricing-assistance-banner">
-          <div>
-            <h4>პორტფელის გადმოტანაში ჩვენ დაგეხმარებით.</h4>
-            <p>თუ ბინები უკვე გაქვს Excel-ში ან ჩათებში, ჩვენი გუნდი დაგეხმარება მონაცემების გადმოტანასა და სისტემის გამართვაში.</p>
-          </div>
-          <a class="btn secondary smallbtn" href="/app/">გაიგე მეტი <span class="arr">↗</span></a>
-        </div>
-      </div>
-    </section>
-
-    <!-- 8. Final CTA -->
-    <section class="final-cta-section">
-      <div class="container final-cta-inner">
-        <div>
-          <h2>შენი ბინებიც რიგზე იყოს.</h2>
-          <p>გახსენი სამუშაო სივრცე და გამოსცადე ბინების მართვის რეალური პროცესი.</p>
-        </div>
-        <a class="btn light" href="/app/">დაიწყე <span class="arr">↗</span></a>
-      </div>
-    </section>
-  </main>
-
-  <!-- Global Footer -->
-  <footer class="site-footer">
-    <div class="container footer-inner">
-      <a class="wordmark" href="/" style="font-size:18px">რიგზეა<i>.</i></a>
-      <div>© 2026 რიგზეა · თბილისი / ბათუმი</div>
-      <div class="footer-links">
-        <a href="#how">როგორ მუშაობს</a>
-        <a href="#timeline">ბინის ისტორია</a>
-        <a href="#pricing">ფასები</a>
-        <a href="/app/">სისტემაში შესვლა</a>
-      </div>
-    </div>
-  </footer>
-
-  <script src="/site.js" defer></script>
+  <!-- Luxury Motion & Interaction Scripts -->
+  <script src="landing-luxury.js" defer></script>
 </body>
 </html>

@@ -99,6 +99,7 @@
     const inP = (d) => d && d >= fromIso && d <= toIso;
     const inc = S.data.income.filter(i => i.apartment_id === id && inP(i.income_date));
     const exp = S.data.expenses.filter(e => e.apartment_id === id && inP(e.expense_date));
+    const aptDeals = (S.data.deals || []).filter(d => d.apartment_id === id);
     const sum = (l) => l.reduce((s, x) => s + Number(x.amount), 0);
     const counted = exp.filter(e => ['incurred', 'paid'].includes(e.status));
     const pendingExp = exp.filter(e => ['proposed', 'approved'].includes(e.status));
@@ -118,6 +119,59 @@
           <button type="button" class="btn btn-ghost" id="a-edit">რედაქტირება</button>
         </div>
       </div>
+
+      <!-- Marketing Showcase & Broker Tools -->
+      <section class="card" style="margin-bottom:16px;background:linear-gradient(135deg, rgba(10,92,68,0.06) 0%, rgba(10,92,68,0.02) 100%);border:1px solid rgba(10,92,68,0.25)">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+          <div>
+            <h3 style="margin:0 0 4px;font-size:15px;display:flex;align-items:center;gap:6px">
+              <span style="color:var(--brand)">${icon('external', 18)}</span>
+              სტუმრის Smart Showcase & გაქირავების ინსტრუმენტები
+            </h3>
+            <p class="muted small" style="margin:0">გააზიარე ბინა კლიენტებთან და პარტნიორებთან 1 კლიკით. მესაკუთრის საკონტაქტო ნომერი დამალულია.</p>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button type="button" class="btn btn-primary btn-sm" id="btn-share-renter">${icon('copy', 14)} სტუმრის ბმული</button>
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-share-wl">🛡️ White-Label ბმული</button>
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-open-post">${icon('whatsapp', 14)} WhatsApp & FB პოსტი</button>
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-open-lease">${icon('file', 14)} საიჯარო ხელშეკრულება</button>
+            <button type="button" class="btn btn-ghost btn-sm" id="btn-apt-deal">+ გარიგება</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Deals & Commission Tracker Section -->
+      <section class="card" style="margin-bottom:16px">
+        <div class="card-head">
+          <h2>${icon('wallet', 18)} გარიგებები და საკომისიო <span class="count">${aptDeals.length}</span></h2>
+          <button type="button" class="btn btn-ghost btn-sm" id="btn-apt-deal-2">+ ახალი გარიგება</button>
+        </div>
+        ${aptDeals.length ? `
+          <div class="rows">
+            ${aptDeals.map(d => {
+              const commPct = Number(d.commission_percent ?? 50);
+              const dealRent = Number(d.deal_amount || a.monthly_rent || 0);
+              const comm = (dealRent * commPct) / 100;
+              const cur = d.currency || a.currency || 'USD';
+              const curSym = cur === 'USD' ? '$' : '₾';
+              return `
+                <div class="row" style="--cols:minmax(0,1.5fr) 110px 140px 150px auto">
+                  <span class="cell-main">
+                    <strong>${esc(d.client_name)}</strong>
+                    <span>${d.client_phone ? `<a href="tel:${esc(d.client_phone)}">${esc(d.client_phone)}</a>` : 'ტელეფონი არაა'} · ${d.target_move_in ? 'გადასვლა: ' + esc(R.date(d.target_move_in)) : 'თარიღი არაა'}</span>
+                  </span>
+                  <span class="cell-meta"><strong>${curSym}${dealRent}</strong> / თვე</span>
+                  <span class="cell-meta" style="color:#047857">საკომისიო: <strong>${curSym}${Math.round(comm)}</strong></span>
+                  <span class="cell-status">${R.dealBadge(d.stage)}</span>
+                  <span class="cell-actions">
+                    <button type="button" class="btn btn-ghost btn-sm" data-deal-edit="${d.id}">რედაქტირება</button>
+                  </span>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        ` : App.emptyInline('ამ ბინაზე აქტიური გარიგება ჯერ არ არის. დაამატე გარიგება კლიენტის დასაჯავშნად.')}
+      </section>
       ${a.rental_type === 'long_term' ? `
       <section class="card" style="margin-bottom:16px;border-left:4px solid var(--brand)">
         <div class="card-head">
@@ -203,6 +257,19 @@
     $('#a-approval')?.addEventListener('click', () => App.openApprovalForm({ apartmentId: id }));
     $('#a-period').onchange = (e) => { aptPeriod[id] = e.target.value; App.render(); };
     $('#a-all-tasks').onclick = (e) => { e.preventDefault(); App.setTaskFilter({ apt: id, status: 'all' }); App.go('#/tasks'); };
+    
+    // Marketing Showcase & Deals Bindings
+    $('#btn-share-renter')?.addEventListener('click', () => App.copyRenterLink(id, false));
+    $('#btn-share-wl')?.addEventListener('click', () => App.copyRenterLink(id, true));
+    $('#btn-open-post')?.addEventListener('click', () => App.openPostGenerator(a));
+    $('#btn-open-lease')?.addEventListener('click', () => App.openLeaseAgreementGenerator(a));
+    $('#btn-apt-deal')?.addEventListener('click', () => App.openDealForm(null, { apartment_id: id, deal_amount: a.monthly_rent, currency: a.currency || 'USD' }));
+    $('#btn-apt-deal-2')?.addEventListener('click', () => App.openDealForm(null, { apartment_id: id, deal_amount: a.monthly_rent, currency: a.currency || 'USD' }));
+    $$('[data-deal-edit]').forEach(b => b.addEventListener('click', () => {
+      const deal = (S.data.deals || []).find(x => x.id === b.dataset.dealEdit);
+      if (deal) App.openDealForm(deal);
+    }));
+
     $('#a-reveal')?.addEventListener('click', (e) => {
       const box = $('#a-access'); box.hidden = !box.hidden;
       e.target.textContent = box.hidden ? 'ჩვენება' : 'დამალვა';
@@ -235,7 +302,7 @@
   // ===========================================================================
   function openApartmentForm(a = null) {
     const edit = Boolean(a);
-    const v = a || { status: 'active', city: S.org.city || 'ბათუმი', commission_pct: 20, checkin_time: '14:00', checkout_time: '12:00' };
+    const v = a || { status: 'active', city: S.org.city || 'ბათუმი', commission_pct: 20, checkin_time: '14:00', checkout_time: '12:00', currency: 'USD', pets_allowed: false, agent_commission_percent: 50, cobroker_split: 50 };
     const id = a?.id || R.uuid();
     return R.dialog({
       title: edit ? 'ბინის რედაქტირება' : 'ახალი ბინა', wide: true, submitLabel: edit ? 'შენახვა' : 'ბინის დამატება',
@@ -244,7 +311,8 @@
         <label class="field"><span class="field-label">ბინის ნომერი</span><input name="unit_number" value="${esc(v.unit_number || '')}" placeholder="1204" /></label>
         <label class="field"><span class="field-label">მისამართი</span><input name="address" required value="${esc(v.address || '')}" placeholder="ქუჩა და ნომერი" data-error="ჩაწერე მისამართი." /></label>
         <label class="field"><span class="field-label">ქალაქი</span><input name="city" value="${esc(v.city || '')}" list="city-list" /><datalist id="city-list"><option>თბილისი</option><option>ბათუმი</option><option>ქუთაისი</option><option>გუდაური</option><option>ბაკურიანი</option></datalist></label>
-        <label class="field"><span class="field-label">მფლობელი</span><select name="owner_id"><option value="">არ არის მითითებული</option>${S.data.owners.map(o => `<option value="${o.id}" ${o.id === v.owner_id ? 'selected' : ''}>${esc(o.name)}</option>`).join('')}</select></label>
+        <label class="field"><span class="field-label">რაიონი / უბანი</span><input name="district" value="${esc(v.district || '')}" list="district-list" placeholder="ვაკე, საბურთალო, ბულვარი..." /><datalist id="district-list"><option>ვაკე</option><option>საბურთალო</option><option>ვერა</option><option>მთაწმინდა</option><option>ჩუღურეთი</option><option>ორთაჭალა</option><option>დიღომი</option><option>ძველი ბულვარი</option><option>ახალი ბულვარი</option><option>რუსთაველი</option></datalist></label>
+        <label class="field"><span class="field-label">მფლობელი (Owner Vault)</span><select name="owner_id"><option value="">არ არის მითითებული</option>${S.data.owners.map(o => `<option value="${o.id}" ${o.id === v.owner_id ? 'selected' : ''}>${esc(o.name)} (დამალულია საჯაროდ)</option>`).join('')}</select></label>
         <label class="field"><span class="field-label">სტატუსი</span><select name="status">${['active', 'maintenance', 'vacant'].map(s => `<option value="${s}" ${v.status === s ? 'selected' : ''}>${L.aptStatus[s]}</option>`).join('')}${edit && v.status === 'archived' ? '<option value="archived" selected>დაარქივებული</option>' : ''}</select></label>
         <label class="field"><span class="field-label">გაქირავების ტიპი</span>
           <select name="rental_type">
@@ -252,20 +320,49 @@
             <option value="long_term" ${v.rental_type === 'long_term' ? 'selected' : ''}>გრძელვადიანი (თვიური ქირა)</option>
           </select>
         </label>
-        <label class="field"><span class="field-label">მართვის საკომისიო (%)</span><input type="number" name="commission_pct" min="0" max="100" step="0.5" value="${esc(v.commission_pct ?? 20)}" /><span class="field-hint">გამოიყენება მფლობელის ამონაწერში.</span></label>
+
+        <!-- Real Estate Property Specs & Public Showcase Info -->
+        <div class="form-section span-2" style="background:var(--surface-2);padding:14px;border-radius:var(--r);border:1px solid var(--line)">
+          <div class="form-section-title" style="margin-bottom:8px;font-weight:700">🏠 საცხოვრებელი პარამეტრები და Smart Showcase (/p/)</div>
+          <div class="form-grid">
+            <label class="field"><span class="field-label">ოთახების რაოდენობა</span><input type="number" name="rooms" min="1" max="20" value="${esc(v.rooms || v.bedrooms || 2)}" /></label>
+            <label class="field"><span class="field-label">საძინებლები</span><input type="number" name="bedrooms" min="0" max="10" value="${esc(v.bedrooms || 1)}" /></label>
+            <label class="field"><span class="field-label">ფართობი (მ²)</span><input type="number" name="area_sqm" min="10" step="0.5" value="${esc(v.area_sqm || '')}" placeholder="75" /></label>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+              <label class="field"><span class="field-label">სართული</span><input name="floor" value="${esc(v.floor || '')}" placeholder="7" /></label>
+              <label class="field"><span class="field-label">სულ სართ.</span><input type="number" name="total_floors" value="${esc(v.total_floors || '')}" placeholder="12" /></label>
+            </div>
+            <label class="field"><span class="field-label">შინაური ცხოველები</span>
+              <select name="pets_allowed">
+                <option value="true" ${v.pets_allowed ? 'selected' : ''}>🐾 ნებადართულია (Pet Friendly)</option>
+                <option value="false" ${!v.pets_allowed ? 'selected' : ''}>🚫 ცხოველების გარეშე</option>
+              </select>
+            </label>
+            <label class="field"><span class="field-label">კომუნალური ხარჯი (~₾)</span><input type="number" name="utilities_estimate" min="0" step="10" value="${esc(v.utilities_estimate || '')}" placeholder="220" /><span class="field-hint">გაზი, დენი, წყალი, ინტერნეტი</span></label>
+            <label class="field"><span class="field-label">წინასწარი გადახდის პირობები</span><input name="prepayment_terms" value="${esc(v.prepayment_terms || '')}" placeholder="1-ლი და ბოლო თვე + 1 თვის დეპოზიტი" /></label>
+            <label class="field"><span class="field-label">აგენტის WhatsApp ნომერი</span><input type="tel" name="agent_phone" value="${esc(v.agent_phone || S.org.contact_phone || '')}" placeholder="+995599001122" /><span class="field-hint">ნახვის დაჯავშნის ღილაკისთვის</span></label>
+            <label class="field span-2"><span class="field-label">ბინის აღწერა (ქართულად)</span><textarea name="description" rows="3" placeholder="ქირავდება თანამედროვე ბინა...">${esc(v.description || '')}</textarea></label>
+          </div>
+        </div>
+
         <div class="form-section span-2">
-          <div class="form-section-title">გრძელვადიანი გაქირავების მონაცემები <span class="muted small">— მხოლოდ თვიური გაქირავების შემთხვევაში</span></div>
+          <div class="form-section-title">გრძელვადიანი გაქირავების მონაცემები</div>
           <div class="form-grid">
             <label class="field"><span class="field-label">მდგმურის სახელი</span><input name="tenant_name" value="${esc(v.tenant_name || '')}" placeholder="გიორგი მაისურაძე" /></label>
             <label class="field"><span class="field-label">მდგმურის ტელეფონი</span><input type="tel" name="tenant_phone" value="${esc(v.tenant_phone || '')}" placeholder="+995 599 00 11 22" /></label>
-            <label class="field"><span class="field-label">თვიური ქირა (₾)</span><input type="number" name="monthly_rent" min="0" step="10" value="${esc(v.monthly_rent || '')}" placeholder="1200" /></label>
+            <label class="field"><span class="field-label">თვიური ქირა</span>
+              <div style="display:grid;grid-template-columns:1fr 85px;gap:6px">
+                <input type="number" name="monthly_rent" min="0" step="10" value="${esc(v.monthly_rent || '')}" placeholder="1200" />
+                <select name="currency"><option value="USD" ${v.currency !== 'GEL' ? 'selected' : ''}>USD ($)</option><option value="GEL" ${v.currency === 'GEL' ? 'selected' : ''}>GEL (₾)</option></select>
+              </div>
+            </label>
             <label class="field"><span class="field-label">გადახდის რიცხვი</span><input type="number" name="rent_due_day" min="1" max="31" value="${esc(v.rent_due_day || 1)}" placeholder="1" /></label>
-            <label class="field"><span class="field-label">დეპოზიტი (₾)</span><input type="number" name="deposit_amount" min="0" step="10" value="${esc(v.deposit_amount || '')}" placeholder="1200" /></label>
+            <label class="field"><span class="field-label">დეპოზიტი</span><input type="number" name="deposit_amount" min="0" step="10" value="${esc(v.deposit_amount || '')}" placeholder="1200" /></label>
             <label class="field"><span class="field-label">ხელშეკრულების ვადა</span><input type="date" name="lease_end" value="${esc(v.lease_end || '')}" /></label>
           </div>
         </div>
         <div class="form-grid" style="gap:8px"><label class="field"><span class="field-label">Check-in</span><input type="time" name="checkin_time" value="${esc(String(v.checkin_time || '14:00').slice(0, 5))}" /></label><label class="field"><span class="field-label">Check-out</span><input type="time" name="checkout_time" value="${esc(String(v.checkout_time || '12:00').slice(0, 5))}" /></label></div>
-        <div class="form-section span-2"><div class="form-section-title">დაშვება <span class="muted small">— ჩანს მხოლოდ მენეჯერებისთვის და იმ თანამშრომლისთვის, ვისაც ამ ბინაში აქტიური საქმე აქვს</span></div>
+        <div class="form-section span-2"><div class="form-section-title">დაშვება <span class="muted small">— ჩანს მხოლოდ მენეჯერებისთვის</span></div>
           <div class="form-grid">
             <label class="field"><span class="field-label">კარის კოდი</span><input name="door_code" value="${esc(v.door_code || '')}" autocomplete="off" /></label>
             <label class="field"><span class="field-label">პარკინგი</span><input name="parking_info" value="${esc(v.parking_info || '')}" /></label>
@@ -278,6 +375,12 @@
       onSubmit: async (_f, f) => {
         const payload = {
           name: f.name.trim(), unit_number: f.unit_number.trim() || null, address: f.address.trim(), city: f.city.trim() || null,
+          district: f.district?.trim() || null, currency: f.currency || 'USD',
+          rooms: f.rooms ? Number(f.rooms) : 2, bedrooms: f.bedrooms ? Number(f.bedrooms) : 1,
+          area_sqm: f.area_sqm ? Number(f.area_sqm) : null, floor: f.floor?.trim() || null, total_floors: f.total_floors ? Number(f.total_floors) : null,
+          pets_allowed: f.pets_allowed === 'true', utilities_estimate: f.utilities_estimate ? Number(f.utilities_estimate) : null,
+          prepayment_terms: f.prepayment_terms?.trim() || null, agent_phone: f.agent_phone?.trim() || null,
+          description: f.description?.trim() || null,
           owner_id: f.owner_id || null, status: f.status, is_archived: f.status === 'archived', commission_pct: Number(f.commission_pct || 0),
           rental_type: f.rental_type || 'short_term', tenant_name: f.tenant_name?.trim() || null, tenant_phone: f.tenant_phone?.trim() || null,
           monthly_rent: f.monthly_rent ? Number(f.monthly_rent) : null, rent_due_day: f.rent_due_day ? Number(f.rent_due_day) : 1,

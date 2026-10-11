@@ -150,7 +150,7 @@
     const since = new Date(); since.setDate(since.getDate() - 120);
     const sinceIso = R.isoDate(since);
     try {
-      const [apartments, owners, tasks, approvals, expenses, income, reservations, events, members, notifications, statements, repairs] = await Promise.all([
+      const [apartments, owners, tasks, approvals, expenses, income, reservations, events, members, notifications, statements, repairs, deals] = await Promise.all([
         q(sb.from('apartments').select('*').eq('organization_id', org).order('name')),
         q(sb.from('owners').select('*').eq('organization_id', org).order('name')),
         q(sb.from('tasks').select('*').eq('organization_id', org).order('due_date', { ascending: true })),
@@ -164,8 +164,9 @@
         q(sb.from('notifications').select('*').eq('organization_id', org).eq('user_id', S.user.id).order('created_at', { ascending: false }).limit(40)),
         q(sb.from('monthly_reports').select('*').eq('organization_id', org).order('month_period', { ascending: false })),
         q(sb.from('repairs').select('*').eq('organization_id', org)).catch(() => []),
+        sb.from('deals').select('*').eq('organization_id', org).order('created_at', { ascending: false }).then(r => r.data || [], () => []),
       ]);
-      S.data = { apartments, owners, tasks, approvals, expenses, income, reservations, events, members, notifications, statements, repairs };
+      S.data = { apartments, owners, tasks, approvals, expenses, income, reservations, events, members, notifications, statements, repairs, deals: deals || [] };
       indexData();
     } catch (err) {
       console.error(err);
@@ -175,13 +176,14 @@
     }
   }
 
-  const idx = { apt: new Map(), owner: new Map(), member: new Map(), task: new Map() };
+  const idx = { apt: new Map(), owner: new Map(), member: new Map(), task: new Map(), deal: new Map() };
   function indexData() {
     const d = S.data;
     idx.apt = new Map(d.apartments.map(a => [a.id, a]));
     idx.owner = new Map(d.owners.map(o => [o.id, o]));
     idx.member = new Map(d.members.map(m => [m.id, m]));
     idx.task = new Map(d.tasks.map(t => [t.id, t]));
+    idx.deal = new Map((d.deals || []).map(x => [x.id, x]));
   }
 
   // Replace or insert a row locally after a confirmed write, then re-render.
@@ -217,6 +219,7 @@
     owner: (id) => idx.owner.get(id),
     member: (id) => idx.member.get(id),
     memberName: (id) => idx.member.get(id)?.display_name || 'უსახელო წევრი',
+    deal: (id) => idx.deal?.get(id),
     task: (id) => idx.task.get(id),
     isOpen: (t) => !['done', 'cancelled'].includes(t.status),
     isOverdue: (t) => H.isOpen(t) && t.due_date && new Date(t.due_date) < new Date(),
@@ -259,6 +262,7 @@
     { id: 'today', label: 'მთავარი', icon: 'today' },
     { id: 'tasks', label: 'საქმეები', icon: 'tasks' },
     { id: 'apartments', label: 'ბინები', icon: 'building' },
+    { id: 'deals', label: 'გარიგებები', icon: 'wallet' },
     { id: 'owners', label: 'მფლობელები', icon: 'owner' },
     { id: 'finance', label: 'ფინანსები', icon: 'wallet' },
     { id: 'team', label: 'გუნდი', icon: 'team' },
@@ -269,7 +273,12 @@
     if (!S.data) return {};
     const overdue = S.data.tasks.filter(H.isOverdue).length;
     const pending = S.data.approvals.filter(a => R.approvalStatus(a) === 'pending').length;
-    return { tasks: overdue ? { n: overdue, danger: true, label: `${overdue} ვადაგადაცილებული` } : null, owners: pending ? { n: pending, label: `${pending} პასუხს ელოდება` } : null };
+    const activeDeals = (S.data.deals || []).filter(d => !['closed', 'lost'].includes(d.stage)).length;
+    return {
+      tasks: overdue ? { n: overdue, danger: true, label: `${overdue} ვადაგადაცილებული` } : null,
+      owners: pending ? { n: pending, label: `${pending} პასუხს ელოდება` } : null,
+      deals: activeDeals ? { n: activeDeals, label: `${activeDeals} აქტიური გარიგება` } : null
+    };
   }
 
   function renderShell() {
@@ -279,7 +288,7 @@
     $('#rail').innerHTML = NAV.map(n => `<a class="nav-item" href="#/${n.id}" ${r.name === n.id ? 'aria-current="page"' : ''}>${icon(n.icon)}<span>${n.label}</span>${countHtml(counts[n.id])}</a>`).join('')
       + `<div class="rail-foot">${S.data ? `${S.data.apartments.filter(a => a.status !== 'archived').length} ბინა · ${S.data.owners.length} მფლობელი · ${S.data.members.length} წევრი` : ''}</div>`;
 
-    const mobile = ['today', 'tasks', 'apartments', 'finance'];
+    const mobile = ['today', 'tasks', 'apartments', 'deals', 'finance'];
     const moreActive = !mobile.includes(r.name);
     $('#bottom-nav').innerHTML = mobile.map(id => { const n = NAV.find(x => x.id === id); return `<a href="#/${id}" ${r.name === id ? 'aria-current="page"' : ''}>${icon(n.icon, 20)}<span>${n.label}</span>${countHtml(counts[id])}</a>`; }).join('')
       + `<button type="button" id="btn-more" ${moreActive ? 'aria-current="page"' : ''}>${icon('menu', 20)}<span>მეტი</span>${countHtml(counts.owners)}</button>`;
