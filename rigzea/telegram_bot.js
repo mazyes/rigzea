@@ -1,12 +1,13 @@
 /**
  * რიგზეა (Rigzea) Real Telegram Bot Service (Local Polling & Fallback Daemon)
- * Token: 8861565420:AAFhLSnnX8todrkJ5R5trg_EiG5MRSZfvPs
+ * Local development only. Secrets come from environment variables; not deployed (see .vercelignore).
  * Username: @Rigzea_bot
  */
 
-const TELEGRAM_BOT_TOKEN = '8861565420:AAFhLSnnX8todrkJ5R5trg_EiG5MRSZfvPs';
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const SUPABASE_URL = 'https://cuioodytwyzykqlrjfej.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN1aW9vZHl0d3l6eWtxbHJqZmVqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE3MjgzMzUsImV4cCI6MjEwNzMwNDMzNX0.IdGlwbbt0_oNwnUj0pUcCjuCVcUV3l19HSa1NIckUyk';
+const SUPABASE_ANON_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY; // service role: Telegram RPCs are no longer callable with the anon key
+if (!TELEGRAM_BOT_TOKEN || !SUPABASE_ANON_KEY) { console.error('Set TELEGRAM_BOT_TOKEN and SUPABASE_SERVICE_ROLE_KEY'); process.exit(1); }
 const BASE_APP_URL = 'https://rigzea-website.vercel.app';
 
 // Supabase RPC Helper

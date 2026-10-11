@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="ka">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex" />
+  <title>რიგზეა · სადემონსტრაციო გვერდი</title>
+  <style>body{margin:0;font:15px/1.5 system-ui,sans-serif;color:#1b2a24;background:#f6f7f4;display:grid;place-items:center;min-height:100vh}</style>
+</head>
+<body>
+  <p id="demo-loading">იტვირთება…</p>
+  <script>
+  // Opens a real public page (smart link, selection, owner approval, guest guide)
+  // on top of the demo's in-browser data instead of the live database.
+  (async () => {
+    'use strict';
+    const PAGES = { p: '/p/index.html', 'p/s': '/p/s/index.html', approve: '/approve/index.html', guide: '/guide/index.html' };
+    const params = new URLSearchParams(location.search);
+    const src = PAGES[params.get('page')] || PAGES.p;
+    const BACK = { ka: 'დემოში დაბრუნება', note: 'სადემონსტრაციო გვერდი — ასე ხედავს ბმულს კლიენტი' };
+    try {
+      const res = await fetch(src, { cache: 'no-cache' });
+      if (!res.ok) throw new Error(String(res.status));
+      let html = await res.text();
+      const inject = '<script>window.__RIGZEA_DEMO_PUBLIC = true;<\/script><script src="/demo/img-fallback.js"><\/script>'
+        + '<script src="/demo/seed.js"><\/script><script src="/demo/mock.js"><\/script>';
+      html = html.replace(/<script src="\/js\/supabase\.js"><\/script>/, inject);
+      const ribbon = `<style>
+          .rz-demo-ribbon{position:sticky;top:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;
+            padding:7px 16px;background:#123d30;color:#e8f3ee;font:500 12.5px/1.4 'FiraGO',system-ui,sans-serif;text-align:center}
+          .rz-demo-ribbon a{color:#fff;font-weight:600;text-underline-offset:3px}
+        </style>
+        <div class="rz-demo-ribbon" role="note"><span>${BACK.note}</span><a href="/demo/">${BACK.ka}</a></div>`;
+      html = html.replace(/<body([^>]*)>/, (m) => m + ribbon);
+      document.open();
+      document.write(html);
+      document.close();
+    } catch (err) {
+      document.getElementById('demo-loading').innerHTML = 'გვერდი ვერ ჩაიტვირთა. <a href="/demo/">დემოში დაბრუნება</a>';
+    }
+  })();
+  </script>
+</body>
+</html>

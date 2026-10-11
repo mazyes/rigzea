@@ -3,77 +3,8 @@
  * Bot: @Rigzea_bot
  */
 
-const TELEGRAM_BOT_TOKEN = '8861565420:AAFhLSnnX8todrkJ5R5trg_EiG5MRSZfvPs';
-const SUPABASE_URL = 'https://cuioodytwyzykqlrjfej.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN1aW9vZHl0d3l6eWtxbHJqZmVqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE3MjgzMzUsImV4cCI6MjEwNzMwNDMzNX0.IdGlwbbt0_oNwnUj0pUcCjuCVcUV3l19HSa1NIckUyk';
-const BASE_APP_URL = 'https://rigzea-website.vercel.app';
-
-// Telegram API Helper
-async function telegramRequest(method, payload) {
-  try {
-    const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/${method}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    return await res.json();
-  } catch (e) {
-    console.error(`Telegram API error on ${method}:`, e);
-    return null;
-  }
-}
-
-async function sendMessage(chatId, text, extra = {}) {
-  return await telegramRequest('sendMessage', {
-    chat_id: chatId,
-    text: text,
-    parse_mode: 'HTML',
-    disable_web_page_preview: true,
-    ...extra
-  });
-}
-
-// Supabase RPC Helper
-async function callRpc(functionName, params = {}) {
-  try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${functionName}`, {
-      method: 'POST',
-      headers: {
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(params)
-    });
-    if (!res.ok) {
-      return null;
-    }
-    return await res.json();
-  } catch (e) {
-    return null;
-  }
-}
-
-// Supabase REST Helper
-async function queryRest(endpoint, method = 'GET', body = null) {
-  try {
-    const options = {
-      method,
-      headers: {
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-        'Content-Type': 'application/json',
-        'Prefer': 'return=representation'
-      }
-    };
-    if (body) options.body = JSON.stringify(body);
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/${endpoint}`, options);
-    if (!res.ok) return null;
-    return await res.json();
-  } catch (e) {
-    return null;
-  }
-}
+import { timingSafeEqual } from 'node:crypto';
+import { BASE_APP_URL, requireEnv, esc, sendMessage, callRpc, fmtDate, daysText } from './_lib.js';
 
 // Georgian NLP Parser
 function parseGeorgianTaskText(rawText, apartments = []) {
@@ -134,33 +65,23 @@ async function handleUpdate(update) {
   const text = msg.text.trim();
   const userName = msg.from.first_name || 'მმართველი';
 
-  // 1. Check if user is linking an Organization
-  const uuidMatch = text.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+  const safeName = esc(userName);
 
-  if (uuidMatch) {
-    const orgId = uuidMatch[0].toLowerCase();
-    
-    // Try link RPC
-    const linkRes = await callRpc('link_telegram_chat', {
-      p_chat_id: chatId,
-      p_org_id: orgId,
-      p_user_name: userName
-    });
-
+  // 1. Link a company with a one-time code: "/start CODE" or "/link CODE"
+  const codeMatch = text.match(/^\/(?:start|link)(?:@\w+)?\s+([A-Za-z0-9]{6,12})\s*$/);
+  if (codeMatch) {
+    const linkRes = await callRpc('consume_telegram_link_code', { p_code: codeMatch[1], p_chat_id: chatId, p_user_name: userName });
     if (linkRes && linkRes.success) {
-      await sendMessage(chatId, `🇬🇪 <b>მოგესალმებით რიგზეას ასისტენტში, ${userName}!</b>\n\nთქვენი Telegram წარმატებით დაუკავშირდა:\n🏢 <b>${linkRes.org_name}</b> (${linkRes.city || 'საქართველო'})\n\nახლა შეგიძლიათ პირდაპირ მომწეროთ ქართულად ნებისმიერი საქმე ან ხარჯი, მაგალითად:\n• <i>1204-ში კონდიციონერი გაფუჭდა, 170 ლარია</i>\n• <i>ბინა 7-ში ონკანი ჟონავს, 85 ლარი</i>\n• <i>ვაკე 18-ში დასუფთავება ხვალ 14:00-ზე</i>\n\n📌 <b>ბრძანებები:</b>\n/today — დღის საოპერაციო მდგომარეობა\n/apartments — ბინების სია\n/help — დახმარება`);
-      return;
+      await sendMessage(chatId, `🇬🇪 <b>მოგესალმებით რიგზეას ასისტენტში, ${safeName}!</b>\n\nთქვენი Telegram წარმატებით დაუკავშირდა:\n🏢 <b>${esc(linkRes.org_name)}</b> (${esc(linkRes.city || 'საქართველო')})\n\nხელშეკრულებების ვადისა და ვადაგადაცილებული საქმეების შეხსენებებს აქ მიიღებთ. ასევე შეგიძლიათ პირდაპირ მომწეროთ ქართულად ნებისმიერი საქმე ან ხარჯი, მაგალითად:\n• <i>1204-ში კონდიციონერი გაფუჭდა, 170 ლარია</i>\n• <i>ბინა 7-ში ონკანი ჟონავს, 85 ლარი</i>\n• <i>ვაკე 18-ში დასუფთავება ხვალ 14:00-ზე</i>\n\n📌 <b>ბრძანებები:</b>\n/today — დღის საოპერაციო მდგომარეობა\n/apartments — ბინების სია\n/renewals — იწურება ხელშეკრულებები\n/help — დახმარება`);
+    } else {
+      await sendMessage(chatId, `❌ კოდი არასწორია ან მისი ვადა გაუვიდა.\nკოდი მოქმედებს 15 წუთის განმავლობაში და მხოლოდ ერთხელ. რიგზეაში შექმენით ახალი კოდი და გამომიგზავნეთ ხელახლა.`);
     }
+    return;
+  }
 
-    // Fallback: check get_telegram_org RPC
-    const orgs = await callRpc('get_telegram_org', { p_org_id: orgId });
-    if (orgs && orgs.length > 0) {
-      const org = orgs[0];
-      await sendMessage(chatId, `🇬🇪 <b>მოგესალმებით რიგზეას ასისტენტში, ${userName}!</b>\n\nთქვენი Telegram დაუკავშირდა:\n🏢 <b>${org.name}</b> (${org.city || 'საქართველო'})\n\nშეგიძლიათ პირდაპირ მომწეროთ საქმე ქართულად!`);
-      return;
-    }
-
-    await sendMessage(chatId, `❌ ორგანიზაცია ID-ით (<code>${orgId}</code>) ვერ მოიძებნა.\nგთხოვთ გადაამოწმოთ გასაღები რიგზეას პარამეტრებში.`);
+  // Old raw-UUID linking is disabled: the id is not a secret.
+  if (/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i.test(text)) {
+    await sendMessage(chatId, `⚠️ კომპანიის გასაღებით დაკავშირება აღარ მუშაობს უსაფრთხოების მიზეზით.\nრიგზეაში დააჭირეთ „Telegram-ის დაკავშირებას“ და გამომიგზავნეთ ერთჯერადი კოდი: <code>/start კოდი</code>`);
     return;
   }
 
@@ -170,17 +91,17 @@ async function handleUpdate(update) {
   // 3. /start Command
   if (text.startsWith('/start')) {
     if (userOrg && userOrg.orgName) {
-      await sendMessage(chatId, `🇬🇪 <b>მოგესალმებით, ${userName}!</b>\n\nთქვენი პროფილი დაკავშირებულია კომპანიასთან:\n🏢 <b>${userOrg.orgName}</b>\n\nუბრალოდ მომწერეთ ქართულად საქმე ან ხარჯი, მაგალითად:\n• <i>1204-ში კონდიციონერი გაფუჭდა, 170 ლარია</i>\n• <i>ბინა 7-ში ონკანი ჟონავს, 85 ლარი</i>`);
+      await sendMessage(chatId, `🇬🇪 <b>მოგესალმებით, ${safeName}!</b>\n\nთქვენი პროფილი დაკავშირებულია კომპანიასთან:\n🏢 <b>${esc(userOrg.orgName)}</b>\n\nუბრალოდ მომწერეთ ქართულად საქმე ან ხარჯი, მაგალითად:\n• <i>1204-ში კონდიციონერი გაფუჭდა, 170 ლარია</i>\n• <i>ბინა 7-ში ონკანი ჟონავს, 85 ლარი</i>`);
       return;
     }
 
-    await sendMessage(chatId, `🇬🇪 <b>რიგზეას Telegram ასისტენტი</b>\n\nკომპანიის დასაკავშირებლად, გთხოვთ გადმოაგზავნოთ თქვენი კომპანიის გასაღები რიგზეას პარამეტრებიდან, მაგალითად:\n<code>95671f98-50fc-4d29-9a0c-b298639359d0</code>`);
+    await sendMessage(chatId, `🇬🇪 <b>რიგზეას Telegram ასისტენტი</b>\n\nკომპანიის დასაკავშირებლად გახსენით რიგზეას მთავარი გვერდი („დღეს“), დააჭირეთ ღილაკს „Telegram-ის დაკავშირება“ და გამომიგზავნეთ მიღებული კოდი:\n<code>/start კოდი</code>`);
     return;
   }
 
   // 4. Require Linked Org for further actions
   if (!userOrg || !userOrg.orgId) {
-    await sendMessage(chatId, `⚠️ <b>კომპანია ჯერ არ არის დაკავშირებული.</b>\n\nგთხოვთ გადმოაგზავნოთ თქვენი კომპანიის გასაღები (UUID) რიგზეას სისტემიდან:\n<code>/link თქვენი_გასაღები</code>`);
+    await sendMessage(chatId, `⚠️ <b>კომპანია ჯერ არ არის დაკავშირებული.</b>\n\nრიგზეაში დააჭირეთ ღილაკს „Telegram-ის დაკავშირება“ და გამომიგზავნეთ მიღებული კოდი:\n<code>/start კოდი</code>`);
     return;
   }
 
@@ -207,7 +128,7 @@ async function handleUpdate(update) {
     const apts = await callRpc('get_telegram_apartments', { p_org_id: userOrg.orgId });
     const aptCount = apts?.length || 0;
 
-    let response = `📊 <b>დღის საოპერაციო მდგომარეობა — ${userOrg.orgName}</b>\n\n`;
+    let response = `📊 <b>დღის საოპერაციო მდგომარეობა — ${esc(userOrg.orgName)}</b>\n\n`;
     response += `• 🏢 <b>ბინების რაოდენობა:</b> ${aptCount}\n`;
     response += `• 🤖 <b>Telegram ასისტენტი:</b> აქტიურია (Serverless 24/7)\n\n`;
     response += `🔗 <a href="${BASE_APP_URL}/app/">სისტემაში გახსნა</a>`;
@@ -216,9 +137,25 @@ async function handleUpdate(update) {
     return;
   }
 
+  // 6b. /renewals Command
+  if (text === '/renewals' || text.startsWith('/renewals@')) {
+    const list = await callRpc('get_telegram_renewals', { p_org_id: userOrg.orgId, p_days: 30 });
+    if (!list || list.length === 0) {
+      await sendMessage(chatId, `📅 მომდევნო 30 დღეში ვადამიწურებადი ხელშეკრულება არ არის.`);
+      return;
+    }
+    let response = `📅 <b>ხელშეკრულებები, რომლებიც 30 დღეში იწურება (${list.length}):</b>\n\n`;
+    list.slice(0, 40).forEach((r) => {
+      response += `${r.days_left <= 3 ? '🔴' : '🟡'} <b>${esc(r.name)}</b>${r.tenant_name ? ` · ${esc(r.tenant_name)}` : ''}\n   ${fmtDate(r.lease_end)} — ${daysText(r.days_left)}\n`;
+    });
+    response += `\n🔗 <a href="${BASE_APP_URL}/app/">გაგრძელება სისტემაში</a>`;
+    await sendMessage(chatId, response);
+    return;
+  }
+
   // 7. /help Command
   if (text === '/help') {
-    await sendMessage(chatId, `ℹ️ <b>როგორ გამოვიყენოთ რიგზეას ბოტი:</b>\n\nუბრალოდ მომწერეთ საქმე ჩვეულებრივი ქართული ტექსტით, მაგალითად:\n• <i>1204-ში კონდიციონერი გაფუჭდა, 170 ლარია</i>\n• <i>ბინა 7-ში ონკანი ჟონავს, 85 ლარი</i>\n• <i>ვაკე 18-ში დასუფთავება ხვალ 14:00-ზე</i>\n\nრიგზეა ავტომატურად:\n1. ამოიცნობს ბინას და თანხას\n2. შექმნის საქმეს ბაზაში\n3. მოამზადებს მესაკუთრისთვის 1-Click თანხმობის ბმულს`);
+    await sendMessage(chatId, `ℹ️ <b>როგორ გამოვიყენოთ რიგზეას ბოტი:</b>\n\nუბრალოდ მომწერეთ საქმე ჩვეულებრივი ქართული ტექსტით, მაგალითად:\n• <i>1204-ში კონდიციონერი გაფუჭდა, 170 ლარია</i>\n• <i>ბინა 7-ში ონკანი ჟონავს, 85 ლარი</i>\n• <i>ვაკე 18-ში დასუფთავება ხვალ 14:00-ზე</i>\n\nბრძანებები: /today, /apartments, /renewals\n\nრიგზეა ავტომატურად:\n1. ამოიცნობს ბინას და თანხას\n2. შექმნის საქმეს ბაზაში\n3. მოამზადებს მესაკუთრისთვის 1-Click თანხმობის ბმულს`);
     return;
   }
 
@@ -252,8 +189,8 @@ async function handleUpdate(update) {
 
   // Response text
   let confirmation = `✅ <b>საქმე შეიქმნა და შენახულია ბაზაში!</b>\n\n` +
-    `🏢 <b>ბინა:</b> ${apt.name || apt.title} (${apt.address || ''})\n` +
-    `🛠 <b>საკითხი:</b> ${parsed.issueTitle}\n`;
+    `🏢 <b>ბინა:</b> ${esc(apt.name || apt.title)} (${esc(apt.address || '')})\n` +
+    `🛠 <b>საკითხი:</b> ${esc(parsed.issueTitle)}\n`;
 
   if (parsed.amount > 0 && createdRecord && createdRecord.token) {
     const approvalUrl = `${BASE_APP_URL}/approve/?token=${createdRecord.token}`;
@@ -281,6 +218,20 @@ export default async function handler(req, res) {
   }
 
   try {
+    requireEnv('TELEGRAM_BOT_TOKEN', 'TELEGRAM_WEBHOOK_SECRET', 'SUPABASE_SERVICE_ROLE_KEY');
+  } catch (e) {
+    console.error(e.message);
+    return res.status(500).json({ ok: false, error: 'Server is not configured' });
+  }
+
+  // Telegram sends the secret we passed to setWebhook(secret_token) in this header.
+  const given = String(req.headers['x-telegram-bot-api-secret-token'] || '');
+  const expected = process.env.TELEGRAM_WEBHOOK_SECRET;
+  if (given.length !== expected.length || !timingSafeEqual(Buffer.from(given), Buffer.from(expected))) {
+    return res.status(401).json({ ok: false, error: 'Unauthorized' });
+  }
+
+  try {
     const update = req.body;
     if (update) {
       await handleUpdate(update);
@@ -288,6 +239,6 @@ export default async function handler(req, res) {
     return res.status(200).json({ ok: true });
   } catch (error) {
     console.error('Webhook error:', error);
-    return res.status(200).json({ ok: false, error: error.message });
+    return res.status(200).json({ ok: false });
   }
 }

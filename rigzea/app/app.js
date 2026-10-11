@@ -12,6 +12,8 @@
     data: null,        // loaded org data, see loadData()
     loading: false,
     loadError: null,
+    platformAdmin: false,
+    seatInvites: 0,    // pending non-staff invitations, kept by the team view
   };
 
   const MANAGER_ROLES = ['owner', 'admin', 'manager'];
@@ -45,6 +47,7 @@
       // Joins any organizations this email was invited to (no-op otherwise).
       await sb.rpc('accept_my_invitations').then(() => {}, () => {});
       await loadOrgs();
+      S.platformAdmin = await sb.rpc('is_platform_admin').then(r => r.data === true, () => false);
       if (!S.orgs.length) return showScreen('onboarding');
       if (S.member.role === 'staff') { location.replace('/staff/'); return; }
       enterShell();
@@ -303,6 +306,8 @@
       sw.innerHTML = `<span class="org-static" title="სამუშაო სივრცე">${esc(S.org.name)}</span>`;
     }
 
+    renderPlanBanner();
+
     const name = S.member?.display_name || S.user.email;
     $('#user-name').textContent = name;
     $('#user-role').textContent = L.role[S.member?.role] || '';
@@ -485,7 +490,141 @@
     if (isManager()) sb.rpc('scan_alerts', { p_org: S.org.id }).then(() => {}, () => {});
   }
 
-  window.App = { S, H, views, isManager, isAdmin, refresh, render, renderShell, go, route, taskHref, closeTaskOverlay, upsertLocal, logEvent };
+  // ---------------------------------------------------------------------------
+  // Plans, trial and feature gates (mirrors supabase/patches/04_plans.sql)
+  // ---------------------------------------------------------------------------
+  const CONTACT = { phone: '+995599000000', wa: '995599000000' };
+  const ALL_FEATURES = ['profile', 'contracts', 'matchmaker', 'reminders', 'selections', 'analytics', 'export', 'whitelabel'];
+  // apartments / seats: null = unlimited. A seat is an owner/admin/manager member; field staff are free.
+  const PLANS = {
+    trial:   { id: 'trial', name: 'საცდელი', price: 0, apartments: 50, seats: 3, features: ALL_FEATURES },
+    starter: { id: 'starter', name: 'დამწყები', price: 0, apartments: 10, seats: 1, features: [],
+      bullets: ['10 აქტიური ობიექტი', 'ჭკვიანი ბმულები', 'საკომისიოს კალკულატორი'] },
+    pro:     { id: 'pro', name: 'პრო აგენტი', price: 29, apartments: 50, seats: 1, features: ['profile', 'contracts', 'matchmaker', 'reminders'],
+      bullets: ['50 აქტიური ობიექტი', 'ორენოვანი ხელშეკრულებები', 'ბინის შერჩევა კლიენტის მოთხოვნით', 'ვადის გასვლის შეხსენებები'] },
+    top:     { id: 'top', name: 'ტოპ აგენტი', price: 69, apartments: 150, seats: 3, features: ['profile', 'contracts', 'matchmaker', 'reminders', 'selections', 'analytics', 'export'],
+      bullets: ['150 აქტიური ობიექტი', '3 სამუშაო ადგილი', 'მრავალობიექტიანი გვერდი', 'ანალიტიკა და ექსპორტი'] },
+    agency:  { id: 'agency', name: 'სააგენტო', price: 149, apartments: null, seats: null, features: ALL_FEATURES,
+      bullets: ['ულიმიტო ობიექტები', '10+ აგენტის სამუშაო ადგილი', 'White-label ბრენდირება', 'პერსონალური მენეჯერი'] },
+    locked:  { id: 'locked', name: 'დაბლოკილი', price: 0, apartments: 0, seats: 0, features: [] },
+  };
+  const PLAN_ORDER = ['starter', 'pro', 'top', 'agency'];
+  const FEATURE_LABEL = {
+    profile: 'პირადი პროფილი და ლოგო', contracts: 'ორენოვანი ხელშეკრულებები', matchmaker: 'კლიენტის მოთხოვნით ბინის შერჩევა',
+    reminders: 'ვადის გასვლის შეხსენებები', selections: 'მრავალობიექტიანი პერსონალური გვერდი', analytics: 'საკომისიოების დეტალური ანალიტიკა',
+    export: 'ექსპორტი Excel-ში', whitelabel: 'White-label ბრენდირება',
+  };
+
+  function planState() {
+    const o = S.org || {};
+    const key = PLANS[o.plan] && o.plan !== 'locked' ? o.plan : 'trial';
+    let eff = key, daysLeft = null, lapsed = false;
+    const end = key === 'trial' ? o.trial_ends_at : key === 'starter' ? null : o.plan_expires_at;
+    if (end) {
+      const ms = new Date(end) - Date.now();
+      daysLeft = Math.max(0, Math.ceil(ms / 864e5));
+      if (ms < 0) { if (key === 'trial') eff = 'locked'; else { eff = 'starter'; lapsed = true; } }
+    }
+    return { key, eff, plan: PLANS[eff], daysLeft, end, lapsed, locked: eff === 'locked', trial: key === 'trial' };
+  }
+  const activeApartments = () => (S.data?.apartments || []).filter(a => a.status !== 'archived' && !a.is_archived).length;
+  const seatsUsed = () => (S.data?.members || []).filter(m => m.role !== 'staff').length + (S.seatInvites || 0);
+  const can = (feature) => planState().plan.features.includes(feature);
+  const minPlanFor = (pred) => PLAN_ORDER.find(id => pred(PLANS[id])) || 'agency';
+
+  function waLink(plan) {
+    const text = plan ? `გამარჯობა! მინდა რიგზეას „${plan.name}“ პაკეტის გააქტიურება. სამუშაო სივრცე: ${S.org?.name || ''}.` : 'გამარჯობა! მინდა რიგზეას პაკეტის არჩევა.';
+    return `https://wa.me/${CONTACT.wa}?text=${encodeURIComponent(text)}`;
+  }
+
+  function planCardsHtml(recId, currentId) {
+    return `<div class="plan-grid">${PLAN_ORDER.map(id => {
+      const p = PLANS[id];
+      const cur = id === currentId, rec = id === recId && !cur;
+      return `<div class="plan-card ${rec ? 'is-rec' : ''} ${cur ? 'is-current' : ''}">
+        ${rec ? '<span class="plan-tag">შენთვის შესაფერისი</span>' : cur ? '<span class="plan-tag plan-tag-cur">შენი პაკეტი</span>' : ''}
+        <h3>${esc(p.name)}</h3>
+        <div class="plan-price">${p.price ? `${p.price} ₾<small> / თვე</small>` : '0 ₾<small> / უფასო</small>'}</div>
+        <ul>${p.bullets.map(b => `<li>${esc(b)}</li>`).join('')}</ul>
+        ${cur ? '' : p.price ? `<a class="btn ${rec ? 'btn-primary' : 'btn-secondary'} btn-sm" href="${esc(waLink(p))}" target="_blank" rel="noopener">${icon('whatsapp', 16)} აირჩიე</a>` : ''}
+      </div>`;
+    }).join('')}</div>`;
+  }
+
+  // reason: { kind: 'apartments'|'seats'|'feature'|'locked'|'info', feature?, count? }
+  function openUpgrade(reason = { kind: 'info' }) {
+    const st = planState();
+    let title = 'აირჩიე შენი პაკეტი', text = 'გადადი უფრო დიდ პაკეტზე და გახსენი მეტი შესაძლებლობა.', rec = 'pro';
+    if (st.locked || reason.kind === 'locked') {
+      title = 'საცდელი პერიოდი დასრულდა';
+      text = 'შენი მონაცემები უსაფრთხოდაა და ნახვა შეგიძლია. ახალი ობიექტების დასამატებლად და ფუნქციების გასახსნელად აირჩიე პაკეტი.';
+    } else if (reason.kind === 'apartments') {
+      const n = reason.count ?? activeApartments();
+      title = 'ობიექტების ლიმიტი ამოიწურა';
+      text = `${st.plan.name} პაკეტში მაქსიმუმ ${st.plan.apartments} აქტიური ობიექტია, ახლა გაქვს ${n}. გადადი პაკეტზე, რომელიც მეტს იტევს.`;
+      rec = minPlanFor(p => p.apartments === null || p.apartments > n);
+    } else if (reason.kind === 'seats') {
+      title = 'გუნდის ლიმიტი ამოიწურა';
+      text = `${st.plan.name} პაკეტში ${st.plan.seats} სამუშაო ადგილია. თანამშრომლის (staff) მოწვევა ლიმიტში არ ითვლება.`;
+      rec = minPlanFor(p => p.seats === null || p.seats > seatsUsed());
+    } else if (reason.kind === 'feature') {
+      rec = minPlanFor(p => p.features.includes(reason.feature));
+      title = 'ეს ფუნქცია სხვა პაკეტშია';
+      text = `„${FEATURE_LABEL[reason.feature] || reason.feature}“ ხელმისაწვდომია პაკეტიდან „${PLANS[rec].name}“.`;
+    }
+    return R.dialog({
+      title, subtitle: text, wide: true,
+      body: `${planCardsHtml(rec, st.key === 'trial' ? null : st.eff)}
+        <p class="plan-contact">გააქტიურება მარტივია: მოგვწერე WhatsApp-ში ან დარეკე <a href="tel:${CONTACT.phone}">${CONTACT.phone}</a> და პაკეტს იმავე დღეს ჩავრთავთ. პორტფელის გადმოტანაში უფასოდ დაგეხმარებით.</p>
+        <div class="plan-cta"><a class="btn btn-primary" href="${esc(waLink(PLANS[rec]))}" target="_blank" rel="noopener">${icon('whatsapp', 16)} მოგვწერე WhatsApp-ში</a><button type="button" class="btn btn-ghost" data-close>მოგვიანებით</button></div>`,
+    });
+  }
+
+  // True when another apartment fits the plan; otherwise opens the upgrade dialog and returns false.
+  function guardLimit(kind, add = 1) {
+    if (!S.data || !S.org) return true;
+    const st = planState();
+    if (kind === 'apartments' || kind === 'seats') {
+      const cap = st.plan[kind];
+      const used = kind === 'apartments' ? activeApartments() : seatsUsed();
+      if (cap === null || used + add <= cap) return true;
+      openUpgrade(st.locked ? { kind: 'locked' } : { kind, count: used });
+      return false;
+    }
+    return true;
+  }
+  // Feature gate with dialog: if (!App.guardFeature('export')) return;
+  function guardFeature(feature) {
+    if (can(feature)) return true;
+    openUpgrade(planState().locked ? { kind: 'locked' } : { kind: 'feature', feature });
+    return false;
+  }
+
+  function renderPlanBanner() {
+    let el = $('#plan-banner');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'plan-banner';
+      $('.layout').before(el);
+    }
+    const st = planState();
+    let tone = null, msg = '', cta = 'პაკეტის არჩევა';
+    if (st.locked) { tone = 'danger'; msg = 'საცდელი პერიოდი დასრულდა. მონაცემების ნახვა შეგიძლია, ახალი ობიექტებისა და ფუნქციების გასახსნელად აირჩიე პაკეტი.'; }
+    else if (st.lapsed) { tone = 'warn'; msg = `„${PLANS[st.key].name}“ პაკეტის ვადა ამოიწურა და ანგარიში დამწყები პაკეტზე გადავიდა. გასაგრძელებლად დაგვიკავშირდი.`; cta = 'განახლება'; }
+    else if (st.trial) {
+      tone = st.daysLeft !== null && st.daysLeft <= 3 ? 'warn' : 'info';
+      msg = st.daysLeft === null ? 'საცდელი პერიოდი: ყველა ფუნქცია ღიაა.' : `საცდელი პერიოდი: დარჩენილია ${st.daysLeft} დღე. ყველა ფუნქცია ღიაა.`;
+    } else if (st.daysLeft !== null && st.daysLeft <= 7) { tone = 'warn'; msg = `„${st.plan.name}“ პაკეტი მთავრდება ${st.daysLeft} დღეში.`; cta = 'განახლება'; }
+    if (!tone) { el.hidden = true; el.innerHTML = ''; return; }
+    el.hidden = false;
+    el.className = `plan-banner plan-banner-${tone}`;
+    el.setAttribute('role', 'status');
+    el.innerHTML = `<span>${esc(msg)}</span><button type="button" class="btn btn-sm ${tone === 'danger' ? 'btn-danger' : 'btn-secondary'}" id="btn-plan-banner">${cta}</button>`;
+    $('#btn-plan-banner').onclick = () => openUpgrade(st.locked ? { kind: 'locked' } : { kind: 'info' });
+  }
+
+  window.App = { S, H, views, isManager, isAdmin, refresh, render, renderShell, go, route, taskHref, closeTaskOverlay, upsertLocal, logEvent,
+    PLANS, PLAN_ORDER, FEATURE_LABEL, CONTACT, planState, can, guardLimit, guardFeature, openUpgrade, planCardsHtml, waLink, activeApartments, seatsUsed };
 
   document.addEventListener('DOMContentLoaded', () => {
     hydrateIcons();

@@ -3,6 +3,13 @@
   "outputDirectory": "rigzea",
   "cleanUrls": true,
   "trailingSlash": true,
+  "functions": {
+    "api/p.js": { "includeFiles": "rigzea/{p/index.html,js/config.js}" }
+  },
+  "rewrites": [
+    { "source": "/p/:ref([A-Za-z0-9-]{3,80})", "destination": "/api/p?ref=:ref" },
+    { "source": "/p", "has": [{ "type": "query", "key": "id" }], "destination": "/api/p" }
+  ],
   "headers": [
     {
       "source": "/fonts/(.*)",
@@ -38,6 +45,12 @@
           "value": "1; mode=block"
         }
       ]
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron-reminders",
+      "schedule": "0 5 * * *"
     }
   ]
 }

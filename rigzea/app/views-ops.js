@@ -182,6 +182,65 @@
   }
   const tagOf = (t) => t.type === 'cleaning' ? 'cleaning' : ['repair', 'maintenance'].includes(t.type) ? 'repair' : 'other';
 
+  // Leases ending within 30 days (or already expired and not yet renewed), soonest first.
+  function renewalItems() {
+    const today = R.isoDate();
+    const dayNum = (iso) => Math.round(Date.parse(iso + 'T00:00:00Z') / 86400e3);
+    return S.data.apartments
+      .filter(a => a.lease_end && !a.is_archived && a.status !== 'archived')
+      .map(a => ({ apt: a, days: dayNum(a.lease_end) - dayNum(today) }))
+      .filter(x => x.days <= 30 && x.days >= -30)
+      .sort((a, b) => a.days - b.days);
+  }
+  const renewalWhy = (d) => d < 0 ? `ვადა გასულია ${-d} დღის წინ` : d === 0 ? 'ვადა იწურება დღეს' : d === 1 ? 'ვადა იწურება ხვალ' : `ვადა იწურება ${d} დღეში`;
+
+  function renewalRow(x) {
+    const a = x.apt;
+    return `<div class="alert-row sev-${x.days <= 3 ? 'danger' : 'warn'}">
+      <a class="what" href="#/apartments/${a.id}" style="text-decoration:none;color:inherit"><strong>${esc(a.name)}</strong><span>${esc(a.tenant_name || 'დამქირავებელი არ არის მითითებული')} · ${esc(R.date(a.lease_end, { withYear: true }))}</span><span class="why ${x.days <= 3 ? 't-danger' : 't-warn'}">${renewalWhy(x.days)}</span></a>
+      <button type="button" class="btn btn-secondary btn-sm" data-renew="${a.id}">ხელშეკრულების გაგრძელება</button></div>`;
+  }
+
+  function openRenew(apt) {
+    const cur = apt.lease_end;
+    const [y, m, d] = cur.split('-').map(Number);
+    const base = new Date(Date.UTC(y + 1, m - 1, d));
+    const suggested = base.toISOString().slice(0, 10);
+    return R.dialog({
+      title: 'ხელშეკრულების გაგრძელება',
+      subtitle: `${apt.name} · მიმდინარე ვადა: ${R.date(cur, { withYear: true })}`,
+      submitLabel: 'გაგრძელება',
+      body: `<label class="field"><span class="field-label">ახალი ვადის დასრულების თარიღი</span><input type="date" name="lease_end" required min="${esc(cur)}" value="${suggested}" data-error="მიუთითე ახალი თარიღი მიმდინარე ვადის შემდეგ." />
+        <span class="field-hint">შემოთავაზებულია +1 წელი. ახალი თარიღი უნდა იყოს მიმდინარე ვადის შემდეგ.</span></label>`,
+      onSubmit: async (_f, v) => {
+        if (!v.lease_end || v.lease_end <= cur) throw new Error('ახალი თარიღი უნდა იყოს მიმდინარე ვადის შემდეგ.');
+        const row = await q(sb.from('apartments').update({ lease_end: v.lease_end }).eq('id', apt.id).select().single());
+        App.upsertLocal('apartments', row);
+        App.logEvent(row.id, 'lease_renewed', `ხელშეკრულება გაგრძელდა: ${row.name}`, `${R.date(cur, { withYear: true })} → ${R.date(v.lease_end, { withYear: true })}`);
+        App.render();
+        toast(`ხელშეკრულება გაგრძელდა: ${R.date(v.lease_end, { withYear: true })}`, { type: 'success' });
+      },
+    });
+  }
+
+  function openTelegramLink() {
+    return R.dialog({
+      title: 'Telegram-ის დაკავშირება',
+      subtitle: 'შეხსენებებს ბოტი პირდაპირ Telegram-ში გამოგიგზავნით',
+      body: `<p class="dlg-text">დააგენერირე ერთჯერადი კოდი და გამოუგზავნე ბოტს <b>@Rigzea_bot</b>. კოდი მოქმედებს 15 წუთის განმავლობაში.</p>
+        <div id="tg-code" class="calc" style="font-size:22px;font-weight:600;letter-spacing:.12em;text-align:center;padding:14px" aria-live="polite">—</div>
+        <p class="field-hint" id="tg-hint">კოდის მისაღებად დააჭირე ღილაკს.</p>
+        <button type="button" class="btn btn-secondary" id="tg-gen">კოდის შექმნა</button>`,
+      onOpen: (form) => {
+        $('#tg-gen', form).addEventListener('click', (e) => run(e.currentTarget, async () => {
+          const res = await q(sb.rpc('create_telegram_link_code', { p_org: S.org.id }));
+          $('#tg-code', form).textContent = res.code;
+          $('#tg-hint', form).innerHTML = `ბოტს გაუგზავნე: <code>/start ${esc(res.code)}</code>`;
+        }));
+      },
+    });
+  }
+
   function scheduleItems(offset) {
     const day = new Date(); day.setDate(day.getDate() + offset);
     const dayIso = R.isoDate(day);
@@ -261,6 +320,7 @@
       }
     }
 
+    const ren = renewalItems();
     const sched = scheduleItems(scheduleDay);
     const tomorrowCount = scheduleItems(1).length;
 
@@ -278,6 +338,10 @@
             <div class="card-head"><h2>${icon('alert', 16)} სასწრაფო და ვადაგადაცილებული <span class="count ${att.some(a => a.sev === 'danger') ? 'count-danger' : ''}">${att.length}</span></h2></div>
             ${att.length ? `<div>${att.map(alertRow).join('')}</div>` : emptyInline('სასწრაფო საკითხი არ არის. ვადაგადაცილებული, დაუნიშნავი და მფლობელის პასუხის მომლოდინე საქმეები აქ გამოჩნდება.')}
           </section>
+          ${ren.length ? `<section class="card ${ren.some(x => x.days <= 3) ? 'card-alert' : ''}">
+            <div class="card-head"><h2>განახლებები <span class="count ${ren.some(x => x.days <= 3) ? 'count-danger' : ''}">${ren.length}</span></h2><span class="page-sub">ხელშეკრულებები, რომლებიც 30 დღეში იწურება</span></div>
+            <div>${ren.map(renewalRow).join('')}</div>
+          </section>` : ''}
           <section class="card">
             <div class="card-head"><h2>${scheduleDay ? 'ხვალის' : 'დღის'} განრიგი <span class="count">${sched.length}</span></h2>
               <div class="seg" role="group" aria-label="დღე"><label><input type="radio" name="sday" value="0" ${scheduleDay === 0 ? 'checked' : ''}><span>დღეს</span></label><label><input type="radio" name="sday" value="1" ${scheduleDay === 1 ? 'checked' : ''}><span>ხვალ · ${tomorrowCount}</span></label></div>
@@ -309,6 +373,10 @@
             ${fin.missing.length ? `<br><a class="link-btn" href="#/finance?status=missing">ქვითარი აკლია ${fin.missing.length} ხარჯს (${money(fin.missing.reduce((s, e) => s + Number(e.amount), 0))})</a>` : ''}</p>
           </section>
           <section class="card">
+            <div class="card-head"><h2>Telegram შეხსენებები</h2></div>
+            <p class="calc">ხელშეკრულების ვადებისა და ვადაგადაცილებული საქმეების შეხსენებებს Telegram-შიც მიიღებ.<br><button type="button" class="link-btn" id="btn-tg-link">Telegram-ის დაკავშირება</button></p>
+          </section>
+          <section class="card">
             <div class="card-head"><h2>ბოლო აქტივობა</h2></div>
             ${activityList(S.data.events.slice(0, 8))}
           </section>
@@ -318,6 +386,8 @@
     $$('[data-filter]').forEach(b => b.addEventListener('click', () => { todayFilter = b.dataset.filter; App.render(); }));
     $$('input[name=sday]').forEach(i => i.addEventListener('change', () => { scheduleDay = Number(i.value); App.render(); }));
     $('#btn-hide-setup')?.addEventListener('click', () => { localStorage.setItem('rigzea_setup_hidden_' + S.org.id, '1'); App.render(); });
+    $$('[data-renew]').forEach(b => b.addEventListener('click', () => openRenew(S.data.apartments.find(a => a.id === b.dataset.renew))));
+    $('#btn-tg-link')?.addEventListener('click', openTelegramLink);
     bindSetup($('#view'));
     bindAlertActions($('#view'), att);
     bindApprovalShare($('#view'));

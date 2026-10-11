@@ -1,862 +1,219 @@
+// Rigzea public demo layer. Loaded after /js/core.js and before /app/app.js.
+// The workspace itself is the real app (/app/*.js) running on demo/mock.js;
+// this file only adapts what needs a backend or a real link:
+//  - public links (/p/, /p/s/, /approve/, /guide/) open the demo copy of those pages,
+//  - uploads stay in this browser, sign-out and server-only actions show a demo notice,
+//  - a demo ribbon and a short "what to try" guide for prospects.
 (() => {
-  const $ = (sel, root = document) => root.querySelector(sel);
-  const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
-
-  const STORAGE_KEY = 'rigzea_app_state_v2';
-  const defaultState = {
-    activeView: 'dashboard',
-    phase: 'awaiting', // 'awaiting' | 'approved' | 'completed' | 'rejected'
-    selectedApartment: 'orbi',
-    reportApartment: 'orbi',
-    aptTab: 'timeline',
-    extraTasks: []
+  'use strict';
+  const R = window.R;
+  const ORIGIN = location.origin;
+  const DEMO_NOTE = 'სადემონსტრაციო რეჟიმი';
+  const IDS = {
+    vake: 'd1e00000-0000-4000-8000-000000000001', vera: 'd1e00000-0000-4000-8000-000000000004',
+    dealVera: 'e1e00000-0000-4000-8000-000000000004', dealElene: 'e1e00000-0000-4000-8000-000000000006',
+    vakeSlug: 'vake-chavchavadze-3-otakhiani', selection: 'elene7vake2k',
+  };
+  const store = {
+    get: (k) => { try { return localStorage.getItem(k); } catch { return null; } },
+    set: (k, v) => { try { localStorage.setItem(k, v); } catch { /* per-viewer convenience only */ } },
+    del: (k) => { try { localStorage.removeItem(k); } catch { /* ignore */ } },
   };
 
-  let state;
-  try {
-    state = { ...defaultState, ...JSON.parse(sessionStorage.getItem(STORAGE_KEY) || '{}') };
-  } catch {
-    state = { ...defaultState };
+  // ---------------------------------------------------------------------------
+  // Public links → demo pages (the live pages would look up the real database)
+  // ---------------------------------------------------------------------------
+  function demoHref(raw) {
+    let u;
+    try { u = new URL(raw, ORIGIN); } catch { return null; }
+    if (u.origin !== ORIGIN) return null;
+    const p = u.pathname;
+    const qs = new URLSearchParams(u.search);
+    let page = null;
+    if (/^\/p\/s\/?$/.test(p)) page = 'p/s';
+    else if (/^\/p\/?$/.test(p)) page = 'p';
+    else if (/^\/approve\/?$/.test(p)) page = 'approve';
+    else if (/^\/guide\/?$/.test(p)) page = 'guide';
+    else {
+      const m = p.match(/^\/p\/([A-Za-z0-9-]{3,80})\/?$/);
+      if (m) { page = 'p'; qs.set('id', m[1]); }
+    }
+    if (!page) return null;
+    qs.set('page', page);
+    return `${ORIGIN}/demo/view/?${qs.toString()}`;
+  }
+  const rewriteText = (text) => String(text ?? '').replace(/https?:\/\/[^\s"'<>]+/g, (m) => demoHref(m) || m);
+
+  const origCopy = R.copyText;
+  R.copyText = (text, msg) => origCopy(rewriteText(text), msg);
+  const origWa = R.whatsappUrl, origTg = R.telegramUrl;
+  R.whatsappUrl = (text) => origWa(rewriteText(text));
+  R.telegramUrl = (text, url) => origTg(rewriteText(text), url ? rewriteText(url) : url);
+  if (navigator.share) {
+    const origShare = navigator.share.bind(navigator);
+    try { navigator.share = (d = {}) => origShare({ ...d, text: d.text && rewriteText(d.text), url: d.url && rewriteText(d.url) }); } catch { /* read-only in some browsers */ }
   }
 
-  const saveState = () => {
-    try {
-      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    } catch {}
-  };
-
-  let toastTimer;
-  const showToast = text => {
-    const el = $('#app-toast');
-    if (!el) return;
-    el.textContent = text;
-    el.classList.add('show');
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => el.classList.remove('show'), 2800);
-  };
-
-  const escapeHtml = str => String(str).replace(/[&<>"']/g, ch => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-  }[ch]));
-
-  // Realistic sample data
-  const apartmentsData = [
-    {
-      id: 'orbi',
-      name: 'Orbi City · 1204',
-      city: 'ბათუმი',
-      owner: 'ნინო ქ.',
-      phone: '+995 599 12 34 56',
-      cleanSchedule: 'ხვალ, 12:00',
-      income: 1840,
-      baseExpense: 320,
-      search: 'orbi city 1204 ნინო ბათუმი'
-    },
-    {
-      id: 'vake',
-      name: 'Vake Residence · 18',
-      city: 'თბილისი',
-      owner: 'ლევან დ.',
-      phone: '+995 595 22 33 44',
-      cleanSchedule: 'ზეგ, 11:00',
-      income: 2400,
-      baseExpense: 180,
-      search: 'vake residence 18 ლევან თბილისი'
-    },
-    {
-      id: 'batumi',
-      name: 'Old Batumi · 7',
-      city: 'ბათუმი',
-      owner: 'თამარ მ.',
-      phone: '+995 577 88 99 00',
-      cleanSchedule: 'დღეს, 18:00 (Check-in)',
-      income: 1650,
-      baseExpense: 140,
-      search: 'old batumi 7 თამარ ბათუმი'
+  // Uploads stay in this browser: images are downscaled into data URLs so the
+  // public demo pages can show them too.
+  const readAsDataUrl = (blob) => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(blob); });
+  async function shrink(file, max) {
+    const bmp = await (window.createImageBitmap ? createImageBitmap(file) : Promise.reject(new Error('no bitmap')));
+    const scale = Math.min(1, max / Math.max(bmp.width, bmp.height));
+    const c = document.createElement('canvas');
+    c.width = Math.max(1, Math.round(bmp.width * scale)); c.height = Math.max(1, Math.round(bmp.height * scale));
+    c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+    return c.toDataURL('image/jpeg', 0.74);
+  }
+  R.uploadFile = async (_org, _folder, file) => {
+    if (!file) return null;
+    if (file.size > 10 * 1024 * 1024) throw new Error('ფაილი 10 მბ-ზე დიდია.');
+    if (/^image\//.test(file.type)) {
+      try { return await shrink(file, 1000); } catch { return readAsDataUrl(file); }
     }
+    return file.size < 400 * 1024 ? readAsDataUrl(file) : URL.createObjectURL(file);
+  };
+
+  const toast = (msg, opts) => R.toast(msg, { timeout: 6000, ...opts });
+  window.addEventListener('rigzea-demo', (e) => toast(e.detail));
+
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('[data-action="signout"]')) {
+      e.preventDefault(); e.stopImmediatePropagation();
+      document.querySelectorAll('dialog[open]').forEach(d => d.close());
+      toast(`${DEMO_NOTE}: გასვლა არ არის საჭირო. საკუთარი ანგარიშისთვის დარეგისტრირდი.`, { action: { label: 'რეგისტრაცია', fn: () => { location.href = '/app/'; } } });
+      return;
+    }
+    const a = e.target.closest('a[href]');
+    if (!a || e.defaultPrevented) return;
+    const href = a.getAttribute('href');
+    if (/^https:\/\/(wa\.me|t\.me)\//.test(href)) {
+      // Share links carry the URL inside their text; point it at the demo page.
+      try {
+        const u = new URL(href);
+        ['text', 'url'].forEach(k => { if (u.searchParams.has(k)) u.searchParams.set(k, rewriteText(u.searchParams.get(k))); });
+        a.href = u.toString();
+      } catch { /* leave as is */ }
+      return;
+    }
+    const target = demoHref(a.href);
+    if (!target) return;
+    e.preventDefault();
+    if (a.target === '_blank') window.open(target, '_blank', 'noopener'); else location.href = target;
+  }, true);
+
+  // ---------------------------------------------------------------------------
+  // Ribbon + guide
+  // ---------------------------------------------------------------------------
+  const ic = (name, size = 16) => R.icon(name, size);
+  const STEPS = [
+    { id: 'listing', icon: 'camera', title: 'ბინა ფოტოებით და ჭკვიანი ბმულით', sub: 'გალერეა, კეთილმოწყობა, ბეჯი, ნახვები და WhatsApp-ის დაწკაპუნებები', run: () => go(`#/apartments/${IDS.vake}`, '.listing-card') },
+    { id: 'client', icon: 'external', title: 'რას ხედავს კლიენტი', sub: 'საჯარო გვერდი /p/ ფოტოგალერეით', run: () => window.open(demoHref(`/p/${IDS.vakeSlug}/`), '_blank', 'noopener') },
+    { id: 'match', icon: 'sparkle', title: 'ბინების შერჩევა კლიენტისთვის', sub: 'უბანი, ბიუჯეტი, საძინებლები და დამთხვევის %', run: () => go('#/deals', null, () => App.openMatchmakerModal(App.H.deal(IDS.dealElene))) },
+    { id: 'selection', icon: 'link', title: 'შერჩევის ერთი ბმული', sub: 'რამდენიმე ბინა ერთ გვერდზე, შედარებით', run: () => window.open(demoHref(`/p/s/?id=${IDS.selection}`), '_blank', 'noopener') },
+    { id: 'post', icon: 'whatsapp', title: 'პოსტის გენერატორი', sub: 'ქართული, English, WhatsApp და Co-Brokering 50/50', run: () => go(`#/apartments/${IDS.vake}`, null, () => App.openPostGenerator(App.H.apt(IDS.vake))) },
+    { id: 'lease', icon: 'file', title: 'ორენოვანი ხელშეკრულება', sub: '11 მუხლი ქართულად და ინგლისურად, PDF', run: () => go('#/deals', null, () => App.openLeaseAgreementGenerator(App.H.apt(IDS.vera), App.H.deal(IDS.dealVera))) },
+    { id: 'comm', icon: 'wallet', title: 'საკომისიოები და ექსპორტი', sub: 'თვე, აგენტი, სრული, პარტნიორის წილი, სუფთა, CSV', run: () => go('#/deals/commissions') },
+    { id: 'renew', icon: 'clock', title: 'განახლებები და Telegram', sub: 'ხელშეკრულებები 30, 14 და 3 დღეში', run: () => go('#/today', '[data-renew]') },
+    { id: 'plans', icon: 'check', title: 'პაკეტები', sub: 'დამწყები, პრო, ტოპ აგენტი, სააგენტო', run: () => go('#/settings/plan') },
+    { id: 'brand', icon: 'settings', title: 'White-label ბრენდინგი', sub: 'ლოგო, სახელი და ფერი საჯარო გვერდებზე', run: () => go('#/settings', '#brand-card') },
   ];
-
-  // Helper for status wording
-  const getPhaseStatusText = () => {
-    switch (state.phase) {
-      case 'awaiting': return 'ელოდება პასუხს';
-      case 'approved': return 'დადასტურებულია';
-      case 'completed': return 'დასრულებულია';
-      case 'rejected': return 'უარყოფილია';
-      default: return 'რიგზეა';
-    }
-  };
-
-  const getPhaseBadgeClass = () => {
-    switch (state.phase) {
-      case 'awaiting': return 'wait';
-      case 'approved': return 'wait';
-      case 'completed': return 'done';
-      case 'rejected': return 'neutral';
-      default: return 'done';
-    }
-  };
-
-  // Switch Screen Views
-  const switchScreenView = viewName => {
-    const validViews = ['dashboard', 'apartments', 'tasks', 'owners', 'reports'];
-    if (!validViews.includes(viewName)) return;
-
-    state.activeView = viewName;
-    saveState();
-
-    // Hide all view sections, show target
-    $$('.app-screen-view').forEach(view => {
-      view.classList.toggle('active', view.id === `view-${viewName}`);
-    });
-
-    // Update sidebar buttons
-    $$('.app-nav-button').forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.view === viewName);
-    });
-
-    // Update mobile bottom nav buttons
-    $$('.mobile-bottom-btn').forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.view === viewName);
-    });
-
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  // Build Orbi City Signature Operational Timeline
-  const getOrbiTimelineEvents = () => {
-    const events = [];
-
-    // Chronological order from latest to earliest (signature sequence)
-    if (state.phase === 'completed') {
-      events.push(
-        { time: '15:23', title: 'ქვითარი დაემატა', desc: 'ქვითარი #INV-841 (₾170) მიბმულია ხარჯთან', accent: true, tag: '📄 ქვითარი მიმაგრებულია' },
-        { time: '15:20', title: 'რემონტი დასრულდა', desc: 'კონდიციონერის შეკეთება — ხელოსანი დათო', accent: true }
-      );
-    }
-
-    if (state.phase === 'approved' || state.phase === 'completed') {
-      events.push(
-        { time: '11:42', title: 'ნინო ქ.-მ ₾170 დაადასტურა', desc: 'მფლობელმა თანხმობა გასცა დაცული ბმულით', accent: false }
-      );
-    } else if (state.phase === 'rejected') {
-      events.push(
-        { time: '11:42', title: 'ნინო ქ.-მ უარი თქვა ₾170-ზე', desc: 'მფლობელი ითხოვს ალტერნატიულ შეფასებას', accent: false, amber: true }
-      );
-    }
-
-    // Base timeline
-    events.push(
-      { time: '11:08', title: 'რემონტის მოთხოვნა გაეგზავნა მფლობელს', desc: 'შეტყობინება დადასტურების ბმულით გაიგზავნა', amber: state.phase === 'awaiting' },
-      { time: '11:05', title: 'ხელოსნის შეფასება — ₾170', desc: 'საჭიროა დეტალის შეცვლა' },
-      { time: '10:42', title: 'კონდიციონერი აღარ აგრილებს', desc: 'საკითხი ბინას დაემატა Telegram-ის შეტყობინებიდან' }
-    );
-
-    // Any dynamically added tasks
-    state.extraTasks.filter(t => t.aptId === 'orbi').forEach((t, idx) => {
-      events.unshift({
-        time: `16:${String(10 + idx * 5).padStart(2, '0')}`,
-        title: t.title,
-        desc: `შეფასება: ₾${t.amount || 0} · დამატებული საქმე`,
-        accent: true
-      });
-    });
-
-    return events;
-  };
-
-  // Render Dashboard
-  const renderDashboard = () => {
-    // 1. Attention Box for Orbi City
-    const orbiUrgent = $('#dash-orbi-urgent');
-    const orbiStateText = $('#dash-orbi-state-text');
-    const btnApproval = $('#btn-dash-open-approval');
-    const countBadge = $('#dash-action-count');
-
-    if (state.phase === 'awaiting') {
-      orbiUrgent.style.display = 'flex';
-      orbiStateText.textContent = '₾170 რემონტი ელოდება მფლობელის თანხმობას';
-      btnApproval.textContent = 'თანხმობა';
-      btnApproval.className = 'btn smallbtn';
-      countBadge.textContent = '2 საკითხი';
-    } else if (state.phase === 'approved') {
-      orbiUrgent.style.display = 'flex';
-      orbiStateText.textContent = '₾170 დადასტურებულია · რემონტი შესასრულებელია';
-      btnApproval.textContent = 'დასრულება ✓';
-      btnApproval.className = 'btn smallbtn';
-      countBadge.textContent = '1 საკითხი';
-    } else if (state.phase === 'completed') {
-      orbiUrgent.style.display = 'none';
-      countBadge.textContent = '1 საკითხი';
-    } else if (state.phase === 'rejected') {
-      orbiUrgent.style.display = 'flex';
-      orbiStateText.textContent = 'მფლობელმა უარი თქვა · საკითხი განხილვაშია';
-      btnApproval.textContent = 'დეტალები';
-      btnApproval.className = 'btn secondary smallbtn';
-      countBadge.textContent = '2 საკითხი';
-    }
-
-    // 2. Recent activity list
-    const recentActivityMount = $('#dash-recent-activity');
-    if (recentActivityMount) {
-      const events = getOrbiTimelineEvents().slice(0, 4);
-      recentActivityMount.innerHTML = events.map(e => `
-        <div class="timeline-event-row ${e.accent ? 'accent' : ''} ${e.amber ? 'amber' : ''}">
-          <time class="num-tabular">${escapeHtml(e.time)}</time>
-          <div class="timeline-rail"></div>
-          <div class="timeline-details">
-            <strong>${escapeHtml(e.title)}</strong>
-            <p>${escapeHtml(e.desc)}</p>
-            ${e.tag ? `<span class="receipt-tag js-open-receipt" style="cursor:pointer">${escapeHtml(e.tag)}</span>` : ''}
-          </div>
-        </div>
-      `).join('');
-    }
-
-    // 3. Mini KPI update
-    const expenseEl = $('#dash-kpi-expense');
-    const netEl = $('#dash-kpi-net');
-    if (expenseEl && netEl) {
-      const isCompleted = state.phase === 'completed';
-      expenseEl.textContent = isCompleted ? '₾490' : '₾320';
-      netEl.textContent = isCompleted ? '₾1,350' : '₾1,520';
-    }
-  };
-
-  // Render Apartments Screen
-  const renderApartmentsScreen = () => {
-    const searchVal = ($('#apt-search-input')?.value || '').trim().toLowerCase();
-    const listMount = $('#apartments-list-mount');
-    if (!listMount) return;
-
-    const filtered = apartmentsData.filter(a => a.search.includes(searchVal));
-
-    listMount.innerHTML = filtered.map(apt => {
-      const isSelected = apt.id === state.selectedApartment;
-      const isOrbi = apt.id === 'orbi';
-      const statusText = isOrbi ? getPhaseStatusText() : 'რიგზეა';
-      const statusClass = isOrbi ? getPhaseBadgeClass() : 'done';
-
-      return `
-        <div class="apartment-row-item ${isSelected ? 'active' : ''}" data-apt-select="${apt.id}">
-          <div class="apt-row-top">
-            <strong>${escapeHtml(apt.name)}</strong>
-            <span class="status-pill ${statusClass}" style="font-size:10px">${escapeHtml(statusText)}</span>
-          </div>
-          <div class="apt-row-meta">
-            <span>${escapeHtml(apt.city)} · ${escapeHtml(apt.owner)}</span>
-            <span class="num-tabular">${isOrbi && state.phase === 'awaiting' ? '₾170 დასადასტურებელი' : ''}</span>
-          </div>
-        </div>
-      `;
-    }).join('');
-
-    // Update active apartment details
-    const currentApt = apartmentsData.find(a => a.id === state.selectedApartment) || apartmentsData[0];
-    const isOrbi = currentApt.id === 'orbi';
-
-    $('#current-apt-title').textContent = currentApt.name;
-    $('#current-apt-sub').textContent = `${currentApt.city} · მფლობელი: ${currentApt.owner} (${currentApt.phone})`;
-    $('#apt-badge-name').textContent = currentApt.name;
-
-    const pill = $('#current-apt-status-pill');
-    pill.textContent = isOrbi ? getPhaseStatusText() : 'რიგზეა';
-    pill.className = `status-pill ${isOrbi ? getPhaseBadgeClass() : 'done'}`;
-
-    $('#current-apt-open-tasks').textContent = isOrbi
-      ? (state.phase === 'completed' ? '0 აქტიური' : '1 აქტიური')
-      : (currentApt.id === 'vake' ? '1 აქტიური' : '0 აქტიური');
-
-    $('#current-apt-pending-cost').textContent = isOrbi && state.phase === 'awaiting' ? '₾170' : '—';
-    $('#current-apt-next-clean').textContent = currentApt.cleanSchedule;
-
-    // Tabs update
-    $$('.apt-tab-btn').forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.aptTab === state.aptTab);
-    });
-
-    const contentMount = $('#apt-tab-content');
-    if (!contentMount) return;
-
-    if (state.aptTab === 'timeline') {
-      const events = isOrbi ? getOrbiTimelineEvents() : (
-        currentApt.id === 'vake'
-          ? [
-              { time: '11:00', title: 'სანტექნიკოსის ვიზიტი დაიგეგმა', desc: 'ხელოსანი გიორგი — დაგვიანებულია', amber: true },
-              { time: '09:15', title: 'წყლის წნევის საკითხი დაფიქსირდა', desc: 'სტუმარმა დაწერა შეტყობინება' }
-            ]
-          : [
-              { time: '18:00', title: 'Check-in დაგეგმილია', desc: '2 სტუმარი — ბინა მზადაა', accent: true },
-              { time: '13:30', title: 'დასუფთავება დასრულდა', desc: 'დამლაგებლის შემოწმება გავლილია' }
-            ]
-      );
-
-      contentMount.innerHTML = `
-        <div class="ledger-timeline" style="padding:4px 0">
-          <div class="timeline-date-label">ოპერაციული ისტორია</div>
-          <div class="timeline-events-list">
-            ${events.map(e => `
-              <div class="timeline-event-row ${e.accent ? 'accent' : ''} ${e.amber ? 'amber' : ''}">
-                <time class="num-tabular">${escapeHtml(e.time)}</time>
-                <div class="timeline-rail"></div>
-                <div class="timeline-details">
-                  <strong>${escapeHtml(e.title)}</strong>
-                  <p>${escapeHtml(e.desc)}</p>
-                  ${e.tag ? `<span class="receipt-tag js-open-receipt" style="cursor:pointer">${escapeHtml(e.tag)}</span>` : ''}
-                </div>
-              </div>
-            `).join('')}
-          </div>
-        </div>
-      `;
-    } else if (state.aptTab === 'tasks') {
-      contentMount.innerHTML = isOrbi ? `
-        <div class="data-table-wrapper">
-          <table class="operational-table">
-            <thead>
-              <tr><th>საქმე</th><th>ხარჯი</th><th>სტატუსი</th></tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td><strong>კონდიციონერის შეკეთება</strong><div style="font-size:10px;color:var(--muted)">დეტალის შეცვლა</div></td>
-                <td class="num-tabular">₾170</td>
-                <td><span class="status-pill ${getPhaseBadgeClass()}">${escapeHtml(getPhaseStatusText())}</span></td>
-              </tr>
-              <tr>
-                <td><strong>დასუფთავება</strong><div style="font-size:10px;color:var(--muted)">დამლაგებელი: მარიამი</div></td>
-                <td class="num-tabular">₾80</td>
-                <td><span class="status-pill neutral">დაგეგმილი (14:00)</span></td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      ` : `
-        <div style="padding:24px;text-align:center;color:var(--muted);font-size:12px">
-          აქტიური საქმეები მიმდინარე გრაფიკშია.
-        </div>
-      `;
-    } else {
-      // Expenses tab
-      contentMount.innerHTML = isOrbi ? `
-        <div class="data-table-wrapper">
-          <table class="operational-table">
-            <thead>
-              <tr><th>თარიღი</th><th>საქმე</th><th>ქვითარი</th><th>თანხა</th></tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>12 სექ</td>
-                <td>დასუფთავება</td>
-                <td><span class="receipt-tag js-open-receipt" style="cursor:pointer">📄 ქვითარი მიბმულია</span></td>
-                <td class="num-tabular"><strong>₾80</strong></td>
-              </tr>
-              <tr>
-                <td>19 სექ</td>
-                <td>კონდიციონერის შეკეთება</td>
-                <td>${state.phase === 'completed' ? '<span class="receipt-tag js-open-receipt" style="cursor:pointer">📄 ქვითარი #INV-841</span>' : '<span style="color:var(--muted)">ელოდება დასრულებას</span>'}</td>
-                <td class="num-tabular"><strong>₾170</strong></td>
-              </tr>
-              <tr>
-                <td>24 სექ</td>
-                <td>საყოფაცხოვრებო სახარჯი მასალები</td>
-                <td><span class="receipt-tag js-open-receipt" style="cursor:pointer">📄 ქვითარი მიბმულია</span></td>
-                <td class="num-tabular"><strong>₾70</strong></td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      ` : `
-        <div style="padding:24px;text-align:center;color:var(--muted);font-size:12px">
-          ამ ბინაზე ახალი ხარჯები არ არის დაფიქსირებული.
-        </div>
-      `;
-    }
-  };
-
-  // Render Tasks Screen
-  const renderTasksScreen = () => {
-    const tbody = $('#tasks-table-tbody');
-    if (!tbody) return;
-
-    const baseRows = [
-      {
-        id: 'orbi-repair',
-        title: 'კონდიციონერის შეკეთება',
-        apt: 'Orbi City · 1204',
-        amount: '₾170',
-        status: getPhaseStatusText(),
-        statusClass: getPhaseBadgeClass(),
-        canAct: state.phase === 'awaiting' || state.phase === 'approved'
-      },
-      {
-        id: 'orbi-clean',
-        title: 'დასუფთავება',
-        apt: 'Orbi City · 1204',
-        amount: '₾80',
-        status: 'დაგეგმილი',
-        statusClass: 'neutral',
-        canAct: false
-      },
-      {
-        id: 'vake-plumb',
-        title: 'სანტექნიკოსი',
-        apt: 'Vake Residence · 18',
-        amount: '—',
-        status: 'დაგვიანებული',
-        statusClass: 'wait',
-        canAct: false
-      },
-      {
-        id: 'batumi-checkin',
-        title: 'Check-in (2 სტუმარი)',
-        apt: 'Old Batumi · 7',
-        amount: '—',
-        status: 'მზადაა',
-        statusClass: 'done',
-        canAct: false
-      }
-    ];
-
-    state.extraTasks.forEach(t => {
-      const aptObj = apartmentsData.find(a => a.id === t.aptId);
-      baseRows.push({
-        id: t.id,
-        title: t.title,
-        apt: aptObj ? aptObj.name : 'Orbi City · 1204',
-        amount: t.amount ? `₾${t.amount}` : '—',
-        status: 'ახალი საქმე',
-        statusClass: 'neutral',
-        canAct: false
-      });
-    });
-
-    $('#task-total-badge').textContent = `${baseRows.length} საქმე რეესტრში`;
-
-    tbody.innerHTML = baseRows.map(row => `
-      <tr>
-        <td><strong>${escapeHtml(row.title)}</strong></td>
-        <td>${escapeHtml(row.apt)}</td>
-        <td class="num-tabular">${escapeHtml(row.amount)}</td>
-        <td><span class="status-pill ${row.statusClass}">${escapeHtml(row.status)}</span></td>
-        <td>
-          ${row.id === 'orbi-repair' && state.phase === 'awaiting'
-            ? `<button class="btn smallbtn" id="btn-task-approve-action" style="padding:4px 8px;font-size:11px">თანხმობა</button>`
-            : row.id === 'orbi-repair' && state.phase === 'approved'
-              ? `<button class="btn smallbtn" id="btn-task-complete-action" style="padding:4px 8px;font-size:11px">დასრულება ✓</button>`
-              : `<span style="font-size:11px;color:var(--muted)">—</span>`}
-        </td>
-      </tr>
-    `).join('');
-  };
-
-  // Render Owners Screen
-  const renderOwnersScreen = () => {
-    const ninoPill = $('#nino-status-pill');
-    if (ninoPill) {
-      ninoPill.textContent = state.phase === 'awaiting' ? '1 ელოდება' : 'რიგზეა';
-      ninoPill.className = `status-pill ${state.phase === 'awaiting' ? 'wait' : 'done'}`;
-    }
-
-    const feedback = $('#owner-sim-feedback');
-    const simActions = $('#owner-sim-actions');
-
-    if (state.phase === 'approved') {
-      simActions.style.display = 'none';
-      feedback.style.display = 'block';
-      feedback.style.background = 'var(--green-light)';
-      feedback.style.color = 'var(--green)';
-      feedback.textContent = '✓ ნინო ქ.-მ თანხმობა გასცა. რემონტი დაწყებულია.';
-    } else if (state.phase === 'completed') {
-      simActions.style.display = 'none';
-      feedback.style.display = 'block';
-      feedback.style.background = 'var(--green-light)';
-      feedback.style.color = 'var(--green)';
-      feedback.textContent = '✓ რემონტი დასრულებულია და ანგარიშში აისახა.';
-    } else if (state.phase === 'rejected') {
-      simActions.style.display = 'none';
-      feedback.style.display = 'block';
-      feedback.style.background = 'var(--red-light)';
-      feedback.style.color = 'var(--red)';
-      feedback.textContent = '✕ ნინო ქ.-მ უარი თქვა. საქმე განხილვაშია.';
-    } else {
-      simActions.style.display = 'flex';
-      feedback.style.display = 'none';
-    }
-  };
-
-  // Render Reports Screen
-  const renderReportsScreen = () => {
-    const aptKey = state.reportApartment || 'orbi';
-    const currentApt = apartmentsData.find(a => a.id === aptKey) || apartmentsData[0];
-    const isOrbi = currentApt.id === 'orbi';
-    const isCompleted = state.phase === 'completed';
-
-    const incomeVal = currentApt.income;
-    const expenseVal = isOrbi ? (isCompleted ? 490 : 320) : currentApt.baseExpense;
-    const netVal = incomeVal - expenseVal;
-
-    $('#report-doc-title').textContent = `სექტემბრის ანგარიში · ${currentApt.name}`;
-    $('#report-doc-sub').textContent = `მფლობელი: ${currentApt.owner} · გენერირებულია: რიგზეა`;
-
-    $('#report-val-income').textContent = `₾${incomeVal.toLocaleString()}`;
-    $('#report-val-expense').textContent = `₾${expenseVal.toLocaleString()}`;
-    $('#report-val-net').textContent = `₾${netVal.toLocaleString()}`;
-
-    const entriesMount = $('#report-entries-mount');
-    if (!entriesMount) return;
-
-    if (isOrbi) {
-      entriesMount.innerHTML = `
-        <div class="expense-entry-row">
-          <time>12 სექ</time>
-          <div class="exp-desc">
-            <strong>დასუფთავება</strong>
-            <span class="js-open-receipt" style="cursor:pointer">📄 ქვითარი #INV-812 · დამლაგებელი: მარიამი</span>
-          </div>
-          <div class="exp-amount num-tabular">₾80</div>
-        </div>
-
-        <div class="expense-entry-row">
-          <time>19 სექ</time>
-          <div class="exp-desc">
-            <strong>კონდიციონერის შეკეთება</strong>
-            <span class="js-open-receipt" style="cursor:pointer">${isCompleted ? 'მფლობელის მიერ დადასტურებული · 📄 ქვითარი #INV-841' : 'თანხმობა მიღებულია · ელოდება დასრულებას'}</span>
-          </div>
-          <div class="exp-amount num-tabular" style="${!isCompleted ? 'color:var(--muted)' : ''}">₾170</div>
-        </div>
-
-        <div class="expense-entry-row">
-          <time>24 სექ</time>
-          <div class="exp-desc">
-            <strong>საყოფაცხოვრებო სახარჯი მასალები</strong>
-            <span class="js-open-receipt" style="cursor:pointer">📄 ქვითარი #INV-833 · თეთრეული და ჰიგიენური საშუალებები</span>
-          </div>
-          <div class="exp-amount num-tabular">₾70</div>
-        </div>
-      `;
-    } else if (currentApt.id === 'vake') {
-      entriesMount.innerHTML = `
-        <div class="expense-entry-row">
-          <time>08 სექ</time>
-          <div class="exp-desc">
-            <strong>გენერალური დასუფთავება</strong>
-            <span class="js-open-receipt" style="cursor:pointer">📄 ქვითარი #INV-790</span>
-          </div>
-          <div class="exp-amount num-tabular">₾100</div>
-        </div>
-        <div class="expense-entry-row">
-          <time>16 სექ</time>
-          <div class="exp-desc">
-            <strong>ჭკვიანი საკეტის ბატარეები</strong>
-            <span class="js-open-receipt" style="cursor:pointer">📄 ქვითარი #INV-802</span>
-          </div>
-          <div class="exp-amount num-tabular">₾80</div>
-        </div>
-      `;
-    } else {
-      entriesMount.innerHTML = `
-        <div class="expense-entry-row">
-          <time>10 სექ</time>
-          <div class="exp-desc">
-            <strong>დასუფთავება და რეცხვა</strong>
-            <span class="js-open-receipt" style="cursor:pointer">📄 ქვითარი #INV-795</span>
-          </div>
-          <div class="exp-amount num-tabular">₾90</div>
-        </div>
-        <div class="expense-entry-row">
-          <time>22 სექ</time>
-          <div class="exp-desc">
-            <strong>ჰიგიენური მასალების შევსება</strong>
-            <span class="js-open-receipt" style="cursor:pointer">📄 ქვითარი #INV-821</span>
-          </div>
-          <div class="exp-amount num-tabular">₾50</div>
-        </div>
-      `;
-    }
-  };
-
-  // Master Render
-  const renderAll = () => {
-    renderDashboard();
-    renderApartmentsScreen();
-    renderTasksScreen();
-    renderOwnersScreen();
-    renderReportsScreen();
-    saveState();
-  };
-
-  // Modals Handling
-  const modal = $('#approval-modal');
-  const receiptModal = $('#receipt-modal');
-  const quickTaskModal = $('#quick-task-modal');
-
-  const openModal = () => {
-    if (!modal) return;
-    $('#modal-pill-status').textContent = getPhaseStatusText();
-    $('#modal-pill-status').className = `status-pill ${getPhaseBadgeClass()}`;
-    modal.classList.add('show');
-    document.body.style.overflow = 'hidden';
-  };
-  const closeModal = () => {
-    if (!modal) return;
-    modal.classList.remove('show');
-    document.body.style.overflow = '';
-  };
-
-  const openReceiptModal = () => {
-    if (!receiptModal) return;
-    receiptModal.classList.add('show');
-    document.body.style.overflow = 'hidden';
-  };
-  const closeReceiptModal = () => {
-    if (!receiptModal) return;
-    receiptModal.classList.remove('show');
-    document.body.style.overflow = '';
-  };
-
-  const openQuickTaskModal = () => {
-    if (!quickTaskModal) return;
-    $('#modal-quick-title').value = '';
-    $('#modal-quick-amount').value = '';
-    quickTaskModal.classList.add('show');
-    document.body.style.overflow = 'hidden';
-    setTimeout(() => $('#modal-quick-title')?.focus(), 50);
-  };
-  const closeQuickTaskModal = () => {
-    if (!quickTaskModal) return;
-    quickTaskModal.classList.remove('show');
-    document.body.style.overflow = '';
-  };
-
-  // Action: Approve
-  const handleApprove = () => {
-    state.phase = 'approved';
-    closeModal();
-    renderAll();
-    showToast('ნინო ქ.-მ დაადასტურა ₾170. საქმე გადავიდა შესრულებაში.');
-  };
-
-  // Action: Reject
-  const handleReject = () => {
-    state.phase = 'rejected';
-    closeModal();
-    renderAll();
-    showToast('მფლობელმა უარი თქვა. სტატუსი განახლდა.');
-  };
-
-  // Action: Complete Repair
-  const handleCompleteRepair = () => {
-    state.phase = 'completed';
-    renderAll();
-    showToast('რემონტი დასრულდა. ქვითარი დაემატა და ანგარიში განახლდა.');
-  };
-
-  // Event Listeners Setup
-  // 1. Navigation buttons (Desktop sidebar & Mobile bottom bar)
-  $$('.app-nav-button').forEach(btn => {
-    btn.addEventListener('click', () => switchScreenView(btn.dataset.view));
-  });
-  $$('.mobile-bottom-btn').forEach(btn => {
-    btn.addEventListener('click', () => switchScreenView(btn.dataset.view));
-  });
-  $$('[data-nav]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      switchScreenView(btn.dataset.nav);
-      if (btn.dataset.apt) {
-        state.selectedApartment = btn.dataset.apt;
-        renderAll();
-      }
-    });
-  });
-
-  // 2. Dashboard action buttons
-  $('#btn-dash-open-approval')?.addEventListener('click', () => {
-    if (state.phase === 'awaiting') {
-      openModal();
-    } else if (state.phase === 'approved') {
-      handleCompleteRepair();
-    } else {
-      switchScreenView('reports');
-    }
-  });
-
-  // 3. Apartment search & selector
-  $('#apt-search-input')?.addEventListener('input', () => {
-    renderApartmentsScreen();
-  });
-
-  $('#apartments-list-mount')?.addEventListener('click', e => {
-    const row = e.target.closest('[data-apt-select]');
-    if (row) {
-      state.selectedApartment = row.dataset.aptSelect;
-      renderAll();
-    }
-  });
-
-  // 4. Apartment Detail Tabs
-  $$('.apt-tab-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      state.aptTab = btn.dataset.aptTab;
-      renderApartmentsScreen();
-      saveState();
-    });
-  });
-
-  // 5. Telegram Input Box Parsing
-  $('#btn-parse-telegram')?.addEventListener('click', () => {
-    const input = ($('#telegram-input-box')?.value || '').trim();
-    const notice = $('#parse-result-notice');
-    if (!notice) return;
-
-    if (!input) {
-      notice.style.display = 'block';
-      notice.style.background = 'var(--red-light)';
-      notice.style.color = 'var(--red)';
-      notice.textContent = 'გთხოვთ შეიყვანოთ შეტყობინების ტექსტი.';
-      return;
-    }
-
-    const aptMatch = input.match(/(?:1204|\b18\b|\b7\b)/);
-    const moneyMatch = input.match(/(?:₾\s*)?(\d{2,5})\s*(?:ლარი|ლარს|₾)?/g);
-
-    if (!aptMatch) {
-      notice.style.display = 'block';
-      notice.style.background = 'var(--amber-light)';
-      notice.style.color = 'var(--amber)';
-      notice.textContent = 'ბინის ნომერი ვერ ამოვიცანით. სცადეთ 1204, 18 ან 7.';
-      return;
-    }
-
-    const aptNum = aptMatch[0];
-    const aptId = aptNum === '1204' ? 'orbi' : (aptNum === '18' ? 'vake' : 'batumi');
-    const aptObj = apartmentsData.find(a => a.id === aptId);
-
-    let detectedAmount = 0;
-    if (moneyMatch) {
-      const nums = moneyMatch.map(p => Number(p.match(/\d+/)?.[0])).filter(n => n >= 20 && n !== Number(aptNum));
-      if (nums.length) detectedAmount = nums[nums.length - 1];
-    }
-
-    let detectedTitle = 'ახალი საკითხი';
-    if (/კონდიციონერ/i.test(input)) detectedTitle = 'კონდიციონერის შეკეთება';
-    else if (/დასუფთავ/i.test(input)) detectedTitle = 'დასუფთავება';
-    else if (/სანტექნიკ|წყალ/i.test(input)) detectedTitle = 'სანტექნიკოსი';
-    else if (/გასაღებ|მიღებ|check/i.test(input)) detectedTitle = 'სტუმრის მიღება';
-
-    const newTask = {
-      id: `task_${Date.now()}`,
-      title: detectedTitle,
-      aptId,
-      amount: detectedAmount
-    };
-
-    state.extraTasks.push(newTask);
-    renderAll();
-
-    notice.style.display = 'block';
-    notice.style.background = 'var(--green-light)';
-    notice.style.color = 'var(--green)';
-    notice.textContent = `✓ საქმე შეიქმნა: ${aptObj.name} · ${detectedTitle} ${detectedAmount ? `(₾${detectedAmount})` : ''}`;
-    showToast('შეტყობინება გადაკეთდა საქმედ და დაემატა რეესტრს.');
-  });
-
-  // 6. Tasks actions
-  $('#tasks-table-tbody')?.addEventListener('click', e => {
-    if (e.target.id === 'btn-task-approve-action') openModal();
-    if (e.target.id === 'btn-task-complete-action') handleCompleteRepair();
-  });
-
-  // 7. Owner Simulator buttons
-  $('#btn-open-owner-preview')?.addEventListener('click', openModal);
-  $('#btn-owner-sim-approve')?.addEventListener('click', handleApprove);
-  $('#btn-owner-sim-reject')?.addEventListener('click', handleReject);
-  $('#owner-row-nino')?.addEventListener('click', openModal);
-
-  // 8. Approval Modal Buttons
-  $('#btn-modal-close')?.addEventListener('click', closeModal);
-  $('#btn-modal-approve')?.addEventListener('click', handleApprove);
-  $('#btn-modal-reject')?.addEventListener('click', handleReject);
-  modal?.addEventListener('click', e => { if (e.target === modal) closeModal(); });
-
-  // 9. Receipt Modal Buttons
-  document.addEventListener('click', e => {
-    if (e.target.closest('.js-open-receipt')) {
-      openReceiptModal();
-    }
-  });
-  $('#btn-receipt-modal-close')?.addEventListener('click', closeReceiptModal);
-  $('#btn-receipt-modal-dismiss')?.addEventListener('click', closeReceiptModal);
-  receiptModal?.addEventListener('click', e => { if (e.target === receiptModal) closeReceiptModal(); });
-
-  // 10. Quick Task Modal Buttons
-  $('#btn-quick-new-task')?.addEventListener('click', openQuickTaskModal);
-  $('#btn-quick-task-close')?.addEventListener('click', closeQuickTaskModal);
-  $('#btn-quick-task-cancel')?.addEventListener('click', closeQuickTaskModal);
-  quickTaskModal?.addEventListener('click', e => { if (e.target === quickTaskModal) closeQuickTaskModal(); });
-
-  $('#btn-quick-task-submit')?.addEventListener('click', () => {
-    const title = ($('#modal-quick-title')?.value || '').trim();
-    const aptId = $('#modal-quick-apt')?.value || 'orbi';
-    const amount = Number($('#modal-quick-amount')?.value) || 0;
-
-    if (!title) {
-      showToast('გთხოვთ შეიყვანოთ საქმის დასახელება.');
-      return;
-    }
-
-    state.extraTasks.push({
-      id: `task_${Date.now()}`,
-      title,
-      aptId,
-      amount
-    });
-
-    closeQuickTaskModal();
-    renderAll();
-    showToast('ახალი საქმე წარმატებით დაემატა.');
-  });
-
-  // 11. Reports Apartment Filter
-  $('#report-apt-select')?.addEventListener('change', e => {
-    state.reportApartment = e.target.value;
-    renderReportsScreen();
-    saveState();
-  });
-
-  // 12. Global Esc key
-  document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') {
-      closeModal();
-      closeReceiptModal();
-      closeQuickTaskModal();
-    }
-  });
-
-  $('#btn-reset-demo')?.addEventListener('click', () => {
-    state = { ...defaultState, extraTasks: [] };
-    sessionStorage.removeItem(STORAGE_KEY);
-    renderAll();
-    switchScreenView('dashboard');
-    showToast('დემო განულდა საწყის მდგომარეობაზე.');
-  });
-
-  $('#btn-print-report')?.addEventListener('click', () => window.print());
-
-  // URL query params initialization (e.g. ?view=apartments or ?plan=starter)
-  const urlParams = new URLSearchParams(window.location.search);
-  const viewParam = urlParams.get('view');
-  if (viewParam && ['dashboard', 'apartments', 'tasks', 'owners', 'reports'].includes(viewParam)) {
-    state.activeView = viewParam;
+  const seen = new Set((store.get('rigzea_demo_seen') || '').split(',').filter(Boolean));
+
+  function waitFor(sel, cb, tries = 40) {
+    const el = sel && document.querySelector(sel);
+    if (el || !sel) return cb(el);
+    if (tries > 0) setTimeout(() => waitFor(sel, cb, tries - 1), 75);
   }
-  const planParam = urlParams.get('plan');
-  if (planParam) {
-    const planNames = { starter: 'მცირე · 10 ბინა', growth: 'გუნდი · 40 ბინა', enterprise: 'დიდი პორტფელი · 40+ ბინა' };
-    if (planNames[planParam]) {
-      $('#portfolio-label-text').textContent = planNames[planParam];
-    }
+  function go(hash, focusSel, after) {
+    document.querySelectorAll('dialog[open]').forEach(d => d.close());
+    if (location.hash !== hash) location.hash = hash; else App.render();
+    waitFor(focusSel || '#view > *', (el) => {
+      if (focusSel && el) {
+        const card = el.closest('section') || el;
+        card.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+        card.classList.add('demo-flash');
+        setTimeout(() => card.classList.remove('demo-flash'), 1600);
+      }
+      if (after) after();
+    });
+    if (matchMedia('(max-width: 900px)').matches) setGuide(false);
   }
 
-  // Initial render
-  switchScreenView(state.activeView);
-  renderAll();
+  function guideHtml() {
+    return `<div class="demo-guide-head">
+        <div><strong>რა ვცადო?</strong><span>${seen.size} / ${STEPS.length} ნანახი</span></div>
+        <button type="button" class="icon-btn" data-guide-close aria-label="ჩაკეცვა">${ic('chevronDown')}</button>
+      </div>
+      <ol class="demo-steps">${STEPS.map(s => `<li><button type="button" data-step="${s.id}" class="${seen.has(s.id) ? 'is-seen' : ''}">
+          <span class="demo-step-ic">${ic(seen.has(s.id) ? 'check' : s.icon)}</span>
+          <span class="demo-step-txt"><strong>${s.title}</strong><span>${s.sub}</span></span>
+        </button></li>`).join('')}</ol>
+      <div class="demo-guide-foot"><a class="btn btn-primary btn-block" href="/app/">დაიწყე 14-დღიანი უფასო ცდა</a></div>`;
+  }
+
+  function setGuide(open) {
+    const g = document.getElementById('demo-guide');
+    if (!g) return;
+    g.hidden = !open;
+    document.querySelectorAll('[data-guide-toggle]').forEach(b => b.setAttribute('aria-expanded', String(open)));
+    store.set('rigzea_demo_guide', open ? '1' : '0');
+  }
+  function renderGuide() {
+    const g = document.getElementById('demo-guide');
+    g.innerHTML = guideHtml();
+    document.querySelectorAll('[data-guide-count]').forEach(el => { el.textContent = `${seen.size}/${STEPS.length}`; });
+  }
+
+  function mount() {
+    const ribbon = document.createElement('div');
+    ribbon.className = 'demo-ribbon';
+    ribbon.setAttribute('role', 'region');
+    ribbon.setAttribute('aria-label', DEMO_NOTE);
+    ribbon.innerHTML = `
+      <span class="demo-tag">დემო</span>
+      <span class="demo-text">სანიმუშო სააგენტო „Mzeo Realty“. ყველა ფუნქცია ღიაა, ცვლილებები მხოლოდ ამ ბრაუზერში ინახება.</span>
+      <span class="demo-actions">
+        <button type="button" class="demo-btn" data-guide-toggle aria-controls="demo-guide" aria-expanded="false">${ic('sparkle', 14)} რა ვცადო? <span class="demo-count" data-guide-count></span></button>
+        <button type="button" class="demo-btn" id="demo-reset" title="სანიმუშო მონაცემების თავიდან ჩატვირთვა">${ic('refresh', 14)} <span class="demo-hide-sm">განულება</span></button>
+        <a class="demo-btn demo-btn-cta" href="/app/">სცადე უფასოდ</a>
+      </span>`;
+    document.body.prepend(ribbon);
+
+    const guide = document.createElement('aside');
+    guide.id = 'demo-guide';
+    guide.className = 'demo-guide';
+    guide.setAttribute('aria-label', 'რა ვცადო დემოში');
+    document.body.appendChild(guide);
+    renderGuide();
+    const saved = store.get('rigzea_demo_guide');
+    setGuide(saved === null ? !matchMedia('(max-width: 900px)').matches : saved === '1');
+
+    ribbon.querySelector('[data-guide-toggle]').addEventListener('click', () => setGuide(guide.hidden));
+    guide.addEventListener('click', (e) => {
+      if (e.target.closest('[data-guide-close]')) { setGuide(false); return; }
+      const b = e.target.closest('[data-step]');
+      if (!b) return;
+      const step = STEPS.find(s => s.id === b.dataset.step);
+      if (!window.App?.S?.data) { toast('დემო ჯერ იტვირთება, სცადე წამში.'); return; }
+      seen.add(step.id);
+      store.set('rigzea_demo_seen', [...seen].join(','));
+      renderGuide();
+      step.run();
+    });
+    document.getElementById('demo-reset').addEventListener('click', async () => {
+      const ok = await R.confirm({ title: 'დემოს განულება', message: 'შენი ცვლილებები წაიშლება და სანიმუშო მონაცემები თავიდან ჩაიტვირთება.', confirmLabel: 'განულება' });
+      if (!ok) return;
+      window.RigzeaDemoDB.reset();
+      store.del('rigzea_demo_seen');
+      location.hash = '#/today';
+      location.reload();
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    // Owner approval links open the demo approval page.
+    if (window.App?.H) App.H.approvalLink = (a) => `${ORIGIN}/demo/view/?page=approve&token=${encodeURIComponent(a.token)}`;
+    mount();
+  });
 })();

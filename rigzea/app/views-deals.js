@@ -1,757 +1,1125 @@
-// Deal Pipeline, Commission CRM, Client Matchmaker and Document Generators
+// Deals layer: pipeline, commissions, client matchmaker + selections,
+// social post generator and the bilingual lease agreement.
 (() => {
   'use strict';
-  const { sb, $, $$, esc, icon, q, toast, run, L, money, copyText } = R;
+  const { sb, $, $$, esc, icon, q, toast, run, L, copyText } = R;
   const { S, H } = App;
 
   const STAGES = [
-    { id: 'active', label: 'აქტიური დაინტერესება', badge: 'info', icon: 'tasks' },
-    { id: 'viewing', label: 'ნახვა დანიშნულია', badge: 'warn', icon: 'clock' },
-    { id: 'deposit', label: 'დეპოზიტი შეტანილია', badge: 'warn', icon: 'wallet' },
-    { id: 'closed', label: 'გარიგება დახურულია', badge: 'ok', icon: 'check' },
+    { id: 'active', label: 'აქტიური დაინტერესება', badge: 'info' },
+    { id: 'viewing', label: 'ნახვა დანიშნულია', badge: 'warn' },
+    { id: 'deposit', label: 'დეპოზიტი შეტანილია', badge: 'warn' },
+    { id: 'closed', label: 'გარიგება დახურულია', badge: 'ok' },
   ];
+  const OPEN_STAGES = ['active', 'viewing', 'deposit'];
 
-  // Helper to calculate commissions
+  // Amenity ids shared with the public listing page.
+  const AMENITIES = {
+    wifi: ['Wi-Fi', 'Wi-Fi'], ac: ['კონდიციონერი', 'Air conditioning'], heating: ['ცენტრალური გათბობა', 'Central heating'],
+    balcony: ['აივანი', 'Balcony'], dishwasher: ['ჭურჭლის სარეცხი მანქანა', 'Dishwasher'], washing_machine: ['სარეცხი მანქანა', 'Washing machine'],
+    elevator: ['ლიფტი', 'Elevator'], parking: ['პარკინგი', 'Parking'], tv: ['Smart TV', 'Smart TV'], oven: ['ღუმელი', 'Oven'],
+    microwave: ['მიკროტალღური ღუმელი', 'Microwave'], security: ['დაცვა 24/7', '24/7 security'], furniture: ['ავეჯი', 'Furnished'],
+  };
+
+  // ---------------------------------------------------------------------------
+  // Money helpers (org FX rate: GEL per 1 USD, set on the organization)
+  // ---------------------------------------------------------------------------
+  const fxRate = () => { const r = Number(S.org?.fx_rate); return r > 0 ? r : null; };
+  const curSym = (c) => (c === 'GEL' ? '₾' : '$');
+
+  function fmtMoney(amount, currency = 'USD') {
+    if (amount === null || amount === undefined || amount === '' || isNaN(amount)) return '—';
+    const num = Math.round(Number(amount)).toLocaleString('en-US');
+    return currency === 'GEL' ? `${num} ₾` : `$${num}`;
+  }
+
+  // Converts between USD and GEL with the org rate; returns null when a rate is needed but missing.
+  function convert(amount, from, to) {
+    const v = Number(amount || 0);
+    if ((from || 'USD') === to) return v;
+    const r = fxRate();
+    if (!r) return null;
+    return to === 'GEL' ? v * r : v / r;
+  }
+
   function calcCommission(deal) {
     const rent = Number(deal.deal_amount || 0);
     const commPct = Number(deal.commission_percent ?? 50);
     const baseComm = (rent * commPct) / 100;
     const bonus = Number(deal.owner_bonus || 0);
     const gross = baseComm + bonus;
-    const hasPartner = Boolean(deal.partner_agent?.trim());
+    const hasPartner = Boolean(String(deal.partner_agent || '').trim());
     const cobrokerPct = hasPartner ? Number(deal.cobroker_split ?? 50) : 0;
     const partnerShare = hasPartner ? (gross * cobrokerPct) / 100 : 0;
     const net = gross - partnerShare;
     return { rent, commPct, baseComm, bonus, gross, hasPartner, cobrokerPct, partnerShare, net };
   }
 
-  // Format currency with symbol
-  function formatDealMoney(amount, currency = 'USD') {
-    if (!amount && amount !== 0) return '—';
-    const num = Number(amount).toLocaleString('en-US', { maximumFractionDigits: 0 });
-    return currency === 'USD' ? `$${num}` : `${num} ₾`;
+  // Sums a per-deal value in one currency. missing = deals that could not be converted (no FX rate).
+  function sumIn(deals, cur, pick) {
+    let value = 0, missing = 0;
+    deals.forEach(d => { const v = convert(pick(d), d.currency || 'USD', cur); if (v === null) missing++; else value += v; });
+    return { value, missing };
   }
 
-  // ===========================================================================
-  // DEALS PIPELINE VIEW
-  // ===========================================================================
-  App.views.deals = () => {
-    const deals = S.data.deals || [];
-    const activeDeals = deals.filter(d => !['closed', 'lost'].includes(d.stage));
-    const closedDeals = deals.filter(d => d.stage === 'closed');
+  const displayCur = () => { try { return localStorage.getItem('rigzea_deals_cur') === 'GEL' ? 'GEL' : 'USD'; } catch { return 'USD'; } };
+  const setDisplayCur = (c) => { try { localStorage.setItem('rigzea_deals_cur', c); } catch { /* per-viewer convenience only */ } };
 
-    // Totals
-    const totalPipelineRent = activeDeals.reduce((sum, d) => sum + Number(d.deal_amount || 0), 0);
-    const totalExpectedComm = activeDeals.reduce((sum, d) => sum + calcCommission(d).net, 0);
-    const totalEarnedComm = closedDeals.reduce((sum, d) => sum + calcCommission(d).net, 0);
+  const agentName = (userId) => S.data.members.find(m => m.user_id === userId)?.display_name || '—';
+  const dmy = (v) => { const d = R.toDate(v); return d ? `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.${d.getFullYear()}` : ''; };
+  const randomSlug = () => { const a = 'abcdefghijkmnpqrstuvwxyz23456789'; const b = crypto.getRandomValues(new Uint8Array(12)); return Array.from(b, x => a[x % a.length]).join(''); };
+  const selectionUrl = (slug) => `${location.origin}/p/s/?id=${encodeURIComponent(slug)}`;
+  const listingUrl = (a, wl = false) => `${location.origin}/p/?id=${encodeURIComponent(a.slug || a.id)}${wl ? '&wl=1' : ''}`;
+  const aptRent = (a) => (a.monthly_rent ? fmtMoney(a.monthly_rent, a.currency || 'USD') : 'ქირა მითითებული არ არის');
+
+  // ===========================================================================
+  // DEALS VIEW (tabs: pipeline · commissions · selections)
+  // ===========================================================================
+  App.views.deals = (r = {}) => {
+    const tab = ['commissions', 'selections'].includes(r.id) ? r.id : 'pipeline';
+    const deals = S.data.deals || [];
+    const activeCount = deals.filter(d => OPEN_STAGES.includes(d.stage)).length;
 
     $('#view').innerHTML = `
       <div class="page-head">
         <div>
           <h1>გარიგებები და საკომისიო</h1>
-          <p class="page-sub">Deals CRM · ${activeDeals.length} აქტიური გარიგება მილსადენში</p>
+          <p class="page-sub muted">${activeCount} აქტიური გარიგება</p>
         </div>
         <div class="page-actions">
-          <button type="button" class="btn btn-secondary" id="btn-matchmaker">
-            ${icon('sparkle', 16)} კლიენტის მატჩმეიკერი
-          </button>
-          <button type="button" class="btn btn-primary" id="btn-deal-new">
-            ${icon('plus', 16)} ახალი გარიგება
-          </button>
+          <button type="button" class="btn btn-secondary" id="btn-matchmaker">${icon('sparkle', 16)} ბინების შერჩევა</button>
+          <button type="button" class="btn btn-primary" id="btn-deal-new">${icon('plus', 16)} ახალი გარიგება</button>
         </div>
       </div>
-
-      <!-- KPI Summary Cards -->
-      <section class="card" style="margin-bottom:20px">
-        <div class="stats">
-          <div class="stat">
-            <span class="stat-label">მილსადენის მოცულობა</span>
-            <span class="stat-value" style="color:var(--brand)">$${totalPipelineRent.toLocaleString()}</span>
-            <span class="stat-note">${activeDeals.length} აქტიური კლიენტი</span>
-          </div>
-          <div class="stat">
-            <span class="stat-label">მოსალოდნელი საკომისიო (Net)</span>
-            <span class="stat-value">$${Math.round(totalExpectedComm).toLocaleString()}</span>
-            <span class="stat-note">50% პირველი თვე (სუფთა)</span>
-          </div>
-          <div class="stat">
-            <span class="stat-label">გამომუშავებული საკომისიო</span>
-            <span class="stat-value" style="color:#047857">$${Math.round(totalEarnedComm).toLocaleString()}</span>
-            <span class="stat-note">${closedDeals.length} დახურული გარიგება</span>
-          </div>
-        </div>
-      </section>
-
-      <!-- Pipeline Kanban Columns -->
-      <div class="deals-pipeline-grid" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:16px;align-items:start">
-        ${STAGES.map(st => {
-          const list = deals.filter(d => d.stage === st.id);
-          const colSum = list.reduce((sum, d) => sum + calcCommission(d).net, 0);
-          return `
-            <div class="deal-column card" style="padding:16px;background:var(--surface)">
-              <div class="deal-col-head" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;border-bottom:1px solid var(--line);padding-bottom:10px">
-                <div style="display:flex;align-items:center;gap:8px">
-                  <span class="badge badge-${st.badge}">${list.length}</span>
-                  <strong style="font-size:14.5px">${esc(st.label)}</strong>
-                </div>
-                <small class="muted" style="font-weight:600">$${Math.round(colSum).toLocaleString()}</small>
-              </div>
-
-              <div class="deal-col-cards" style="display:flex;flex-direction:column;gap:12px;min-height:80px">
-                ${list.length ? list.map(d => renderDealCard(d)).join('') : `<div class="empty-inline" style="padding:16px 8px;font-size:12.5px">ჩანაწერი არ არის</div>`}
-              </div>
-            </div>
-          `;
-        }).join('')}
+      <div class="tabs" role="tablist">
+        <a class="tab" role="tab" href="#/deals" aria-selected="${tab === 'pipeline'}">გარიგებები</a>
+        <a class="tab" role="tab" href="#/deals/commissions" aria-selected="${tab === 'commissions'}">საკომისიოები</a>
+        <a class="tab" role="tab" href="#/deals/selections" aria-selected="${tab === 'selections'}">შერჩევები</a>
       </div>
-    `;
+      <div id="deals-body"></div>`;
 
-    // Bindings
     $('#btn-deal-new').onclick = () => openDealForm();
     $('#btn-matchmaker').onclick = () => openMatchmakerModal();
 
-    // Card buttons
+    if (tab === 'commissions') renderCommissions();
+    else if (tab === 'selections') renderSelections();
+    else renderPipeline();
+  };
+
+  // ---------------------------------------------------------------------------
+  // Pipeline
+  // ---------------------------------------------------------------------------
+  function renderPipeline() {
+    const deals = S.data.deals || [];
+    const cur = displayCur();
+    const open = deals.filter(d => OPEN_STAGES.includes(d.stage));
+    const closed = deals.filter(d => d.stage === 'closed');
+    const pipe = sumIn(open, cur, d => d.deal_amount);
+    const expected = sumIn(open, cur, d => calcCommission(d).net);
+    const earned = sumIn(closed, cur, d => calcCommission(d).net);
+    const missing = pipe.missing + earned.missing;
+
+    $('#deals-body').innerHTML = `
+      <section class="card" style="margin-bottom:16px">
+        <div class="stats">
+          <div class="stat"><span class="stat-label">ღია გარიგებების ქირა</span><span class="stat-value">${fmtMoney(pipe.value, cur)}</span><span class="stat-note">${open.length} ღია გარიგება</span></div>
+          <div class="stat"><span class="stat-label">მოსალოდნელი საკომისიო (სუფთა)</span><span class="stat-value">${fmtMoney(expected.value, cur)}</span><span class="stat-note">პარტნიორის წილის გარეშე</span></div>
+          <div class="stat"><span class="stat-label">გამომუშავებული საკომისიო</span><span class="stat-value t-ok">${fmtMoney(earned.value, cur)}</span><span class="stat-note">${closed.length} დახურული გარიგება</span></div>
+        </div>
+        ${missing ? `<div class="calc">${icon('alert', 14)} ${missing} გარიგება სხვა ვალუტაშია და ჯამში არ შევიდა — მიუთითე ვალუტის კურსი „საკომისიოების“ ჩანართში.</div>` : ''}
+      </section>
+      <div class="toolbar">
+        ${curToggle(cur)}
+        <span class="grow"></span>
+        <button type="button" class="btn btn-ghost btn-sm" data-export="csv">${icon('file', 14)} CSV</button>
+        <button type="button" class="btn btn-ghost btn-sm" data-export="xlsx">${icon('file', 14)} Excel</button>
+      </div>
+      ${deals.length ? '' : `<section class="card" style="margin-bottom:16px"><div class="empty">${icon('wallet', 28)}<h3>გარიგება ჯერ არ არის</h3><p>დაამატე კლიენტი, მიაბი ბინა და აქ დაინახავ ეტაპებს, მოსალოდნელ და მიღებულ საკომისიოს.</p><button type="button" class="btn btn-primary" id="btn-deal-empty">${icon('plus', 16)} პირველი გარიგება</button></div></section>`}
+      <div class="deal-board">
+        ${STAGES.map(st => {
+          const list = deals.filter(d => d.stage === st.id);
+          const colSum = sumIn(list, cur, d => calcCommission(d).net).value;
+          return `
+            <section class="deal-col card">
+              <div class="deal-col-head">
+                <span class="badge badge-${st.badge}">${list.length}</span>
+                <strong>${esc(st.label)}</strong>
+                <small class="muted">${fmtMoney(colSum, cur)}</small>
+              </div>
+              <div class="deal-col-cards">
+                ${list.length ? list.map(renderDealCard).join('') : '<div class="empty-inline">ჩანაწერი არ არის</div>'}
+              </div>
+            </section>`;
+        }).join('')}
+      </div>`;
+
+    $('#btn-deal-empty')?.addEventListener('click', () => openDealForm());
+    bindCurToggle();
+    $$('[data-export]').forEach(b => b.addEventListener('click', () => exportDeals(deals, b.dataset.export, b, 'all')));
+
     $$('[data-deal-edit]').forEach(b => b.addEventListener('click', () => {
-      const deal = S.data.deals.find(x => x.id === b.dataset.dealEdit);
+      const deal = H.deal(b.dataset.dealEdit);
       if (deal) openDealForm(deal);
     }));
-
-    $$('[data-deal-advance]').forEach(b => b.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const deal = S.data.deals.find(x => x.id === b.dataset.dealAdvance);
-      const nextStage = b.dataset.nextStage;
-      if (deal && nextStage) advanceDealStage(deal, nextStage, b);
+    $$('[data-deal-advance]').forEach(b => b.addEventListener('click', () => {
+      const deal = H.deal(b.dataset.dealAdvance);
+      if (deal) advanceDealStage(deal, b.dataset.nextStage, b);
     }));
-
-    $$('[data-deal-post]').forEach(b => b.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const apt = H.apt(b.dataset.dealPost);
-      if (apt) App.openPostGenerator(apt);
-    }));
-
-    $$('[data-deal-lease]').forEach(b => b.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const deal = S.data.deals.find(x => x.id === b.dataset.dealLease);
+    $$('[data-deal-match]').forEach(b => b.addEventListener('click', () => openMatchmakerModal(H.deal(b.dataset.dealMatch))));
+    $$('[data-deal-post]').forEach(b => b.addEventListener('click', () => { const apt = H.apt(b.dataset.dealPost); if (apt) App.openPostGenerator(apt); }));
+    $$('[data-deal-lease]').forEach(b => b.addEventListener('click', () => {
+      const deal = H.deal(b.dataset.dealLease);
       const apt = H.apt(deal?.apartment_id);
       if (apt) App.openLeaseAgreementGenerator(apt, deal);
     }));
-  };
+  }
+
+  function curToggle(cur) {
+    return `<div class="seg" role="radiogroup" aria-label="ვალუტა">
+      ${['USD', 'GEL'].map(c => `<label><input type="radio" name="deals-cur" value="${c}" ${cur === c ? 'checked' : ''} /><span>${c} (${curSym(c)})</span></label>`).join('')}
+    </div>`;
+  }
+  function bindCurToggle() {
+    $$('input[name="deals-cur"]').forEach(i => i.addEventListener('change', () => { setDisplayCur(i.value); App.render(); }));
+  }
 
   function renderDealCard(d) {
     const apt = H.apt(d.apartment_id);
     const comm = calcCommission(d);
     const cur = d.currency || 'USD';
-
-    let nextBtn = '';
-    if (d.stage === 'active') {
-      nextBtn = `<button type="button" class="btn btn-ghost btn-sm" data-deal-advance="${d.id}" data-next-stage="viewing"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-right:5px;vertical-align:-2px"><rect x="3" y="4" width="18" height="18" rx="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>ნახვის დანიშვნა</button>`;
-    } else if (d.stage === 'viewing') {
-      nextBtn = `<button type="button" class="btn btn-ghost btn-sm" data-deal-advance="${d.id}" data-next-stage="deposit"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-right:5px;vertical-align:-2px"><rect x="2" y="6" width="20" height="12" rx="2"></rect><circle cx="12" cy="12" r="2"></circle><path d="M6 12h.01M18 12h.01"></path></svg>დეპოზიტი</button>`;
-    } else if (d.stage === 'deposit') {
-      nextBtn = `<button type="button" class="btn btn-primary btn-sm" data-deal-advance="${d.id}" data-next-stage="closed"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-right:5px;vertical-align:-2px"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M10 14.66V17c0 .55-.45 1-1 1H7c-.55 0-1 .45-1 1v1h12v-1c0-.55-.45-1-1-1h-2c-.55 0-1-.45-1-1v-2.34"></path><path d="M18 4H6v7a6 6 0 0 0 12 0V4z"></path></svg>დახურვა & საკომისიო</button>`;
-    }
-
+    const next = { active: ['viewing', 'ნახვის დანიშვნა', 'btn-ghost', 'clock'], viewing: ['deposit', 'დეპოზიტი', 'btn-ghost', 'wallet'], deposit: ['closed', 'დახურვა', 'btn-primary', 'check'] }[d.stage];
     return `
-      <div class="deal-card" style="background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r);padding:14px;box-shadow:var(--shadow)">
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px">
-          <div>
-            <strong style="font-size:15px;display:block">${esc(d.client_name)}</strong>
-            ${d.client_phone ? `<a href="tel:${esc(d.client_phone)}" style="font-size:12.5px;color:var(--muted);text-decoration:none">${esc(d.client_phone)}</a>` : ''}
+      <article class="deal-card">
+        <div class="deal-card-head">
+          <div class="cell-main">
+            <strong>${esc(d.client_name)}</strong>
+            ${d.client_phone ? `<a href="tel:${esc(d.client_phone)}" class="muted small">${esc(d.client_phone)}</a>` : ''}
           </div>
-          <button type="button" class="icon-btn" data-deal-edit="${d.id}" title="რედაქტირება" style="width:28px;height:28px">
-            ${icon('wrench', 14)}
-          </button>
+          <button type="button" class="icon-btn" data-deal-edit="${d.id}" title="რედაქტირება" aria-label="რედაქტირება: ${esc(d.client_name)}">${icon('wrench', 14)}</button>
         </div>
-
-        <div style="font-size:13px;margin-bottom:10px;padding:6px 8px;background:var(--surface);border-radius:6px;border:1px solid var(--line)">
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <span class="muted">ბინა:</span>
-            <strong>${apt ? `<a href="#/apartments/${apt.id}" style="color:var(--brand);text-decoration:none">${esc(apt.name)}</a>` : 'არ არის მიბმული'}</strong>
+        <dl class="deal-card-facts">
+          <div><dt>ბინა</dt><dd>${apt ? `<a href="#/apartments/${apt.id}">${esc(apt.name)}</a>` : '<span class="muted">არ არის მიბმული</span>'}</dd></div>
+          <div><dt>ქირა</dt><dd>${fmtMoney(d.deal_amount, cur)} / თვე</dd></div>
+        </dl>
+        <div class="deal-net"><span>სუფთა საკომისიო</span><strong>${fmtMoney(comm.net, cur)}</strong></div>
+        ${comm.hasPartner ? `<div class="deal-partner">${icon('team', 12)} ${esc(d.partner_agent)} · ${comm.cobrokerPct}% (${fmtMoney(comm.partnerShare, cur)})</div>` : ''}
+        <div class="deal-card-foot">
+          <div class="deal-card-tools">
+            <button type="button" class="btn btn-ghost btn-sm" data-deal-match="${d.id}" title="ბინების შერჩევა" aria-label="ბინების შერჩევა">${icon('sparkle', 14)}</button>
+            ${apt ? `<button type="button" class="btn btn-ghost btn-sm" data-deal-post="${apt.id}" title="პოსტის გენერატორი" aria-label="პოსტის გენერატორი">${icon('whatsapp', 14)}</button>
+            <button type="button" class="btn btn-ghost btn-sm" data-deal-lease="${d.id}" title="ხელშეკრულება" aria-label="ხელშეკრულება">${icon('file', 14)}</button>` : ''}
           </div>
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
-            <span class="muted">ქირა:</span>
-            <span><strong>${formatDealMoney(d.deal_amount, cur)}</strong> / თვეში</span>
-          </div>
+          ${next ? `<button type="button" class="btn ${next[2]} btn-sm" data-deal-advance="${d.id}" data-next-stage="${next[0]}">${icon(next[3], 14)} ${next[1]}</button>` : ''}
         </div>
-
-        <!-- Commission Breakdown Badge -->
-        <div style="display:flex;justify-content:space-between;align-items:center;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:6px;padding:6px 8px;margin-bottom:10px;font-size:12px">
-          <span style="color:#047857;font-weight:600">შენი საკომისიო (Net):</span>
-          <strong style="color:#047857;font-size:13.5px">${formatDealMoney(comm.net, cur)}</strong>
-        </div>
-
-        ${comm.hasPartner ? `
-          <div style="font-size:11.5px;color:var(--muted);margin-bottom:8px;display:flex;align-items:center;gap:4px">
-            ${icon('team', 12)} Co-Brokering: ${esc(d.partner_agent)} (${comm.cobrokerPct}% / ${formatDealMoney(comm.partnerShare, cur)})
-          </div>
-        ` : ''}
-
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;border-top:1px solid var(--line);padding-top:10px">
-          ${apt ? `
-            <div style="display:flex;gap:4px">
-              <button type="button" class="btn btn-ghost btn-sm" data-deal-post="${apt.id}" title="WhatsApp & FB პოსტი">${icon('whatsapp', 14)}</button>
-              <button type="button" class="btn btn-ghost btn-sm" data-deal-lease="${d.id}" title="ხელშეკრულება">${icon('file', 14)}</button>
-            </div>
-          ` : '<div></div>'}
-          <div>${nextBtn}</div>
-        </div>
-      </div>
-    `;
+      </article>`;
   }
 
-  async function advanceDealStage(deal, newStage, btn) {
+  // Writes only after the database confirms; failures surface through run() with a retry.
+  function advanceDealStage(deal, newStage, btn) {
     return run(btn, async () => {
-      const patch = { stage: newStage, updated_at: new Date().toISOString() };
-      if (newStage === 'closed') patch.closed_at = new Date().toISOString();
-      if (newStage === 'deposit') patch.deposit_paid_at = new Date().toISOString();
-
-      let row;
-      try {
-        row = await q(sb.from('deals').update(patch).eq('id', deal.id).select().single());
-      } catch {
-        // Fallback local update
-        row = { ...deal, ...patch };
-      }
+      const now = new Date().toISOString();
+      const patch = { stage: newStage, updated_at: now };
+      if (newStage === 'closed') patch.closed_at = now;
+      if (newStage === 'deposit') patch.deposit_paid_at = now;
+      const row = await q(sb.from('deals').update(patch).eq('id', deal.id).select().single());
       App.upsertLocal('deals', row);
-      toast(`სტატუსი განახლდა: ${L.dealStage[newStage] || newStage}`, { type: 'success' });
+      toast(`ეტაპი განახლდა: ${L.dealStage[newStage] || newStage}`, { type: 'success' });
       App.render();
     });
   }
 
   // ===========================================================================
-  // DEAL FORM MODAL
+  // DEAL FORM
   // ===========================================================================
   function openDealForm(deal = null, defaults = {}) {
     const edit = Boolean(deal);
-    const v = deal || {
-      stage: defaults.stage || 'active',
-      apartment_id: defaults.apartment_id || '',
-      currency: defaults.currency || 'USD',
-      commission_percent: 50,
-      cobroker_split: 50,
-      deal_amount: defaults.deal_amount || '',
-      owner_bonus: 0,
-      ...defaults
-    };
+    const v = deal || { stage: 'active', apartment_id: '', currency: 'USD', commission_percent: 50, cobroker_split: 50, deal_amount: '', owner_bonus: 0, ...defaults };
     const id = deal?.id || R.uuid();
+    const numOr = (val, dflt) => (val === '' || val === undefined || val === null ? dflt : Number(val));
 
     return R.dialog({
-      title: edit ? 'გარიგების რედაქტირება' : 'ახალი გარიგება / Deal',
+      title: edit ? 'გარიგების რედაქტირება' : 'ახალი გარიგება',
       wide: true,
       submitLabel: edit ? 'შენახვა' : 'გარიგების დამატება',
       body: `
         <div class="form-grid">
           <label class="field"><span class="field-label">კლიენტის სახელი</span><input name="client_name" required value="${esc(v.client_name || '')}" placeholder="მაგ.: დავით ბერიძე" data-error="შეიყვანე კლიენტის სახელი." /></label>
-          <label class="field"><span class="field-label">კლიენტის ტელეფონი</span><input type="tel" name="client_phone" value="${esc(v.client_phone || '')}" placeholder="+995 599 00 11 22" /></label>
-          
+          <label class="field"><span class="field-label">კლიენტის ტელეფონი</span><input type="tel" name="client_phone" value="${esc(v.client_phone || '')}" placeholder="+995 5XX XX XX XX" /></label>
           <label class="field span-2"><span class="field-label">ბინა პორტფოლიოდან</span>
             <select name="apartment_id" id="deal-apt-select">
-              <option value="">-- აირჩიე ბინა --</option>
-              ${S.data.apartments.filter(a => a.status !== 'archived').map(a => `
-                <option value="${a.id}" data-rent="${a.monthly_rent || ''}" data-cur="${a.currency || 'USD'}" ${a.id === v.apartment_id ? 'selected' : ''}>
-                  ${esc(a.name)} · ${esc(a.city || '')} (${a.monthly_rent ? (a.currency === 'GEL' ? a.monthly_rent + ' ₾' : '$' + a.monthly_rent) : 'ქირა მითითებული არაა'})
-                </option>
-              `).join('')}
+              <option value="">— აირჩიე ბინა —</option>
+              ${S.data.apartments.filter(a => a.status !== 'archived').map(a => `<option value="${a.id}" data-rent="${a.monthly_rent || ''}" data-cur="${a.currency || 'USD'}" ${a.id === v.apartment_id ? 'selected' : ''}>${esc(a.name)}${a.city ? ' · ' + esc(a.city) : ''} (${esc(aptRent(a))})</option>`).join('')}
             </select>
           </label>
-
           <label class="field"><span class="field-label">ქირის თანხა</span>
-            <div style="display:grid;grid-template-columns:1fr 90px;gap:6px">
-              <input type="number" id="deal-amount" name="deal_amount" min="0" step="10" required value="${esc(v.deal_amount || '')}" placeholder="1200" />
-              <select name="currency" id="deal-currency">
-                <option value="USD" ${v.currency === 'USD' ? 'selected' : ''}>USD ($)</option>
+            <div class="input-pair">
+              <input type="number" id="deal-amount" name="deal_amount" min="0" step="10" required value="${esc(v.deal_amount ?? '')}" placeholder="1200" data-error="მიუთითე ქირის თანხა." />
+              <select name="currency" id="deal-currency" aria-label="ვალუტა">
+                <option value="USD" ${v.currency !== 'GEL' ? 'selected' : ''}>USD ($)</option>
                 <option value="GEL" ${v.currency === 'GEL' ? 'selected' : ''}>GEL (₾)</option>
               </select>
             </div>
           </label>
-
-          <label class="field"><span class="field-label">ეტაპი (Stage)</span>
+          <label class="field"><span class="field-label">ეტაპი</span>
             <select name="stage">
-              <option value="active" ${v.stage === 'active' ? 'selected' : ''}>აქტიური დაინტერესება</option>
-              <option value="viewing" ${v.stage === 'viewing' ? 'selected' : ''}>ნახვა დანიშნულია</option>
-              <option value="deposit" ${v.stage === 'deposit' ? 'selected' : ''}>დეპოზიტი შეტანილია</option>
-              <option value="closed" ${v.stage === 'closed' ? 'selected' : ''}>დახურული (წარმატებული)</option>
-              <option value="lost" ${v.stage === 'lost' ? 'selected' : ''}>ჩაშლილი</option>
+              ${[...STAGES.map(s => [s.id, s.label]), ['lost', 'ჩაშლილი']].map(([sid, l]) => `<option value="${sid}" ${v.stage === sid ? 'selected' : ''}>${l}</option>`).join('')}
             </select>
           </label>
 
-          <!-- Commission Calculator Section -->
-          <div class="form-section span-2" style="background:var(--surface-2);padding:14px;border-radius:var(--r);border:1px solid var(--line)">
-            <div class="form-section-title" style="margin-bottom:10px;font-weight:700;display:flex;align-items:center;gap:6px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg> საკომისიო და ბონუსის კალკულატორი</div>
+          <div class="form-section span-2 deal-calc-section">
+            <div class="form-section-title">${icon('wallet', 16)} საკომისიოს კალკულატორი</div>
             <div class="form-grid">
-              <label class="field"><span class="field-label">საკომისიო (%)</span><input type="number" id="deal-comm-pct" name="commission_percent" min="0" max="100" step="5" value="${esc(v.commission_percent ?? 50)}" /><span class="field-hint">სტანდარტული: 50% (1-ლი თვე)</span></label>
-              <label class="field"><span class="field-label">მესაკუთრის ბონუსი ($/₾)</span><input type="number" id="deal-bonus" name="owner_bonus" min="0" step="10" value="${esc(v.owner_bonus || 0)}" /><span class="field-hint">დამატებითი ბონუსი მესაკუთრისგან</span></label>
-              <label class="field"><span class="field-label">Co-Broker პარტნიორი აგენტი</span><input name="partner_agent" id="deal-partner" value="${esc(v.partner_agent || '')}" placeholder="მაგ.: ირაკლი (GeoRealty)" /></label>
-              <label class="field"><span class="field-label">პარტნიორის წილი (%)</span><input type="number" id="deal-partner-split" name="cobroker_split" min="0" max="100" step="5" value="${esc(v.cobroker_split ?? 50)}" /><span class="field-hint">50/50 თანაბარი გაყოფა</span></label>
+              <label class="field"><span class="field-label">საკომისიო (% პირველი თვის ქირიდან)</span><input type="number" id="deal-comm-pct" name="commission_percent" min="0" max="100" step="5" value="${esc(v.commission_percent ?? 50)}" /></label>
+              <label class="field"><span class="field-label">მესაკუთრის ბონუსი</span><input type="number" id="deal-bonus" name="owner_bonus" min="0" step="10" value="${esc(v.owner_bonus || 0)}" /><span class="field-hint">გარიგების ვალუტაში</span></label>
+              <label class="field"><span class="field-label">პარტნიორი აგენტი (Co-Broker)</span><input name="partner_agent" id="deal-partner" value="${esc(v.partner_agent || '')}" placeholder="სახელი, სააგენტო" /></label>
+              <label class="field"><span class="field-label">პარტნიორის წილი (%)</span><input type="number" id="deal-partner-split" name="cobroker_split" min="0" max="100" step="5" value="${esc(v.cobroker_split ?? 50)}" /><span class="field-hint">50 = თანაბრად გაყოფა</span></label>
+              <label class="field"><span class="field-label">პარტნიორის ტელეფონი</span><input type="tel" name="partner_phone" value="${esc(v.partner_phone || '')}" /></label>
             </div>
-
-            <!-- Live Net Take-Home Calculation Box -->
-            <div id="deal-calc-box" style="margin-top:12px;background:#ffffff;border:1px solid #a7f3d0;border-radius:8px;padding:12px;display:flex;align-items:center;justify-content:space-between">
-              <div>
-                <small class="muted" style="display:block">შენი სუფთა საკომისიო (Net Take-Home):</small>
-                <strong id="deal-calc-net" style="font-size:20px;color:#047857">$600</strong>
-              </div>
-              <div id="deal-calc-breakdown" style="font-size:12px;color:var(--muted);text-align:right">
-                Gross: $600 · Co-Broker: $0
-              </div>
+            <div class="deal-calc-box">
+              <div><small class="muted">შენი სუფთა საკომისიო</small><strong id="deal-calc-net">—</strong></div>
+              <div id="deal-calc-breakdown" class="small muted"></div>
             </div>
           </div>
 
           <label class="field"><span class="field-label">გადაბარგების სამიზნე თარიღი</span><input type="date" name="target_move_in" value="${esc(v.target_move_in || '')}" /></label>
           <label class="field"><span class="field-label">კლიენტის ელფოსტა</span><input type="email" name="client_email" value="${esc(v.client_email || '')}" /></label>
           <label class="field span-2"><span class="field-label">შენიშვნა / კლიენტის მოთხოვნები</span><textarea name="notes" rows="2" placeholder="მაგ.: ეძებს წყნარ ადგილს, ჰყავს პატარა ძაღლი">${esc(v.notes || '')}</textarea></label>
-        </div>
-      `,
+        </div>`,
       onOpen: (form) => {
-        // Auto fill rent when selecting apartment
         const aptSelect = $('#deal-apt-select', form);
         const rentInput = $('#deal-amount', form);
         const curSelect = $('#deal-currency', form);
-
+        const updateCalc = () => {
+          const c = calcCommission({
+            deal_amount: rentInput.value, commission_percent: numOr($('#deal-comm-pct', form).value, 50), owner_bonus: $('#deal-bonus', form).value,
+            partner_agent: $('#deal-partner', form).value, cobroker_split: numOr($('#deal-partner-split', form).value, 50),
+          });
+          const cur = curSelect.value;
+          $('#deal-calc-net', form).textContent = fmtMoney(c.net, cur);
+          $('#deal-calc-breakdown', form).innerHTML = `სრული საკომისიო: ${fmtMoney(c.gross, cur)}<br>${c.hasPartner ? `პარტნიორის წილი: −${fmtMoney(c.partnerShare, cur)}` : 'პარტნიორის გარეშე'}`;
+        };
         aptSelect.addEventListener('change', () => {
           const opt = aptSelect.selectedOptions[0];
-          if (opt && opt.dataset.rent && !rentInput.value) {
-            rentInput.value = opt.dataset.rent;
-            if (opt.dataset.cur) curSelect.value = opt.dataset.cur;
-            updateCalc();
-          }
+          if (opt?.dataset.rent && !rentInput.value) { rentInput.value = opt.dataset.rent; curSelect.value = opt.dataset.cur || 'USD'; }
+          updateCalc();
         });
-
-        const updateCalc = () => {
-          const rent = Number(rentInput.value || 0);
-          const commPct = Number($('#deal-comm-pct', form).value || 50);
-          const bonus = Number($('#deal-bonus', form).value || 0);
-          const baseComm = (rent * commPct) / 100;
-          const gross = baseComm + bonus;
-          const partner = $('#deal-partner', form).value.trim();
-          const split = partner ? Number($('#deal-partner-split', form).value || 50) : 0;
-          const partnerShare = partner ? (gross * split) / 100 : 0;
-          const net = gross - partnerShare;
-          const curSym = curSelect.value === 'USD' ? '$' : '₾';
-
-          $('#deal-calc-net', form).textContent = `${curSym}${Math.round(net).toLocaleString()}`;
-          $('#deal-calc-breakdown', form).innerHTML = `
-            სრული საკომისიო: ${curSym}${Math.round(gross).toLocaleString()}<br/>
-            ${partner ? `პარტნიორის წილი: −${curSym}${Math.round(partnerShare).toLocaleString()}` : 'პირდაპირი გარიგება (100%)'}
-          `;
-        };
-
-        ['deal-amount', 'deal-comm-pct', 'deal-bonus', 'deal-partner', 'deal-partner-split', 'deal-currency'].forEach(id => {
-          $(`#${id}`, form)?.addEventListener('input', updateCalc);
-          $(`#${id}`, form)?.addEventListener('change', updateCalc);
+        ['deal-amount', 'deal-comm-pct', 'deal-bonus', 'deal-partner', 'deal-partner-split', 'deal-currency'].forEach(x => {
+          $(`#${x}`, form).addEventListener('input', updateCalc);
+          $(`#${x}`, form).addEventListener('change', updateCalc);
         });
-
         updateCalc();
       },
       onSubmit: async (_f, f) => {
-        const rent = Number(f.deal_amount || 0);
-        const commPct = Number(f.commission_percent || 50);
-        const bonus = Number(f.owner_bonus || 0);
-        const baseComm = (rent * commPct) / 100;
-        const gross = baseComm + bonus;
         const partner = f.partner_agent?.trim() || null;
-        const split = partner ? Number(f.cobroker_split || 50) : 0;
-        const partnerShare = partner ? (gross * split) / 100 : 0;
-        const net = gross - partnerShare;
-
         const payload = {
           apartment_id: f.apartment_id || null,
           client_name: f.client_name.trim(),
           client_phone: f.client_phone?.trim() || null,
           client_email: f.client_email?.trim() || null,
           stage: f.stage || 'active',
-          deal_amount: rent,
+          deal_amount: Number(f.deal_amount || 0),
           currency: f.currency || 'USD',
-          commission_percent: commPct,
-          commission_amount: baseComm,
-          owner_bonus: bonus,
+          commission_percent: numOr(f.commission_percent, 50),
+          owner_bonus: Number(f.owner_bonus || 0),
           partner_agent: partner,
-          cobroker_split: split,
-          net_commission: net,
+          partner_phone: f.partner_phone?.trim() || null,
+          cobroker_split: partner ? numOr(f.cobroker_split, 50) : 0,
           target_move_in: f.target_move_in || null,
           notes: f.notes?.trim() || null,
-          organization_id: S.org.id,
-          created_by: S.user.id
+          updated_at: new Date().toISOString(),
         };
+        const c = calcCommission(payload);
+        payload.commission_amount = c.baseComm;
+        payload.net_commission = c.net;
+        if (payload.stage === 'closed' && !deal?.closed_at) payload.closed_at = new Date().toISOString();
 
-        let row;
-        try {
-          row = edit
-            ? await q(sb.from('deals').update(payload).eq('id', deal.id).select().single())
-            : await App.insertOnce('deals', { id, ...payload });
-        } catch (err) {
-          console.warn('Deals remote write notice:', err);
-          row = { id, ...payload, updated_at: new Date().toISOString() };
-        }
-
+        // Errors propagate to the dialog: it stays open with the values and shows the reason.
+        const row = edit
+          ? await q(sb.from('deals').update(payload).eq('id', deal.id).select().single())
+          : await App.insertOnce('deals', { id, ...payload, criteria: defaults.criteria || {}, organization_id: S.org.id, created_by: S.user.id });
         App.upsertLocal('deals', row);
-        toast(edit ? 'გარიგება განახლდა' : `ახალი გარიგება შეიქმნა: ${row.client_name}`, { type: 'success' });
+        toast(edit ? 'გარიგება განახლდა' : `გარიგება დაემატა: ${row.client_name}`, { type: 'success' });
         App.render();
-      }
+        return row;
+      },
     });
   }
   App.openDealForm = openDealForm;
 
   // ===========================================================================
-  // CLIENT MATCHMAKER MODAL
+  // COMMISSIONS
   // ===========================================================================
-  function openMatchmakerModal() {
+  const commFilter = { month: R.monthKey(), agent: '' };
+
+  function commissionRows() {
+    const deals = S.data.deals || [];
+    const inMonth = (v) => !commFilter.month || (v && R.monthKey(R.toDate(v)) === commFilter.month);
+    return deals.filter(d => {
+      if (commFilter.agent && d.created_by !== commFilter.agent) return false;
+      if (d.stage === 'closed') return inMonth(d.closed_at || d.updated_at || d.created_at);
+      if (OPEN_STAGES.includes(d.stage)) return inMonth(d.target_move_in || d.created_at);
+      return false;
+    });
+  }
+
+  function renderCommissions() {
+    const cur = displayCur();
+    const rows = commissionRows();
+    const closed = rows.filter(d => d.stage === 'closed');
+    const open = rows.filter(d => d.stage !== 'closed');
+    const gross = sumIn(closed, cur, d => calcCommission(d).gross);
+    const partner = sumIn(closed, cur, d => calcCommission(d).partnerShare);
+    const net = sumIn(closed, cur, d => calcCommission(d).net);
+    const expected = sumIn(open, cur, d => calcCommission(d).net);
+    const missing = gross.missing + expected.missing;
+    const agents = [...new Set((S.data.deals || []).map(d => d.created_by).filter(Boolean))];
+    const rate = fxRate();
+    const dateOf = (d) => (d.stage === 'closed' ? (d.closed_at || d.updated_at) : (d.target_move_in || d.created_at));
+
+    $('#deals-body').innerHTML = `
+      <div class="toolbar">
+        <label class="sr-only" for="cm-month">თვე</label>
+        <input type="month" id="cm-month" class="input" value="${esc(commFilter.month)}" />
+        <button type="button" class="chip" id="cm-all" aria-pressed="${!commFilter.month}">ყველა თვე</button>
+        <label class="sr-only" for="cm-agent">აგენტი</label>
+        <select id="cm-agent" class="input">
+          <option value="">ყველა აგენტი</option>
+          ${agents.map(u => `<option value="${esc(u)}" ${commFilter.agent === u ? 'selected' : ''}>${esc(agentName(u))}</option>`).join('')}
+        </select>
+        ${curToggle(cur)}
+        <span class="grow"></span>
+        <button type="button" class="btn btn-ghost btn-sm" data-export="csv">${icon('file', 14)} CSV</button>
+        <button type="button" class="btn btn-ghost btn-sm" data-export="xlsx">${icon('file', 14)} Excel</button>
+      </div>
+
+      <section class="card" style="margin-bottom:16px">
+        <div class="stats">
+          <div class="stat"><span class="stat-label">სრული საკომისიო (დახურული)</span><span class="stat-value">${fmtMoney(gross.value, cur)}</span><span class="stat-note">${closed.length} დახურული გარიგება</span></div>
+          <div class="stat"><span class="stat-label">პარტნიორების წილი</span><span class="stat-value">${partner.value ? '−' : ''}${fmtMoney(partner.value, cur)}</span><span class="stat-note">Co-Brokering</span></div>
+          <div class="stat"><span class="stat-label">სუფთა საკომისიო (დახურული)</span><span class="stat-value t-ok">${fmtMoney(net.value, cur)}</span><span class="stat-note">ხელზე მისაღები</span></div>
+          <div class="stat"><span class="stat-label">მოსალოდნელი (სუფთა)</span><span class="stat-value">${fmtMoney(expected.value, cur)}</span><span class="stat-note">${open.length} ღია გარიგება</span></div>
+        </div>
+        <div class="calc">
+          ${icon('refresh', 13)} კურსი: ${rate ? `<b>1 USD = ${rate} ₾</b>` : '<b class="t-danger">მითითებული არ არის</b>'}
+          ${App.isAdmin() ? ' · <button type="button" class="link-btn small" id="cm-fx">შეცვლა</button>' : ''}
+          ${missing ? `<br>${icon('alert', 13)} ${missing} გარიგება სხვა ვალუტაშია და კურსის გარეშე ჯამში ვერ შევიდა.` : ''}
+          <br>დახურული — დახურვის თარიღით; მოსალოდნელი — გადაბარგების სამიზნე თარიღით (თუ არ არის, შექმნის თარიღით).
+        </div>
+      </section>
+
+      <section class="card">
+        ${rows.length ? `
+          <div class="rows" style="--cols:minmax(0,2fr) minmax(0,1fr) 180px 80px 90px 90px 100px">
+            <div class="rows-head"><span>კლიენტი / ბინა</span><span>აგენტი</span><span>ეტაპი</span><span>თარიღი</span><span class="cell-right">სრული</span><span class="cell-right">პარტნიორი</span><span class="cell-right">სუფთა</span></div>
+            ${rows.slice().sort((a, b) => String(dateOf(b) || '').localeCompare(String(dateOf(a) || ''))).map(d => {
+              const c = calcCommission(d); const dc = d.currency || 'USD';
+              return `<div class="row comm-row">
+                <span class="cell-main"><strong>${esc(d.client_name)}</strong><span>${esc(d.apartment_id ? H.aptName(d.apartment_id) : 'ბინა არ არის მიბმული')}</span>
+                  <span class="comm-m">${esc(agentName(d.created_by))} · ${esc(R.date(dateOf(d)))} · სრული ${fmtMoney(c.gross, dc)}${c.hasPartner ? ` · პარტნიორი −${fmtMoney(c.partnerShare, dc)}` : ''}</span></span>
+                <span class="comm-d">${esc(agentName(d.created_by))}</span>
+                <span class="comm-d">${R.dealBadge(d.stage)}</span>
+                <span class="comm-d">${esc(R.date(dateOf(d)))}</span>
+                <span class="cell-right comm-d">${fmtMoney(c.gross, dc)}</span>
+                <span class="cell-right comm-d">${c.hasPartner ? '−' + fmtMoney(c.partnerShare, dc) : '—'}</span>
+                <span class="cell-right comm-net"><strong>${fmtMoney(c.net, dc)}</strong><span class="comm-m">${R.dealBadge(d.stage)}</span></span>
+              </div>`;
+            }).join('')}
+          </div>` : '<div class="empty-inline">ამ ფილტრით გარიგება ვერ მოიძებნა.</div>'}
+      </section>`;
+
+    $('#cm-month').addEventListener('change', (e) => { commFilter.month = e.target.value; App.render(); });
+    $('#cm-all').addEventListener('click', () => { commFilter.month = commFilter.month ? '' : R.monthKey(); App.render(); });
+    $('#cm-agent').addEventListener('change', (e) => { commFilter.agent = e.target.value; App.render(); });
+    bindCurToggle();
+    $('#cm-fx')?.addEventListener('click', openFxDialog);
+    $$('[data-export]').forEach(b => b.addEventListener('click', () => exportDeals(rows, b.dataset.export, b, commFilter.month || 'all')));
+  }
+
+  function openFxDialog() {
+    return R.dialog({
+      title: 'ვალუტის კურსი',
+      submitLabel: 'შენახვა',
+      body: `<label class="field"><span class="field-label">1 USD ლარში</span><input type="number" name="fx_rate" min="0.5" max="99" step="0.0001" required value="${esc(fxRate() || '')}" placeholder="2.70" data-error="მიუთითე კურსი (მაგ.: 2.70)." />
+        <span class="field-hint">გამოიყენება ფასების ორ ვალუტაში საჩვენებლად, პოსტებში, შერჩევის გვერდზე და საკომისიოების ჯამში.</span></label>`,
+      onSubmit: async (_f, v) => {
+        const rate = Number(v.fx_rate);
+        if (!(rate > 0)) throw new Error('კურსი დადებითი რიცხვი უნდა იყოს.');
+        const row = await q(sb.from('organizations').update({ fx_rate: rate }).eq('id', S.org.id).select().single());
+        Object.assign(S.org, { fx_rate: row.fx_rate ?? rate });
+        toast('კურსი შენახულია', { type: 'success' });
+        App.render();
+      },
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Export (CSV, or XLSX via SheetJS loaded on demand — same CDN as the importer)
+  // ---------------------------------------------------------------------------
+  function loadSheetJS() {
+    if (window.XLSX?.utils) return Promise.resolve(window.XLSX);
+    return new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+      s.onload = () => (window.XLSX?.utils ? resolve(window.XLSX) : reject(new Error('Excel-ის ბიბლიოთეკა ვერ ჩაიტვირთა. გამოიყენე CSV.')));
+      s.onerror = () => reject(new Error('Excel-ის ბიბლიოთეკა ვერ ჩაიტვირთა. შეამოწმე ინტერნეტი ან გამოიყენე CSV.'));
+      document.head.appendChild(s);
+    });
+  }
+
+  function dealsMatrix(deals) {
+    const head = ['კლიენტი', 'ტელეფონი', 'ბინა', 'ეტაპი', 'ქირა', 'ვალუტა', 'საკომისიო %', 'მესაკუთრის ბონუსი', 'სრული საკომისიო', 'პარტნიორი', 'პარტნიორის წილი %', 'პარტნიორის თანხა', 'სუფთა საკომისიო', 'აგენტი', 'შექმნის თარიღი', 'გადაბარგების თარიღი', 'დახურვის თარიღი'];
+    const r2 = (n) => Math.round(Number(n || 0) * 100) / 100;
+    return [head, ...deals.map(d => {
+      const c = calcCommission(d);
+      return [d.client_name, d.client_phone || '', d.apartment_id ? H.aptName(d.apartment_id) : '', L.dealStage[d.stage] || d.stage, r2(d.deal_amount), d.currency || 'USD', c.commPct, r2(c.bonus), r2(c.gross), d.partner_agent || '', c.cobrokerPct, r2(c.partnerShare), r2(c.net), agentName(d.created_by), dmy(d.created_at), dmy(d.target_move_in), dmy(d.closed_at)];
+    })];
+  }
+
+  function download(blob, name) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+  }
+
+  function exportDeals(deals, kind, btn, label) {
+    if (!deals.length) { toast('საექსპორტო გარიგება არ არის.', { type: 'info' }); return undefined; }
+    const name = `rigzea-deals-${label}`;
+    const matrix = dealsMatrix(deals);
+    if (kind === 'csv') {
+      const cell = (v) => { const s = String(v ?? ''); return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
+      download(new Blob(['﻿' + matrix.map(r => r.map(cell).join(',')).join('\r\n')], { type: 'text/csv;charset=utf-8' }), `${name}.csv`);
+      toast('CSV ფაილი ჩამოიტვირთა', { type: 'success' });
+      return undefined;
+    }
+    return run(btn, async () => {
+      const XLSX = await loadSheetJS();
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.aoa_to_sheet(matrix);
+      ws['!cols'] = matrix[0].map((h, i) => ({ wch: Math.min(32, Math.max(String(h).length, ...matrix.slice(1).map(r => String(r[i] ?? '').length)) + 2) }));
+      XLSX.utils.book_append_sheet(wb, ws, 'Deals');
+      XLSX.writeFile(wb, `${name}.xlsx`);
+      toast('Excel ფაილი ჩამოიტვირთა', { type: 'success' });
+    });
+  }
+
+  // ===========================================================================
+  // SELECTIONS LIST
+  // ===========================================================================
+  const selCache = { org: null, rows: [], error: null, loading: false };
+
+  async function loadSelections() {
+    selCache.loading = true; selCache.error = null;
+    try {
+      selCache.rows = await q(sb.from('selections').select('*').eq('organization_id', S.org.id).order('created_at', { ascending: false }));
+      selCache.org = S.org.id;
+    } catch (err) {
+      console.error(err);
+      selCache.error = err;
+    } finally {
+      selCache.loading = false;
+    }
+    if (App.route().name === 'deals' && App.route().id === 'selections') renderSelections();
+  }
+
+  function selectionShareText(sel) {
+    const n = (sel.apartment_ids || []).length;
+    return `გამარჯობა! თქვენი მოთხოვნის მიხედვით შევარჩიე ${n} ბინა. ფოტოები, ფასები და შედარება ერთ გვერდზეა:\n${selectionUrl(sel.slug)}`;
+  }
+
+  function renderSelections() {
+    const body = $('#deals-body');
+    if (!body) return;
+    if (selCache.org !== S.org.id && !selCache.error) {
+      body.innerHTML = '<div class="card"><div class="skeleton" aria-label="იტვირთება"><i></i><i></i><i></i></div></div>';
+      if (!selCache.loading) loadSelections();
+      return;
+    }
+    if (selCache.error) {
+      body.innerHTML = `<div class="card"><div class="error-state"><p>შერჩევები ვერ ჩაიტვირთა. ${esc(R.friendlyError(selCache.error))}</p><button type="button" class="btn btn-primary" id="sel-retry">${icon('refresh', 16)} ხელახლა ცდა</button></div></div>`;
+      $('#sel-retry').onclick = () => { selCache.error = null; selCache.org = null; renderSelections(); };
+      return;
+    }
+    const rows = selCache.rows;
+    body.innerHTML = `<section class="card">${rows.length ? `
+      <div class="rows" style="--cols:minmax(0,1fr) auto">
+        ${rows.map(s => `
+          <div class="row">
+            <span class="cell-main"><strong>${esc(s.client_name || 'შერჩევა კლიენტის სახელის გარეშე')} ${s.is_active === false ? R.badge('გათიშული', 'muted') : ''}</strong>
+              <span>${(s.apartment_ids || []).length} ბინა · ${esc(R.date(s.created_at))}${s.deal_id && H.deal(s.deal_id) ? ' · გარიგება: ' + esc(H.deal(s.deal_id).client_name) : ''}</span></span>
+            <span class="cell-actions">
+              <button type="button" class="btn btn-ghost btn-sm" data-sel-copy="${s.id}" aria-label="ბმულის კოპირება">${icon('copy', 14)}</button>
+              <a class="btn btn-ghost btn-sm" href="${R.whatsappUrl(selectionShareText(s))}" target="_blank" rel="noopener" aria-label="WhatsApp-ით გაგზავნა">${icon('whatsapp', 14)}</a>
+              <a class="btn btn-ghost btn-sm" href="${esc(selectionUrl(s.slug))}" target="_blank" rel="noopener" aria-label="გახსნა">${icon('external', 14)}</a>
+              <button type="button" class="btn btn-ghost btn-sm" data-sel-toggle="${s.id}">${s.is_active === false ? 'ჩართვა' : 'გათიშვა'}</button>
+            </span>
+          </div>`).join('')}
+      </div>` : `<div class="empty">${icon('link', 28)}<h3>შერჩევა ჯერ არ შეგიქმნია</h3><p>გახსენი „ბინების შერჩევა“, მონიშნე კლიენტისთვის შესაფერისი ბინები და გაუგზავნე ერთი ბმული.</p><button type="button" class="btn btn-primary" id="sel-new">${icon('sparkle', 16)} ბინების შერჩევა</button></div>`}</section>`;
+
+    $('#sel-new')?.addEventListener('click', () => openMatchmakerModal());
+    $$('[data-sel-copy]').forEach(b => b.addEventListener('click', () => { const s = rows.find(x => x.id === b.dataset.selCopy); copyText(selectionUrl(s.slug), 'შერჩევის ბმული დაკოპირდა'); }));
+    $$('[data-sel-toggle]').forEach(b => b.addEventListener('click', () => run(b, async () => {
+      const s = rows.find(x => x.id === b.dataset.selToggle);
+      const row = await q(sb.from('selections').update({ is_active: s.is_active === false }).eq('id', s.id).select().single());
+      Object.assign(s, row);
+      toast(row.is_active === false ? 'ბმული გაითიშა — კლიენტი მას ვეღარ გახსნის' : 'ბმული ისევ აქტიურია', { type: 'success' });
+      renderSelections();
+    })));
+  }
+
+  // ===========================================================================
+  // MATCHMAKER
+  // ===========================================================================
+  // Weighted match of one apartment against client criteria. Returns 0–100, or null with no criteria.
+  function matchScore(a, c = {}) {
+    let total = 0, got = 0;
+    const add = (w, part) => { total += w; got += w * Math.max(0, Math.min(1, part)); };
+    const norm = (s) => String(s || '').trim().toLowerCase();
+    if (c.city) add(15, norm(a.city) === norm(c.city) ? 1 : 0);
+    if (c.district) add(25, a.district && (norm(a.district).includes(norm(c.district)) || norm(c.district).includes(norm(a.district))) ? 1 : 0);
+    const min = Number(c.budget_min || 0), max = Number(c.budget_max || 0);
+    if (min || max) {
+      const price = a.monthly_rent ? convert(a.monthly_rent, a.currency || 'USD', c.currency || 'USD') : null;
+      if (price === null) add(30, 0);
+      else if (max && price > max) add(30, 1 - (price - max) / (max * 0.25));
+      else if (min && price < min) add(30, 1 - (min - price) / (min * 0.5));
+      else add(30, 1);
+    }
+    const rooms = Number(c.rooms || 0);
+    if (rooms) { const v = Number(a.rooms || 0); add(15, v >= rooms ? 1 : v === rooms - 1 ? 0.5 : 0); }
+    const beds = Number(c.bedrooms || 0);
+    if (beds) { const v = Number(a.bedrooms || 0); add(15, v >= beds ? 1 : v === beds - 1 ? 0.5 : 0); }
+    if (c.pets) add(15, a.pets_allowed ? 1 : 0);
+    return total ? Math.round((got / total) * 100) : null;
+  }
+  App.matchScore = matchScore;
+
+  function openMatchmakerModal(deal = null) {
     const apts = (S.data.apartments || []).filter(a => a.status !== 'archived');
-    const cities = [...new Set(apts.map(a => a.city).filter(Boolean))];
+    const uniq = (arr) => [...new Set(arr.filter(Boolean).map(s => String(s).trim()))].sort((x, y) => x.localeCompare(y));
+    const cities = uniq(apts.map(a => a.city));
+    const districts = uniq(apts.map(a => a.district));
+    const openDeals = (S.data.deals || []).filter(d => OPEN_STAGES.includes(d.stage));
+    const picked = new Set();
+    let linkedDeal = deal;
 
     return R.dialog({
-      title: 'კლიენტის მატჩმეიკერი (Client Matchmaker)',
+      title: 'ბინების შერჩევა კლიენტისთვის',
       wide: true,
-      submitLabel: 'დახურვა',
       body: `
-        <div style="margin-bottom:16px;background:var(--surface-2);padding:14px;border-radius:var(--r);border:1px solid var(--line)">
-          <div style="font-weight:600;font-size:13.5px;margin-bottom:8px">შეიყვანე კლიენტის ძებნის კრიტერიუმები:</div>
-          <div class="form-grid" style="grid-template-columns:repeat(auto-fit, minmax(130px, 1fr));gap:8px">
-            <label class="field"><span class="field-label">ქალაქი</span>
-              <select id="mm-city">
-                <option value="">ყველა ქალაქი</option>
-                ${cities.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('')}
-              </select>
-            </label>
-            <label class="field"><span class="field-label">მაქს. ქირა ($)</span><input type="number" id="mm-price" placeholder="მაგ. 1200" /></label>
-            <label class="field"><span class="field-label">ოთახები</span>
-              <select id="mm-rooms">
-                <option value="">ნებისმიერი</option>
-                <option value="1">1 (სტუდია)</option>
-                <option value="2">2 (1 საძინებელი)</option>
-                <option value="3">3 (2 საძინებელი)</option>
-                <option value="4">4+ ოთახი</option>
-              </select>
-            </label>
-            <label class="field"><span class="field-label">შინაური ცხოველები</span>
-              <select id="mm-pets">
-                <option value="">სულერთია</option>
-                <option value="1">მხოლოდ Pet Friendly</option>
-              </select>
-            </label>
+        <div class="mm-filters">
+          <div class="form-grid">
+            <label class="field"><span class="field-label">გარიგება (არასავალდებულო)</span>
+              <select id="mm-deal"><option value="">— გარიგების გარეშე —</option>${openDeals.map(d => `<option value="${d.id}" ${deal?.id === d.id ? 'selected' : ''}>${esc(d.client_name)}</option>`).join('')}</select></label>
+            <label class="field"><span class="field-label">კლიენტის სახელი (ბმულზე გამოჩნდება)</span><input id="mm-client" maxlength="60" value="${esc(deal?.client_name || '')}" placeholder="მაგ.: მარიამი" /></label>
+          </div>
+          <div class="mm-grid">
+            <label class="field"><span class="field-label">ქალაქი</span><select id="mm-city" data-c="city"><option value="">ნებისმიერი</option>${cities.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('')}</select></label>
+            <label class="field"><span class="field-label">უბანი</span><input id="mm-district" data-c="district" list="mm-district-list" placeholder="მაგ.: ვაკე" /><datalist id="mm-district-list">${districts.map(d => `<option value="${esc(d)}"></option>`).join('')}</datalist></label>
+            <label class="field"><span class="field-label">ბიუჯეტი — მინ.</span><input type="number" min="0" step="50" id="mm-min" data-c="budget_min" /></label>
+            <label class="field"><span class="field-label">ბიუჯეტი — მაქს.</span><input type="number" min="0" step="50" id="mm-max" data-c="budget_max" /></label>
+            <label class="field"><span class="field-label">ვალუტა</span><select id="mm-cur" data-c="currency"><option value="USD">USD ($)</option><option value="GEL">GEL (₾)</option></select></label>
+            <label class="field"><span class="field-label">ოთახები (მინ.)</span><select id="mm-rooms" data-c="rooms"><option value="">ნებისმიერი</option>${[1, 2, 3, 4, 5].map(n => `<option value="${n}">${n}+</option>`).join('')}</select></label>
+            <label class="field"><span class="field-label">საძინებლები (მინ.)</span><select id="mm-beds" data-c="bedrooms"><option value="">ნებისმიერი</option>${[1, 2, 3, 4].map(n => `<option value="${n}">${n}+</option>`).join('')}</select></label>
+            <label class="field"><span class="field-label">შინაური ცხოველი</span><select id="mm-pets" data-c="pets"><option value="">არ აქვს მნიშვნელობა</option><option value="1">ცხოველით</option></select></label>
           </div>
         </div>
-
-        <div id="mm-results-head" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-          <strong>შესაბამისი ბინები (<span id="mm-count">${apts.length}</span>)</strong>
-          <small class="muted">ავტომატურად ფილტრავს პორტფოლიოს</small>
+        <div class="mm-head"><strong>შესაბამისი ბინები (<span id="mm-count">0</span>)</strong><button type="button" class="link-btn small" id="mm-save" hidden>კრიტერიუმების შენახვა გარიგებაში</button></div>
+        <div id="mm-results" class="mm-list"></div>
+        <div class="mm-bar" id="mm-bar">
+          <span id="mm-picked" class="small muted">მონიშნე ბინები, რომლებიც კლიენტს უნდა გაუგზავნო.</span>
+          <button type="button" class="btn btn-primary" id="mm-create" disabled>${icon('link', 16)} შერჩევის ბმულის შექმნა</button>
         </div>
-
-        <div id="mm-results" style="display:flex;flex-direction:column;gap:10px;max-height:420px;overflow-y:auto"></div>
-      `,
+        <div id="mm-done" class="mm-done" hidden></div>`,
       onOpen: (form) => {
-        const updateList = () => {
-          const city = $('#mm-city', form).value;
-          const maxPrice = Number($('#mm-price', form).value || 0);
-          const rooms = Number($('#mm-rooms', form).value || 0);
-          const petsOnly = $('#mm-pets', form).value === '1';
-
-          const filtered = apts.filter(a => {
-            if (city && a.city !== city) return false;
-            if (maxPrice && Number(a.monthly_rent || 0) > maxPrice) return false;
-            if (rooms && Number(a.rooms || a.bedrooms || 1) < rooms) return false;
-            if (petsOnly && !a.pets_allowed) return false;
-            return true;
-          });
-
-          $('#mm-count', form).textContent = filtered.length;
-          const container = $('#mm-results', form);
-
-          if (!filtered.length) {
-            container.innerHTML = `<div class="empty-inline" style="padding:24px">მითითებული პარამეტრებით ბინა ვერ მოიძებნა. შეამცირე ფილტრები.</div>`;
-            return;
-          }
-
-          container.innerHTML = filtered.map(a => {
-            const rentText = a.monthly_rent ? (a.currency === 'GEL' ? `${a.monthly_rent} ₾` : `$${a.monthly_rent}`) : '—';
-            const showcaseUrl = `${location.origin}/p/?id=${a.id}`;
-            return `
-              <div class="card" style="padding:12px;display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--surface)">
-                <div>
-                  <strong style="font-size:14.5px;display:block">${esc(a.name)}</strong>
-                  <span style="font-size:12.5px;color:var(--muted)">
-                    ${esc([a.city, a.district, a.address].filter(Boolean).join(', '))} · 
-                    ${a.rooms || 2} ოთახი · 
-                    ${a.pets_allowed ? '<span style="display:inline-flex;align-items:center;gap:3px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="15" r="3"/><circle cx="6" cy="11" r="2"/><circle cx="10" cy="6" r="2"/><circle cx="14" cy="6" r="2"/><circle cx="18" cy="11" r="2"/></svg> Pet Friendly</span>' : 'ცხოველების გარეშე'}
-                  </span>
-                </div>
-                <div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
-                  <span style="font-size:16px;font-weight:700;color:var(--brand)">${rentText}</span>
-                  <button type="button" class="btn btn-secondary btn-sm" data-mm-copy="${a.id}">
-                    ${icon('copy', 14)} ბმული
-                  </button>
-                  <button type="button" class="btn btn-primary btn-sm" data-mm-deal="${a.id}">
-                    + გარიგება
-                  </button>
-                </div>
-              </div>
-            `;
-          }).join('');
-
-          $$('[data-mm-copy]', form).forEach(b => b.addEventListener('click', () => {
-            const url = `${location.origin}/p/?id=${b.dataset.mmCopy}`;
-            copyText(url, 'სტუმრის ბმული დაკოპირდა!');
-          }));
-
-          $$('[data-mm-deal]', form).forEach(b => b.addEventListener('click', () => {
-            const apt = H.apt(b.dataset.mmDeal);
-            openDealForm(null, { apartment_id: apt.id, deal_amount: apt.monthly_rent, currency: apt.currency || 'USD' });
-          }));
+        const fields = $$('[data-c]', form);
+        const readCriteria = () => {
+          const c = {};
+          fields.forEach(el => { const v = el.value.trim(); if (v) c[el.dataset.c] = ['budget_min', 'budget_max', 'rooms', 'bedrooms'].includes(el.dataset.c) ? Number(v) : el.dataset.c === 'pets' ? true : v; });
+          if (!c.currency) c.currency = 'USD';
+          return c;
+        };
+        const fillCriteria = (c = {}) => {
+          fields.forEach(el => { const v = c[el.dataset.c]; el.value = el.dataset.c === 'pets' ? (v ? '1' : '') : (v ?? (el.dataset.c === 'currency' ? 'USD' : '')); });
         };
 
-        ['mm-city', 'mm-price', 'mm-rooms', 'mm-pets'].forEach(id => {
-          $(`#${id}`, form)?.addEventListener('input', updateList);
-          $(`#${id}`, form)?.addEventListener('change', updateList);
+        const updateList = () => {
+          const c = readCriteria();
+          const scored = apts.map(a => ({ a, s: matchScore(a, c) }));
+          scored.sort((x, y) => (y.s ?? -1) - (x.s ?? -1) || String(x.a.name).localeCompare(String(y.a.name)));
+          $('#mm-count', form).textContent = scored.length;
+          $('#mm-results', form).innerHTML = scored.length ? scored.map(({ a, s }) => {
+            const tone = s === null ? '' : s >= 80 ? 'hi' : s >= 50 ? 'mid' : 'lo';
+            const facts = [[a.city, a.district].filter(Boolean).join(', '), a.rooms ? `${a.rooms} ოთახი` : '', a.bedrooms ? `${a.bedrooms} საძინებელი` : '', a.area_sqm ? `${a.area_sqm} მ²` : '', a.pets_allowed ? 'ცხოველი დასაშვებია' : ''].filter(Boolean).join(' · ');
+            return `<label class="mm-item ${s !== null && s < 50 ? 'is-weak' : ''}">
+              <input type="checkbox" value="${a.id}" ${picked.has(a.id) ? 'checked' : ''} />
+              <span class="cell-main wrap"><strong>${esc(a.name)}</strong><span>${esc(facts || 'დეტალები შევსებული არ არის')}</span></span>
+              <span class="mm-side"><strong>${esc(a.monthly_rent ? fmtMoney(a.monthly_rent, a.currency || 'USD') : '—')}</strong>${s !== null ? `<span class="mm-score ${tone}">${s}% დამთხვევა</span>` : ''}</span>
+            </label>`;
+          }).join('') : '<div class="empty-inline">პორტფოლიოში აქტიური ბინა არ არის.</div>';
+          $$('#mm-results input[type=checkbox]', form).forEach(cb => cb.addEventListener('change', () => { cb.checked ? picked.add(cb.value) : picked.delete(cb.value); updateBar(); }));
+          updateBar();
+        };
+        const updateBar = () => {
+          $('#mm-create', form).disabled = !picked.size;
+          $('#mm-picked', form).textContent = picked.size ? `მონიშნულია ${picked.size} ბინა` : 'მონიშნე ბინები, რომლებიც კლიენტს უნდა გაუგზავნო.';
+          $('#mm-save', form).hidden = !linkedDeal;
+        };
+
+        const dealSelect = $('#mm-deal', form);
+        dealSelect.addEventListener('change', () => {
+          linkedDeal = H.deal(dealSelect.value) || null;
+          if (linkedDeal) { $('#mm-client', form).value = linkedDeal.client_name || ''; fillCriteria(linkedDeal.criteria || {}); }
+          updateList();
+        });
+        fields.forEach(el => { el.addEventListener('input', updateList); el.addEventListener('change', updateList); });
+
+        const saveCriteria = async (criteria) => {
+          const row = await q(sb.from('deals').update({ criteria, updated_at: new Date().toISOString() }).eq('id', linkedDeal.id).select().single());
+          App.upsertLocal('deals', row);
+          linkedDeal = row;
+        };
+        $('#mm-save', form).addEventListener('click', (e) => run(e.currentTarget, async () => { await saveCriteria(readCriteria()); }, { success: 'კრიტერიუმები შენახულია' }));
+
+        let pendingId = null;
+        $('#mm-create', form).addEventListener('click', (e) => {
+          if (!picked.size) return;
+          if (picked.size > 20) { toast('ერთ ბმულში მაქსიმუმ 20 ბინის დამატებაა შესაძლებელი.', { type: 'error' }); return; }
+          // Public page shows listings in the current (best match first) order.
+          const order = $$('#mm-results input[type=checkbox]', form).map(cb => cb.value).filter(id => picked.has(id));
+          const row = { id: pendingId = pendingId || R.uuid(), slug: randomSlug(), organization_id: S.org.id, client_name: $('#mm-client', form).value.trim() || null, apartment_ids: order, criteria: readCriteria(), deal_id: linkedDeal?.id || null, created_by: S.user.id };
+          run(e.currentTarget, async () => {
+            const sel = await App.insertOnce('selections', row);
+            pendingId = null;
+            if (linkedDeal) await saveCriteria(row.criteria);
+            if (selCache.org === S.org.id) selCache.rows.unshift(sel);
+            showDone(sel);
+          });
         });
 
+        const showDone = (sel) => {
+          const url = selectionUrl(sel.slug);
+          const text = selectionShareText(sel);
+          const done = $('#mm-done', form);
+          done.hidden = false;
+          done.innerHTML = `
+            <div class="mm-done-head">${icon('check', 18)} <strong>ბმული მზადაა — ${sel.apartment_ids.length} ბინა</strong></div>
+            <div class="mm-link"><input class="input" readonly value="${esc(url)}" aria-label="შერჩევის ბმული" /></div>
+            <div class="mm-done-actions">
+              <button type="button" class="btn btn-secondary" id="mm-copy">${icon('copy', 16)} კოპირება</button>
+              <a class="btn btn-wa" href="${R.whatsappUrl(text)}" target="_blank" rel="noopener">${icon('whatsapp', 16)} WhatsApp-ით გაგზავნა</a>
+              <a class="btn btn-ghost" href="${esc(url)}" target="_blank" rel="noopener">${icon('external', 16)} გახსნა</a>
+            </div>`;
+          $('#mm-copy', form).onclick = () => copyText(url, 'შერჩევის ბმული დაკოპირდა');
+          copyText(url, 'შერჩევის ბმული შეიქმნა და დაკოპირდა');
+          done.scrollIntoView({ block: 'nearest' });
+        };
+
+        if (deal) fillCriteria(deal.criteria || {});
         updateList();
-      }
+      },
     });
   }
   App.openMatchmakerModal = openMatchmakerModal;
 
   // ===========================================================================
-  // 1-CLICK SOCIAL & WHATSAPP POST GENERATOR MODAL
+  // POST GENERATOR (KA · EN · WhatsApp · Co-Brokering 50/50)
   // ===========================================================================
+  function amenityLabels(a, lang) {
+    const i = lang === 'en' ? 1 : 0;
+    return (Array.isArray(a.amenities) ? a.amenities : []).map(x => {
+      if (typeof x === 'string') return AMENITIES[x]?.[i] || x;
+      if (x && typeof x === 'object') return (lang === 'en' ? x.en || x.label_en : x.ka || x.label) || AMENITIES[x.id]?.[i] || x.label || '';
+      return '';
+    }).filter(Boolean);
+  }
+
   App.openPostGenerator = (apartment) => {
     const a = apartment;
-    const isUSD = (a.currency || 'USD').toUpperCase() === 'USD';
+    const cur = (a.currency || 'USD').toUpperCase() === 'GEL' ? 'GEL' : 'USD';
     const rent = Number(a.monthly_rent || 0);
-    const usd = isUSD ? rent : Math.round(rent / 2.7);
-    const gel = isUSD ? Math.round(rent * 2.7) : rent;
-    const priceStr = isUSD ? `$${usd} / თვეში (~${gel} ₾)` : `${gel} ₾ / თვეში (~$${usd})`;
+    const other = cur === 'USD' ? 'GEL' : 'USD';
+    const alt = rent ? convert(rent, cur, other) : null;
+    const priceKA = rent ? `${fmtMoney(rent, cur)} / თვე${alt !== null ? ` (~${fmtMoney(alt, other)})` : ''}` : 'ფასი შეთანხმებით';
+    const priceEN = rent ? `${fmtMoney(rent, cur)} / month${alt !== null ? ` (~${fmtMoney(alt, other)})` : ''}` : 'Price on request';
+    const publicUrl = listingUrl(a);
+    const wlUrl = listingUrl(a, true);
+    const phone = a.agent_phone || S.member?.phone || S.org?.contact_phone || '';
+    const place = [a.district, a.city].filter(Boolean).join(', ');
+    const tag = (s) => (s ? '#' + String(s).replace(/[^\p{L}\p{N}]+/gu, '') : '');
+    const floorKA = a.floor ? `სართული ${a.floor}${a.total_floors ? '/' + a.total_floors : ''}` : '';
+    const floorEN = a.floor ? `floor ${a.floor}${a.total_floors ? '/' + a.total_floors : ''}` : '';
+    const specsKA = [a.rooms ? `${a.rooms} ოთახი` : '', a.bedrooms ? `${a.bedrooms} საძინებელი` : '', a.area_sqm ? `${a.area_sqm} მ²` : '', floorKA].filter(Boolean).join(' · ');
+    const specsEN = [a.rooms ? `${a.rooms} rooms` : '', a.bedrooms ? `${a.bedrooms} bedrooms` : '', a.area_sqm ? `${a.area_sqm} m²` : '', floorEN].filter(Boolean).join(' · ');
+    const amKA = amenityLabels(a, 'ka');
+    const amEN = amenityLabels(a, 'en');
+    const lines = (...xs) => xs.filter(x => x !== null && x !== undefined && x !== false && x !== '').join('\n');
 
-    const publicUrl = `${location.origin}/p/?id=${a.id}`;
-    const whiteLabelUrl = `${location.origin}/p/?id=${a.id}&wl=1`;
+    const postKA = lines(
+      `✨ ქირავდება ბინა${place ? ' · ' + place : ''}`,
+      `🏠 ${a.name}`,
+      a.address && `📍 მისამართი: ${a.address}`,
+      `💰 ფასი: ${priceKA}`,
+      specsKA && `🚪 ${specsKA}`,
+      a.pets_allowed ? '🐾 შინაური ცხოველი: დასაშვებია' : '🚫 შინაური ცხოველი: დაუშვებელია',
+      a.utilities_estimate && `💡 კომუნალური: ~${a.utilities_estimate} ₾ / თვე`,
+      a.prepayment_terms && `🔑 პირობები: ${a.prepayment_terms}`,
+      amKA.length && `\n✅ კეთილმოწყობა: ${amKA.join(', ')}`,
+      a.description && `\n${String(a.description).trim()}`,
+      '',
+      '📸 ფოტოები და დეტალები:',
+      `👉 ${publicUrl}`,
+      '',
+      phone ? `📲 ნახვის დასაჯავშნად მოგვწერეთ WhatsApp-ში ან დაგვირეკეთ:\n☎️ ${phone}` : '📲 ნახვის დასაჯავშნად მოგვწერეთ პირად შეტყობინებაში.',
+      ['#ქირავდება', '#ბინა', tag(a.city), tag(a.district)].filter(Boolean).join(' '),
+    );
 
-    const city = a.city || 'თბილისი';
-    const district = a.district || (a.city === 'ბათუმი' ? 'ბულვარი' : 'ვაკე');
-    const rooms = a.rooms || a.bedrooms || 2;
-    const floor = a.floor ? `${a.floor} სართული` : '';
-    const pets = a.pets_allowed ? '🐾 შინაური ცხოველები: დაშვებულია' : '🚫 შინაური ცხოველები: დაუშვებელია';
-    const petsEn = a.pets_allowed ? '🐾 Pets: Allowed (Pet friendly)' : '🚫 Pets: Not allowed';
-    const util = a.utilities_estimate ? `💡 კომუნალური ხარჯი: ~${a.utilities_estimate} ₾/თვე` : '';
+    const postEN = lines(
+      `✨ Apartment for rent${place ? ' · ' + place : ''}`,
+      `🏠 ${a.name}`,
+      a.address && `📍 Address: ${a.address}`,
+      `💰 Rent: ${priceEN}`,
+      specsEN && `🚪 ${specsEN}`,
+      a.pets_allowed ? '🐾 Pets: allowed' : '🚫 Pets: not allowed',
+      a.utilities_estimate && `💡 Utilities: ~${a.utilities_estimate} GEL / month`,
+      a.prepayment_terms && `🔑 Terms: ${a.prepayment_terms}`,
+      amEN.length && `\n✅ Amenities: ${amEN.join(', ')}`,
+      a.description_en && `\n${String(a.description_en).trim()}`,
+      '',
+      '📸 Photos and details:',
+      `👉 ${publicUrl}`,
+      '',
+      phone ? `📲 To book a viewing, message on WhatsApp or call:\n☎️ ${phone}` : '📲 To book a viewing, send us a private message.',
+      ['#ApartmentForRent', '#RentGeorgia', '#Expats'].join(' '),
+    );
 
-    // Georgian Post Format (Facebook / Telegram)
-    const postKA = `✨ ქირავდება თანამედროვე ბინა ${city}-ში (${district})! ✨
+    const postWA = lines(
+      'გამარჯობა! გიგზავნით ბინის ვარიანტს:',
+      `🏠 ${a.name}${place ? ' — ' + place : ''}`,
+      `💰 ${priceKA}`,
+      [specsKA, a.pets_allowed ? '🐾 ცხოველი დასაშვებია' : ''].filter(Boolean).join(' · '),
+      '',
+      'ფოტოები და ყველა დეტალი:',
+      publicUrl,
+      '',
+      'თუ მოგეწონებათ, ნახვას დაგიჯავშნით.',
+    );
 
-📍 მისამართი: ${a.address || city}
-💰 ფასი: ${priceStr}
-🚪 ოთახები: ${rooms} ოთახი ${floor ? '· ' + floor : ''}
-${pets}
-${util}
-🔑 პირობები: 1-ლი და ბოლო თვის წინასწარი გადახდა + დეპოზიტი
+    const split = Number(a.cobroker_split ?? 50);
+    const commPct = Number(a.agent_commission_percent ?? 50);
+    const commAmount = rent ? (rent * commPct) / 100 + Number(a.owner_bonus || 0) : 0;
+    const postCB = lines(
+      `🤝 Co-Brokering ${split}/${100 - split} · ქირავდება ბინა`,
+      `🏠 ${a.name}${place ? ' · ' + place : ''}`,
+      `💰 ქირა: ${priceKA}`,
+      specsKA && `🚪 ${specsKA}`,
+      a.pets_allowed ? '🐾 ცხოველი დასაშვებია' : '🚫 ცხოველი დაუშვებელია',
+      rent ? `💼 საკომისიო: ${commPct}% პირველი თვის ქირიდან${Number(a.owner_bonus) ? ' + მესაკუთრის ბონუსი' : ''} (${fmtMoney(commAmount, cur)}), ვიყოფთ ${split}/${100 - split}` : `💼 საკომისიოს ვიყოფთ ${split}/${100 - split}`,
+      '',
+      '📸 ბმული კლიენტისთვის (ჩემი კონტაქტის გარეშე):',
+      `👉 ${wlUrl}`,
+      '',
+      phone ? `📲 თუ შესაფერისი კლიენტი გყავთ, მომწერეთ: ${phone}` : '📲 თუ შესაფერისი კლიენტი გყავთ, მომწერეთ პირად შეტყობინებაში.',
+    );
 
-📸 იხილეთ სრული ფოტოები და დეტალები ბმულზე:
-👉 ${publicUrl}
-
-📲 დასაჯავშნად დაგვიკავშირდით პირადში ან WhatsApp-ში:
-☎️ ${a.agent_phone || S.org.contact_phone || '+995 599 00 11 22'}
-#ქირავდება #თბილისი #ბინა #ApartmentForRent #${district.replace(/\s+/g, '')}`;
-
-    // English Post Format (Expats / FB Groups)
-    const postEN = `✨ For Rent: Modern Apartment in ${city} (${district})! ✨
-
-📍 Location: ${a.address || city}
-💰 Rent: $${usd} / month (~${gel} GEL)
-🚪 Rooms: ${rooms} rooms ${floor ? '· Floor ' + a.floor : ''}
-${petsEn}
-🔑 Terms: 1st & last month upfront + 1 month security deposit
-🛡️ 100% Free for tenants · Zero agent fee!
-
-📸 Full high-res photo gallery & specs:
-👉 ${publicUrl}
-
-📲 To schedule a viewing contact via WhatsApp:
-☎️ ${a.agent_phone || S.org.contact_phone || '+995 599 00 11 22'}
-#TbilisiRent #ApartmentForRent #ExpatsTbilisi #Rigzea`;
-
-    // WhatsApp Direct Client Message
-    const postWA = `გამარჯობა! გიგზავნით ბინის ვარიანტს ${district}-ში:
-🏠 ${a.name}
-💰 ${priceStr}
-🚪 ${rooms} ოთახი · ${a.pets_allowed ? 'Pet friendly 🐾' : ''}
-
-ფოტოების სრული გალერეა და მონაცემები:
-${publicUrl}
-
-თუ მოგეწონებათ, შემიძლია ნახვა დაგიჯავშნოთ!`;
+    const posts = { ka: postKA, en: postEN, wa: postWA, cb: postCB };
+    const tabs = [['ka', 'ქართული პოსტი'], ['en', 'English post'], ['wa', 'WhatsApp კლიენტს'], ['cb', 'Co-Brokering 50/50']];
+    const warnings = [!phone && 'საკონტაქტო ტელეფონი არ არის მითითებული — დაამატე ბინის ან კომპანიის პარამეტრებში.', !rent && 'ბინას ქირა არ აქვს მითითებული.', !a.description_en && 'ინგლისური აღწერა (description_en) არ არის — English პოსტი აღწერის გარეშე იქნება.'].filter(Boolean);
 
     return R.dialog({
-      title: 'WhatsApp & FB პოსტის გენერატორი',
+      title: 'პოსტის გენერატორი',
+      subtitle: a.name,
       wide: true,
-      submitLabel: 'დახურვა',
       body: `
-        <div style="margin-bottom:14px;display:flex;gap:8px;flex-wrap:wrap">
-          <button type="button" class="btn btn-secondary btn-sm" id="gen-tab-ka" style="font-weight:700">ქართული პოსტი (FB/Telegram)</button>
-          <button type="button" class="btn btn-ghost btn-sm" id="gen-tab-en">English Post (Expats)</button>
-          <button type="button" class="btn btn-ghost btn-sm" id="gen-tab-wa" style="display:inline-flex;align-items:center;gap:4px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>WhatsApp Direct კლიენტისთვის</button>
-        </div>
-
-        <div style="position:relative">
-          <textarea id="gen-output" rows="12" class="input" style="font-family:monospace;font-size:13px;line-height:1.5;width:100%">${esc(postKA)}</textarea>
-        </div>
-
-        <div style="margin-top:14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
-          <div style="display:flex;gap:8px">
-            <button type="button" class="btn btn-primary" id="btn-copy-post">
-              ${icon('copy', 16)} ტექსტის კოპირება
-            </button>
-            <button type="button" class="btn btn-secondary" id="btn-copy-wl" style="display:inline-flex;align-items:center;gap:5px">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg> White-Label ბმულის კოპირება
-            </button>
-          </div>
-          <a class="btn btn-ghost" href="${publicUrl}" target="_blank">
-            ${icon('external', 16)} გვერდის გახსნა
-          </a>
-        </div>
-      `,
+        <div class="tabs" role="tablist">${tabs.map(([k, l], i) => `<button type="button" role="tab" class="tab" data-post="${k}" aria-selected="${i === 0}">${l}</button>`).join('')}</div>
+        ${warnings.length ? `<div class="notice notice-warn notice-list small">${warnings.map(w => `<div>${icon('alert', 13)} ${esc(w)}</div>`).join('')}</div>` : ''}
+        <label class="sr-only" for="gen-output">პოსტის ტექსტი</label>
+        <textarea id="gen-output" rows="14" class="input post-output">${esc(postKA)}</textarea>
+        <div class="post-actions">
+          <button type="button" class="btn btn-primary" id="btn-copy-post">${icon('copy', 16)} ტექსტის კოპირება</button>
+          <a class="btn btn-wa" id="btn-wa-post" href="${R.whatsappUrl(postKA)}" target="_blank" rel="noopener">${icon('whatsapp', 16)} WhatsApp</a>
+          <button type="button" class="btn btn-secondary" id="btn-copy-wl" title="კლიენტისთვის გადასაგზავნი ბმული აგენტის კონტაქტის გარეშე">White-label ბმული</button>
+          <a class="btn btn-ghost" href="${esc(publicUrl)}" target="_blank" rel="noopener">${icon('external', 16)} გვერდის გახსნა</a>
+        </div>`,
       onOpen: (form) => {
         const out = $('#gen-output', form);
-        const tabKa = $('#gen-tab-ka', form);
-        const tabEn = $('#gen-tab-en', form);
-        const tabWa = $('#gen-tab-wa', form);
-
-        const setTab = (activeTab, text) => {
-          [tabKa, tabEn, tabWa].forEach(t => { t.className = 'btn btn-ghost btn-sm'; });
-          activeTab.className = 'btn btn-secondary btn-sm';
-          activeTab.style.fontWeight = '700';
-          out.value = text;
-        };
-
-        tabKa.onclick = () => setTab(tabKa, postKA);
-        tabEn.onclick = () => setTab(tabEn, postEN);
-        tabWa.onclick = () => setTab(tabWa, postWA);
-
-        $('#btn-copy-post', form).onclick = () => {
-          copyText(out.value, 'პოსტის ტექსტი დაკოპირდა!');
-        };
-
-        $('#btn-copy-wl', form).onclick = () => {
-          copyText(whiteLabelUrl, 'White-Label ბმული დაკოპირდა (კონტაქტის გარეშე)!');
-        };
-      }
+        const wa = $('#btn-wa-post', form);
+        const sync = () => { wa.href = R.whatsappUrl(out.value); };
+        $$('[data-post]', form).forEach(t => t.addEventListener('click', () => {
+          $$('[data-post]', form).forEach(x => x.setAttribute('aria-selected', String(x === t)));
+          out.value = posts[t.dataset.post];
+          sync();
+        }));
+        out.addEventListener('input', sync);
+        $('#btn-copy-post', form).onclick = () => copyText(out.value, 'პოსტის ტექსტი დაკოპირდა');
+        $('#btn-copy-wl', form).onclick = () => copyText(wlUrl, 'White-label ბმული დაკოპირდა (აგენტის კონტაქტის გარეშე)');
+      },
     });
   };
 
   // ===========================================================================
-  // STANDARD GEORGIAN/ENGLISH LEASE AGREEMENT GENERATOR (PRINT / PDF)
+  // LEASE AGREEMENT (form → saved contract → bilingual preview / print)
   // ===========================================================================
-  App.openLeaseAgreementGenerator = (apartment, deal = null) => {
+  const BLANK = '________________';
+  const val = (v, blank = BLANK) => (v === null || v === undefined || String(v).trim() === '' ? blank : esc(String(v).trim()));
+  const amountKA = (n, cur) => (n === '' || n === null || n === undefined || isNaN(n) ? BLANK : `${Number(n).toLocaleString('en-US').replace(/,/g, ' ')} ${cur}`);
+  const amountEN = (n, cur) => (n === '' || n === null || n === undefined || isNaN(n) ? BLANK : `${cur} ${Number(n).toLocaleString('en-US')}`);
+
+  // Clause set: each article has a KA and EN heading and parallel clauses, so numbering always matches.
+  function leaseArticles(d) {
+    const cur = d.currency || 'USD';
+    const area = d.area_sqm ? { ka: `, ფართობი: ${esc(d.area_sqm)} მ²`, en: `, area: ${esc(d.area_sqm)} m²` } : { ka: '', en: '' };
+    const deposit = Number(d.deposit) > 0;
+    const iban = d.landlord_bank ? { ka: `: ${esc(d.landlord_bank)}`, en: `: ${esc(d.landlord_bank)}` } : { ka: '', en: '' };
+    const notice = val(d.notice_days, '____');
+    const utilities = {
+      tenant: ['ხელშეკრულების მოქმედების პერიოდში მოხმარებულ კომუნალურ მომსახურებას (ელექტროენერგია, ბუნებრივი აირი, წყალი, დასუფთავება, ინტერნეტი) იხდის დამქირავებელი, მრიცხველების ჩვენებისა და ქვითრების მიხედვით.',
+        'Utilities consumed during the term (electricity, gas, water, waste collection, internet) are paid by the Tenant according to meter readings and bills.'],
+      landlord: ['კომუნალური მომსახურების (ელექტროენერგია, ბუნებრივი აირი, წყალი, დასუფთავება, ინტერნეტი) ღირებულება შედის ქირაში და მას იხდის გამქირავებელი.',
+        'Utilities (electricity, gas, water, waste collection, internet) are included in the rent and paid by the Landlord.'],
+      custom: [`კომუნალური გადასახადები იფარება შემდეგი წესით: ${val(d.utilities_note)}`, `Utilities are paid as follows: ${val(d.utilities_note)}`],
+    }[d.utilities || 'tenant'];
+
+    const arts = [
+      { ka: 'ხელშეკრულების საგანი', en: 'Subject of the Agreement', c: [
+        [`გამქირავებელი დამქირავებელს დროებით სარგებლობაში გადასცემს საცხოვრებელ ბინას, რომელიც მდებარეობს მისამართზე: ${val(d.property_address)} (საკადასტრო კოდი: ${val(d.cadastral_code)}${area.ka}) (შემდგომში — „ბინა“), ხოლო დამქირავებელი კისრულობს ქირის გადახდას ამ ხელშეკრულებით დადგენილი პირობებით.`,
+          `The Landlord grants the Tenant temporary use of the residential apartment located at: ${val(d.property_address)} (cadastral code: ${val(d.cadastral_code)}${area.en}) (hereinafter the "Apartment"), and the Tenant undertakes to pay rent under the terms of this Agreement.`],
+        ['გამქირავებელი ადასტურებს, რომ არის ბინის მესაკუთრე ან უფლებამოსილია, გააქირაოს იგი, და ბინა არ არის დატვირთული ისეთი უფლებით, რომელიც დამქირავებელს ბინით სარგებლობაში ხელს შეუშლის.',
+          'The Landlord confirms that they own the Apartment or are authorised to let it, and that the Apartment is not encumbered by any right that would prevent the Tenant from using it.'],
+      ] },
+      { ka: 'ქირა და გადახდის წესი', en: 'Rent and Payment', c: [
+        [`ბინის ყოველთვიური ქირის ოდენობაა ${amountKA(d.rent, cur)}.`, `The monthly rent for the Apartment is ${amountEN(d.rent, cur)}.`],
+        [`ქირა გადაიხდება წინასწარ, ყოველი თვის ${val(d.pay_day, '____')} რიცხვამდე (ჩათვლით).`, `Rent is payable in advance, on or before day ${val(d.pay_day, '____')} of each month.`],
+        [`გადახდა ხორციელდება მხარეთა შეთანხმებით — ნაღდი ფორმით ან გამქირავებლის საბანკო ანგარიშზე ჩარიცხვით${iban.ka}.`, `Payment is made as agreed by the Parties, in cash or by transfer to the Landlord's bank account${iban.en}.`],
+        ['ქირის ოდენობის შეცვლა ხელშეკრულების მოქმედების პერიოდში დასაშვებია მხოლოდ მხარეთა წერილობითი შეთანხმებით.', 'The rent may be changed during the term only by written agreement of the Parties.'],
+      ] },
+      { ka: 'უზრუნველყოფის დეპოზიტი', en: 'Security Deposit', c: deposit ? [
+        [`ხელშეკრულების ხელმოწერისას დამქირავებელი გამქირავებელს უხდის უზრუნველყოფის დეპოზიტს, რომლის ოდენობაა ${amountKA(d.deposit, cur)}.`, `Upon signing this Agreement, the Tenant pays the Landlord a security deposit of ${amountEN(d.deposit, cur)}.`],
+        ['დეპოზიტი დამქირავებელს უბრუნდება ბინის დაბრუნებიდან 14 დღის ვადაში, თუ ბინა ჩვეულებრივ ცვეთაზე მეტად არ არის დაზიანებული და დამქირავებელს არ აქვს ქირის ან კომუნალური გადასახადების დავალიანება.',
+          'The deposit is returned to the Tenant within 14 days after the Apartment is handed back, provided the Apartment has no damage beyond normal wear and tear and the Tenant has no outstanding rent or utility debts.'],
+        ['წინააღმდეგ შემთხვევაში, გამქირავებელს უფლება აქვს, დეპოზიტიდან დაფაროს დავალიანება ან ზიანის აღმოფხვრის დოკუმენტურად დადასტურებული ხარჯი და დარჩენილი თანხა დაუბრუნოს დამქირავებელს.',
+          'Otherwise, the Landlord may deduct the outstanding debt or the documented cost of repairing the damage from the deposit and return the balance to the Tenant.'],
+        ['დეპოზიტი ბოლო თვის ქირად არ ჩაითვლება, თუ მხარეები წერილობით სხვა რამეზე არ შეთანხმდებიან.', 'The deposit shall not be applied as the last month\'s rent unless the Parties agree otherwise in writing.'],
+      ] : [
+        ['მხარეები შეთანხმდნენ, რომ უზრუნველყოფის დეპოზიტი არ გადაიხდება.', 'The Parties have agreed that no security deposit is payable.'],
+      ] },
+      { ka: 'ხელშეკრულების ვადა', en: 'Term', c: [
+        [`ხელშეკრულების მოქმედების ვადაა: ${val(dmy(d.start_date))} – ${val(dmy(d.end_date))} (ორივე თარიღის ჩათვლით).`, `This Agreement is valid from ${val(dmy(d.start_date))} to ${val(dmy(d.end_date))} inclusive.`],
+        ['ვადის გაგრძელება შესაძლებელია მხარეთა წერილობითი შეთანხმებით.', 'The term may be extended by written agreement of the Parties.'],
+      ] },
+      { ka: 'ბინით სარგებლობა', en: 'Use of the Apartment', c: [
+        ['დამქირავებელი ბინას იყენებს მხოლოდ საცხოვრებლად და ვალდებულია, გაუფრთხილდეს მას, დაიცვას მეზობლების უფლებები და შენობის შინაგანაწესი.', 'The Tenant shall use the Apartment for residential purposes only, take good care of it and respect the rights of neighbours and the building rules.'],
+        ['ბინის ქვექირავნობით ან მესამე პირისთვის სარგებლობაში გადაცემა დასაშვებია მხოლოდ გამქირავებლის წინასწარი წერილობითი თანხმობით.', 'Subletting the Apartment or handing it over to a third party is allowed only with the Landlord\'s prior written consent.'],
+        ['ბინის გადაკეთება ან რეკონსტრუქცია დასაშვებია მხოლოდ გამქირავებლის წერილობითი თანხმობით.', 'Any alteration or reconstruction of the Apartment requires the Landlord\'s written consent.'],
+        d.pets === 'yes'
+          ? ['შინაური ცხოველის ყოლა ნებადართულია. ცხოველის მიერ მიყენებულ ზიანზე პასუხს აგებს დამქირავებელი.', 'Pets are allowed. The Tenant is liable for any damage caused by the pet.']
+          : ['შინაური ცხოველის ყოლა დაუშვებელია გამქირავებლის წერილობითი თანხმობის გარეშე.', 'Pets are not allowed without the Landlord\'s written consent.'],
+        ['გამქირავებელს უფლება აქვს, დამქირავებელთან წინასწარი შეთანხმებით, გონივრულ დროს დაათვალიეროს ბინა.', 'The Landlord may inspect the Apartment at a reasonable time agreed in advance with the Tenant.'],
+      ] },
+      { ka: 'კომუნალური გადასახადები', en: 'Utilities', c: [
+        utilities,
+        ['ბინის გადაცემისას მხარეები მრიცხველების ჩვენებას აფიქსირებენ მიღება-ჩაბარების აქტში.', 'On handover, the Parties record the meter readings in the handover report.'],
+        ['ბინის გადაცემამდე წარმოშობილ კომუნალურ დავალიანებას ფარავს გამქირავებელი.', 'Any utility debts incurred before handover are paid by the Landlord.'],
+      ] },
+      { ka: 'ბინის გადაცემა და მდგომარეობა', en: 'Handover and Condition', c: [
+        ['გამქირავებელი ბინას დამქირავებელს გადასცემს ხელშეკრულების მოქმედების დაწყების დღეს, საცხოვრებლად ვარგის მდგომარეობაში, მიღება-ჩაბარების აქტში აღწერილ ინვენტართან ერთად.', 'The Landlord hands over the Apartment to the Tenant on the start date of the term, in a habitable condition, together with the inventory listed in the handover report.'],
+        ['მიღება-ჩაბარების აქტი (ფოტოებით) ხელშეკრულების განუყოფელი ნაწილია.', 'The handover report (with photos) forms an integral part of this Agreement.'],
+        ['ბინის ძირითად ხარვეზებს (მზიდი კონსტრუქციები, სახურავი, შიდა კომუნიკაციები) საკუთარი ხარჯით აღმოფხვრის გამქირავებელი, ხოლო მიმდინარე წვრილმან შეკეთებას უზრუნველყოფს დამქირავებელი.', 'The Landlord remedies major defects (structural elements, roof, internal utility systems) at their own expense; the Tenant takes care of minor day-to-day repairs.'],
+        ['ხელშეკრულების დასრულებისას დამქირავებელი ბინას აბრუნებს იმავე მდგომარეობაში, რომელშიც მიიღო, ჩვეულებრივი ცვეთის გათვალისწინებით.', 'At the end of the Agreement, the Tenant returns the Apartment in the same condition in which it was received, allowing for normal wear and tear.'],
+      ] },
+      { ka: 'ხელშეკრულების შეწყვეტა', en: 'Termination', c: [
+        ['ხელშეკრულება შეიძლება ვადამდე შეწყდეს მხარეთა წერილობითი შეთანხმებით.', 'The Agreement may be terminated early by written agreement of the Parties.'],
+        [`თითოეულ მხარეს შეუძლია, ვადამდე შეწყვიტოს ხელშეკრულება, თუ მეორე მხარეს ამის შესახებ წერილობით აცნობებს არანაკლებ ${notice} დღით ადრე.`, `Either Party may terminate the Agreement early by giving the other Party at least ${notice} days' written notice.`],
+        ['გამქირავებელს უფლება აქვს, შეწყვიტოს ხელშეკრულება, თუ დამქირავებელი ქირის გადახდას 10 დღეზე მეტით აგვიანებს ან არსებითად არღვევს ამ ხელშეკრულების პირობებს.', 'The Landlord may terminate the Agreement if the Tenant is more than 10 days late with rent or materially breaches this Agreement.'],
+        ['დამქირავებელს უფლება აქვს, შეწყვიტოს ხელშეკრულება, თუ ბინა საცხოვრებლად უვარგისი გახდა არა დამქირავებლის ბრალით.', 'The Tenant may terminate the Agreement if the Apartment becomes uninhabitable through no fault of the Tenant.'],
+      ] },
+      { ka: 'პასუხისმგებლობა', en: 'Liability', c: [
+        ['ხელშეკრულების დარღვევისთვის მხარეები პასუხს აგებენ საქართველოს კანონმდებლობის შესაბამისად.', 'The Parties are liable for breach of this Agreement in accordance with the legislation of Georgia.'],
+        ['დამქირავებელი პასუხს აგებს ბინისთვის მიყენებულ ზიანზე, რომელიც გამოწვეულია მისი, მასთან მცხოვრები პირების ან მისი სტუმრების ბრალით.', 'The Tenant is liable for damage to the Apartment caused by the Tenant, persons living with the Tenant or the Tenant\'s guests.'],
+        ['მხარეები თავისუფლდებიან პასუხისმგებლობისგან, თუ ვალდებულების შეუსრულებლობა გამოწვეულია დაუძლეველი ძალით (ფორს-მაჟორი).', 'The Parties are released from liability if non-performance is caused by force majeure.'],
+      ] },
+      { ka: 'დავების გადაწყვეტა', en: 'Disputes', c: [
+        ['ხელშეკრულებიდან გამომდინარე დავებს მხარეები წყვეტენ მოლაპარაკებით.', 'The Parties shall resolve disputes arising from this Agreement through negotiation.'],
+        ['შეთანხმების მიუღწევლობის შემთხვევაში, დავას განიხილავს საქართველოს საერთო სასამართლო, საქართველოს კანონმდებლობის შესაბამისად.', 'If no agreement is reached, the dispute shall be heard by the common courts of Georgia in accordance with the legislation of Georgia.'],
+      ] },
+    ];
+    if (String(d.extra_terms || '').trim()) {
+      arts.push({ ka: 'დამატებითი პირობები', en: 'Additional Terms', c: [[esc(d.extra_terms.trim()).replace(/\n/g, '<br>'), esc(d.extra_terms.trim()).replace(/\n/g, '<br>')]] });
+    }
+    arts.push({ ka: 'დასკვნითი დებულებები', en: 'Final Provisions', c: [
+      ['ხელშეკრულება ძალაში შედის მხარეთა მიერ ხელმოწერისთანავე.', 'This Agreement enters into force upon signature by the Parties.'],
+      ['ხელშეკრულებაში ნებისმიერი ცვლილება ან დამატება ძალაშია მხოლოდ წერილობითი ფორმით, ორივე მხარის ხელმოწერით.', 'Any amendment or addition to this Agreement is valid only in writing and signed by both Parties.'],
+      ['ხელშეკრულება შედგენილია ორ იდენტურ ეგზემპლარად, თითო — თითოეული მხარისთვის.', 'This Agreement is made in two identical copies, one for each Party.'],
+    ] });
+    return arts;
+  }
+
+  const LEASE_CSS = `
+    .lease-doc { font-family: 'FiraGO', system-ui, sans-serif; color: #111; background: #fff; font-size: 12.5px; line-height: 1.55; }
+    .lease-doc h2 { font-size: 16px; text-align: center; margin: 0 0 2px; text-transform: uppercase; letter-spacing: .3px; }
+    .lease-doc .ld-sub { text-align: center; color: #444; font-size: 12px; margin: 0 0 14px; }
+    .lease-doc .ld-place { display: flex; justify-content: space-between; margin: 0 0 14px; font-size: 12px; }
+    .lease-doc .ld-parties { margin: 0 0 12px; }
+    .lease-doc h3 { font-size: 13px; margin: 14px 0 6px; padding-bottom: 3px; border-bottom: 1px solid #bbb; break-after: avoid; }
+    .lease-doc p { margin: 0 0 6px; }
+    .lease-doc .ld-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; break-inside: avoid; }
+    .lease-doc .ld-pair > :last-child { color: #333; }
+    .lease-doc .ld-sign { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-top: 28px; break-inside: avoid; }
+    .lease-doc .ld-sign div { font-size: 12px; }
+    .lease-doc .ld-line { border-bottom: 1px solid #111; height: 34px; margin-bottom: 4px; }
+    @media (max-width: 600px) { .lease-doc .ld-pair { grid-template-columns: 1fr; gap: 2px; } .lease-doc .ld-sign { grid-template-columns: 1fr; } }`;
+
+  function leaseHtml(d, mode = 'dual') {
+    const showKa = mode !== 'en', showEn = mode !== 'ka', dual = mode === 'dual';
+    const arts = leaseArticles(d);
+    const partyKA = `${val(d.landlord_name)}, პირადი ნომერი: ${val(d.landlord_id)}, მისამართი: ${val(d.landlord_address)} (შემდგომში — „გამქირავებელი“), ერთი მხრივ, და ${val(d.tenant_name)}, პირადი ნომერი: ${val(d.tenant_id)}, მისამართი: ${val(d.tenant_address)} (შემდგომში — „დამქირავებელი“), მეორე მხრივ (ერთად — „მხარეები“), ვდებთ წინამდებარე ხელშეკრულებას შემდეგზე:`;
+    const partyEN = `${val(d.landlord_name)}, personal ID: ${val(d.landlord_id)}, address: ${val(d.landlord_address)} (hereinafter the "Landlord"), on the one hand, and ${val(d.tenant_name)}, personal ID: ${val(d.tenant_id)}, address: ${val(d.tenant_address)} (hereinafter the "Tenant"), on the other hand (together the "Parties"), have concluded this Agreement as follows:`;
+    const block = (ka, en) => (dual ? `<div class="ld-pair"><p>${ka}</p><p>${en}</p></div>` : `<p>${showKa ? ka : en}</p>`);
+    const finalLang = dual ? [['ხელშეკრულება შედგენილია ქართულ და ინგლისურ ენებზე. ტექსტებს შორის შეუსაბამობის შემთხვევაში, უპირატესობა ენიჭება ქართულ ტექსტს.', 'This Agreement is made in Georgian and English. In case of any discrepancy, the Georgian text prevails.']] : [];
+    const sign = (roleKa, roleEn, name, pid, phone) => `<div>
+        <strong>${showKa ? roleKa : ''}${dual ? ' / ' : ''}${showEn ? roleEn : ''}</strong>
+        <div>${val(name)}</div>
+        <div>${showKa ? 'პ/ნ' : 'ID'}: ${val(pid)}${phone ? ` · ${showKa ? 'ტელ.' : 'Tel.'}: ${esc(phone)}` : ''}</div>
+        <div class="ld-line"></div><small>${showKa ? 'ხელმოწერა' : ''}${dual ? ' / ' : ''}${showEn ? 'Signature' : ''}</small>
+      </div>`;
+    return `<div class="lease-doc">
+      ${showKa ? '<h2>საცხოვრებელი ბინის ქირავნობის ხელშეკრულება</h2>' : ''}
+      ${showEn ? `<${showKa ? 'p class="ld-sub"' : 'h2'}>Residential Lease Agreement</${showKa ? 'p' : 'h2'}>` : ''}
+      <div class="ld-place"><span>${showKa ? 'ქ.' : 'City:'} ${val(d.city)}</span><span>${val(dmy(d.contract_date))}</span></div>
+      <div class="ld-parties">${block(partyKA, partyEN)}</div>
+      ${arts.map((art, i) => {
+        const n = i + 1;
+        const clauses = art.c.concat(i === arts.length - 1 ? finalLang : []);
+        return `<h3>${showKa ? `მუხლი ${n}. ${art.ka}` : ''}${dual ? ' / ' : ''}${showEn ? `Article ${n}. ${art.en}` : ''}</h3>
+          ${clauses.map(([ka, en], j) => block(`${n}.${j + 1}. ${ka}`, `${n}.${j + 1}. ${en}`)).join('')}`;
+      }).join('')}
+      <div class="ld-sign">
+        ${sign('გამქირავებელი', 'Landlord', d.landlord_name, d.landlord_id, d.landlord_phone)}
+        ${sign('დამქირავებელი', 'Tenant', d.tenant_name, d.tenant_id, d.tenant_phone)}
+      </div>
+    </div>`;
+  }
+  App.leaseHtml = leaseHtml;
+
+  function printLease(d, mode, title) {
+    const w = window.open('', '_blank');
+    if (!w) { toast('ბრაუზერმა ახალი ფანჯარა დაბლოკა. დაუშვი pop-up ამ საიტისთვის და სცადე ხელახლა.', { type: 'error' }); return; }
+    const font = (wt, f) => `@font-face{font-family:'FiraGO';src:url('${location.origin}/fonts/${f}.woff2') format('woff2');font-weight:${wt};}`;
+    w.document.write(`<!doctype html><html lang="${mode === 'en' ? 'en' : 'ka'}"><head><meta charset="utf-8"><title>${esc(title)}</title>
+      <style>${font(400, 'FiraGO-Regular')}${font(600, 'FiraGO-SemiBold')}${font(700, 'FiraGO-Bold')}
+      @page { size: A4; margin: 16mm 15mm; } body { margin: 0; padding: 24px; background: #fff; } @media print { body { padding: 0; } }
+      ${LEASE_CSS}</style></head><body>${leaseHtml(d, mode)}
+      <script>document.fonts.ready.then(function(){ setTimeout(function(){ window.print(); }, 150); }); window.onafterprint = function(){ window.close(); };<\/script></body></html>`);
+    w.document.close();
+  }
+
+  App.openLeaseAgreementGenerator = async (apartment, deal = null) => {
     const a = apartment;
     const owner = H.owner(a.owner_id);
-    const tenantName = deal?.client_name || a.tenant_name || 'დავით ბერიძე';
-    const tenantPhone = deal?.client_phone || a.tenant_phone || '+995 599 00 11 22';
-    const ownerName = owner?.name || S.org.name || 'მესაკუთრე';
-    const ownerPhone = owner?.phone || S.org.contact_phone || '—';
+    // Reopen the last saved contract for this deal/apartment, if any (the table may not exist yet).
+    let last = null;
+    try {
+      let query = sb.from('contracts').select('*').eq('organization_id', S.org.id);
+      query = deal ? query.eq('deal_id', deal.id) : query.eq('apartment_id', a.id);
+      const { data } = await query.order('created_at', { ascending: false }).limit(1);
+      last = data?.[0]?.data || null;
+    } catch { last = null; }
 
-    const cur = deal?.currency || a.currency || 'USD';
-    const rent = deal?.deal_amount || a.monthly_rent || 1200;
-    const curSymbol = cur === 'USD' ? '$' : '₾';
-    const deposit = a.deposit_amount || rent;
-
-    const todayStr = R.date(new Date(), { withYear: true });
-    const oneYearLater = new Date();
-    oneYearLater.setFullYear(oneYearLater.getFullYear() + 1);
-    const endDateStr = R.date(oneYearLater, { withYear: true });
+    const d = last || {
+      landlord_name: owner?.name || '', landlord_phone: owner?.phone || '', landlord_id: '', landlord_address: '', landlord_bank: owner?.payout_account || '',
+      tenant_name: deal?.client_name || '', tenant_phone: deal?.client_phone || '', tenant_id: '', tenant_address: '',
+      property_address: [a.city, a.district, a.address, a.unit_number && `ბინა ${a.unit_number}`].filter(Boolean).join(', '),
+      cadastral_code: '', area_sqm: a.area_sqm || '', city: a.city || '', contract_date: R.isoDate(),
+      start_date: deal?.target_move_in || '', end_date: '', rent: deal?.deal_amount || a.monthly_rent || '', currency: deal?.currency || a.currency || 'USD',
+      pay_day: a.rent_due_day || '', deposit: a.deposit_amount || '', notice_days: '', pets: a.pets_allowed ? 'yes' : 'no', utilities: 'tenant', utilities_note: '', extra_terms: '',
+    };
+    const f = (name, label, opts = {}) => `<label class="field ${opts.span ? 'span-2' : ''}"><span class="field-label">${label}</span>${opts.textarea
+      ? `<textarea name="${name}" rows="${opts.rows || 2}" ${opts.required ? 'required' : ''} placeholder="${esc(opts.ph || '')}">${esc(d[name] || '')}</textarea>`
+      : `<input name="${name}" type="${opts.type || 'text'}" ${opts.required ? `required data-error="${esc(opts.err || 'შეავსე სავალდებულო ველები.')}"` : ''} ${opts.attrs || ''} value="${esc(d[name] ?? '')}" placeholder="${esc(opts.ph || '')}" />`}${opts.hint ? `<span class="field-hint">${opts.hint}</span>` : ''}</label>`;
 
     return R.dialog({
-      title: 'საიჯარო ხელშეკრულება (Lease Agreement Generator)',
+      title: 'ქირავნობის ხელშეკრულება',
+      subtitle: a.name,
       wide: true,
-      submitLabel: 'დახურვა',
+      submitLabel: 'ხელშეკრულების შედგენა',
       body: `
-        <div style="margin-bottom:14px;display:flex;align-items:center;justify-content:space-between">
-          <p class="muted" style="margin:0;font-size:13.5px">საქართველოს სამოქალაქო კოდექსის შესაბამისი ორენოვანი სტანდარტული ხელშეკრულება.</p>
-          <button type="button" class="btn btn-primary" id="btn-print-lease">
-            ${icon('printer', 16)} ბეჭდვა / PDF შენახვა
-          </button>
-        </div>
-
-        <div id="lease-printable-area" style="background:#ffffff;border:1px solid var(--line);border-radius:var(--r);padding:32px 28px;max-height:550px;overflow-y:auto;font-size:13px;line-height:1.6;color:#1e293b">
-          <div style="text-align:center;border-bottom:2px solid #0f172a;padding-bottom:16px;margin-bottom:20px">
-            <h2 style="font-size:18px;margin:0 0 6px;text-transform:uppercase;letter-spacing:0.5px">საცხოვრებელი ბინის ქირავნობის ხელშეკრულება</h2>
-            <h3 style="font-size:14px;margin:0;color:var(--muted);font-weight:600">RESIDENTIAL LEASE AGREEMENT</h3>
-            <p style="margin:8px 0 0;font-size:12px;color:var(--muted)">ქალაქი ${esc(a.city || 'თბილისი')} · თარიღი: ${todayStr}</p>
-          </div>
-
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;padding:12px;background:#f8fafc;border-radius:8px">
-            <div>
-              <strong style="display:block;font-size:13px;color:var(--brand)">1. გამქირავებელი (LESSOR):</strong>
-              <div>სახელი / სახელი: <strong>${esc(ownerName)}</strong></div>
-              <div>ტელეფონი: ${esc(ownerPhone)}</div>
-            </div>
-            <div>
-              <strong style="display:block;font-size:13px;color:var(--brand)">2. დამქირავებელი (LESSEE):</strong>
-              <div>სახელი / სახელი: <strong>${esc(tenantName)}</strong></div>
-              <div>ტელეფონი: ${esc(tenantPhone)}</div>
-            </div>
-          </div>
-
-          <h4 style="font-size:14px;margin:16px 0 6px;border-bottom:1px solid var(--line);padding-bottom:4px">მუხლი 1. ხელშეკრულების საგანი (SUBJECT OF AGREEMENT)</h4>
-          <p>
-            1.1. გამქირავებელი გადასცემს, ხოლო დამქირავებელი დროებით სარგებლობაში იღებს საცხოვრებელ ბინას, მდებარე მისამართზე: <strong>${esc([a.city, a.district, a.address, a.unit_number && 'ბინა ' + a.unit_number].filter(Boolean).join(', '))}</strong>.<br/>
-            <i>1.1. The Lessor provides and the Lessee accepts for temporary residential use the apartment located at: ${esc([a.city, a.district, a.address].filter(Boolean).join(', '))}.</i>
-          </p>
-
-          <h4 style="font-size:14px;margin:16px 0 6px;border-bottom:1px solid var(--line);padding-bottom:4px">მუხლი 2. ქირის ოდენობა და გადახდის წესი (RENT & PAYMENT)</h4>
-          <p>
-            2.1. ყოველთვიური ქირის ოდენობა შეადგენს: <strong>${curSymbol}${rent} (${cur})</strong>.<br/>
-            2.2. ქირის გადახდა ხორციელდება ყოველი თვის <strong>${a.rent_due_day || 1}</strong> რიცხვამდე.<br/>
-            2.3. ხელშეკრულების ხელმოწერისას დამქირავებელი იხდის პირველი და ბოლო თვის ქირას და საგარანტიო დეპოზიტს <strong>${curSymbol}${deposit}</strong> ოდენობით, რომელიც უბრუნდება ბინის ჩაბარებისას.<br/>
-            <i>2.1. The monthly rent amount is ${curSymbol}${rent}. The Lessee shall pay rent before day ${a.rent_due_day || 1} of each month. A security deposit of ${curSymbol}${deposit} is paid upon signing.</i>
-          </p>
-
-          <h4 style="font-size:14px;margin:16px 0 6px;border-bottom:1px solid var(--line);padding-bottom:4px">მუხლი 3. ვადები და კომუნალური ხარჯები (TERM & UTILITIES)</h4>
-          <p>
-            3.1. ხელშეკრულების მოქმედების ვადა: <strong>${todayStr}</strong>-დან <strong>${endDateStr}</strong>-მდე (1 წელი).<br/>
-            3.2. დამქირავებელი ვალდებულია დროულად გადაიხადოს მოხმარებული კომუნალური გადასახადები (ელექტროენერგია, გაზი, წყალი, ინტერნეტი).<br/>
-            3.3. შინაური ცხოველების ყოლა: <strong>${a.pets_allowed ? 'ნებადართულია (Pet friendly)' : 'აკრძალულია'}</strong>.<br/>
-            <i>3.1. Lease term: from ${todayStr} until ${endDateStr}. The Lessee pays all consumed utility bills. Pets: ${a.pets_allowed ? 'Allowed' : 'Prohibited'}.</i>
-          </p>
-
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:40px;padding-top:20px;border-top:1px dashed var(--line)">
-            <div>
-              <p style="margin:0 0 40px"><strong>გამქირავებელი / Lessor:</strong></p>
-              <div style="border-bottom:1px solid #000;width:180px;margin-bottom:6px"></div>
-              <small class="muted">ხელმოწერა / Signature</small>
-            </div>
-            <div>
-              <p style="margin:0 0 40px"><strong>დამქირავებელი / Lessee:</strong></p>
-              <div style="border-bottom:1px solid #000;width:180px;margin-bottom:6px"></div>
-              <small class="muted">ხელმოწერა / Signature</small>
-            </div>
-          </div>
-        </div>
-      `,
+        <div class="notice small">${icon('alert', 14)} ეს ზოგადი შაბლონია. ხელმოწერამდე სასურველია, ტექსტს იურისტმა გადახედოს და კონკრეტულ გარიგებას მოარგოს. ცარიელი ველები დოკუმენტში ხაზად დარჩება ხელით შესავსებად.</div>
+        <div class="form-section"><div class="form-section-title">გამქირავებელი</div><div class="form-grid">
+          ${f('landlord_name', 'სახელი, გვარი', { required: true, err: 'მიუთითე გამქირავებლის სახელი და გვარი.' })}${f('landlord_id', 'პირადი ნომერი', { attrs: 'inputmode="numeric" maxlength="20"' })}
+          ${f('landlord_address', 'მისამართი')}${f('landlord_phone', 'ტელეფონი', { type: 'tel' })}
+          ${f('landlord_bank', 'საბანკო ანგარიში (IBAN)', { span: true, hint: 'არასავალდებულო' })}
+        </div></div>
+        <div class="form-section"><div class="form-section-title">დამქირავებელი</div><div class="form-grid">
+          ${f('tenant_name', 'სახელი, გვარი', { required: true, err: 'მიუთითე დამქირავებლის სახელი და გვარი.' })}${f('tenant_id', 'პირადი ნომერი / პასპორტი', { attrs: 'maxlength="20"' })}
+          ${f('tenant_address', 'მისამართი')}${f('tenant_phone', 'ტელეფონი', { type: 'tel' })}
+        </div></div>
+        <div class="form-section"><div class="form-section-title">ბინა</div><div class="form-grid">
+          ${f('property_address', 'ბინის მისამართი', { span: true, required: true, err: 'მიუთითე ბინის მისამართი.' })}
+          ${f('cadastral_code', 'საკადასტრო კოდი', { ph: '00.00.00.000.000.00.000' })}${f('area_sqm', 'ფართობი (მ²)', { type: 'number', attrs: 'min="1" step="0.1"' })}
+          ${f('city', 'ხელშეკრულების დადების ქალაქი')}${f('contract_date', 'ხელშეკრულების თარიღი', { type: 'date' })}
+        </div></div>
+        <div class="form-section"><div class="form-section-title">ვადა და გადახდა</div><div class="form-grid">
+          ${f('start_date', 'დაწყების თარიღი', { type: 'date', required: true, err: 'მიუთითე ხელშეკრულების დაწყების თარიღი.' })}${f('end_date', 'დასრულების თარიღი', { type: 'date', required: true, err: 'მიუთითე ხელშეკრულების დასრულების თარიღი.' })}
+          <label class="field"><span class="field-label">ყოველთვიური ქირა</span><div class="input-pair"><input name="rent" type="number" min="0" step="10" required data-error="მიუთითე ქირის ოდენობა." value="${esc(d.rent ?? '')}" />
+            <select name="currency" aria-label="ვალუტა"><option value="USD" ${d.currency !== 'GEL' ? 'selected' : ''}>USD</option><option value="GEL" ${d.currency === 'GEL' ? 'selected' : ''}>GEL</option></select></div></label>
+          ${f('pay_day', 'გადახდის ბოლო რიცხვი', { type: 'number', attrs: 'min="1" max="31"', hint: 'თვის რომელ რიცხვამდე' })}
+          ${f('deposit', 'დეპოზიტი', { type: 'number', attrs: 'min="0" step="10"', hint: 'ცარიელი ან 0 — დეპოზიტის გარეშე' })}
+          ${f('notice_days', 'შეწყვეტის წინასწარი შეტყობინება (დღე)', { type: 'number', attrs: 'min="0" max="365"' })}
+        </div></div>
+        <div class="form-section"><div class="form-section-title">პირობები</div><div class="form-grid">
+          <label class="field"><span class="field-label">შინაური ცხოველი</span><select name="pets"><option value="no" ${d.pets !== 'yes' ? 'selected' : ''}>დაუშვებელია (თანხმობის გარეშე)</option><option value="yes" ${d.pets === 'yes' ? 'selected' : ''}>დასაშვებია</option></select></label>
+          <label class="field"><span class="field-label">კომუნალური გადასახადები</span><select name="utilities" id="lease-util"><option value="tenant" ${d.utilities === 'tenant' ? 'selected' : ''}>იხდის დამქირავებელი</option><option value="landlord" ${d.utilities === 'landlord' ? 'selected' : ''}>შედის ქირაში (იხდის გამქირავებელი)</option><option value="custom" ${d.utilities === 'custom' ? 'selected' : ''}>სხვა პირობა</option></select></label>
+          <div class="span-2" id="lease-util-note" ${d.utilities === 'custom' ? '' : 'hidden'}>${f('utilities_note', 'კომუნალურის პირობა', { textarea: true, ph: 'მაგ.: ელექტროენერგიას და გაზს იხდის დამქირავებელი, ინტერნეტს — გამქირავებელი' })}</div>
+          ${f('extra_terms', 'დამატებითი პირობები', { textarea: true, span: true, rows: 3, hint: 'არასავალდებულო. ცალკე მუხლად დაემატება.' })}
+        </div></div>`,
       onOpen: (form) => {
-        $('#btn-print-lease', form).onclick = () => {
-          const content = $('#lease-printable-area', form).innerHTML;
-          const printWin = window.open('', '_blank');
-          printWin.document.write(`
-            <!doctype html>
-            <html>
-            <head>
-              <title>Lease Agreement · ${esc(a.name)}</title>
-              <style>
-                body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 40px; color: #000; line-height: 1.6; }
-                @media print { body { padding: 0; } }
-              </style>
-            </head>
-            <body>${content}</body>
-            </html>
-          `);
-          printWin.document.close();
-          printWin.focus();
-          setTimeout(() => { printWin.print(); printWin.close(); }, 300);
-        };
-      }
+        const start = $('[name=start_date]', form), end = $('[name=end_date]', form);
+        start.addEventListener('change', () => {
+          if (!start.value || end.value) return;
+          const s = R.toDate(start.value); const e = new Date(s.getFullYear() + 1, s.getMonth(), s.getDate() - 1);
+          end.value = R.isoDate(e);
+        });
+        const util = $('#lease-util', form);
+        util.addEventListener('change', () => { $('#lease-util-note', form).hidden = util.value !== 'custom'; });
+      },
+      onSubmit: async (_f, v) => {
+        if (v.start_date && v.end_date && v.end_date <= v.start_date) throw new Error('დასრულების თარიღი დაწყების თარიღის შემდეგ უნდა იყოს.');
+        const data = { ...v, rent: Number(v.rent), deposit: v.deposit === '' ? '' : Number(v.deposit) };
+        const row = await App.insertOnce('contracts', { id: R.uuid(), organization_id: S.org.id, apartment_id: a.id, deal_id: deal?.id || null, data, created_by: S.user.id });
+        toast('ხელშეკრულება შენახულია', { type: 'success' });
+        setTimeout(() => openLeasePreview(row.data || data, a), 0);
+      },
     });
   };
 
-  // Link copy helper
-  App.copyRenterLink = (aptId, isWhiteLabel = false) => {
-    const url = isWhiteLabel ? `${location.origin}/p/?id=${aptId}&wl=1` : `${location.origin}/p/?id=${aptId}`;
-    copyText(url, isWhiteLabel ? 'White-Label ბმული დაკოპირდა!' : 'სტუმრის ბმული დაკოპირდა!');
-  };
+  function openLeasePreview(d, a) {
+    let mode = 'dual';
+    return R.dialog({
+      title: 'ხელშეკრულება მზადაა',
+      subtitle: a.name,
+      wide: true,
+      body: `
+        <style>${LEASE_CSS}</style>
+        <div class="lease-toolbar">
+          <div class="seg" role="radiogroup" aria-label="ენა">
+            ${[['dual', 'ორენოვანი'], ['ka', 'ქართული'], ['en', 'English']].map(([k, l]) => `<label><input type="radio" name="lease-mode" value="${k}" ${k === mode ? 'checked' : ''} /><span>${l}</span></label>`).join('')}
+          </div>
+          <button type="button" class="btn btn-primary" id="btn-print-lease">${icon('printer', 16)} ბეჭდვა / PDF</button>
+        </div>
+        <p class="small muted lease-hint">${icon('alert', 13)} შაბლონი არ ცვლის იურიდიულ კონსულტაციას — ხელმოწერამდე ტექსტი იურისტს აჩვენე.</p>
+        <div class="lease-paper" id="lease-paper">${leaseHtml(d, mode)}</div>`,
+      onOpen: (form) => {
+        $$('input[name="lease-mode"]', form).forEach(i => i.addEventListener('change', () => { mode = i.value; $('#lease-paper', form).innerHTML = leaseHtml(d, mode); }));
+        $('#btn-print-lease', form).onclick = () => printLease(d, mode, `ხელშეკრულება · ${a.name}`);
+      },
+    });
+  }
 
+  // Link copy helper used by the apartment views
+  App.copyRenterLink = (aptId, isWhiteLabel = false) => {
+    const a = H.apt(aptId) || { id: aptId };
+    copyText(listingUrl(a, isWhiteLabel), isWhiteLabel ? 'White-label ბმული დაკოპირდა' : 'ბინის ბმული დაკოპირდა');
+  };
 })();

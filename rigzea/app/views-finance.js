@@ -27,7 +27,7 @@
 
     $('#view').innerHTML = `
       <div class="page-head"><div><h1>ფინანსები</h1><p class="page-sub">ყველა თანხა ლარშია. შეთავაზებული ხარჯი გაწეულ ხარჯად არ ითვლება, სანამ არ დადასტურდება და არ დაიხარჯება.</p></div>
-        <div class="page-actions"><button type="button" class="btn btn-secondary" id="f-inc">+ შემოსავალი</button><button type="button" class="btn btn-primary" id="f-exp">${icon('plus', 16)} ხარჯი</button></div></div>
+        <div class="page-actions"><button type="button" class="btn btn-ghost" id="f-export" title="ექსპორტი Excel/CSV">${icon('file', 16)} ექსპორტი</button><button type="button" class="btn btn-secondary" id="f-inc">+ შემოსავალი</button><button type="button" class="btn btn-primary" id="f-exp">${icon('plus', 16)} ხარჯი</button></div></div>
       <div class="toolbar">
         <select class="input" id="f-month" aria-label="თვე"><option value="">ყველა პერიოდი</option>${months.map(m => `<option value="${m}" ${ff.month === m ? 'selected' : ''}>${esc(App.monthLabel(m))}</option>`).join('')}</select>
         <select class="input" id="f-apt" aria-label="ბინა"><option value="">ყველა ბინა</option>${S.data.apartments.map(a => `<option value="${a.id}" ${ff.apt === a.id ? 'selected' : ''}>${esc(a.name)}</option>`).join('')}</select>
@@ -49,6 +49,7 @@
     $('#f-month').onchange = (e) => { ff.month = e.target.value; App.render(); };
     $('#f-apt').onchange = (e) => { ff.apt = e.target.value; App.render(); };
     $$('[data-tab]').forEach(b => b.addEventListener('click', () => { ff.tab = b.dataset.tab; App.render(); }));
+    $('#f-export').onclick = () => App.exportFinance(exp, inc);
     $('#f-exp').onclick = () => openExpenseForm({ apartmentId: ff.apt || null });
     $('#f-inc').onclick = () => openIncomeForm({ apartmentId: ff.apt || null });
     const body = $('#f-body');
