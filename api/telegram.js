@@ -4,8 +4,8 @@
  */
 
 const TELEGRAM_BOT_TOKEN = '8861565420:AAFhLSnnX8todrkJ5R5trg_EiG5MRSZfvPs';
-const SUPABASE_URL = 'https://pwasuamrqxyhhyqxfrjz.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3YXN1YW1ycXh5aGh5cXhmcmp6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2MTk0NjgsImV4cCI6MjEwNjE5NTQ2OH0.f17SPN36R4k2uoUYgs1zWeiMVmMpcinaBkrBMFK8FC0';
+const SUPABASE_URL = 'https://cuioodytwyzykqlrjfej.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN1aW9vZHl0d3l6eWtxbHJqZmVqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE3MjgzMzUsImV4cCI6MjEwNzMwNDMzNX0.IdGlwbbt0_oNwnUj0pUcCjuCVcUV3l19HSa1NIckUyk';
 const BASE_APP_URL = 'https://rigzea-website.vercel.app';
 
 // Telegram API Helper
