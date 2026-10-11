@@ -162,8 +162,11 @@
     login: '<path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"/>',
     wrench: '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.8-3.8a6 6 0 0 1-7.9 7.9l-6.9 6.9a2.1 2.1 0 0 1-3-3l6.9-6.9a6 6 0 0 1 7.9-7.9z"/>',
     sparkle: '<path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2 2M16 16l2 2M6 18l2-2M16 8l2-2"/>',
+    logo: '<path d="M5 6.5h14M5 12h10M5 17.5h14"/>',
+    whatsapp: '<path d="M17.6 6.3a9 9 0 0 0-14.7 10L2 22l5.8-1.5a9 9 0 0 0 4.2 1.1h.1a9 9 0 0 0 9-9 9 9 0 0 0-3.5-6.3zM12 19.9a7.5 7.5 0 0 1-3.8-1l-.3-.2-3.4.9.9-3.3-.2-.4a7.5 7.5 0 1 1 13.9-3.9 7.5 7.5 0 0 1-7.1 7.9z"/>',
+    telegram: '<path d="m22 2-20 8 7 3 2 7 4-5 5 4 2-17zM9 13l9-7-7.5 8.5L9 18v-5z"/>',
   };
-  const icon = (name, size = 18) => `<svg class="icon" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name] || ''}</svg>`;
+  const icon = (name, size = 18) => `<svg class="icon" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${name === 'logo' ? '2.4' : '1.8'}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name] || ''}</svg>`;
 
   // ---------------------------------------------------------------------------
   // Errors
@@ -347,5 +350,7 @@
     sb, $, $$, esc, money, toDate, isoDate, monthKey, time, date, dayLabel, dateTime, relative, elapsed, span, sameDay,
     MONTHS, WEEKDAYS, L, badge, taskBadge, approvalStatus, approvalBadge, expenseBadge, icon,
     friendlyError, q, toast, run, dialog, confirm, ask, uploadFile, copyText, applyTheme, uuid,
+    whatsappUrl: (text) => `https://wa.me/?text=${encodeURIComponent(text)}`,
+    telegramUrl: (text, url) => `https://t.me/share/url?url=${encodeURIComponent(url || '')}&text=${encodeURIComponent(text || '')}`,
   };
 })();

@@ -14,7 +14,7 @@
   <!-- Sign in / sign up / reset -->
   <main id="auth" class="auth" hidden>
     <div class="auth-card">
-      <a class="brand" href="/"><span class="brand-mark" data-icon="tasks"></span>რიგზეა</a>
+      <a class="brand" href="/"><span class="brand-mark" data-icon="logo"></span><span class="brand-text">რიგზეა<i>.</i></span></a>
 
       <form id="form-signin" class="form-stack" novalidate>
         <div><h1>შესვლა</h1><p class="page-sub">შეიყვანე სამუშაო ელფოსტა და პაროლი.</p></div>
@@ -22,16 +22,25 @@
         <label class="field"><span class="field-label">ელფოსტა</span><input type="email" name="email" required autocomplete="email" data-error="შეიყვანე სწორი ელფოსტა." /></label>
         <label class="field"><span class="field-label">პაროლი</span><input type="password" name="password" required autocomplete="current-password" data-error="შეიყვანე პაროლი." /></label>
         <button type="submit" class="btn btn-primary btn-block">შესვლა</button>
-        <p class="auth-foot"><button type="button" class="link-btn" data-auth="reset">დაგავიწყდა პაროლი?</button> · <button type="button" class="link-btn" data-auth="signup">ახალი ანგარიში</button></p>
+        <div class="auth-demo-prompt">
+          <a class="btn btn-secondary btn-block" href="/demo/">👁 სცადე დემო (რეგისტრაციის გარეშე)</a>
+        </div>
+        <p class="auth-foot"><button type="button" class="link-btn" data-auth="reset">დაგავიწყდა პაროლი?</button> · <button type="button" class="link-btn" data-auth="signup">ახალი ანგარიში (14 დღე უფასოდ)</button></p>
       </form>
 
       <form id="form-signup" class="form-stack" novalidate hidden>
-        <div><h1>ანგარიშის შექმნა</h1><p class="page-sub">თუ გუნდში მოგიწვიეს, დარეგისტრირდი იმავე ელფოსტით — სამუშაო სივრცე ავტომატურად დაგემატება.</p></div>
+        <div>
+          <h1>ანგარიშის შექმნა</h1>
+          <p class="page-sub"><strong>14 დღე უფასო საცდელი პერიოდი</strong> · საბანკო ბარათი არ არის საჭირო.</p>
+        </div>
         <div class="form-error" role="alert" hidden></div>
         <label class="field"><span class="field-label">სახელი და გვარი</span><input type="text" name="name" required autocomplete="name" data-error="შეიყვანე სახელი." /></label>
         <label class="field"><span class="field-label">ელფოსტა</span><input type="email" name="email" required autocomplete="email" data-error="შეიყვანე სწორი ელფოსტა." /></label>
         <label class="field"><span class="field-label">პაროლი</span><input type="password" name="password" required minlength="6" autocomplete="new-password" data-error="პაროლი მინიმუმ 6 სიმბოლოს უნდა შეიცავდეს." /><span class="field-hint">მინიმუმ 6 სიმბოლო</span></label>
-        <button type="submit" class="btn btn-primary btn-block">რეგისტრაცია</button>
+        <button type="submit" class="btn btn-primary btn-block">რეგისტრაცია (14 დღე უფასოდ)</button>
+        <div class="auth-demo-prompt">
+          <a class="btn btn-secondary btn-block" href="/demo/">👁 სცადე დემო (რეგისტრაციის გარეშე)</a>
+        </div>
         <p class="auth-foot">უკვე გაქვს ანგარიში? <button type="button" class="link-btn" data-auth="signin">შესვლა</button></p>
       </form>
 
@@ -48,7 +57,7 @@
   <!-- First run: create organization -->
   <main id="onboarding" class="auth" hidden>
     <div class="auth-card auth-card-wide">
-      <a class="brand" href="/"><span class="brand-mark" data-icon="tasks"></span>რიგზეა</a>
+      <a class="brand" href="/"><span class="brand-mark" data-icon="logo"></span><span class="brand-text">რიგზეა<i>.</i></span></a>
       <form id="form-org" class="form-stack" novalidate>
         <div>
           <h1>შექმენი სამუშაო სივრცე</h1>
@@ -73,7 +82,7 @@
   <!-- Workspace -->
   <div id="shell" class="shell" hidden>
     <header class="topbar">
-      <a class="brand" href="#/today" aria-label="რიგზეა · მთავარი"><span class="brand-mark" data-icon="tasks"></span><span class="brand-text">რიგზეა</span></a>
+      <a class="brand" href="#/today" aria-label="რიგზეა · მთავარი"><span class="brand-mark" data-icon="logo"></span><span class="brand-text">რიგზეა<i>.</i></span></a>
       <div class="org-switch" id="org-switch"></div>
       <div class="topbar-spacer"></div>
       <button type="button" class="search-trigger" id="btn-search" aria-label="ძებნა"><span data-icon="search"></span><span class="label">ბინა, საქმე, მფლობელი…</span><kbd>/</kbd></button>

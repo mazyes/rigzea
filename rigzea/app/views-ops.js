@@ -271,7 +271,7 @@
       <div class="chips" role="group" aria-label="ფილტრი">${FILTERS.map(([id, label]) => `<button type="button" class="chip" data-filter="${id}" aria-pressed="${todayFilter === id}">${label}${id !== 'all' ? ` <span class="count">${counts[id]}</span>` : ''}</button>`).join('')}</div>
       <div class="cols">
         <div class="stack">
-          ${showSetup ? `<section class="card"><div class="card-head"><h2>პირველი ნაბიჯები</h2><button type="button" class="link-btn small" id="btn-hide-setup">დამალვა</button></div>
+          ${showSetup ? `<section class="card"><div class="card-head"><h2>${icon('sparkle', 16)} პირველი ნაბიჯები <span class="count">${steps.filter(s => s.done).length}/${steps.length}</span></h2><button type="button" class="link-btn small" id="btn-hide-setup">დამალვა</button></div>
             <ol class="setup">${steps.map(s => `<li class="${s.done ? 'done' : ''}"><div><div class="step-title">${esc(s.title)}</div><div class="step-desc">${esc(s.desc)}</div></div><div>${s.done ? '' : s.action || ''}</div></li>`).join('')}</ol></section>` : ''}
           ${focus || `
           <section class="card ${att.some(a => a.sev === 'danger') ? 'card-alert' : ''}">
@@ -368,13 +368,39 @@
     }));
   }
 
-  App.shareApproval = async (a) => {
+  App.shareApproval = (a) => {
     const link = H.approvalLink(a);
-    const text = `${H.aptName(a.apartment_id)}: ${a.title || a.description} — ${money(a.amount)}. გთხოვთ, დაადასტუროთ ან უარყოთ:`;
-    if (navigator.share) {
-      try { await navigator.share({ title: 'ხარჯის თანხმობა', text, url: link }); return; } catch (err) { if (err.name === 'AbortError') return; }
-    }
-    R.copyText(link, 'თანხმობის ბმული დაკოპირდა — გაუგზავნე მფლობელს');
+    const owner = H.owner(a.owner_id);
+    const apt = H.aptName(a.apartment_id);
+    const msg = `გამარჯობა${owner?.name ? ' ' + owner.name : ''}! ${apt}-ში საჭიროა: ${a.title || a.description} (${money(a.amount)}). გთხოვთ დაადასტუროთ ბმულზე:\n${link}`;
+    const waUrl = R.whatsappUrl(msg);
+    const tgUrl = R.telegramUrl(msg, link);
+
+    R.dialog({
+      title: 'მფლობელთან გაზიარება',
+      desc: `${apt} · ${money(a.amount)}`,
+      body: `
+        <div class="share-dialog-content">
+          <div class="share-preview-box">${esc(msg)}</div>
+          <div class="share-actions-grid">
+            <a class="btn btn-wa" href="${esc(waUrl)}" target="_blank" rel="noopener">${icon('whatsapp', 18)} WhatsApp</a>
+            <a class="btn btn-tg" href="${esc(tgUrl)}" target="_blank" rel="noopener">${icon('telegram', 18)} Telegram</a>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:4px">
+            <button type="button" class="btn btn-secondary btn-block" id="btn-copy-approval-link">${icon('copy', 16)} ბმულის კოპირება</button>
+            ${navigator.share ? `<button type="button" class="btn btn-secondary" id="btn-native-share" title="სხვა აპლიკაციით გაზიარება">${icon('external', 16)}</button>` : ''}
+          </div>
+        </div>
+      `,
+      buttons: [{ label: 'დახურვა', close: true }],
+    });
+
+    document.getElementById('btn-copy-approval-link')?.addEventListener('click', () => {
+      R.copyText(link, 'თანხმობის ბმული დაკოპირდა!');
+    });
+    document.getElementById('btn-native-share')?.addEventListener('click', async () => {
+      try { await navigator.share({ title: 'ხარჯის თანხმობა', text: msg, url: link }); } catch (_) {}
+    });
   };
 
   function activityList(events) {
