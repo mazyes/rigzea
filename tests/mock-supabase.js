@@ -73,7 +73,7 @@
     tasks: { status: 'new', priority: 'normal', type: 'other', checklist: [], photos: [] },
     expenses: { status: 'incurred', receipt_required: true, charge_to_owner: true },
     approvals: { status: 'pending', photos: [] },
-    apartments: { status: 'active', commission_pct: 20, photos: [], amenities: [], is_published: true },
+    apartments: { status: 'active', commission_pct: 20 },
     reservations: { status: 'confirmed', source: 'airbnb' },
     notifications: { is_read: false },
     monthly_reports: { status: 'draft' },
@@ -154,14 +154,29 @@
 
   const rpcs = {
     create_user_organization(a) {
-      const org = { id: uuid(), name: a.p_org_name, city: a.p_city, portfolio_size: a.p_portfolio_size, created_at: now() };
+      const org = { id: uuid(), name: a.p_org_name, city: a.p_city, portfolio_size: a.p_portfolio_size, plan: 'trial', trial_ends_at: new Date(Date.now() + 14 * 864e5).toISOString(), created_at: now() };
       T('organizations').push(org);
       const u = db.users.find(x => x.id === uid());
       T('organization_members').push({ id: uuid(), organization_id: org.id, user_id: uid(), role: 'owner', display_name: u?.name || 'მმართველი', created_at: now() });
       return org.id;
     },
     accept_my_invitations() { return 0; },
+    is_platform_admin() { return T('platform_admins').some(x => x.user_id === uid()); },
+    admin_list_orgs() {
+      if (!rpcs.is_platform_admin()) throw { message: 'ამ მოქმედების უფლება არ გაქვს.' };
+      return T('organizations').map(o => ({ id: o.id, name: o.name, city: o.city, plan: o.plan || 'trial', effective_plan: o.plan || 'trial', trial_ends_at: o.trial_ends_at || null, plan_expires_at: o.plan_expires_at || null, created_at: o.created_at, owner_email: 'owner@example.ge', apartments_count: T('apartments').filter(a => a.organization_id === o.id).length, members_count: T('organization_members').filter(m => m.organization_id === o.id).length }));
+    },
+    admin_set_org_plan(a) {
+      if (!rpcs.is_platform_admin()) throw { message: 'ამ მოქმედების უფლება არ გაქვს.' };
+      const o = T('organizations').find(x => x.id === a.p_org);
+      o.plan = a.p_plan;
+      const end = a.p_days == null ? null : new Date(Date.now() + a.p_days * 864e5).toISOString();
+      if (a.p_plan === 'trial') o.trial_ends_at = new Date(Date.now() + (a.p_days ?? 14) * 864e5).toISOString();
+      o.plan_expires_at = ['trial', 'starter'].includes(a.p_plan) ? null : end;
+      return { id: o.id, plan: o.plan, trial_ends_at: o.trial_ends_at || null, plan_expires_at: o.plan_expires_at };
+    },
     scan_alerts() { return 0; },
+    create_telegram_link_code() { return { code: 'TESTC0DE'.replace('0', '2'), expires_at: new Date(Date.now() + 900e3).toISOString() }; },
     generate_statement(a) {
       const apt = T('apartments').find(x => x.id === a.p_apartment);
       const inMonth = (d) => (d || '').startsWith(a.p_month);
@@ -199,22 +214,31 @@
       T('tasks').push(row);
       return row.id;
     },
-    // Mirrors public.get_public_listing: missing, archived and unpublished all look the same.
+    // Smart link (supabase/patches/01_smartlink.sql)
     get_public_listing(a) {
-      const ref = String(a.p_ref || '');
-      const apt = T('apartments').find(x => (x.public_slug === ref.toLowerCase() || x.id === ref) && !x.is_archived && x.status !== 'archived' && x.is_published !== false);
-      if (!apt) return { success: false };
-      const org = T('organizations').find(o => o.id === apt.organization_id) || {};
-      const pick = ['id', 'public_slug', 'name', 'address', 'city', 'district', 'rooms', 'bedrooms', 'floor', 'total_floors', 'area_sqm', 'monthly_rent', 'currency', 'rental_type', 'pets_allowed', 'utilities_estimate', 'prepayment_terms', 'deposit_amount', 'description', 'description_en'];
-      const pub = Object.fromEntries(pick.map(k => [k, apt[k] ?? null]));
-      const phone = apt.agent_phone || org.contact_phone || null;
-      return { success: true, apartment: { ...pub, agent_phone: phone, photos: apt.photos || [], amenities: apt.amenities || [] }, agency: { name: org.name || null, phone } };
+      const ref = String(a.p_ref || '').toLowerCase();
+      const apt = T('apartments').find(x => x.id === ref || (x.slug && x.slug === ref));
+      if (!apt || apt.is_archived || apt.status === 'archived') return { success: false, error: 'not_found' };
+      const org = T('organizations').find(x => x.id === apt.organization_id) || {};
+      const { door_code, wifi_name, wifi_password, access_instructions, parking_info, owner_id, tenant_name, tenant_phone, notes, commission_pct, ...pub } = apt;
+      return { success: true, apartment: { ...pub, photos: apt.photos || [], amenities: apt.amenities || [], agent_phone: apt.agent_phone || org.contact_phone }, agency: { name: org.name, logo_url: org.logo_url || null, brand_color: org.brand_color || null, agent_name: apt.agent_name || null, phone: apt.agent_phone || org.contact_phone } };
     },
     get_public_showcase(a) { return rpcs.get_public_listing({ p_ref: a.p_apartment_id }); },
-    create_telegram_link_code() { db.tgCode = 'A1B2C3D4E5'; return db.tgCode; },
-    get_my_telegram_link() { return db.tgLinked ? { linked: true, user_name: 'ნინო', linked_at: now(), notify_views: db.tgNotify || 'all' } : { linked: false }; },
-    set_my_telegram_notify(a) { db.tgNotify = a.p_mode; return null; },
-    unlink_my_telegram() { db.tgLinked = false; return null; },
+    track_link_event(a) {
+      const ref = String(a.p_ref || '').toLowerCase();
+      const apt = T('apartments').find(x => x.id === ref || (x.slug && x.slug === ref));
+      if (!apt || !['view', 'whatsapp', 'call'].includes(a.p_kind)) return false;
+      const ev = T('link_events');
+      const win = a.p_kind === 'view' ? 30 * 60e3 : 2 * 60e3;
+      if (a.p_visitor && ev.some(e => e.apartment_id === apt.id && e.visitor === a.p_visitor && e.kind === a.p_kind && Date.now() - new Date(e.created_at) < win)) return false;
+      ev.push({ id: ev.length + 1, organization_id: apt.organization_id, apartment_id: apt.id, selection_id: a.p_selection_id || null, kind: a.p_kind, visitor: a.p_visitor || null, created_at: now() });
+      return true;
+    },
+    get_link_stats(a) {
+      const ev = T('link_events').filter(e => e.apartment_id === a.p_apartment_id);
+      const views = ev.filter(e => e.kind === 'view');
+      return { views: views.length, visitors: new Set(views.map(e => e.visitor)).size, whatsapp: ev.filter(e => e.kind === 'whatsapp').length, calls: ev.filter(e => e.kind === 'call').length, views_7d: views.filter(e => Date.now() - new Date(e.created_at) < 7 * 864e5).length, last_view_at: views.map(e => e.created_at).sort().pop() || null };
+    },
     get_public_approval(a) {
       const ap = T('approvals').find(x => x.token === a.p_token);
       if (!ap) return { success: false, error: 'მოთხოვნა ვერ მოიძებნა ან ვადაგასულია' };
@@ -222,6 +246,15 @@
       const owner = T('owners').find(x => x.id === ap.owner_id) || {};
       const org = T('organizations').find(x => x.id === ap.organization_id) || {};
       return { success: true, approval: { id: ap.id, title: ap.title, amount: ap.amount, description: ap.description, status: ap.status, photos: ap.photos, created_at: ap.created_at, responded_at: ap.responded_at, response_note: ap.response_note }, apartment: { name: apt.name, address: apt.address, unit_number: apt.unit_number, city: apt.city }, owner: { name: owner.name }, organization: { name: org.name, contact_phone: org.contact_phone }, repair: { issue: null, contractor_name: null } };
+    },
+    get_public_selection(a) {
+      const sel = T('selections').find(x => x.slug === a.p_slug && x.is_active !== false);
+      if (!sel) return { success: false, error: 'not_found' };
+      const org = T('organizations').find(x => x.id === sel.organization_id) || {};
+      const apartments = (sel.apartment_ids || []).map(id => T('apartments').find(x => x.id === id && x.organization_id === sel.organization_id && x.status !== 'archived')).filter(Boolean)
+        .map(x => ({ id: x.id, slug: x.slug || null, title: x.name, price: x.monthly_rent ?? null, currency: x.currency || 'USD', rooms: x.rooms ?? null, bedrooms: x.bedrooms ?? null, area_sqm: x.area_sqm ?? null, floor: x.floor ?? null, total_floors: x.total_floors ?? null, district: x.district || null, city: x.city || null, pets_allowed: !!x.pets_allowed, photos: (x.photos || []).slice(0, 4), agent_phone: x.agent_phone || null }));
+      if (!apartments.length) return { success: false, error: 'not_found' };
+      return { success: true, selection: { client_name: sel.client_name, created_at: sel.created_at }, apartments, agency: { name: org.name, phone: org.contact_phone || null, logo_url: org.logo_url || null, brand_color: org.brand_color || null, fx_rate: org.fx_rate ?? 2.7 } };
     },
     respond_public_approval(a) {
       const ap = T('approvals').find(x => x.token === a.p_token);
@@ -268,8 +301,7 @@
     storage: {
       from: () => ({
         async upload(path) { await delay(); if (shouldFail('upload:storage')) return netErr(); return { data: { path }, error: null }; },
-        getPublicUrl(path) { return { data: { publicUrl: 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="120" height="90"><rect width="120" height="90" fill="#cbd5e1"/><text x="10" y="50" font-size="10">' + path.split('/').pop() + '</text></svg>') + '#' + encodeURIComponent(path) } }; },
-        async remove() { return { data: [], error: null }; },
+        getPublicUrl(path) { return { data: { publicUrl: 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="120" height="90"><rect width="120" height="90" fill="#cbd5e1"/><text x="10" y="50" font-size="10">' + path.split('/').pop() + '</text></svg>') } }; },
       }),
     },
   };

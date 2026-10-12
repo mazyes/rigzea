@@ -1,0 +1,61 @@
+/* Public demo chrome: ribbon and "what to try" guide. Uses the app's tokens (/app/app.css). */
+.demo-ribbon {
+  display: flex; align-items: center; gap: 10px 14px; flex-wrap: wrap;
+  padding: 7px 16px; background: #123d30; color: #dcebe4; font-size: 12.5px; line-height: 1.4;
+}
+.demo-tag {
+  flex: none; padding: 2px 8px; border-radius: 999px; background: #e8b04a; color: #2b1d02;
+  font-weight: 700; font-size: 11px; letter-spacing: .02em;
+}
+.demo-text { flex: 1 1 320px; min-width: 0; }
+.demo-actions { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.demo-btn {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 30px; padding: 0 10px;
+  border: 1px solid rgba(255, 255, 255, .22); border-radius: var(--r-sm); background: transparent;
+  color: #fff; font-size: 12.5px; font-weight: 500; text-decoration: none; cursor: pointer; white-space: nowrap;
+}
+.demo-btn:hover { background: rgba(255, 255, 255, .1); }
+.demo-btn:focus-visible { outline: 2px solid #e8b04a; outline-offset: 2px; }
+.demo-btn-cta { background: #fff; color: #123d30; border-color: #fff; font-weight: 600; }
+.demo-btn-cta:hover { background: #e7f1ed; }
+.demo-count { font-variant-numeric: tabular-nums; opacity: .75; }
+
+.demo-guide {
+  position: fixed; right: 20px; bottom: 20px; z-index: 50; width: 340px; max-height: calc(100vh - 120px);
+  display: flex; flex-direction: column; background: var(--surface); color: var(--ink);
+  border-radius: 12px; box-shadow: var(--shadow-pop); overflow: hidden;
+  animation: demo-rise .32s cubic-bezier(.16, 1, .3, 1);
+}
+.demo-guide[hidden] { display: none; }
+.demo-guide-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 10px 10px 16px; border-bottom: 1px solid var(--line); }
+.demo-guide-head strong { display: block; font-size: 15px; }
+.demo-guide-head span { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.demo-steps { list-style: none; margin: 0; padding: 6px; overflow-y: auto; overscroll-behavior: contain; }
+.demo-steps button {
+  width: 100%; display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 10px; align-items: start;
+  padding: 8px 10px; border: 0; border-radius: var(--r); background: none; text-align: left; cursor: pointer;
+}
+.demo-steps button:hover { background: var(--hover); }
+.demo-steps button:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+.demo-step-ic { width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; background: var(--brand-soft); color: var(--brand); }
+.demo-steps .is-seen .demo-step-ic { background: var(--ok-bg); color: var(--ok); }
+.demo-step-txt strong { display: block; font-size: 13px; font-weight: 600; line-height: 1.35; }
+.demo-step-txt span { display: block; font-size: 12px; color: var(--muted); line-height: 1.4; margin-top: 1px; }
+.demo-guide-foot { padding: 10px 12px 12px; border-top: 1px solid var(--line); }
+
+.demo-flash { animation: demo-flash 1.6s ease-out; }
+@keyframes demo-flash { 0%, 30% { box-shadow: 0 0 0 3px var(--brand), var(--shadow); } 100% { box-shadow: var(--shadow); } }
+@keyframes demo-rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .demo-guide, .demo-flash { animation: none; } }
+
+@media (max-width: 900px) {
+  .demo-ribbon { padding: 6px 12px; gap: 6px 10px; }
+  .demo-text { display: none; }
+  .demo-actions { flex: 1; justify-content: flex-end; }
+  .demo-hide-sm { display: none; }
+  .demo-guide {
+    left: 8px; right: 8px; width: auto; bottom: calc(var(--bottom-nav) + env(safe-area-inset-bottom) + 8px);
+    max-height: min(70vh, calc(100vh - var(--bottom-nav) - 90px));
+  }
+}
+@media print { .demo-ribbon, .demo-guide { display: none !important; } }

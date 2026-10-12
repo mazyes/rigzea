@@ -158,9 +158,9 @@
       if (left < 0 || left > 24 * 3600e3 || !tv.needsTurnover) return;
       const leftText = R.span(tv.inTs);
       let why = null;
-      if (!tv.cleaning) why = `Check-in-მდე ${leftText} დარჩა, დასუფთავება არ არის დაგეგმილი`;
-      else if (tv.cleaning.status !== 'done' && !tv.cleaning.assigned_to) why = `Check-in-მდე ${leftText} დარჩა, დასუფთავება ჯერ არ არის დანიშნული`;
-      else if (tv.cleaning.status !== 'done' && left < 6 * 3600e3) why = `Check-in-მდე ${leftText} დარჩა, დასუფთავება არ დასრულებულა`;
+      if (!tv.cleaning) why = `Check-in-მდე ${leftText} დარჩა — დასუფთავება არ არის დაგეგმილი`;
+      else if (tv.cleaning.status !== 'done' && !tv.cleaning.assigned_to) why = `Check-in-მდე ${leftText} დარჩა — დასუფთავება ჯერ არ არის დანიშნული`;
+      else if (tv.cleaning.status !== 'done' && left < 6 * 3600e3) why = `Check-in-მდე ${leftText} დარჩა — დასუფთავება არ დასრულებულა`;
       if (!why) return;
       add({ sev: 'danger', tags: ['urgent', 'today', 'cleaning'], taskId: tv.cleaning?.id, title: `Check-in: ${r.guest_name}`, sub: `${H.aptName(r.apartment_id)} · ${R.time(tv.inTs)}`, why,
         href: tv.cleaning ? App.taskHref(tv.cleaning.id) : `#/apartments/${r.apartment_id}`, action: tv.cleaning ? (tv.cleaning.assigned_to ? null : 'assign') : { plan: r.id } });
@@ -181,6 +181,65 @@
     return items;
   }
   const tagOf = (t) => t.type === 'cleaning' ? 'cleaning' : ['repair', 'maintenance'].includes(t.type) ? 'repair' : 'other';
+
+  // Leases ending within 30 days (or already expired and not yet renewed), soonest first.
+  function renewalItems() {
+    const today = R.isoDate();
+    const dayNum = (iso) => Math.round(Date.parse(iso + 'T00:00:00Z') / 86400e3);
+    return S.data.apartments
+      .filter(a => a.lease_end && !a.is_archived && a.status !== 'archived')
+      .map(a => ({ apt: a, days: dayNum(a.lease_end) - dayNum(today) }))
+      .filter(x => x.days <= 30 && x.days >= -30)
+      .sort((a, b) => a.days - b.days);
+  }
+  const renewalWhy = (d) => d < 0 ? `ვადა გასულია ${-d} დღის წინ` : d === 0 ? 'ვადა იწურება დღეს' : d === 1 ? 'ვადა იწურება ხვალ' : `ვადა იწურება ${d} დღეში`;
+
+  function renewalRow(x) {
+    const a = x.apt;
+    return `<div class="alert-row sev-${x.days <= 3 ? 'danger' : 'warn'}">
+      <a class="what" href="#/apartments/${a.id}" style="text-decoration:none;color:inherit"><strong>${esc(a.name)}</strong><span>${esc(a.tenant_name || 'დამქირავებელი არ არის მითითებული')} · ${esc(R.date(a.lease_end, { withYear: true }))}</span><span class="why ${x.days <= 3 ? 't-danger' : 't-warn'}">${renewalWhy(x.days)}</span></a>
+      <button type="button" class="btn btn-secondary btn-sm" data-renew="${a.id}">ხელშეკრულების გაგრძელება</button></div>`;
+  }
+
+  function openRenew(apt) {
+    const cur = apt.lease_end;
+    const [y, m, d] = cur.split('-').map(Number);
+    const base = new Date(Date.UTC(y + 1, m - 1, d));
+    const suggested = base.toISOString().slice(0, 10);
+    return R.dialog({
+      title: 'ხელშეკრულების გაგრძელება',
+      subtitle: `${apt.name} · მიმდინარე ვადა: ${R.date(cur, { withYear: true })}`,
+      submitLabel: 'გაგრძელება',
+      body: `<label class="field"><span class="field-label">ახალი ვადის დასრულების თარიღი</span><input type="date" name="lease_end" required min="${esc(cur)}" value="${suggested}" data-error="მიუთითე ახალი თარიღი მიმდინარე ვადის შემდეგ." />
+        <span class="field-hint">შემოთავაზებულია +1 წელი. ახალი თარიღი უნდა იყოს მიმდინარე ვადის შემდეგ.</span></label>`,
+      onSubmit: async (_f, v) => {
+        if (!v.lease_end || v.lease_end <= cur) throw new Error('ახალი თარიღი უნდა იყოს მიმდინარე ვადის შემდეგ.');
+        const row = await q(sb.from('apartments').update({ lease_end: v.lease_end }).eq('id', apt.id).select().single());
+        App.upsertLocal('apartments', row);
+        App.logEvent(row.id, 'lease_renewed', `ხელშეკრულება გაგრძელდა: ${row.name}`, `${R.date(cur, { withYear: true })} → ${R.date(v.lease_end, { withYear: true })}`);
+        App.render();
+        toast(`ხელშეკრულება გაგრძელდა: ${R.date(v.lease_end, { withYear: true })}`, { type: 'success' });
+      },
+    });
+  }
+
+  function openTelegramLink() {
+    return R.dialog({
+      title: 'Telegram-ის დაკავშირება',
+      subtitle: 'შეხსენებებს ბოტი პირდაპირ Telegram-ში გამოგიგზავნით',
+      body: `<p class="dlg-text">დააგენერირე ერთჯერადი კოდი და გამოუგზავნე ბოტს <b>@Rigzea_bot</b>. კოდი მოქმედებს 15 წუთის განმავლობაში.</p>
+        <div id="tg-code" class="calc" style="font-size:22px;font-weight:600;letter-spacing:.12em;text-align:center;padding:14px" aria-live="polite">—</div>
+        <p class="field-hint" id="tg-hint">კოდის მისაღებად დააჭირე ღილაკს.</p>
+        <button type="button" class="btn btn-secondary" id="tg-gen">კოდის შექმნა</button>`,
+      onOpen: (form) => {
+        $('#tg-gen', form).addEventListener('click', (e) => run(e.currentTarget, async () => {
+          const res = await q(sb.rpc('create_telegram_link_code', { p_org: S.org.id }));
+          $('#tg-code', form).textContent = res.code;
+          $('#tg-hint', form).innerHTML = `ბოტს გაუგზავნე: <code>/start ${esc(res.code)}</code>`;
+        }));
+      },
+    });
+  }
 
   function scheduleItems(offset) {
     const day = new Date(); day.setDate(day.getDate() + offset);
@@ -261,6 +320,7 @@
       }
     }
 
+    const ren = renewalItems();
     const sched = scheduleItems(scheduleDay);
     const tomorrowCount = scheduleItems(1).length;
 
@@ -278,6 +338,10 @@
             <div class="card-head"><h2>${icon('alert', 16)} სასწრაფო და ვადაგადაცილებული <span class="count ${att.some(a => a.sev === 'danger') ? 'count-danger' : ''}">${att.length}</span></h2></div>
             ${att.length ? `<div>${att.map(alertRow).join('')}</div>` : emptyInline('სასწრაფო საკითხი არ არის. ვადაგადაცილებული, დაუნიშნავი და მფლობელის პასუხის მომლოდინე საქმეები აქ გამოჩნდება.')}
           </section>
+          ${ren.length ? `<section class="card ${ren.some(x => x.days <= 3) ? 'card-alert' : ''}">
+            <div class="card-head"><h2>განახლებები <span class="count ${ren.some(x => x.days <= 3) ? 'count-danger' : ''}">${ren.length}</span></h2><span class="page-sub">ხელშეკრულებები, რომლებიც 30 დღეში იწურება</span></div>
+            <div>${ren.map(renewalRow).join('')}</div>
+          </section>` : ''}
           <section class="card">
             <div class="card-head"><h2>${scheduleDay ? 'ხვალის' : 'დღის'} განრიგი <span class="count">${sched.length}</span></h2>
               <div class="seg" role="group" aria-label="დღე"><label><input type="radio" name="sday" value="0" ${scheduleDay === 0 ? 'checked' : ''}><span>დღეს</span></label><label><input type="radio" name="sday" value="1" ${scheduleDay === 1 ? 'checked' : ''}><span>ხვალ · ${tomorrowCount}</span></label></div>
@@ -309,6 +373,10 @@
             ${fin.missing.length ? `<br><a class="link-btn" href="#/finance?status=missing">ქვითარი აკლია ${fin.missing.length} ხარჯს (${money(fin.missing.reduce((s, e) => s + Number(e.amount), 0))})</a>` : ''}</p>
           </section>
           <section class="card">
+            <div class="card-head"><h2>Telegram შეხსენებები</h2></div>
+            <p class="calc">ხელშეკრულების ვადებისა და ვადაგადაცილებული საქმეების შეხსენებებს Telegram-შიც მიიღებ.<br><button type="button" class="link-btn" id="btn-tg-link">Telegram-ის დაკავშირება</button></p>
+          </section>
+          <section class="card">
             <div class="card-head"><h2>ბოლო აქტივობა</h2></div>
             ${activityList(S.data.events.slice(0, 8))}
           </section>
@@ -318,6 +386,8 @@
     $$('[data-filter]').forEach(b => b.addEventListener('click', () => { todayFilter = b.dataset.filter; App.render(); }));
     $$('input[name=sday]').forEach(i => i.addEventListener('change', () => { scheduleDay = Number(i.value); App.render(); }));
     $('#btn-hide-setup')?.addEventListener('click', () => { localStorage.setItem('rigzea_setup_hidden_' + S.org.id, '1'); App.render(); });
+    $$('[data-renew]').forEach(b => b.addEventListener('click', () => openRenew(S.data.apartments.find(a => a.id === b.dataset.renew))));
+    $('#btn-tg-link')?.addEventListener('click', openTelegramLink);
     bindSetup($('#view'));
     bindAlertActions($('#view'), att);
     bindApprovalShare($('#view'));
@@ -477,7 +547,7 @@
 
   App.openTaskDrawer = (id) => {
     const t = H.task(id);
-    if (!t) { App.closeTaskDrawer(true); toast('საქმე ვერ მოიძებნა. შესაძლოა წაშლილია ან სხვა სამუშაო სივრცეს ეკუთვნის.', { type: 'error' }); App.closeTaskOverlay(); return; }
+    if (!t) { App.closeTaskDrawer(true); toast('საქმე ვერ მოიძებნა — შესაძლოა წაშლილია ან სხვა სამუშაო სივრცეს ეკუთვნის.', { type: 'error' }); App.closeTaskOverlay(); return; }
     if (!drawerEl) {
       returnFocus = document.activeElement;
       drawerEl = document.createElement('div');
@@ -690,7 +760,7 @@
             <label class="choice"><input type="radio" name="cost_mode" value="none" checked><span><strong>ხარჯი ჯერ უცნობია</strong><small>თანხას მოგვიანებით დაამატებ საქმის გვერდიდან.</small></span></label>
             <label class="choice"><input type="radio" name="cost_mode" value="estimate"><span><strong>მხოლოდ შეფასება</strong><small>ინფორმაციისთვის. ხარჯად არ ჩაითვლება და მფლობელს არ ეგზავნება.</small></span></label>
             <label class="choice"><input type="radio" name="cost_mode" value="approval"><span><strong>მფლობელის თანხმობის მოთხოვნა</strong><small>შეიქმნება „შეთავაზებული“ ხარჯი და ბმული მფლობელისთვის. ხარჯად ჩაითვლება მხოლოდ დადასტურების შემდეგ.</small></span></label>
-            <label class="choice"><input type="radio" name="cost_mode" value="expense"><span><strong>უკვე გაწეული ხარჯი</strong><small>თანხა უკვე დაიხარჯა, ჩაიწერება „გაწეულ“ ხარჯად.</small></span></label>
+            <label class="choice"><input type="radio" name="cost_mode" value="expense"><span><strong>უკვე გაწეული ხარჯი</strong><small>თანხა უკვე დაიხარჯა — ჩაიწერება „გაწეულ“ ხარჯად.</small></span></label>
           </div>
           <div class="form-grid" data-cost hidden>
             <label class="field"><span class="field-label">თანხა (₾)</span><input type="number" name="amount" min="0.01" step="0.01" inputmode="decimal" data-error="ჩაწერე თანხა." /></label>
@@ -725,7 +795,7 @@
           const apt = H.apt(form.apartment_id.value);
           const owner = apt && H.owner(apt.owner_id);
           const note = $('[data-owner-note]', form);
-          note.textContent = mode === 'approval' ? (owner ? `თანხმობის ბმული გაეგზავნება: ${owner.name}${owner.phone ? ' (' + owner.phone + ')' : ''}.` : 'ამ ბინას მფლობელი არ ჰყავს მითითებული. თანხმობის მოთხოვნამდე მიუთითე მფლობელი ბინის გვერდზე.') : '';
+          note.textContent = mode === 'approval' ? (owner ? `თანხმობის ბმული გაეგზავნება: ${owner.name}${owner.phone ? ' (' + owner.phone + ')' : ''}.` : 'ამ ბინას მფლობელი არ ჰყავს მითითებული — თანხმობის მოთხოვნამდე მიუთითე მფლობელი ბინის გვერდზე.') : '';
           note.className = 'field-hint span-2' + (mode === 'approval' && !owner ? ' t-danger' : '');
         };
         form.checklist.addEventListener('input', () => { form.checklist.dataset.auto = ''; });
@@ -747,7 +817,7 @@
         const checklist = checklistLines.map(label => ({ label, done: Boolean(oldChecklist.find(i => i.label === label)?.done) }));
         const mode = v.cost_mode || 'none';
         const amount = Number(v.amount || 0);
-        if (mode === 'approval' && !apt.owner_id) throw new Error('ამ ბინას მფლობელი არ ჰყავს. თანხმობის მოთხოვნა შეუძლებელია.');
+        if (mode === 'approval' && !apt.owner_id) throw new Error('ამ ბინას მფლობელი არ ჰყავს — თანხმობის მოთხოვნა შეუძლებელია.');
         if (mode !== 'none' && !(amount > 0)) throw new Error('ჩაწერე თანხა.');
 
         const fields = {
@@ -788,7 +858,7 @@
           }
         } catch (err) {
           App.render();
-          throw new Error(`საქმე შეიქმნა, მაგრამ ხარჯი ვერ შეინახა (${R.friendlyError(err)}). დააჭირე „საქმის შექმნა“-ს ხელახლა. საქმე მეორედ არ შეიქმნება.`);
+          throw new Error(`საქმე შეიქმნა, მაგრამ ხარჯი ვერ შეინახა (${R.friendlyError(err)}). დააჭირე „საქმის შექმნა“-ს ხელახლა — საქმე მეორედ არ შეიქმნება.`);
         }
         App.render();
         toast(`საქმე შეიქმნა: ${row.title}${row.assigned_to ? ' · დაინიშნა ' + H.memberName(row.assigned_to) : ''}`, { type: 'success', action: { label: 'გახსნა', fn: () => App.go(App.taskHref(row.id)) } });

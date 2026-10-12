@@ -18,7 +18,7 @@
 
   const numberFmt = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 });
   const money = (n) => {
-    if (n === null || n === undefined || n === '' || isNaN(n)) return '-';
+    if (n === null || n === undefined || n === '' || isNaN(n)) return '—';
     const v = Number(n);
     return (v < 0 ? '−₾' : '₾') + numberFmt.format(Math.abs(v)).replace(/,/g, ' ');
   };
@@ -34,18 +34,18 @@
   };
   const isoDate = (d = new Date()) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
   const monthKey = (d = new Date()) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
-  const time = (v) => { const d = toDate(v); return d ? `${pad(d.getHours())}:${pad(d.getMinutes())}` : '-'; };
+  const time = (v) => { const d = toDate(v); return d ? `${pad(d.getHours())}:${pad(d.getMinutes())}` : '—'; };
   const sameDay = (a, b) => a && b && a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 
   function date(v, { withYear = false } = {}) {
     const d = toDate(v);
-    if (!d) return '-';
+    if (!d) return '—';
     return `${d.getDate()} ${MONTHS_SHORT[d.getMonth()]}${withYear || d.getFullYear() !== new Date().getFullYear() ? ' ' + d.getFullYear() : ''}`;
   }
 
   function dayLabel(v) {
     const d = toDate(v);
-    if (!d) return '-';
+    if (!d) return '—';
     const today = new Date();
     const tomorrow = new Date(); tomorrow.setDate(today.getDate() + 1);
     const yesterday = new Date(); yesterday.setDate(today.getDate() - 1);
@@ -55,8 +55,8 @@
     return date(d);
   }
 
-  // "დღეს, 14:00" - for timestamps where time matters
-  const dateTime = (v) => { const d = toDate(v); return d ? `${dayLabel(d)}, ${time(d)}` : '-'; };
+  // "დღეს, 14:00" — for timestamps where time matters
+  const dateTime = (v) => { const d = toDate(v); return d ? `${dayLabel(d)}, ${time(d)}` : '—'; };
 
   function duration(ms) {
     const m = Math.round(Math.abs(ms) / 60000);
@@ -69,14 +69,14 @@
   // "3 საათის წინ" / "2 საათში"
   function relative(v) {
     const d = toDate(v);
-    if (!d) return '-';
+    if (!d) return '—';
     const diff = d - Date.now();
     const { n, unit } = duration(diff);
     const forms = { 'წუთ': ['წუთის', 'წუთში'], 'საათ': ['საათის', 'საათში'], 'დღ': ['დღის', 'დღეში'] }[unit];
     return diff < 0 ? `${n} ${forms[0]} წინ` : `${n} ${forms[1]}`;
   }
 
-  // "18 საათი" - elapsed amount in nominative-like form for "N საათია"
+  // "18 საათი" — elapsed amount in nominative-like form for "N საათია"
   function elapsed(v) {
     const d = toDate(v);
     if (!d) return '';
@@ -264,8 +264,6 @@
           ${opts.onSubmit ? `<footer class="dlg-foot">
             <button type="button" class="btn btn-ghost" data-close>გაუქმება</button>
             <button type="submit" class="btn ${opts.danger ? 'btn-danger' : 'btn-primary'}" data-submit>${esc(opts.submitLabel || 'შენახვა')}</button>
-          </footer>` : opts.submitLabel ? `<footer class="dlg-foot">
-            <button type="button" class="btn btn-primary" data-close data-submit>${esc(opts.submitLabel)}</button>
           </footer>` : ''}
         </form>`;
       document.body.appendChild(dlg);
@@ -278,7 +276,6 @@
       dlg.addEventListener('cancel', (e) => { if ($('[data-submit]', dlg)?.dataset.busy === '1') e.preventDefault(); });
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        if (!opts.onSubmit) { close(); return; } // read-only dialog: the footer button only closes
         const btn = $('[data-submit]', dlg);
         if (!btn || btn.dataset.busy === '1') return;
         errBox.hidden = true;
@@ -336,59 +333,6 @@
     return sb.storage.from('rigzea-files').getPublicUrl(path).data.publicUrl;
   }
 
-  // Ids match the icons on the public listing page (rigzea/p/index.html).
-  const AMENITIES = [
-    { id: 'wifi', label: 'სწრაფი Wi-Fi' }, { id: 'ac', label: 'კონდიციონერი' }, { id: 'heating', label: 'ცენტრალური გათბობა' },
-    { id: 'balcony', label: 'აივანი' }, { id: 'dishwasher', label: 'ჭურჭლის სარეცხი' }, { id: 'washing_machine', label: 'სარეცხი მანქანა' },
-    { id: 'elevator', label: 'ლიფტი' }, { id: 'parking', label: 'პარკინგი' }, { id: 'tv', label: 'Smart TV' },
-    { id: 'oven', label: 'ღუმელი' }, { id: 'microwave', label: 'მიკროტალღური' }, { id: 'security', label: 'დაცვა 24/7' },
-  ];
-
-  // Phone photos run to several megabytes and a listing needs about 1920px. Returns a JPEG file,
-  // or throws when the browser cannot decode the image (HEIC on some devices).
-  async function downscaleImage(file, max = 1920, quality = 0.82) {
-    let bmp;
-    try { bmp = await createImageBitmap(file); } catch { throw new Error(`„${file.name}“ ვერ წავიკითხე. სცადე JPG ან PNG ფორმატი.`); }
-    const scale = Math.min(1, max / Math.max(bmp.width, bmp.height));
-    const canvas = document.createElement('canvas');
-    canvas.width = Math.round(bmp.width * scale);
-    canvas.height = Math.round(bmp.height * scale);
-    canvas.getContext('2d').drawImage(bmp, 0, 0, canvas.width, canvas.height);
-    if (bmp.close) bmp.close();
-    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', quality));
-    if (!blob) throw new Error(`„${file.name}“ ვერ დამუშავდა.`);
-    return new File([blob], (file.name.replace(/\.[^.]+$/, '') || 'photo') + '.jpg', { type: 'image/jpeg' });
-  }
-
-  // Best effort: a file that cannot be removed only wastes storage, it does not break the listing.
-  async function removeFile(publicUrl) {
-    const path = String(publicUrl || '').split('/rigzea-files/')[1];
-    if (!path) return;
-    try { await sb.storage.from('rigzea-files').remove([decodeURIComponent(path.split('?')[0])]); } catch { /* ignored */ }
-  }
-
-  // ---------------------------------------------------------------------------
-  // Public listing links
-  // ---------------------------------------------------------------------------
-  const KA_LATIN = { ა: 'a', ბ: 'b', გ: 'g', დ: 'd', ე: 'e', ვ: 'v', ზ: 'z', თ: 't', ი: 'i', კ: 'k', ლ: 'l', მ: 'm', ნ: 'n', ო: 'o', პ: 'p', ჟ: 'zh', რ: 'r', ს: 's', ტ: 't', უ: 'u', ფ: 'p', ქ: 'k', ღ: 'gh', ყ: 'q', შ: 'sh', ჩ: 'ch', ც: 'ts', ძ: 'dz', წ: 'ts', ჭ: 'ch', ხ: 'kh', ჯ: 'j', ჰ: 'h' };
-
-  // Readable part from the name plus a random tail, so a link cannot be guessed from another one.
-  function makeSlug(name) {
-    const base = String(name || '').toLowerCase().replace(/[ა-ჰ]/g, c => KA_LATIN[c] || '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40);
-    const tail = Array.from(crypto.getRandomValues(new Uint8Array(6)), b => (b % 36).toString(36)).join('');
-    return base ? `${base}-${tail}` : tail;
-  }
-
-  // Listings created before slugs existed fall back to the id form, which the public page still accepts.
-  function listingUrl(apt, { whiteLabel = false, recipient = null } = {}) {
-    const base = apt.public_slug ? `${location.origin}/p/${encodeURIComponent(apt.public_slug)}` : `${location.origin}/p/?id=${apt.id}`;
-    const qs = new URLSearchParams();
-    if (whiteLabel) qs.set('wl', '1');
-    if (recipient) qs.set('r', recipient);
-    const tail = qs.toString();
-    return tail ? base + (base.includes('?') ? '&' : '?') + tail : base;
-  }
-
   async function copyText(text, okMsg = 'დაკოპირდა') {
     try { await navigator.clipboard.writeText(text); toast(okMsg, { type: 'success' }); }
     catch { window.prompt('დააკოპირე ბმული:', text); }
@@ -408,7 +352,7 @@
   window.R = {
     sb, $, $$, esc, money, toDate, isoDate, monthKey, time, date, dayLabel, dateTime, relative, elapsed, span, sameDay,
     MONTHS, WEEKDAYS, L, badge, taskBadge, approvalStatus, approvalBadge, expenseBadge, dealBadge, icon,
-    friendlyError, q, toast, run, dialog, confirm, ask, uploadFile, copyText, applyTheme, uuid, makeSlug, listingUrl, AMENITIES, downscaleImage, removeFile,
+    friendlyError, q, toast, run, dialog, confirm, ask, uploadFile, copyText, applyTheme, uuid,
     whatsappUrl: (text) => `https://wa.me/?text=${encodeURIComponent(text)}`,
     telegramUrl: (text, url) => `https://t.me/share/url?url=${encodeURIComponent(url || '')}&text=${encodeURIComponent(text || '')}`,
   };

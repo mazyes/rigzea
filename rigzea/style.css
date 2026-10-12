@@ -1857,7 +1857,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 }
 
 .plan-features-list li::before {
-  content: "-";
+  content: "—";
   color: var(--green);
   font-weight: 700;
 }
@@ -2763,7 +2763,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 }
 
 /* ==========================================================================
-   TRUST LAYER - institutional Georgian look (overrides above)
+   TRUST LAYER — institutional Georgian look (overrides above)
    ========================================================================== */
 
 /* FiraGO has no Georgian capitals (Mtavruli). Uppercasing Georgian makes the

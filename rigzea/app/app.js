@@ -12,6 +12,8 @@
     data: null,        // loaded org data, see loadData()
     loading: false,
     loadError: null,
+    platformAdmin: false,
+    seatInvites: 0,    // pending non-staff invitations, kept by the team view
   };
 
   const MANAGER_ROLES = ['owner', 'admin', 'manager'];
@@ -45,6 +47,7 @@
       // Joins any organizations this email was invited to (no-op otherwise).
       await sb.rpc('accept_my_invitations').then(() => {}, () => {});
       await loadOrgs();
+      S.platformAdmin = await sb.rpc('is_platform_admin').then(r => r.data === true, () => false);
       if (!S.orgs.length) return showScreen('onboarding');
       if (S.member.role === 'staff') { location.replace('/staff/'); return; }
       enterShell();
@@ -150,7 +153,7 @@
     const since = new Date(); since.setDate(since.getDate() - 120);
     const sinceIso = R.isoDate(since);
     try {
-      const [apartments, owners, tasks, approvals, expenses, income, reservations, events, members, notifications, statements, repairs, deals, linkEvents, shareLinks] = await Promise.all([
+      const [apartments, owners, tasks, approvals, expenses, income, reservations, events, members, notifications, statements, repairs, deals] = await Promise.all([
         q(sb.from('apartments').select('*').eq('organization_id', org).order('name')),
         q(sb.from('owners').select('*').eq('organization_id', org).order('name')),
         q(sb.from('tasks').select('*').eq('organization_id', org).order('due_date', { ascending: true })),
@@ -165,11 +168,8 @@
         q(sb.from('monthly_reports').select('*').eq('organization_id', org).order('month_period', { ascending: false })),
         q(sb.from('repairs').select('*').eq('organization_id', org)).catch(() => []),
         sb.from('deals').select('*').eq('organization_id', org).order('created_at', { ascending: false }).then(r => r.data || [], () => []),
-        // Sharing tables arrive with the link-tracking migration; until then they read as empty.
-        sb.from('link_events').select('*').eq('organization_id', org).gte('created_at', new Date(Date.now() - 30 * 864e5).toISOString()).order('created_at', { ascending: false }).limit(2000).then(r => r.data || [], () => []),
-        sb.from('share_links').select('*').eq('organization_id', org).order('created_at', { ascending: false }).then(r => r.data || [], () => []),
       ]);
-      S.data = { apartments, owners, tasks, approvals, expenses, income, reservations, events, members, notifications, statements, repairs, deals: deals || [], linkEvents: linkEvents || [], shareLinks: shareLinks || [] };
+      S.data = { apartments, owners, tasks, approvals, expenses, income, reservations, events, members, notifications, statements, repairs, deals: deals || [] };
       indexData();
     } catch (err) {
       console.error(err);
@@ -262,17 +262,15 @@
   }
 
   const NAV = [
-    { id: 'apartments', label: 'ბინები და ბმულები', icon: 'building', group: 'გაყიდვები & გარიგებები' },
-    { id: 'deals', label: 'გარიგებები & CRM', icon: 'owner' },
-    { id: 'today', label: 'აქტივობა & მთავარი', icon: 'today' },
-    // Everything below is day-to-day management, kept out of the way of the sharing flow.
-    { id: 'tasks', label: 'საქმეები & დალაგება', icon: 'tasks', group: 'საოპერაციო მართვა' },
-    { id: 'owners', label: 'მფლობელები & თანხმობები', icon: 'owner' },
-    { id: 'finance', label: 'ფინანსები & ხარჯები', icon: 'wallet' },
-    { id: 'team', label: 'გუნდი & წვდომები', icon: 'team' },
-    { id: 'settings', label: 'პარამეტრები & Telegram', icon: 'settings' },
+    { id: 'today', label: 'მთავარი', icon: 'today' },
+    { id: 'tasks', label: 'საქმეები', icon: 'tasks' },
+    { id: 'apartments', label: 'ბინები', icon: 'building' },
+    { id: 'deals', label: 'გარიგებები', icon: 'wallet' },
+    { id: 'owners', label: 'მფლობელები', icon: 'owner' },
+    { id: 'finance', label: 'ფინანსები', icon: 'wallet' },
+    { id: 'team', label: 'გუნდი', icon: 'team' },
+    { id: 'settings', label: 'პარამეტრები', icon: 'settings' },
   ];
-  const MOBILE_NAV = ['apartments', 'deals', 'today', 'finance'];
 
   function navCounts() {
     if (!S.data) return {};
@@ -290,10 +288,10 @@
     const r = route();
     const counts = navCounts();
     const countHtml = (c) => c ? `<span class="count ${c.danger ? 'count-danger' : ''}" title="${esc(c.label)}">${c.n}</span>` : '';
-    $('#rail').innerHTML = NAV.map(n => `${n.group ? `<div class="nav-group">${n.group}</div>` : ''}<a class="nav-item" href="#/${n.id}" ${r.name === n.id ? 'aria-current="page"' : ''}>${icon(n.icon)}<span>${n.label}</span>${countHtml(counts[n.id])}</a>`).join('')
+    $('#rail').innerHTML = NAV.map(n => `<a class="nav-item" href="#/${n.id}" ${r.name === n.id ? 'aria-current="page"' : ''}>${icon(n.icon)}<span>${n.label}</span>${countHtml(counts[n.id])}</a>`).join('')
       + `<div class="rail-foot">${S.data ? `${S.data.apartments.filter(a => a.status !== 'archived').length} ბინა · ${S.data.owners.length} მფლობელი · ${S.data.members.length} წევრი` : ''}</div>`;
 
-    const mobile = MOBILE_NAV;
+    const mobile = ['today', 'tasks', 'apartments', 'deals', 'finance'];
     const moreActive = !mobile.includes(r.name);
     $('#bottom-nav').innerHTML = mobile.map(id => { const n = NAV.find(x => x.id === id); return `<a href="#/${id}" ${r.name === id ? 'aria-current="page"' : ''}>${icon(n.icon, 20)}<span>${n.label}</span>${countHtml(counts[id])}</a>`; }).join('')
       + `<button type="button" id="btn-more" ${moreActive ? 'aria-current="page"' : ''}>${icon('menu', 20)}<span>მეტი</span>${countHtml(counts.owners)}</button>`;
@@ -307,6 +305,8 @@
     } else {
       sw.innerHTML = `<span class="org-static" title="სამუშაო სივრცე">${esc(S.org.name)}</span>`;
     }
+
+    renderPlanBanner();
 
     const name = S.member?.display_name || S.user.email;
     $('#user-name').textContent = name;
@@ -333,7 +333,7 @@
     const r = route();
     R.dialog({
       title: 'მენიუ',
-      body: `<nav class="menu-list" style="padding:0">${NAV.filter(n => !MOBILE_NAV.includes(n.id)).map(n => `<a href="#/${n.id}" data-close ${r.name === n.id ? 'aria-current="page"' : ''}>${icon(n.icon)} ${n.label}</a>`).join('')}
+      body: `<nav class="menu-list" style="padding:0">${NAV.filter(n => !['today', 'tasks', 'apartments', 'finance'].includes(n.id)).map(n => `<a href="#/${n.id}" data-close ${r.name === n.id ? 'aria-current="page"' : ''}>${icon(n.icon)} ${n.label}</a>`).join('')}
         <button type="button" data-action="signout">${icon('logout')} გამოსვლა</button></nav>`,
       onOpen: (form, dlg) => $$('a', form).forEach(a => a.addEventListener('click', () => dlg.close())),
     });
@@ -360,7 +360,7 @@
       console.error(err);
       $('#view').innerHTML = `<div class="card"><div class="error-state"><p>გვერდის ჩვენება ვერ მოხერხდა: ${esc(err.message)}</p><a class="btn btn-secondary" href="#/today">მთავარზე დაბრუნება</a></div></div>`;
     }
-    if (S.loadError) toast('ბოლო განახლება ვერ მოხერხდა. ნაჩვენებია წინა მონაცემები.', { type: 'error', action: { label: 'განახლება', fn: () => refresh({ quiet: true }) } });
+    if (S.loadError) toast('ბოლო განახლება ვერ მოხერხდა — ნაჩვენებია წინა მონაცემები.', { type: 'error', action: { label: 'განახლება', fn: () => refresh({ quiet: true }) } });
     // Task overlay on top of any page
     const taskId = r.params.get('task');
     if (taskId) App.openTaskDrawer(taskId); else App.closeTaskDrawer?.(true);
@@ -439,83 +439,37 @@
   });
 
   // ---------------------------------------------------------------------------
-  // Global search: KokonutUI / 21st.dev Command Palette (Cmd+K / Ctrl+K / /)
+  // Global search
   // ---------------------------------------------------------------------------
   function openSearch() {
     if (!S.data || document.querySelector('dialog[open]')) return;
     R.dialog({
-      title: 'ბრძანებების პალიტრა (Command Palette)',
-      body: `
-        <div class="search-input cmd-search-bar">
-          <span>${icon('search', 16)}</span>
-          <input class="input" id="search-q" type="search" placeholder="ჩაწერე ბინა, გარიგება, საქმე, მფლობელი ან ბრძანება…" autocomplete="off" aria-label="საძიებო სიტყვა" />
-          <kbd class="cmd-shortcut-hint">ESC</kbd>
-        </div>
-        <div class="cmd-quick-chips" style="display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 14px">
-          <button type="button" class="chip-btn" data-nav="#/tasks" style="font-size:11.5px;padding:3px 10px;border-radius:99px;background:var(--surface-2);border:1px solid var(--line);cursor:pointer">⚡ საქმეები</button>
-          <button type="button" class="chip-btn" data-nav="#/apartments" style="font-size:11.5px;padding:3px 10px;border-radius:99px;background:var(--surface-2);border:1px solid var(--line);cursor:pointer">🏢 ბინები</button>
-          <button type="button" class="chip-btn" data-nav="#/deals" style="font-size:11.5px;padding:3px 10px;border-radius:99px;background:var(--surface-2);border:1px solid var(--line);cursor:pointer">💼 კლიენტები</button>
-          <button type="button" class="chip-btn" data-nav="#/finance" style="font-size:11.5px;padding:3px 10px;border-radius:99px;background:var(--surface-2);border:1px solid var(--line);cursor:pointer">💰 ფინანსები</button>
-          <button type="button" class="chip-btn" data-nav="#/owners" style="font-size:11.5px;padding:3px 10px;border-radius:99px;background:var(--surface-2);border:1px solid var(--line);cursor:pointer">👥 მფლობელები</button>
-        </div>
-        <div id="search-results" class="rows cmd-results-list"></div>
-      `,
+      title: 'ძებნა',
+      body: `<div class="search-input"><span>${icon('search', 16)}</span><input class="input" id="search-q" type="search" placeholder="ბინა, მისამართი, საქმე, მფლობელი…" autocomplete="off" aria-label="საძიებო სიტყვა" /></div><div id="search-results" class="rows" style="margin-top:10px"></div>`,
       onOpen: (form, dlg) => {
         const input = $('#search-q', form);
         const out = $('#search-results', form);
-        $$('.chip-btn', form).forEach(chip => {
-          chip.addEventListener('click', () => {
-            dlg.close();
-            go(chip.dataset.nav);
-          });
-        });
-
         const draw = () => {
           const s = input.value.trim().toLowerCase();
-          if (s.length < 1) {
-            // Show recommended quick suggestions
-            const rec = [
-              { href: `#/apartments`, icon: 'building', title: 'ყველა ბინის დათვალიერება', sub: `${S.data.apartments.length} აქტიური ობიექტი`, badge: 'ნავიგაცია' },
-              { href: `#/deals`, icon: 'wallet', title: 'გარიგებების Pipeline', sub: 'მიმდინარე და დახურული საკომისიოები', badge: 'გაყიდვები' },
-              { href: `#/tasks`, icon: 'tasks', title: 'საქმეების სია', sub: `${S.data.tasks.filter(H.isOpen).length} ღია დავალება`, badge: 'ოპერაციები' },
-            ];
-            out.innerHTML = rec.map(x => `<a class="row cmd-item" style="--cols:24px minmax(0,1fr) auto" href="${x.href}">${icon(x.icon)}<span class="cell-main"><strong>${esc(x.title)}</strong><span>${esc(x.sub)}</span></span><span class="badge" style="font-size:10px">${x.badge}</span></a>`).join('');
-            $$('a', out).forEach(a => a.addEventListener('click', () => dlg.close()));
-            return;
-          }
-
+          if (s.length < 2) { out.innerHTML = '<p class="empty-inline">ჩაწერე მინიმუმ 2 სიმბოლო.</p>'; return; }
           const has = (...v) => v.some(x => String(x || '').toLowerCase().includes(s));
           const res = [
-            ...S.data.apartments.filter(a => has(a.name, a.unit_number, a.address, a.city, H.owner(a.owner_id)?.name)).slice(0, 6).map(a => ({ href: `#/apartments/${a.id}`, icon: 'building', title: a.name, sub: [a.address, a.city].filter(Boolean).join(', '), tag: 'ბინა' })),
-            ...(S.data.deals || []).filter(d => has(d.title, d.contact_name, H.aptName(d.apartment_id))).slice(0, 4).map(d => ({ href: `#/deals`, icon: 'wallet', title: d.title || 'გარიგება', sub: `${H.aptName(d.apartment_id)} · ${d.contact_name || ''}`, tag: 'გარიგება' })),
-            ...S.data.tasks.filter(t => has(t.title, t.description, H.aptName(t.apartment_id))).slice(0, 6).map(t => ({ href: taskHref(t.id), icon: 'tasks', title: t.title, sub: `${H.aptName(t.apartment_id)} · ${L.taskStatus[t.status]}`, tag: 'საქმე' })),
-            ...S.data.owners.filter(o => has(o.name, o.phone, o.email)).slice(0, 4).map(o => ({ href: `#/owners/${o.id}`, icon: 'owner', title: o.name, sub: o.phone || o.email || '', tag: 'მფლობელი' })),
+            ...S.data.apartments.filter(a => has(a.name, a.unit_number, a.address, a.city, H.owner(a.owner_id)?.name)).slice(0, 6).map(a => ({ href: `#/apartments/${a.id}`, icon: 'building', title: a.name, sub: [a.address, a.city].filter(Boolean).join(', ') })),
+            ...S.data.tasks.filter(t => has(t.title, t.description, H.aptName(t.apartment_id))).slice(0, 6).map(t => ({ href: taskHref(t.id), icon: 'tasks', title: t.title, sub: `${H.aptName(t.apartment_id)} · ${L.taskStatus[t.status]}` })),
+            ...S.data.owners.filter(o => has(o.name, o.phone, o.email)).slice(0, 4).map(o => ({ href: `#/owners/${o.id}`, icon: 'owner', title: o.name, sub: o.phone || o.email || '' })),
           ];
-
-          out.innerHTML = res.length ? res.map(x => `<a class="row cmd-item" style="--cols:24px minmax(0,1fr) auto" href="${x.href}">${icon(x.icon)}<span class="cell-main"><strong>${esc(x.title)}</strong><span>${esc(x.sub)}</span></span><span class="badge" style="font-size:10.5px">${x.tag}</span></a>`).join('') : '<p class="empty-inline">ვერაფერი მოიძებნა.</p>';
+          out.innerHTML = res.length ? res.map(x => `<a class="row" style="--cols:24px minmax(0,1fr)" href="${x.href}">${icon(x.icon)}<span class="cell-main"><strong>${esc(x.title)}</strong><span>${esc(x.sub)}</span></span></a>`).join('') : '<p class="empty-inline">ვერაფერი მოიძებნა.</p>';
           $$('a', out).forEach(a => a.addEventListener('click', () => dlg.close()));
         };
-
         input.addEventListener('input', draw);
-        input.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter') {
-            e.preventDefault();
-            const first = $('a.cmd-item', out);
-            if (first) { dlg.close(); first.click(); }
-          }
-        });
+        input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); $('a', out)?.click(); } });
         draw();
       },
     });
   }
   $('#btn-search').addEventListener('click', openSearch);
   document.addEventListener('keydown', (e) => {
-    const isCmdK = (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k';
-    const isSlash = e.key === '/' && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName);
-    if ((isCmdK || isSlash) && !$('#shell').hidden) {
-      e.preventDefault();
-      openSearch();
-    }
+    if (e.key === '/' && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName) && !$('#shell').hidden) { e.preventDefault(); openSearch(); }
   });
 
   $('#btn-new-task').addEventListener('click', () => App.openTaskForm({ apartmentId: route().name === 'apartments' ? route().id : null }));
@@ -536,121 +490,145 @@
     if (isManager()) sb.rpc('scan_alerts', { p_org: S.org.id }).then(() => {}, () => {});
   }
 
-  window.App = { S, H, views, isManager, isAdmin, refresh, render, renderShell, go, route, taskHref, closeTaskOverlay, upsertLocal, logEvent };
+  // ---------------------------------------------------------------------------
+  // Plans, trial and feature gates (mirrors supabase/patches/04_plans.sql)
+  // ---------------------------------------------------------------------------
+  const CONTACT = { phone: '+995599000000', wa: '995599000000' };
+  const ALL_FEATURES = ['profile', 'contracts', 'matchmaker', 'reminders', 'selections', 'analytics', 'export', 'whitelabel'];
+  // apartments / seats: null = unlimited. A seat is an owner/admin/manager member; field staff are free.
+  const PLANS = {
+    trial:   { id: 'trial', name: 'საცდელი', price: 0, apartments: 50, seats: 3, features: ALL_FEATURES },
+    starter: { id: 'starter', name: 'დამწყები', price: 0, apartments: 10, seats: 1, features: [],
+      bullets: ['10 აქტიური ობიექტი', 'ჭკვიანი ბმულები', 'საკომისიოს კალკულატორი'] },
+    pro:     { id: 'pro', name: 'პრო აგენტი', price: 29, apartments: 50, seats: 1, features: ['profile', 'contracts', 'matchmaker', 'reminders'],
+      bullets: ['50 აქტიური ობიექტი', 'ორენოვანი ხელშეკრულებები', 'ბინის შერჩევა კლიენტის მოთხოვნით', 'ვადის გასვლის შეხსენებები'] },
+    top:     { id: 'top', name: 'ტოპ აგენტი', price: 69, apartments: 150, seats: 3, features: ['profile', 'contracts', 'matchmaker', 'reminders', 'selections', 'analytics', 'export'],
+      bullets: ['150 აქტიური ობიექტი', '3 სამუშაო ადგილი', 'მრავალობიექტიანი გვერდი', 'ანალიტიკა და ექსპორტი'] },
+    agency:  { id: 'agency', name: 'სააგენტო', price: 149, apartments: null, seats: null, features: ALL_FEATURES,
+      bullets: ['ულიმიტო ობიექტები', '10+ აგენტის სამუშაო ადგილი', 'White-label ბრენდირება', 'პერსონალური მენეჯერი'] },
+    locked:  { id: 'locked', name: 'დაბლოკილი', price: 0, apartments: 0, seats: 0, features: [] },
+  };
+  const PLAN_ORDER = ['starter', 'pro', 'top', 'agency'];
+  const FEATURE_LABEL = {
+    profile: 'პირადი პროფილი და ლოგო', contracts: 'ორენოვანი ხელშეკრულებები', matchmaker: 'კლიენტის მოთხოვნით ბინის შერჩევა',
+    reminders: 'ვადის გასვლის შეხსენებები', selections: 'მრავალობიექტიანი პერსონალური გვერდი', analytics: 'საკომისიოების დეტალური ანალიტიკა',
+    export: 'ექსპორტი Excel-ში', whitelabel: 'White-label ბრენდირება',
+  };
+
+  function planState() {
+    const o = S.org || {};
+    const key = PLANS[o.plan] && o.plan !== 'locked' ? o.plan : 'trial';
+    let eff = key, daysLeft = null, lapsed = false;
+    const end = key === 'trial' ? o.trial_ends_at : key === 'starter' ? null : o.plan_expires_at;
+    if (end) {
+      const ms = new Date(end) - Date.now();
+      daysLeft = Math.max(0, Math.ceil(ms / 864e5));
+      if (ms < 0) { if (key === 'trial') eff = 'locked'; else { eff = 'starter'; lapsed = true; } }
+    }
+    return { key, eff, plan: PLANS[eff], daysLeft, end, lapsed, locked: eff === 'locked', trial: key === 'trial' };
+  }
+  const activeApartments = () => (S.data?.apartments || []).filter(a => a.status !== 'archived' && !a.is_archived).length;
+  const seatsUsed = () => (S.data?.members || []).filter(m => m.role !== 'staff').length + (S.seatInvites || 0);
+  const can = (feature) => planState().plan.features.includes(feature);
+  const minPlanFor = (pred) => PLAN_ORDER.find(id => pred(PLANS[id])) || 'agency';
+
+  function waLink(plan) {
+    const text = plan ? `გამარჯობა! მინდა რიგზეას „${plan.name}“ პაკეტის გააქტიურება. სამუშაო სივრცე: ${S.org?.name || ''}.` : 'გამარჯობა! მინდა რიგზეას პაკეტის არჩევა.';
+    return `https://wa.me/${CONTACT.wa}?text=${encodeURIComponent(text)}`;
+  }
+
+  function planCardsHtml(recId, currentId) {
+    return `<div class="plan-grid">${PLAN_ORDER.map(id => {
+      const p = PLANS[id];
+      const cur = id === currentId, rec = id === recId && !cur;
+      return `<div class="plan-card ${rec ? 'is-rec' : ''} ${cur ? 'is-current' : ''}">
+        ${rec ? '<span class="plan-tag">შენთვის შესაფერისი</span>' : cur ? '<span class="plan-tag plan-tag-cur">შენი პაკეტი</span>' : ''}
+        <h3>${esc(p.name)}</h3>
+        <div class="plan-price">${p.price ? `${p.price} ₾<small> / თვე</small>` : '0 ₾<small> / უფასო</small>'}</div>
+        <ul>${p.bullets.map(b => `<li>${esc(b)}</li>`).join('')}</ul>
+        ${cur ? '' : p.price ? `<a class="btn ${rec ? 'btn-primary' : 'btn-secondary'} btn-sm" href="${esc(waLink(p))}" target="_blank" rel="noopener">${icon('whatsapp', 16)} აირჩიე</a>` : ''}
+      </div>`;
+    }).join('')}</div>`;
+  }
+
+  // reason: { kind: 'apartments'|'seats'|'feature'|'locked'|'info', feature?, count? }
+  function openUpgrade(reason = { kind: 'info' }) {
+    const st = planState();
+    let title = 'აირჩიე შენი პაკეტი', text = 'გადადი უფრო დიდ პაკეტზე და გახსენი მეტი შესაძლებლობა.', rec = 'pro';
+    if (st.locked || reason.kind === 'locked') {
+      title = 'საცდელი პერიოდი დასრულდა';
+      text = 'შენი მონაცემები უსაფრთხოდაა და ნახვა შეგიძლია. ახალი ობიექტების დასამატებლად და ფუნქციების გასახსნელად აირჩიე პაკეტი.';
+    } else if (reason.kind === 'apartments') {
+      const n = reason.count ?? activeApartments();
+      title = 'ობიექტების ლიმიტი ამოიწურა';
+      text = `${st.plan.name} პაკეტში მაქსიმუმ ${st.plan.apartments} აქტიური ობიექტია, ახლა გაქვს ${n}. გადადი პაკეტზე, რომელიც მეტს იტევს.`;
+      rec = minPlanFor(p => p.apartments === null || p.apartments > n);
+    } else if (reason.kind === 'seats') {
+      title = 'გუნდის ლიმიტი ამოიწურა';
+      text = `${st.plan.name} პაკეტში ${st.plan.seats} სამუშაო ადგილია. თანამშრომლის (staff) მოწვევა ლიმიტში არ ითვლება.`;
+      rec = minPlanFor(p => p.seats === null || p.seats > seatsUsed());
+    } else if (reason.kind === 'feature') {
+      rec = minPlanFor(p => p.features.includes(reason.feature));
+      title = 'ეს ფუნქცია სხვა პაკეტშია';
+      text = `„${FEATURE_LABEL[reason.feature] || reason.feature}“ ხელმისაწვდომია პაკეტიდან „${PLANS[rec].name}“.`;
+    }
+    return R.dialog({
+      title, subtitle: text, wide: true,
+      body: `${planCardsHtml(rec, st.key === 'trial' ? null : st.eff)}
+        <p class="plan-contact">გააქტიურება მარტივია: მოგვწერე WhatsApp-ში ან დარეკე <a href="tel:${CONTACT.phone}">${CONTACT.phone}</a> და პაკეტს იმავე დღეს ჩავრთავთ. პორტფელის გადმოტანაში უფასოდ დაგეხმარებით.</p>
+        <div class="plan-cta"><a class="btn btn-primary" href="${esc(waLink(PLANS[rec]))}" target="_blank" rel="noopener">${icon('whatsapp', 16)} მოგვწერე WhatsApp-ში</a><button type="button" class="btn btn-ghost" data-close>მოგვიანებით</button></div>`,
+    });
+  }
+
+  // True when another apartment fits the plan; otherwise opens the upgrade dialog and returns false.
+  function guardLimit(kind, add = 1) {
+    if (!S.data || !S.org) return true;
+    const st = planState();
+    if (kind === 'apartments' || kind === 'seats') {
+      const cap = st.plan[kind];
+      const used = kind === 'apartments' ? activeApartments() : seatsUsed();
+      if (cap === null || used + add <= cap) return true;
+      openUpgrade(st.locked ? { kind: 'locked' } : { kind, count: used });
+      return false;
+    }
+    return true;
+  }
+  // Feature gate with dialog: if (!App.guardFeature('export')) return;
+  function guardFeature(feature) {
+    if (can(feature)) return true;
+    openUpgrade(planState().locked ? { kind: 'locked' } : { kind: 'feature', feature });
+    return false;
+  }
+
+  function renderPlanBanner() {
+    let el = $('#plan-banner');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'plan-banner';
+      $('.layout').before(el);
+    }
+    const st = planState();
+    let tone = null, msg = '', cta = 'პაკეტის არჩევა';
+    if (st.locked) { tone = 'danger'; msg = 'საცდელი პერიოდი დასრულდა. მონაცემების ნახვა შეგიძლია, ახალი ობიექტებისა და ფუნქციების გასახსნელად აირჩიე პაკეტი.'; }
+    else if (st.lapsed) { tone = 'warn'; msg = `„${PLANS[st.key].name}“ პაკეტის ვადა ამოიწურა და ანგარიში დამწყები პაკეტზე გადავიდა. გასაგრძელებლად დაგვიკავშირდი.`; cta = 'განახლება'; }
+    else if (st.trial) {
+      tone = st.daysLeft !== null && st.daysLeft <= 3 ? 'warn' : 'info';
+      msg = st.daysLeft === null ? 'საცდელი პერიოდი: ყველა ფუნქცია ღიაა.' : `საცდელი პერიოდი: დარჩენილია ${st.daysLeft} დღე. ყველა ფუნქცია ღიაა.`;
+    } else if (st.daysLeft !== null && st.daysLeft <= 7) { tone = 'warn'; msg = `„${st.plan.name}“ პაკეტი მთავრდება ${st.daysLeft} დღეში.`; cta = 'განახლება'; }
+    if (!tone) { el.hidden = true; el.innerHTML = ''; return; }
+    el.hidden = false;
+    el.className = `plan-banner plan-banner-${tone}`;
+    el.setAttribute('role', 'status');
+    el.innerHTML = `<span>${esc(msg)}</span><button type="button" class="btn btn-sm ${tone === 'danger' ? 'btn-danger' : 'btn-secondary'}" id="btn-plan-banner">${cta}</button>`;
+    $('#btn-plan-banner').onclick = () => openUpgrade(st.locked ? { kind: 'locked' } : { kind: 'info' });
+  }
+
+  window.App = { S, H, views, isManager, isAdmin, refresh, render, renderShell, go, route, taskHref, closeTaskOverlay, upsertLocal, logEvent,
+    PLANS, PLAN_ORDER, FEATURE_LABEL, CONTACT, planState, can, guardLimit, guardFeature, openUpgrade, planCardsHtml, waLink, activeApartments, seatsUsed };
 
   document.addEventListener('DOMContentLoaded', () => {
     hydrateIcons();
     legacyRedirect();
     boot();
   });
-
-
-  /* ==========================================================================
-     KOKONUT UI: APP PARTICLES & HOLD-TO-CONFIRM
-     ========================================================================== */
-
-  function triggerAppParticleBurst(x, y, count = 24) {
-    const colors = ['#0a5c44', '#10b981', '#00f59b', '#ffd700', '#34d399'];
-    for (let i = 0; i < count; i++) {
-      const p = document.createElement('div');
-      p.className = 'app-burst-particle';
-      const size = Math.random() * 6 + 3;
-      const color = colors[Math.floor(Math.random() * colors.length)];
-      p.style.width = size + 'px';
-      p.style.height = size + 'px';
-      p.style.backgroundColor = color;
-      p.style.left = x + 'px';
-      p.style.top = y + 'px';
-      p.style.boxShadow = '0 0 ' + size + 'px ' + color;
-      document.body.appendChild(p);
-
-      const angle = Math.random() * Math.PI * 2;
-      const speed = Math.random() * 90 + 35;
-      const vx = Math.cos(angle) * speed;
-      const vy = Math.sin(angle) * speed;
-      const duration = Math.random() * 500 + 400;
-      const start = performance.now();
-
-      function step(now) {
-        const elapsed = now - start;
-        const progress = elapsed / duration;
-        if (progress >= 1) {
-          if (p.parentNode) p.parentNode.removeChild(p);
-          return;
-        }
-        const curX = x + vx * progress;
-        const curY = y + vy * progress + (progress * progress * 60);
-        p.style.transform = 'translate(' + (curX - x) + 'px, ' + (curY - y) + 'px) scale(' + (1 - progress * 0.6) + ')';
-        p.style.opacity = 1 - progress;
-        requestAnimationFrame(step);
-      }
-      requestAnimationFrame(step);
-    }
-  }
-
-  // Bind particles to action buttons in app
-  document.addEventListener('click', (e) => {
-    const btn = e.target.closest('#btn-new-task, .btn-primary, [data-action="complete-task"]');
-    if (btn) {
-      const r = btn.getBoundingClientRect();
-      triggerAppParticleBurst(e.clientX || (r.left + r.width / 2), e.clientY || (r.top + r.height / 2), 22);
-    }
-  });
-
-  // Hold-to-confirm implementation for safe operations
-  function initHoldButtons() {
-    document.addEventListener('pointerdown', (e) => {
-      const btn = e.target.closest('.btn-hold, [data-hold]');
-      if (!btn) return;
-
-      const duration = parseInt(btn.dataset.holdDuration || '1000', 10);
-      let ring = btn.querySelector('.hold-ring-fill');
-      let bar = btn.querySelector('.hold-progress-bar');
-
-      if (!ring && !bar) {
-        bar = document.createElement('div');
-        bar.className = 'hold-progress-bar';
-        btn.appendChild(bar);
-      }
-
-      btn.classList.add('is-holding');
-      const start = performance.now();
-      let animId = null;
-
-      function onHoldProgress(now) {
-        const elapsed = now - start;
-        const pct = Math.min(100, (elapsed / duration) * 100);
-        if (bar) bar.style.width = pct + '%';
-        if (ring) ring.style.strokeDashoffset = (56.5 * (1 - pct / 100)) + '';
-
-        if (pct >= 100) {
-          btn.classList.remove('is-holding');
-          if (bar) bar.style.width = '0%';
-          const r = btn.getBoundingClientRect();
-          triggerAppParticleBurst(r.left + r.width / 2, r.top + r.height / 2, 32);
-          if (typeof navigator.vibrate === 'function') navigator.vibrate([40, 30, 40]);
-          btn.dispatchEvent(new CustomEvent('hold-complete', { bubbles: true }));
-          return;
-        }
-        animId = requestAnimationFrame(onHoldProgress);
-      }
-
-      animId = requestAnimationFrame(onHoldProgress);
-
-      function cancelHold() {
-        btn.classList.remove('is-holding');
-        if (animId) cancelAnimationFrame(animId);
-        if (bar) bar.style.width = '0%';
-        if (ring) ring.style.strokeDashoffset = '56.5';
-        window.removeEventListener('pointerup', cancelHold);
-        window.removeEventListener('pointercancel', cancelHold);
-      }
-
-      window.addEventListener('pointerup', cancelHold, { once: true });
-      window.addEventListener('pointercancel', cancelHold, { once: true });
-    });
-  }
-
-  initHoldButtons();
-
 })();

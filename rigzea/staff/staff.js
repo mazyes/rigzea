@@ -155,7 +155,7 @@
       run(b, async () => {
         await save(t, args);
         if (status === 'done') location.hash = '';
-      }, { success: { in_progress: 'სამუშაო დაიწყო', done: 'სამუშაო დასრულდა, მადლობა!', blocked: 'სამუშაო შეჩერდა, მენეჯერი შეტყობინებას მიიღებს' }[status] });
+      }, { success: { in_progress: 'სამუშაო დაიწყო', done: 'სამუშაო დასრულდა — მადლობა!', blocked: 'სამუშაო შეჩერდა, მენეჯერი შეტყობინებას მიიღებს' }[status] });
     }));
   }
 
@@ -174,7 +174,7 @@
         <label class="field"><span class="field-label">რა მოხდა?</span><input name="title" required maxlength="120" placeholder="მაგ.: ონკანი ჟონავს" data-error="მოკლედ აღწერე პრობლემა." /></label>
         <label class="field"><span class="field-label">დეტალები</span><textarea name="description" rows="3"></textarea></label>
         <label class="field"><span class="field-label">ფოტო</span><input type="file" name="photo" accept="image/*" capture="environment" /></label>
-        <label class="check"><input type="checkbox" name="urgent" /><span>სასწრაფოა: სტუმარი ვერ იცხოვრებს ან ზიანი იზრდება</span></label></div>`,
+        <label class="check"><input type="checkbox" name="urgent" /><span>სასწრაფოა — სტუმარი ვერ იცხოვრებს ან ზიანი იზრდება</span></label></div>`,
       onSubmit: async (form, v) => {
         if (!form.dataset.url && form.photo.files[0]) form.dataset.url = await R.uploadFile(t.organization_id, `tasks/${t.id}`, form.photo.files[0]);
         await q(sb.rpc('staff_report_problem', { p_task: t.id, p_title: v.title.trim(), p_description: v.description.trim() || null, p_photo_url: form.dataset.url || null, p_urgent: Boolean(v.urgent) }));

@@ -12,7 +12,6 @@ function serve(port = 4173) {
   const server = http.createServer((req, res) => {
     let p = decodeURIComponent(new URL(req.url, 'http://x').pathname);
     let file = path.join(ROOT, p);
-    if (/^\/p\/[^/.]+\/?$/.test(p)) file = path.join(ROOT, 'p', 'index.html'); // same rewrite as vercel.json
     if (fs.existsSync(file) && fs.statSync(file).isDirectory()) file = path.join(file, 'index.html');
     if (!fs.existsSync(file)) { res.writeHead(404); return res.end('not found'); }
     res.writeHead(200, { 'Content-Type': TYPES[path.extname(file)] || 'application/octet-stream' });
