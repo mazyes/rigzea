@@ -1,5 +1,5 @@
 /**
- * RIGZEA 3.0 — LUXURY MOTION & INTERACTION ENGINE
+ * RIGZEA 3.0 - LUXURY MOTION & INTERACTION ENGINE
  * Elite Creative-Technologist Motion Suite
  * Lenis Smooth Scroll + GSAP 3.12 + ScrollTrigger Architecture
  * 
@@ -335,7 +335,17 @@
         wakePhoneLoop();
       });
 
+      let phonePressed = false;
+      phoneContainer.addEventListener('pointerdown', () => {
+        phonePressed = true;
+        targetRotX = currRotX;
+        targetRotY = currRotY;
+        targetTransY = currTransY;
+      });
+      window.addEventListener('pointerup', () => { phonePressed = false; });
+
       phoneContainer.addEventListener('pointermove', (e) => {
+        if (phonePressed) return;
         if (!phoneRect) phoneRect = phone.getBoundingClientRect();
         const normX = (e.clientX - phoneRect.left - phoneRect.width / 2) / (phoneRect.width / 2);
         const normY = (e.clientY - phoneRect.top - phoneRect.height / 2) / (phoneRect.height / 2);
@@ -856,7 +866,7 @@
 • ცენტრალური გათბობა, კონდიციონერი, ჭურჭლის სარეცხი მანქანა
 • აივანი ვაკის პარკის ხედით
 
-💳 ფასი: $950 / თვეში
+💳 ფასი: $950 თვეში
 📌 პირობები: პირველი და ბოლო თვის გადახდით + დეპოზიტი $950
 🐾 შინაური ცხოველები: შეთანხმებით
 
@@ -865,7 +875,7 @@
 
 📞 WhatsApp: +995 599 12 34 56 (გიორგი)`,
 
-    whatsapp: `მოგესალმებით მარიამ! 🌿
+    whatsapp: `მოგესალმებით, მარიამ! 🌿
 
 თქვენი მოთხოვნის შესაბამისად, შეგირჩიეთ იდეალური ვარიანტი:
 
@@ -873,12 +883,12 @@
 📐 85 მ², 2 ოთახი
 💵 ფასი: $950/თვე (პირველი და ბოლო თვის გადახდით)
 
-ბინის ყველა HD ფოტო, ვიდეო-ტური, ზუსტი ლოკაცია და დეტალური პირობები შეგიძლიათ ნახოთ ამ ბმულზე:
+ბინის ყველა HD ფოტო, ვიდეოტური, ზუსტი ლოკაცია და დეტალური პირობები შეგიძლიათ ნახოთ ამ ბმულზე:
 👉 rigzea.ge/p/vake-loft-42
 
 თუ მოგეწონებათ, მომწერეთ და დღესვე შეგვიძლია ადგილზე ნახვა! 🤝`,
 
-    cobroker: `სალამი კოლეგა! 🤝 მყავს აქტუალური ობიექტი, თანამშრომლობაზე გახსნილი ვარ (50/50 საკომისიოს გაყოფით):
+    cobroker: `სალამი, კოლეგა! 🤝 მაქვს აქტუალური ობიექტი და მზად ვარ თანამშრომლობისთვის (საკომისიოს გაყოფა 50/50):
 
 📍 ლოკაცია: ვაკე, ჭავჭავაძე (ვაკის პარკი)
 🏠 ტიპი: 2 ოთახი, 85 მ²
@@ -944,19 +954,19 @@
   const matchData = {
     vake: {
       req: 'ვაკე, ჭავჭავაძე · $950-მდე · 2 ოთახი · ძაღლით',
-      score: '98% იდეალური თანხვედრა',
+      score: '98% თანხვედრა',
       title: 'ვაკე, ჭავჭავაძის გამზ. #42',
       details: '85 მ² · $950/თვე · ცხოველები დაშვებულია'
     },
     saburtalo: {
       req: 'საბურთალო, ყაზბეგი · $700-მდე · 2 ოთახი · მეტროსთან',
-      score: '96% იდეალური თანხვედრა',
+      score: '96% თანხვედრა',
       title: 'საბურთალო, ალ. ყაზბეგის #14',
       details: '62 მ² · $650/თვე · მეტრო დელისთან 3 წუთი'
     },
     batumi: {
       req: 'ბათუმი, ორბი სითი · $800-მდე · ზღვის პირველი ზოლი',
-      score: '99% იდეალური თანხვედრა',
+      score: '99% თანხვედრა',
       title: 'ბათუმი, Orbi City Block A',
       details: '48 მ² · $750/თვე · პანორამული ზღვის ხედი'
     }
@@ -999,9 +1009,11 @@
         priceEl.textContent = targetPrice;
       });
 
-      const periodLabels = document.querySelectorAll('.lx-plan-period[data-monthly-period]');
-      periodLabels.forEach(label => {
-        label.textContent = isYearly ? '/ წელი' : '/ თვე';
+      // the free plan keeps its own label; paid plans switch between month and year
+      document.querySelectorAll('.lx-plan-period[data-monthly-period]').forEach(label => {
+        if (!label.dataset.monthlyText) label.dataset.monthlyText = label.textContent;
+        const isFree = label.previousElementSibling && label.previousElementSibling.dataset.yearly === label.previousElementSibling.dataset.monthly;
+        label.textContent = isYearly && !isFree ? '/ წელი' : label.dataset.monthlyText;
       });
     });
   });
@@ -1036,4 +1048,386 @@
     });
   });
 
+  // =========================================================================
+  // 17. HERO HEADLINE WORD ROTATOR (21st.dev style)
+  // =========================================================================
+  const wordRotator = document.querySelector('#hero-word-rotator');
+  if (wordRotator) {
+    const words = wordRotator.querySelectorAll('.word-item');
+    let activeWordIndex = 0;
+
+    setInterval(() => {
+      if (document.hidden) return;
+      words[activeWordIndex].classList.remove('active');
+      activeWordIndex = (activeWordIndex + 1) % words.length;
+      words[activeWordIndex].classList.add('active');
+    }, 3200);
+  }
+
+  // =========================================================================
+  // 18. MAGIC UI LIVE ACTIVITY STREAM TICKER (Tbilisi & Batumi real-time activity)
+  // =========================================================================
+  const liveTickerText = document.querySelector('#lx-ticker-text');
+  if (liveTickerText) {
+    const liveActivities = [
+      { name: 'გიორგი მ. (ვაკე)', action: 'ჭკვიანი ბმული გაიგზავნა WhatsApp‑ში', time: '2 წთ წინ' },
+      { name: 'ნინო კ. (ბათუმი)', action: 'KA/EN ხელშეკრულება მომზადდა', time: '5 წთ წინ' },
+      { name: 'დავით ბ. (საბურთალო)', action: 'დახურა გარიგება · საკომისიო +$475', time: '9 წთ წინ' },
+      { name: 'მარიამ ხ. (ვერა)', action: 'კლიენტმა 3 ბინის ვიტრინა ნახა', time: '14 წთ წინ' },
+      { name: 'ლევან შ. (ორთაჭალა)', action: 'Facebook‑პოსტი წამებში მომზადდა', time: '21 წთ წინ' }
+    ];
+
+    let actIdx = 0;
+    setInterval(() => {
+      if (document.hidden) return;
+      actIdx = (actIdx + 1) % liveActivities.length;
+      const act = liveActivities[actIdx];
+
+      liveTickerText.style.opacity = '0';
+      liveTickerText.style.transform = 'translateY(-4px)';
+      liveTickerText.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
+
+      setTimeout(() => {
+        liveTickerText.innerHTML = `
+          <span class="lx-ticker-name">${act.name}</span> · 
+          <span class="lx-ticker-action">${act.action}</span> 
+          <span class="lx-ticker-time">(${act.time})</span>
+        `;
+        liveTickerText.style.opacity = '1';
+        liveTickerText.style.transform = 'translateY(0)';
+      }, 260);
+    }, 4200);
+  }
+
+  // =========================================================================
+  // 19. BENCHO INTERACTIVE DYNAMIC ISLAND & HERO PHONE GALLERY
+  // =========================================================================
+  const dynamicIsland = document.querySelector('#hero-dynamic-island');
+  const diLiveText = dynamicIsland?.querySelector('.di-live-text');
+
+  if (dynamicIsland && diLiveText) {
+    const islandAlerts = [
+      '⚡ WhatsApp: ახალი ჯავშანი ვაკეში $950',
+      '🎉 საკომისიო: +₾1,292 დაფიქსირდა',
+      '📄 KA/EN ხელშეკრულება ხელმოსაწერად მზადაა',
+      '👀 კლიენტმა გახსნა ჭკვიანი ბმული'
+    ];
+
+    let islandIdx = 0;
+    setInterval(() => {
+      if (document.hidden) return;
+      islandIdx = (islandIdx + 1) % islandAlerts.length;
+      diLiveText.textContent = islandAlerts[islandIdx];
+    }, 4500);
+
+    dynamicIsland.addEventListener('click', () => {
+      dynamicIsland.classList.toggle('is-expanded');
+    });
+  }
+
+  // Hero Phone Gallery Switcher
+  const phonePhoto = document.querySelector('#phone-main-photo');
+  const photoDots = document.querySelectorAll('.lx-photo-dot');
+  const apartmentPhotos = [
+    'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=720&q=85',
+    'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=720&q=85',
+    'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=720&q=85'
+  ];
+
+  photoDots.forEach(dot => {
+    dot.addEventListener('click', (e) => {
+      e.stopPropagation();
+      photoDots.forEach(d => d.classList.remove('active'));
+      dot.classList.add('active');
+      const idx = parseInt(dot.dataset.imgIdx || '0', 10);
+      if (phonePhoto && apartmentPhotos[idx]) {
+        phonePhoto.style.opacity = '0.6';
+        phonePhoto.src = apartmentPhotos[idx];
+        setTimeout(() => { phonePhoto.style.opacity = '1'; }, 180);
+      }
+    });
+  });
+
+  // Hero Phone Quick Link Copy
+  const phoneCopyLinkBtn = document.querySelector('#phone-copy-link-btn');
+  if (phoneCopyLinkBtn) {
+    phoneCopyLinkBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const url = 'https://rigzea.ge/p/vake-loft-42';
+      navigator.clipboard?.writeText(url).catch(() => {});
+      phoneCopyLinkBtn.style.color = '#fff';
+      phoneCopyLinkBtn.style.background = 'rgba(0, 245, 155, 0.35)';
+      setTimeout(() => {
+        phoneCopyLinkBtn.style.color = '';
+        phoneCopyLinkBtn.style.background = '';
+      }, 1500);
+    });
+  }
+
+  // =========================================================================
+  // 20. BENCHO.DEV INTERACTIVE BEFORE / AFTER SPLIT COMPARISON SLIDER
+  // =========================================================================
+  const splitStage = document.querySelector('#lx-split-stage');
+  const splitHandle = document.querySelector('#lx-split-handle');
+  const splitRigzeaLayer = document.querySelector('#lx-split-rigzea-layer');
+  const compareModeBtns = document.querySelectorAll('.lx-compare-mode-btn');
+
+  if (splitStage && splitHandle && splitRigzeaLayer) {
+    let isSplitDragging = false;
+    let splitPosPercent = 50; // default 50%
+
+    function setSplitPosition(percent, smooth = false) {
+      splitPosPercent = Math.max(2, Math.min(98, percent));
+      
+      if (smooth) {
+        splitRigzeaLayer.style.transition = 'clip-path 0.35s cubic-bezier(0.16, 1, 0.3, 1)';
+        splitHandle.style.transition = 'left 0.35s cubic-bezier(0.16, 1, 0.3, 1)';
+        setTimeout(() => {
+          splitRigzeaLayer.style.transition = 'none';
+          splitHandle.style.transition = 'none';
+        }, 360);
+      } else {
+        splitRigzeaLayer.style.transition = 'none';
+        splitHandle.style.transition = 'none';
+      }
+
+      splitRigzeaLayer.style.clipPath = `polygon(0 0, ${splitPosPercent}% 0, ${splitPosPercent}% 100%, 0 100%)`;
+      splitHandle.style.left = `${splitPosPercent}%`;
+      splitHandle.setAttribute('aria-valuenow', Math.round(splitPosPercent));
+    }
+
+    function onPointerMove(e) {
+      if (!isSplitDragging) return;
+      const rect = splitStage.getBoundingClientRect();
+      const clientX = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : rect.left + rect.width / 2);
+      const relativeX = clientX - rect.left;
+      const percent = (relativeX / rect.width) * 100;
+      setSplitPosition(percent, false);
+    }
+
+    function onPointerUp() {
+      if (isSplitDragging) {
+        isSplitDragging = false;
+        splitHandle.classList.remove('is-dragging');
+        window.removeEventListener('pointermove', onPointerMove);
+        window.removeEventListener('pointerup', onPointerUp);
+        window.removeEventListener('touchmove', onPointerMove);
+        window.removeEventListener('touchend', onPointerUp);
+      }
+    }
+
+    splitHandle.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      isSplitDragging = true;
+      splitHandle.classList.add('is-dragging');
+      window.addEventListener('pointermove', onPointerMove);
+      window.addEventListener('pointerup', onPointerUp);
+    });
+
+    splitStage.addEventListener('pointerdown', (e) => {
+      if (e.target.closest('#lx-split-handle')) return;
+      const rect = splitStage.getBoundingClientRect();
+      const percent = ((e.clientX - rect.left) / rect.width) * 100;
+      setSplitPosition(percent, true);
+    });
+
+    // Touch support for mobile devices
+    splitHandle.addEventListener('touchstart', (e) => {
+      isSplitDragging = true;
+      splitHandle.classList.add('is-dragging');
+      window.addEventListener('touchmove', onPointerMove, { passive: true });
+      window.addEventListener('touchend', onPointerUp);
+    }, { passive: true });
+
+    // Mode preset buttons
+    compareModeBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        compareModeBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const val = parseFloat(btn.dataset.compareVal || '50');
+        setSplitPosition(val, true);
+      });
+    });
+
+    // Keyboard accessibility for slider
+    splitHandle.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
+        e.preventDefault();
+        setSplitPosition(splitPosPercent - 5, true);
+      } else if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        setSplitPosition(splitPosPercent + 5, true);
+      }
+    });
+
+    // Initialize at 50%
+    setSplitPosition(50, false);
+  }
+
+
+
+  /* ==========================================================================
+     KOKONUT UI & SHADCN SPACE JAVASCRIPT ENHANCEMENTS
+     ========================================================================== */
+
+  // 1. KokonutUI: particle-button Engine
+  function createParticleBurst(x, y, count = 28) {
+    const colors = ['#00f59b', '#10b981', '#ffd700', '#ffffff', '#34d399', '#6ee7b7'];
+    const container = document.body;
+
+    for (let i = 0; i < count; i++) {
+      const particle = document.createElement('div');
+      particle.className = 'lx-burst-particle';
+      
+      const size = Math.random() * 7 + 3;
+      const color = colors[Math.floor(Math.random() * colors.length)];
+      
+      particle.style.width = size + 'px';
+      particle.style.height = size + 'px';
+      particle.style.backgroundColor = color;
+      particle.style.left = x + 'px';
+      particle.style.top = y + 'px';
+      particle.style.zIndex = '999999';
+      particle.style.boxShadow = '0 0 ' + (size * 1.5) + 'px ' + color;
+
+      container.appendChild(particle);
+
+      const angle = Math.random() * Math.PI * 2;
+      const speed = Math.random() * 110 + 45;
+      const vx = Math.cos(angle) * speed;
+      const vy = Math.sin(angle) * speed;
+      const duration = Math.random() * 600 + 450;
+      const startTime = performance.now();
+
+      function update(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = elapsed / duration;
+
+        if (progress >= 1) {
+          if (particle.parentNode) particle.parentNode.removeChild(particle);
+          return;
+        }
+
+        // Ease out quadratic with slight gravity
+        const currentX = x + vx * progress * (1 - progress * 0.4);
+        const currentY = y + vy * progress + (progress * progress * 80);
+        const scale = 1 - progress * 0.7;
+        const opacity = 1 - Math.pow(progress, 1.8);
+
+        particle.style.transform = 'translate(' + (currentX - x) + 'px, ' + (currentY - y) + 'px) scale(' + scale + ')';
+        particle.style.opacity = opacity;
+
+        requestAnimationFrame(update);
+      }
+
+      requestAnimationFrame(update);
+    }
+  }
+
+  // Bind particle bursts to all primary & interactive buttons
+  document.addEventListener('click', function(e) {
+    const target = e.target.closest('.lx-btn-primary, .lx-particle-btn, .lx-copy-btn, #btn-new-task, .lx-quick-tour-btn');
+    if (target) {
+      const rect = target.getBoundingClientRect();
+      const clickX = e.clientX || (rect.left + rect.width / 2);
+      const clickY = e.clientY || (rect.top + rect.height / 2);
+      createParticleBurst(clickX, clickY, 26);
+    }
+  });
+
+  // 2. Micro-Toast Notification Utility
+  window.showLuxuryToast = function(message) {
+    let toast = document.getElementById('lx-global-toast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'lx-global-toast';
+      toast.className = 'lx-toast';
+      document.body.appendChild(toast);
+    }
+    toast.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00f59b" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> <span>' + message + '</span>';
+    toast.classList.add('is-visible');
+
+    clearTimeout(toast._timer);
+    toast._timer = setTimeout(() => {
+      toast.classList.remove('is-visible');
+    }, 3200);
+  };
+
+  // 3. ShadcnSpace hero-02: Interactive Tour Modal Handler
+  function initTourModal() {
+    const tourBtns = document.querySelectorAll('.lx-quick-tour-btn');
+    const modalBackdrop = document.getElementById('tour-modal-backdrop');
+    const modalCloseBtn = document.getElementById('tour-modal-close');
+    const modalConfirmBtn = document.getElementById('tour-modal-confirm');
+    const slotBtns = document.querySelectorAll('.lx-time-slot-btn');
+
+    if (!modalBackdrop) return;
+
+    let modalOpener = null;
+
+    tourBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        modalOpener = btn;
+        modalBackdrop.classList.add('is-open');
+        if (modalCloseBtn) modalCloseBtn.focus();
+      });
+    });
+
+    // Tab stays inside the open dialog; Escape closes it and hands focus back to the button that opened it
+    document.addEventListener('keydown', (e) => {
+      if (!modalBackdrop.classList.contains('is-open')) return;
+      if (e.key === 'Tab') {
+        const stops = modalBackdrop.querySelectorAll('button, a[href]');
+        const first = stops[0], last = stops[stops.length - 1];
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+        return;
+      }
+      if (e.key !== 'Escape') return;
+      modalBackdrop.classList.remove('is-open');
+      if (modalOpener) modalOpener.focus();
+    });
+
+    if (modalCloseBtn) {
+      modalCloseBtn.addEventListener('click', () => {
+        modalBackdrop.classList.remove('is-open');
+      });
+    }
+
+    modalBackdrop.addEventListener('click', (e) => {
+      if (e.target === modalBackdrop) {
+        modalBackdrop.classList.remove('is-open');
+      }
+    });
+
+    slotBtns.forEach(slot => {
+      slot.addEventListener('click', () => {
+        slotBtns.forEach(s => s.classList.remove('is-selected'));
+        slot.classList.add('is-selected');
+      });
+    });
+
+    if (modalConfirmBtn) {
+      modalConfirmBtn.addEventListener('click', (e) => {
+        const selectedSlot = document.querySelector('.lx-time-slot-btn.is-selected');
+        const slotText = selectedSlot ? selectedSlot.textContent : 'დღეს 18:00';
+        modalBackdrop.classList.remove('is-open');
+        
+        const rect = modalConfirmBtn.getBoundingClientRect();
+        createParticleBurst(rect.left + rect.width / 2, rect.top + rect.height / 2, 36);
+        
+        window.showLuxuryToast('✓ ვიზიტი დაჯავშნილია (' + slotText + ')! აგენტი დაგიკავშირდებათ.');
+      });
+    }
+  }
+
+  // Initialize once DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initTourModal);
+  } else {
+    initTourModal();
+  }
+
 })();
+

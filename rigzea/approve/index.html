@@ -71,7 +71,7 @@
         expiredMsg: 'მოთხოვნის ვადა ამოიწურა. სთხოვეთ მმართველს ახალი ბმული.',
         callPrompt: 'კითხვა გაქვთ? დაურეკეთ მმართველს:',
         invalidLink: 'ბმული არასრულია. სთხოვეთ მმართველს ბმულის ხელახლა გამოგზავნა.',
-        notFound: 'მოთხოვნა ვერ მოიძებნა. შესაძლოა გაუქმდა — დაუკავშირდით მმართველს.',
+        notFound: 'მოთხოვნა ვერ მოიძებნა. შესაძლოა გაუქმდა. დაუკავშირდით მმართველს.',
         retry: 'ხელახლა ცდა',
       },
       en: {
@@ -209,7 +209,7 @@
           data.approval.responded_at = new Date().toISOString();
           render();
         } catch (err) {
-          const notRecorded = lang === 'en' ? 'Decision not recorded — please try again.' : 'პასუხი არ დაფიქსირებულა — სცადეთ ხელახლა.';
+          const notRecorded = lang === 'en' ? 'Decision not recorded. please try again.' : 'პასუხი არ დაფიქსირებულა. სცადეთ ხელახლა.';
           render({ confirm: state.confirm, note, error: `${R.friendlyError(err)} ${notRecorded}` });
         } finally {
           btn.dataset.busy = ''; btn.disabled = false; btn.classList.remove('is-busy');

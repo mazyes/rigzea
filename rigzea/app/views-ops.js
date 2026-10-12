@@ -158,9 +158,9 @@
       if (left < 0 || left > 24 * 3600e3 || !tv.needsTurnover) return;
       const leftText = R.span(tv.inTs);
       let why = null;
-      if (!tv.cleaning) why = `Check-in-მდე ${leftText} დარჩა — დასუფთავება არ არის დაგეგმილი`;
-      else if (tv.cleaning.status !== 'done' && !tv.cleaning.assigned_to) why = `Check-in-მდე ${leftText} დარჩა — დასუფთავება ჯერ არ არის დანიშნული`;
-      else if (tv.cleaning.status !== 'done' && left < 6 * 3600e3) why = `Check-in-მდე ${leftText} დარჩა — დასუფთავება არ დასრულებულა`;
+      if (!tv.cleaning) why = `Check-in-მდე ${leftText} დარჩა, დასუფთავება არ არის დაგეგმილი`;
+      else if (tv.cleaning.status !== 'done' && !tv.cleaning.assigned_to) why = `Check-in-მდე ${leftText} დარჩა, დასუფთავება ჯერ არ არის დანიშნული`;
+      else if (tv.cleaning.status !== 'done' && left < 6 * 3600e3) why = `Check-in-მდე ${leftText} დარჩა, დასუფთავება არ დასრულებულა`;
       if (!why) return;
       add({ sev: 'danger', tags: ['urgent', 'today', 'cleaning'], taskId: tv.cleaning?.id, title: `Check-in: ${r.guest_name}`, sub: `${H.aptName(r.apartment_id)} · ${R.time(tv.inTs)}`, why,
         href: tv.cleaning ? App.taskHref(tv.cleaning.id) : `#/apartments/${r.apartment_id}`, action: tv.cleaning ? (tv.cleaning.assigned_to ? null : 'assign') : { plan: r.id } });
@@ -477,7 +477,7 @@
 
   App.openTaskDrawer = (id) => {
     const t = H.task(id);
-    if (!t) { App.closeTaskDrawer(true); toast('საქმე ვერ მოიძებნა — შესაძლოა წაშლილია ან სხვა სამუშაო სივრცეს ეკუთვნის.', { type: 'error' }); App.closeTaskOverlay(); return; }
+    if (!t) { App.closeTaskDrawer(true); toast('საქმე ვერ მოიძებნა. შესაძლოა წაშლილია ან სხვა სამუშაო სივრცეს ეკუთვნის.', { type: 'error' }); App.closeTaskOverlay(); return; }
     if (!drawerEl) {
       returnFocus = document.activeElement;
       drawerEl = document.createElement('div');
@@ -690,7 +690,7 @@
             <label class="choice"><input type="radio" name="cost_mode" value="none" checked><span><strong>ხარჯი ჯერ უცნობია</strong><small>თანხას მოგვიანებით დაამატებ საქმის გვერდიდან.</small></span></label>
             <label class="choice"><input type="radio" name="cost_mode" value="estimate"><span><strong>მხოლოდ შეფასება</strong><small>ინფორმაციისთვის. ხარჯად არ ჩაითვლება და მფლობელს არ ეგზავნება.</small></span></label>
             <label class="choice"><input type="radio" name="cost_mode" value="approval"><span><strong>მფლობელის თანხმობის მოთხოვნა</strong><small>შეიქმნება „შეთავაზებული“ ხარჯი და ბმული მფლობელისთვის. ხარჯად ჩაითვლება მხოლოდ დადასტურების შემდეგ.</small></span></label>
-            <label class="choice"><input type="radio" name="cost_mode" value="expense"><span><strong>უკვე გაწეული ხარჯი</strong><small>თანხა უკვე დაიხარჯა — ჩაიწერება „გაწეულ“ ხარჯად.</small></span></label>
+            <label class="choice"><input type="radio" name="cost_mode" value="expense"><span><strong>უკვე გაწეული ხარჯი</strong><small>თანხა უკვე დაიხარჯა, ჩაიწერება „გაწეულ“ ხარჯად.</small></span></label>
           </div>
           <div class="form-grid" data-cost hidden>
             <label class="field"><span class="field-label">თანხა (₾)</span><input type="number" name="amount" min="0.01" step="0.01" inputmode="decimal" data-error="ჩაწერე თანხა." /></label>
@@ -725,7 +725,7 @@
           const apt = H.apt(form.apartment_id.value);
           const owner = apt && H.owner(apt.owner_id);
           const note = $('[data-owner-note]', form);
-          note.textContent = mode === 'approval' ? (owner ? `თანხმობის ბმული გაეგზავნება: ${owner.name}${owner.phone ? ' (' + owner.phone + ')' : ''}.` : 'ამ ბინას მფლობელი არ ჰყავს მითითებული — თანხმობის მოთხოვნამდე მიუთითე მფლობელი ბინის გვერდზე.') : '';
+          note.textContent = mode === 'approval' ? (owner ? `თანხმობის ბმული გაეგზავნება: ${owner.name}${owner.phone ? ' (' + owner.phone + ')' : ''}.` : 'ამ ბინას მფლობელი არ ჰყავს მითითებული. თანხმობის მოთხოვნამდე მიუთითე მფლობელი ბინის გვერდზე.') : '';
           note.className = 'field-hint span-2' + (mode === 'approval' && !owner ? ' t-danger' : '');
         };
         form.checklist.addEventListener('input', () => { form.checklist.dataset.auto = ''; });
@@ -747,7 +747,7 @@
         const checklist = checklistLines.map(label => ({ label, done: Boolean(oldChecklist.find(i => i.label === label)?.done) }));
         const mode = v.cost_mode || 'none';
         const amount = Number(v.amount || 0);
-        if (mode === 'approval' && !apt.owner_id) throw new Error('ამ ბინას მფლობელი არ ჰყავს — თანხმობის მოთხოვნა შეუძლებელია.');
+        if (mode === 'approval' && !apt.owner_id) throw new Error('ამ ბინას მფლობელი არ ჰყავს. თანხმობის მოთხოვნა შეუძლებელია.');
         if (mode !== 'none' && !(amount > 0)) throw new Error('ჩაწერე თანხა.');
 
         const fields = {
@@ -788,7 +788,7 @@
           }
         } catch (err) {
           App.render();
-          throw new Error(`საქმე შეიქმნა, მაგრამ ხარჯი ვერ შეინახა (${R.friendlyError(err)}). დააჭირე „საქმის შექმნა“-ს ხელახლა — საქმე მეორედ არ შეიქმნება.`);
+          throw new Error(`საქმე შეიქმნა, მაგრამ ხარჯი ვერ შეინახა (${R.friendlyError(err)}). დააჭირე „საქმის შექმნა“-ს ხელახლა. საქმე მეორედ არ შეიქმნება.`);
         }
         App.render();
         toast(`საქმე შეიქმნა: ${row.title}${row.assigned_to ? ' · დაინიშნა ' + H.memberName(row.assigned_to) : ''}`, { type: 'success', action: { label: 'გახსნა', fn: () => App.go(App.taskHref(row.id)) } });

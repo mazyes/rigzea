@@ -36,9 +36,9 @@
       apartments: [
         { id: a(1), organization_id: ORG, name: 'Orbi City · 1204', unit_number: '1204', address: 'შერიფ ხიმშიაშვილის 7', city: 'ბათუმი', owner_id: o1, status: 'active', door_code: '4821#', wifi_name: 'Orbi1204', wifi_password: 'sea-view-24', access_instructions: 'გასაღები რეცეფციაზე, სახელით.', commission_pct: 20, created_at: at(-50 * D) },
         { id: a(2), organization_id: ORG, name: 'Orbi City · 2210', unit_number: '2210', address: 'შერიფ ხიმშიაშვილის 7', city: 'ბათუმი', owner_id: o1, status: 'active', commission_pct: 20, created_at: at(-50 * D) },
-        { id: a(3), organization_id: ORG, name: 'ვაკე · ჭავჭავაძე 33', unit_number: '14', address: 'ილია ჭავჭავაძის გამზ. 33', city: 'თბილისი', owner_id: o2, status: 'maintenance', commission_pct: 15, created_at: at(-40 * D) },
+        { id: a(3), organization_id: ORG, name: 'ვაკე · ჭავჭავაძე 33', public_slug: 'vake-chavchavadze-33-k2m9qx', monthly_rent: 950, agent_phone: '+995599000111', rental_type: 'long_term', unit_number: '14', address: 'ილია ჭავჭავაძის გამზ. 33', city: 'თბილისი', owner_id: o2, status: 'maintenance', commission_pct: 15, created_at: at(-40 * D) },
         { id: a(4), organization_id: ORG, name: 'ძველი ბათუმი · 5', unit_number: '5', address: 'გორგილაძის 12', city: 'ბათუმი', owner_id: o2, status: 'active', commission_pct: 20, created_at: at(-40 * D) },
-        { id: a(5), organization_id: ORG, name: 'სანაპირო · 801', unit_number: '801', address: 'ზ. გამსახურდიას 30', city: 'ბათუმი', owner_id: null, status: 'vacant', commission_pct: 20, created_at: at(-10 * D) },
+        { id: a(5), organization_id: ORG, name: 'სანაპირო · 801', public_slug: 'sanapiro-801-h7w3zd', is_published: false, unit_number: '801', address: 'ზ. გამსახურდიას 30', city: 'ბათუმი', owner_id: null, status: 'vacant', commission_pct: 20, created_at: at(-10 * D) },
       ],
       tasks,
       approvals: [

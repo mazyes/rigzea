@@ -3,9 +3,13 @@
  * Bot: @Rigzea_bot
  */
 
-const TELEGRAM_BOT_TOKEN = '8861565420:AAFhLSnnX8todrkJ5R5trg_EiG5MRSZfvPs';
+// Set in the environment (Vercel project settings, or the shell for local polling). Never hardcode it.
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const SUPABASE_URL = 'https://cuioodytwyzykqlrjfej.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN1aW9vZHl0d3l6eWtxbHJqZmVqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE3MjgzMzUsImV4cCI6MjEwNzMwNDMzNX0.IdGlwbbt0_oNwnUj0pUcCjuCVcUV3l19HSa1NIckUyk';
+// Server-only key. The bot's database functions no longer accept the public anon key.
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+// Optional: set the same value as the webhook's secret_token so only Telegram can call this endpoint.
+const WEBHOOK_SECRET = process.env.TELEGRAM_WEBHOOK_SECRET;
 const BASE_APP_URL = 'https://rigzea-website.vercel.app';
 
 // Telegram API Helper
@@ -39,8 +43,8 @@ async function callRpc(functionName, params = {}) {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${functionName}`, {
       method: 'POST',
       headers: {
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'apikey': SUPABASE_SERVICE_KEY,
+        'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify(params)
@@ -60,8 +64,8 @@ async function queryRest(endpoint, method = 'GET', body = null) {
     const options = {
       method,
       headers: {
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'apikey': SUPABASE_SERVICE_KEY,
+        'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}`,
         'Content-Type': 'application/json',
         'Prefer': 'return=representation'
       }
@@ -134,33 +138,15 @@ async function handleUpdate(update) {
   const text = msg.text.trim();
   const userName = msg.from.first_name || 'მმართველი';
 
-  // 1. Check if user is linking an Organization
-  const uuidMatch = text.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
-
-  if (uuidMatch) {
-    const orgId = uuidMatch[0].toLowerCase();
-    
-    // Try link RPC
-    const linkRes = await callRpc('link_telegram_chat', {
-      p_chat_id: chatId,
-      p_org_id: orgId,
-      p_user_name: userName
-    });
-
+  // 1. Linking: a one-time code created in the app (Settings > Telegram), sent as "/start CODE" or on its own.
+  const codeMatch = text.match(/^(?:\/start\s+)?([A-Fa-f0-9]{10})$/);
+  if (codeMatch) {
+    const linkRes = await callRpc('redeem_telegram_link_code', { p_code: codeMatch[1], p_chat_id: chatId, p_user_name: userName });
     if (linkRes && linkRes.success) {
-      await sendMessage(chatId, `🇬🇪 <b>მოგესალმებით რიგზეას ასისტენტში, ${userName}!</b>\n\nთქვენი Telegram წარმატებით დაუკავშირდა:\n🏢 <b>${linkRes.org_name}</b> (${linkRes.city || 'საქართველო'})\n\nახლა შეგიძლიათ პირდაპირ მომწეროთ ქართულად ნებისმიერი საქმე ან ხარჯი, მაგალითად:\n• <i>1204-ში კონდიციონერი გაფუჭდა, 170 ლარია</i>\n• <i>ბინა 7-ში ონკანი ჟონავს, 85 ლარი</i>\n• <i>ვაკე 18-ში დასუფთავება ხვალ 14:00-ზე</i>\n\n📌 <b>ბრძანებები:</b>\n/today — დღის საოპერაციო მდგომარეობა\n/apartments — ბინების სია\n/help — დახმარება`);
-      return;
+      await sendMessage(chatId, `✅ <b>Telegram დაკავშირებულია, ${userName}!</b>\n\nკომპანია: <b>${linkRes.org_name}</b>\n\nაქ მიიღებთ შეტყობინებას, როცა კლიენტი თქვენს ბმულს გახსნის.\n\n📌 <b>ბრძანებები:</b>\n/today: დღის მდგომარეობა\n/apartments: ბინების სია\n/help: დახმარება`);
+    } else {
+      await sendMessage(chatId, `❌ კოდი არასწორია ან ვადა გაუვიდა.\n\nგახსენით რიგზეა, გადადით „პარამეტრები“ > „Telegram“ და შექმენით ახალი კოდი. კოდი 15 წუთი მოქმედებს.`);
     }
-
-    // Fallback: check get_telegram_org RPC
-    const orgs = await callRpc('get_telegram_org', { p_org_id: orgId });
-    if (orgs && orgs.length > 0) {
-      const org = orgs[0];
-      await sendMessage(chatId, `🇬🇪 <b>მოგესალმებით რიგზეას ასისტენტში, ${userName}!</b>\n\nთქვენი Telegram დაუკავშირდა:\n🏢 <b>${org.name}</b> (${org.city || 'საქართველო'})\n\nშეგიძლიათ პირდაპირ მომწეროთ საქმე ქართულად!`);
-      return;
-    }
-
-    await sendMessage(chatId, `❌ ორგანიზაცია ID-ით (<code>${orgId}</code>) ვერ მოიძებნა.\nგთხოვთ გადაამოწმოთ გასაღები რიგზეას პარამეტრებში.`);
     return;
   }
 
@@ -174,13 +160,13 @@ async function handleUpdate(update) {
       return;
     }
 
-    await sendMessage(chatId, `🇬🇪 <b>რიგზეას Telegram ასისტენტი</b>\n\nკომპანიის დასაკავშირებლად, გთხოვთ გადმოაგზავნოთ თქვენი კომპანიის გასაღები რიგზეას პარამეტრებიდან, მაგალითად:\n<code>95671f98-50fc-4d29-9a0c-b298639359d0</code>`);
+    await sendMessage(chatId, `🇬🇪 <b>რიგზეას Telegram ასისტენტი</b>\n\nკომპანიის დასაკავშირებლად გახსენით რიგზეა, გადადით „პარამეტრები“ > „Telegram“ და დააჭირეთ „დაკავშირებას“.`);
     return;
   }
 
   // 4. Require Linked Org for further actions
   if (!userOrg || !userOrg.orgId) {
-    await sendMessage(chatId, `⚠️ <b>კომპანია ჯერ არ არის დაკავშირებული.</b>\n\nგთხოვთ გადმოაგზავნოთ თქვენი კომპანიის გასაღები (UUID) რიგზეას სისტემიდან:\n<code>/link თქვენი_გასაღები</code>`);
+    await sendMessage(chatId, `⚠️ <b>კომპანია ჯერ არ არის დაკავშირებული.</b>\n\nგახსენით რიგზეა, გადადით „პარამეტრები“ > „Telegram“ და დააჭირეთ „დაკავშირებას“.`);
     return;
   }
 
@@ -194,7 +180,7 @@ async function handleUpdate(update) {
 
     let response = `🏢 <b>აქტიური ბინების სია (${apts.length}):</b>\n\n`;
     apts.forEach((a, idx) => {
-      response += `${idx + 1}. <b>${a.name || a.title}</b>\n   📍 ${a.address || 'მისამართი'} (№${a.unit_number || '—'})\n`;
+      response += `${idx + 1}. <b>${a.name || a.title}</b>\n   📍 ${a.address || 'მისამართი'} (№${a.unit_number || '-'})\n`;
     });
     response += `\n<i>საქმის დასამატებლად უბრალოდ მომწერეთ, მაგ: „${apts[0].unit_number || apts[0].name}-ში კონდიციონერი გაფუჭდა, 150 ლარია“</i>`;
 
@@ -207,7 +193,7 @@ async function handleUpdate(update) {
     const apts = await callRpc('get_telegram_apartments', { p_org_id: userOrg.orgId });
     const aptCount = apts?.length || 0;
 
-    let response = `📊 <b>დღის საოპერაციო მდგომარეობა — ${userOrg.orgName}</b>\n\n`;
+    let response = `📊 <b>დღის საოპერაციო მდგომარეობა: ${userOrg.orgName}</b>\n\n`;
     response += `• 🏢 <b>ბინების რაოდენობა:</b> ${aptCount}\n`;
     response += `• 🤖 <b>Telegram ასისტენტი:</b> აქტიურია (Serverless 24/7)\n\n`;
     response += `🔗 <a href="${BASE_APP_URL}/app/">სისტემაში გახსნა</a>`;
@@ -233,7 +219,7 @@ async function handleUpdate(update) {
   const parsed = parseGeorgianTaskText(text, apts);
 
   if (!parsed.matchedApt) {
-    let helpMsg = `⚠️ <b>ბინა ვერ ამოვიცანი ტექსტში.</b>\n\nგთხოვთ მიუთითოთ ბინის ნომერი ან სახელი, მაგალითად:\n• <i>${apts[0].unit_number || apts[0].name}-ში ${parsed.issueTitle}, ${parsed.amount > 0 ? parsed.amount + ' ლარი' : '150 ლარი'}</i>\n\n🏢 <b>თქვენი ბინები:</b>\n` + apts.slice(0, 5).map(a => `• ${a.name || a.title} (№${a.unit_number || '—'})`).join('\n');
+    let helpMsg = `⚠️ <b>ბინა ვერ ამოვიცანი ტექსტში.</b>\n\nგთხოვთ მიუთითოთ ბინის ნომერი ან სახელი, მაგალითად:\n• <i>${apts[0].unit_number || apts[0].name}-ში ${parsed.issueTitle}, ${parsed.amount > 0 ? parsed.amount + ' ლარი' : '150 ლარი'}</i>\n\n🏢 <b>თქვენი ბინები:</b>\n` + apts.slice(0, 5).map(a => `• ${a.name || a.title} (№${a.unit_number || '-'})`).join('\n');
     await sendMessage(chatId, helpMsg);
     return;
   }
@@ -272,6 +258,13 @@ async function handleUpdate(update) {
 
 // Vercel Serverless Function Handler
 export default async function handler(req, res) {
+  if (!TELEGRAM_BOT_TOKEN || !SUPABASE_SERVICE_KEY) {
+    console.error('TELEGRAM_BOT_TOKEN or SUPABASE_SERVICE_ROLE_KEY is not set');
+    return res.status(500).json({ ok: false, error: 'bot is not configured' });
+  }
+  if (WEBHOOK_SECRET && req.method === 'POST' && req.headers['x-telegram-bot-api-secret-token'] !== WEBHOOK_SECRET) {
+    return res.status(401).json({ ok: false });
+  }
   if (req.method === 'GET') {
     return res.status(200).json({ ok: true, message: 'Rigzea Telegram Webhook is active' });
   }
@@ -291,3 +284,6 @@ export default async function handler(req, res) {
     return res.status(200).json({ ok: false, error: error.message });
   }
 }
+
+// Shared with scripts/telegram_bot.mjs, the local long-polling runner.
+export { handleUpdate, telegramRequest };

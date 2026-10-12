@@ -131,7 +131,7 @@
     if (state.phase === 'completed') {
       events.push(
         { time: '15:23', title: 'ქვითარი დაემატა', desc: 'ქვითარი #INV-841 (₾170) მიბმულია ხარჯთან', accent: true, tag: '📄 ქვითარი მიმაგრებულია' },
-        { time: '15:20', title: 'რემონტი დასრულდა', desc: 'კონდიციონერის შეკეთება — ხელოსანი დათო', accent: true }
+        { time: '15:20', title: 'რემონტი დასრულდა', desc: 'კონდიციონერის შეკეთება, ხელოსანი დათო', accent: true }
       );
     }
 
@@ -148,7 +148,7 @@
     // Base timeline
     events.push(
       { time: '11:08', title: 'რემონტის მოთხოვნა გაეგზავნა მფლობელს', desc: 'შეტყობინება დადასტურების ბმულით გაიგზავნა', amber: state.phase === 'awaiting' },
-      { time: '11:05', title: 'ხელოსნის შეფასება — ₾170', desc: 'საჭიროა დეტალის შეცვლა' },
+      { time: '11:05', title: 'ხელოსნის შეფასება: ₾170', desc: 'საჭიროა დეტალის შეცვლა' },
       { time: '10:42', title: 'კონდიციონერი აღარ აგრილებს', desc: 'საკითხი ბინას დაემატა Telegram-ის შეტყობინებიდან' }
     );
 
@@ -267,7 +267,7 @@
       ? (state.phase === 'completed' ? '0 აქტიური' : '1 აქტიური')
       : (currentApt.id === 'vake' ? '1 აქტიური' : '0 აქტიური');
 
-    $('#current-apt-pending-cost').textContent = isOrbi && state.phase === 'awaiting' ? '₾170' : '—';
+    $('#current-apt-pending-cost').textContent = isOrbi && state.phase === 'awaiting' ? '₾170' : '-';
     $('#current-apt-next-clean').textContent = currentApt.cleanSchedule;
 
     // Tabs update
@@ -282,11 +282,11 @@
       const events = isOrbi ? getOrbiTimelineEvents() : (
         currentApt.id === 'vake'
           ? [
-              { time: '11:00', title: 'სანტექნიკოსის ვიზიტი დაიგეგმა', desc: 'ხელოსანი გიორგი — დაგვიანებულია', amber: true },
+              { time: '11:00', title: 'სანტექნიკოსის ვიზიტი დაიგეგმა', desc: 'ხელოსანი გიორგი, დაგვიანებულია', amber: true },
               { time: '09:15', title: 'წყლის წნევის საკითხი დაფიქსირდა', desc: 'სტუმარმა დაწერა შეტყობინება' }
             ]
           : [
-              { time: '18:00', title: 'Check-in დაგეგმილია', desc: '2 სტუმარი — ბინა მზადაა', accent: true },
+              { time: '18:00', title: 'Check-in დაგეგმილია', desc: '2 სტუმარი, ბინა მზადაა', accent: true },
               { time: '13:30', title: 'დასუფთავება დასრულდა', desc: 'დამლაგებლის შემოწმება გავლილია' }
             ]
       );
@@ -401,7 +401,7 @@
         id: 'vake-plumb',
         title: 'სანტექნიკოსი',
         apt: 'Vake Residence · 18',
-        amount: '—',
+        amount: '-',
         status: 'დაგვიანებული',
         statusClass: 'wait',
         canAct: false
@@ -410,7 +410,7 @@
         id: 'batumi-checkin',
         title: 'Check-in (2 სტუმარი)',
         apt: 'Old Batumi · 7',
-        amount: '—',
+        amount: '-',
         status: 'მზადაა',
         statusClass: 'done',
         canAct: false
@@ -423,7 +423,7 @@
         id: t.id,
         title: t.title,
         apt: aptObj ? aptObj.name : 'Orbi City · 1204',
-        amount: t.amount ? `₾${t.amount}` : '—',
+        amount: t.amount ? `₾${t.amount}` : '-',
         status: 'ახალი საქმე',
         statusClass: 'neutral',
         canAct: false
@@ -443,7 +443,7 @@
             ? `<button class="btn smallbtn" id="btn-task-approve-action" style="padding:4px 8px;font-size:11px">თანხმობა</button>`
             : row.id === 'orbi-repair' && state.phase === 'approved'
               ? `<button class="btn smallbtn" id="btn-task-complete-action" style="padding:4px 8px;font-size:11px">დასრულება ✓</button>`
-              : `<span style="font-size:11px;color:var(--muted)">—</span>`}
+              : `<span style="font-size:11px;color:var(--muted)">-</span>`}
         </td>
       </tr>
     `).join('');

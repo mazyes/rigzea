@@ -75,11 +75,11 @@ async function runAudit() {
 
       // Switch to WhatsApp tab
       await page.locator('[data-post-type="whatsapp"]').click();
-      assert((await postBox.innerText()).includes('მოგესალმებით მარიამ'));
+      assert((await postBox.innerText()).includes('მოგესალმებით, მარიამ'));
 
       // Switch to Co-broker tab
       await page.locator('[data-post-type="cobroker"]').click();
-      assert((await postBox.innerText()).includes('სალამი კოლეგა'));
+      assert((await postBox.innerText()).includes('სალამი, კოლეგა'));
 
       // Copy button test
       const copyBtn = page.locator('#copy-post-btn');
@@ -184,17 +184,17 @@ async function runAudit() {
       const monthlyBtn = page.locator('.lx-billing-toggle-pill button[data-billing="monthly"]');
       const yearlyBtn = page.locator('.lx-billing-toggle-pill button[data-billing="yearly"]');
 
-      // Default monthly: Pro Agent is 29 GEL
-      const proPrice = page.locator('.lx-plan-amount[data-monthly="29 ₾"]');
-      assert.strictEqual(await proPrice.innerText(), '29 ₾');
+      // Default monthly: Pro Agent is 39 GEL
+      const proPrice = page.locator('.lx-plan-amount[data-monthly="39 ₾"]');
+      assert.strictEqual(await proPrice.innerText(), '39 ₾');
 
       // Switch to yearly
       await yearlyBtn.click();
-      assert.strictEqual(await proPrice.innerText(), '279 ₾');
+      assert.strictEqual(await proPrice.innerText(), '390 ₾');
 
       // Switch back to monthly
       await monthlyBtn.click();
-      assert.strictEqual(await proPrice.innerText(), '29 ₾');
+      assert.strictEqual(await proPrice.innerText(), '39 ₾');
 
       await page.close();
     });
@@ -208,7 +208,7 @@ async function runAudit() {
       page.on('console', msg => { if (msg.type() === 'error') errors.push(msg.text()); });
       page.on('pageerror', err => errors.push(String(err)));
 
-      await page.goto(testBase + '/p/');
+      await page.goto(testBase + '/p/?demo=1');
       await page.locator('#prop-title').waitFor();
       assert.strictEqual(errors.length, 0, `Renter showcase console errors: ${errors.join('; ')}`);
 
@@ -216,6 +216,11 @@ async function runAudit() {
       assert((await page.locator('#prop-price').innerText()).includes('$'));
       assert((await page.locator('#prop-address').innerText()).length > 5);
       assert((await page.locator('#spec-rooms').innerText()).length > 0);
+
+      // Viral Badge Verification (Visible in standard, hidden in white-label)
+      const viralBadge = page.locator('#p-viral-badge');
+      await viralBadge.waitFor();
+      assert.strictEqual(await viralBadge.isVisible(), true);
 
       // Gallery Next/Prev
       const counter = page.locator('#gallery-counter');
@@ -237,6 +242,11 @@ async function runAudit() {
       assert((await page.locator('#btn-whatsapp-text').innerText()).includes('WhatsApp'));
       await page.locator('#lang-ka').click();
       assert((await page.locator('#title-desc').innerText()).includes('ბინის აღწერა'));
+
+      // White-label mode suppresses viral badge
+      await page.goto(testBase + '/p/?demo=1&wl=1');
+      await page.locator('#prop-title').waitFor();
+      assert.strictEqual(await page.locator('#p-viral-badge').isVisible(), false);
 
       await page.close();
     });

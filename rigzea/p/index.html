@@ -346,7 +346,7 @@
       font-size: 18px;
       flex-shrink: 0;
     }
-    .p-term-text h4 {
+    .p-term-text h2 {
       margin: 0 0 3px;
       font-size: 13.5px;
       font-weight: 600;
@@ -476,6 +476,39 @@
     }
     .p-btn-call:hover { background: var(--hover); }
 
+    /* Viral Growth Referral Badge */
+    .p-viral-badge {
+      margin: 18px auto 8px;
+      text-align: center;
+      padding: 0 16px;
+    }
+    .p-viral-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 18px;
+      border-radius: 999px;
+      background: rgba(10, 92, 68, 0.08);
+      border: 1px solid rgba(10, 92, 68, 0.22);
+      color: var(--brand);
+      text-decoration: none;
+      font-size: 12.5px;
+      font-weight: 500;
+      transition: all 0.2s ease;
+    }
+    .p-viral-link:hover {
+      background: rgba(10, 92, 68, 0.16);
+      border-color: var(--brand);
+      transform: translateY(-1px);
+    }
+    .p-viral-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #00f59b;
+      box-shadow: 0 0 8px #00f59b;
+    }
+
     /* Print Stylesheet */
     @media print {
       body {
@@ -492,9 +525,29 @@
         break-inside: avoid;
       }
     }
+
+    /* Page states: the listing stays hidden until real data has arrived */
+    body[data-state="loading"] #p-main, body[data-state="loading"] #bottom-bar,
+    body[data-state="unavailable"] #p-main, body[data-state="unavailable"] #bottom-bar,
+    body[data-state="error"] #p-main, body[data-state="error"] #bottom-bar { display: none; }
+    body[data-state="ready"] #p-state { display: none; }
+    .p-state { max-width: 720px; margin: 0 auto; padding: 24px 16px 48px; }
+    .p-state-box { text-align: center; padding: 56px 20px; }
+    .p-state-box h1 { font-size: 20px; margin: 0 0 8px; color: #0f172a; }
+    .p-state-box p { margin: 0 0 20px; color: #64748b; font-size: 14.5px; line-height: 1.6; }
+    .p-state-box button { min-height: 44px; padding: 0 20px; border-radius: 10px; border: 0; background: var(--brand); color: #fff; font: inherit; font-weight: 600; cursor: pointer; }
+    .p-skel-photo, .p-skel-line { background: linear-gradient(90deg, #e9eef3 25%, #f4f7fa 50%, #e9eef3 75%); background-size: 200% 100%; animation: p-skel 1.2s linear infinite; border-radius: 12px; }
+    .p-skel-photo { aspect-ratio: 4 / 3; margin-bottom: 20px; }
+    .p-skel-line { height: 16px; margin-bottom: 12px; }
+    .p-skel-line.w60 { width: 60%; height: 24px; }
+    .p-skel-line.w40 { width: 40%; }
+    @keyframes p-skel { to { background-position: -200% 0; } }
+    @media (prefers-reduced-motion: reduce) { .p-skel-photo, .p-skel-line { animation: none; } }
+    .p-no-photos { display: flex; align-items: center; justify-content: center; aspect-ratio: 4 / 3; background: #eef2f6; color: #64748b; font-size: 14px; }
+    .p-no-photos[hidden] { display: none; }
   </style>
 </head>
-<body>
+<body data-state="loading">
   <!-- Header with Brand & Language Toggle -->
   <header class="p-header" id="p-header">
     <div class="p-nav-inner">
@@ -511,10 +564,16 @@
     </div>
   </header>
 
+  <!-- Shown instead of the listing while loading, when the link is not available, or when the network fails -->
+  <div class="p-state" id="p-state" role="status" aria-live="polite">
+    <div class="p-skeleton" aria-hidden="true"><div class="p-skel-photo"></div><div class="p-skel-line w60"></div><div class="p-skel-line w40"></div><div class="p-skel-line"></div></div>
+  </div>
+
   <main class="p-container" id="p-main">
     <!-- Gallery Slider -->
     <div class="p-gallery" id="gallery-container">
       <div class="p-slides" id="gallery-slides"></div>
+      <div class="p-no-photos" id="gallery-empty" hidden></div>
       <button type="button" class="p-gallery-btn prev" id="btn-prev" aria-label="წინა ფოტო">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
       </button>
@@ -569,7 +628,7 @@
         <div class="p-term-card">
           <div class="p-term-icon" id="icon-pet"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="15" r="3"></circle><circle cx="6" cy="11" r="2"></circle><circle cx="10" cy="6" r="2"></circle><circle cx="14" cy="6" r="2"></circle><circle cx="18" cy="11" r="2"></circle></svg></div>
           <div class="p-term-text">
-            <h4 id="title-pet">შინაური ცხოველები</h4>
+            <h2 id="title-pet">შინაური ცხოველები</h2>
             <p id="desc-pet">ნებადართულია (Pet Friendly)</p>
           </div>
         </div>
@@ -577,7 +636,7 @@
         <div class="p-term-card">
           <div class="p-term-icon" id="icon-util"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="9" y1="18" x2="15" y2="18"></line><line x1="10" y1="22" x2="14" y2="22"></line><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5.76.76 1.23 1.52 1.41 2.5"></path></svg></div>
           <div class="p-term-text">
-            <h4 id="title-util">კომუნალური ხარჯი</h4>
+            <h2 id="title-util">კომუნალური ხარჯი</h2>
             <p id="desc-util">სავარაუდოდ ~180-250 ₾ / თვეში</p>
           </div>
         </div>
@@ -585,7 +644,7 @@
         <div class="p-term-card">
           <div class="p-term-icon" id="icon-terms"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="7.5" cy="15.5" r="5.5"></circle><path d="m21 2-9.6 9.6"></path><path d="m15.5 7.5 3 3L22 7l-3-3"></path></svg></div>
           <div class="p-term-text">
-            <h4 id="title-terms">გადახდის პირობები</h4>
+            <h2 id="title-terms">გადახდის პირობები</h2>
             <p id="desc-terms">1-ლი და ბოლო თვე + 1 თვის დეპოზიტი</p>
           </div>
         </div>
@@ -593,7 +652,7 @@
         <div class="p-term-card">
           <div class="p-term-icon" id="icon-term-type"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg></div>
           <div class="p-term-text">
-            <h4 id="title-term-type">ქირის ფორმატი</h4>
+            <h2 id="title-term-type">ქირის ფორმატი</h2>
             <p id="desc-term-type">გრძელვადიანი (მინიმუმ 6-12 თვე)</p>
           </div>
         </div>
@@ -622,6 +681,14 @@
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
       <span id="text-free-note">უფასო მომსახურება მაძიებლებისთვის · საკომისიოს გარეშე</span>
     </div>
+
+    <!-- Viral Acquisition Badge for Visiting Agents -->
+    <div class="p-viral-badge" id="p-viral-badge">
+      <a href="/?ref=p" target="_blank" rel="noopener" class="p-viral-link">
+        <span class="p-viral-dot"></span>
+        <span id="p-viral-text">ბინა წარმოდგენილია <strong>Rigzea</strong>-თი · შექმენი შენი ბმული უფასოდ →</span>
+      </a>
+    </div>
   </main>
 
   <!-- Sticky Bottom Bar -->
@@ -646,7 +713,6 @@
     <button type="button" class="p-lightbox-close" id="lightbox-close" aria-label="დახურვა">
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
     </button>
-    <img id="lightbox-img" src="" alt="Property" />
   </div>
 
   <script src="/js/supabase.js"></script>
@@ -725,7 +791,8 @@
         barPriceLabel: 'თვიური ქირა',
         btnWhatsApp: 'დაჯავშნე ნახვა WhatsApp-ით',
         waMessage: 'გამარჯობა! მსურს ბინის ნახვის დაჯავშნა: {name} (ID: {id}). ხელმისაწვდომია?',
-        whiteLabelAgent: 'უძრავი ქონების პარტნიორი'
+        whiteLabelAgent: 'უძრავი ქონების პარტნიორი',
+        viralBadgeText: 'ბინა წარმოდგენილია <strong>Rigzea</strong>-თი · შექმენი შენი ბმული უფასოდ →'
       },
       en: {
         pageTitle: 'Property Showcase · Rigzea',
@@ -750,7 +817,8 @@
         barPriceLabel: 'Monthly Rent',
         btnWhatsApp: 'Book Viewing via WhatsApp',
         waMessage: 'Hello! I would like to book a viewing for: {name} (ID: {id}). Is it available?',
-        whiteLabelAgent: 'Direct Real Estate Partner'
+        whiteLabelAgent: 'Direct Real Estate Partner',
+        viralBadgeText: 'Presented with <strong>Rigzea</strong> · Create your showcase link for free →'
       }
     };
 
@@ -776,49 +844,63 @@
       document.getElementById('lang-ka').classList.toggle('active', lang === 'ka');
       document.getElementById('lang-en').classList.toggle('active', lang === 'en');
       document.documentElement.lang = lang;
+      if (document.body.dataset.state === 'unavailable') showState('unavailable');
+      else if (document.body.dataset.state === 'error') showState('error');
       render();
     }
 
     document.getElementById('lang-ka')?.addEventListener('click', () => setLanguage('ka'));
     document.getElementById('lang-en')?.addEventListener('click', () => setLanguage('en'));
 
+    const params = new URLSearchParams(location.search);
+    const isDemo = params.get('demo') === '1';
+    const esc = (v) => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+    const STATE_TEXT = {
+      ka: { goneTitle: 'ბმული აღარ მოქმედებს', goneBody: 'ეს განცხადება მოხსნილია ან ბმული არასწორია. დაუკავშირდით აგენტს, რომელმაც ბმული გამოგიგზავნათ.', errTitle: 'გვერდი ვერ ჩაიტვირთა', errBody: 'შეამოწმეთ ინტერნეტკავშირი და სცადეთ ხელახლა.', retry: 'ხელახლა ცდა', noPhotos: 'ფოტოები მალე დაემატება', priceOnRequest: 'ფასი შეთანხმებით' },
+      en: { goneTitle: 'This link is no longer available', goneBody: 'The listing was removed or the link is incorrect. Please contact the agent who sent it to you.', errTitle: 'The page could not be loaded', errBody: 'Check your connection and try again.', retry: 'Try again', noPhotos: 'Photos will be added soon', priceOnRequest: 'Price on request' },
+    };
+
+    function showState(kind) {
+      const t = STATE_TEXT[currentLang] || STATE_TEXT.ka;
+      const box = document.getElementById('p-state');
+      document.body.dataset.state = kind;
+      if (kind === 'unavailable') box.innerHTML = `<div class="p-state-box"><h1>${t.goneTitle}</h1><p>${t.goneBody}</p></div>`;
+      if (kind === 'error') {
+        box.innerHTML = `<div class="p-state-box"><h1>${t.errTitle}</h1><p>${t.errBody}</p><button type="button" id="p-retry">${t.retry}</button></div>`;
+        document.getElementById('p-retry').onclick = () => { document.body.dataset.state = 'loading'; box.innerHTML = ''; loadData(); };
+      }
+    }
+
+    // The listing is named either by the path (/p/<slug>) or, for older links, by ?id=<uuid>.
+    function listingRef() {
+      const parts = location.pathname.split('/').filter(Boolean);
+      const i = parts.indexOf('p');
+      const fromPath = i >= 0 && parts[i + 1] && parts[i + 1] !== 'index.html' ? decodeURIComponent(parts[i + 1]) : null;
+      return fromPath || params.get('id') || params.get('p') || params.get('apt');
+    }
+
     // Data fetching
     async function loadData() {
-      const params = new URLSearchParams(location.search);
-      const id = params.get('id') || params.get('p') || params.get('apt');
+      if (isDemo) { prop = FALLBACK_DATA; document.body.dataset.state = 'ready'; render(); return; }
 
-      if (!id) {
-        prop = FALLBACK_DATA;
-        render();
-        return;
-      }
+      const ref = listingRef();
+      if (!ref || !window.supabaseClient) { showState('unavailable'); return; }
 
       try {
-        // Try RPC first for safe public showcase
-        if (window.supabaseClient) {
-          const { data: rpcData, error: rpcErr } = await window.supabaseClient.rpc('get_public_showcase', { p_apartment_id: id });
-          if (!rpcErr && rpcData?.success && rpcData?.apartment) {
-            prop = rpcData.apartment;
-            if (rpcData.agency?.phone && !prop.agent_phone) prop.agent_phone = rpcData.agency.phone;
-            render();
-            return;
-          }
-
-          // Fallback to direct query if RPC not yet created
-          const { data: aptRow, error: aptErr } = await window.supabaseClient.from('apartments').select('*').eq('id', id).single();
-          if (!aptErr && aptRow) {
-            prop = aptRow;
-            render();
-            return;
-          }
-        }
+        let { data, error } = await window.supabaseClient.rpc('get_public_listing', { p_ref: ref });
+        // Databases that have not had the sharing migration yet only know the id-based function.
+        if (error && /^[0-9a-f-]{36}$/i.test(ref)) ({ data, error } = await window.supabaseClient.rpc('get_public_showcase', { p_apartment_id: ref }));
+        if (error) throw error;
+        if (!data?.success || !data.apartment) { showState('unavailable'); return; }
+        prop = data.apartment;
+        if (data.agency?.phone && !prop.agent_phone) prop.agent_phone = data.agency.phone;
+        document.body.dataset.state = 'ready';
+        render();
       } catch (err) {
-        console.warn('Supabase fetch notice, falling back to demo:', err);
+        console.warn('Listing could not be loaded:', err);
+        showState('error');
       }
-
-      // If ID not found in database, adapt demo data with requested ID
-      prop = { ...FALLBACK_DATA, id: id };
-      render();
     }
 
     // Render logic
@@ -837,17 +919,22 @@
         document.getElementById('brand-link').href = 'javascript:void(0)';
       }
 
-      // Photos Gallery
-      let photos = Array.isArray(prop.photos) && prop.photos.length ? prop.photos : DEMO_PHOTOS;
-      // Handle jsonb array of strings or objects { url }
-      photos = photos.map(p => typeof p === 'string' ? p : (p?.url || '')).filter(Boolean);
-      if (!photos.length) photos = DEMO_PHOTOS;
+      // Photos Gallery: only the listing's own photos; stock images belong to the demo alone
+      const photos = (Array.isArray(prop.photos) ? prop.photos : []).map(p => typeof p === 'string' ? p : (p?.url || '')).filter(Boolean);
+      const sx = STATE_TEXT[currentLang] || STATE_TEXT.ka;
 
       const slidesEl = document.getElementById('gallery-slides');
       const dotsEl = document.getElementById('gallery-dots');
+      const emptyEl = document.getElementById('gallery-empty');
+      emptyEl.hidden = photos.length > 0;
+      emptyEl.textContent = sx.noPhotos;
+      slidesEl.hidden = !photos.length;
+      for (const id of ['btn-prev', 'btn-next', 'gallery-counter', 'gallery-dots']) document.getElementById(id).style.display = photos.length > 1 ? '' : 'none';
+      if (slideIndex >= photos.length) slideIndex = 0;
+
       slidesEl.innerHTML = photos.map((url, i) => `
         <div class="p-slide" data-index="${i}">
-          <img src="${url}" alt="${title} photo ${i+1}" loading="${i === 0 ? 'eager' : 'lazy'}" />
+          <img src="${esc(url)}" alt="${esc(title)} · ${i + 1}" loading="${i === 0 ? 'eager' : 'lazy'}" decoding="async" />
         </div>
       `).join('');
 
@@ -858,7 +945,7 @@
       updateGallery(photos.length);
 
       // Price Formatting
-      const rent = Number(prop.monthly_rent || prop.price || 1200);
+      const rent = Number(prop.monthly_rent || prop.price || 0);
       const isUSD = (prop.currency || 'USD').toUpperCase() === 'USD';
       // Calculate approximate GEL / USD equivalent (using standard ~2.70 rate)
       const usdVal = isUSD ? rent : Math.round(rent / 2.7);
@@ -867,9 +954,9 @@
       const priceMainText = isUSD ? `$${usdVal.toLocaleString()}` : `${gelVal.toLocaleString()} ₾`;
       const priceSubText = isUSD ? `(~${gelVal.toLocaleString()} ₾)` : `(~$${usdVal.toLocaleString()})`;
 
-      document.getElementById('prop-price').textContent = priceMainText;
-      document.getElementById('prop-price-sub').textContent = `${priceSubText} ${t.perMonth}`;
-      document.getElementById('bar-price-val').textContent = priceMainText;
+      document.getElementById('prop-price').textContent = rent ? priceMainText : sx.priceOnRequest;
+      document.getElementById('prop-price-sub').textContent = rent ? `${priceSubText} ${t.perMonth}` : '';
+      document.getElementById('bar-price-val').textContent = rent ? priceMainText : sx.priceOnRequest;
       document.getElementById('bar-price-label').textContent = t.barPriceLabel;
 
       // Location
@@ -885,10 +972,10 @@
       document.getElementById('label-area').textContent = t.area;
       document.getElementById('label-floor').textContent = t.floor;
 
-      document.getElementById('spec-rooms').textContent = prop.rooms || prop.bedrooms || '2';
-      document.getElementById('spec-bedrooms').textContent = prop.bedrooms || '1';
-      document.getElementById('spec-area').textContent = prop.area_sqm ? `${prop.area_sqm} მ²` : '—';
-      document.getElementById('spec-floor').textContent = prop.floor ? (prop.total_floors ? `${prop.floor} / ${prop.total_floors}` : prop.floor) : '—';
+      document.getElementById('spec-rooms').textContent = prop.rooms || prop.bedrooms || '-';
+      document.getElementById('spec-bedrooms').textContent = prop.bedrooms || '-';
+      document.getElementById('spec-area').textContent = prop.area_sqm ? `${prop.area_sqm} მ²` : '-';
+      document.getElementById('spec-floor').textContent = prop.floor ? (prop.total_floors ? `${prop.floor} / ${prop.total_floors}` : prop.floor) : '-';
 
       // Pet Policy
       document.getElementById('title-pet').textContent = t.titlePet;
@@ -901,8 +988,9 @@
 
       // Utilities
       document.getElementById('title-util').textContent = t.titleUtil;
-      const utilVal = prop.utilities_estimate || '180–240';
-      document.getElementById('desc-util').textContent = t.utilEst.replace('{val}', utilVal);
+      const utilRow = document.getElementById('icon-util').parentElement;
+      utilRow.style.display = prop.utilities_estimate ? '' : 'none';
+      if (prop.utilities_estimate) document.getElementById('desc-util').textContent = t.utilEst.replace('{val}', prop.utilities_estimate);
 
       // Prepayment Terms
       document.getElementById('title-terms').textContent = t.titleTerms;
@@ -912,11 +1000,15 @@
       // Rental Term
       document.getElementById('title-term-type').textContent = t.titleTermType;
       document.getElementById('desc-term-type').textContent = t.termLong;
+      document.getElementById('icon-term-type').parentElement.style.display = (isDemo || prop.rental_type === 'long_term') ? '' : 'none';
 
       // Amenities
       document.getElementById('title-amenities').textContent = t.titleAmenities;
       const amContainer = document.getElementById('amenities-container');
-      amContainer.innerHTML = AMENITIES_DICT.map(a => `
+      const ownAmenities = Array.isArray(prop.amenities) ? prop.amenities.map(String) : [];
+      const shownAmenities = isDemo ? AMENITIES_DICT : AMENITIES_DICT.filter(a => ownAmenities.includes(a.id));
+      amContainer.closest('section').style.display = shownAmenities.length ? '' : 'none';
+      amContainer.innerHTML = shownAmenities.map(a => `
         <div class="p-amenity-chip">
           <span style="display:inline-flex;align-items:center;justify-content:center;color:var(--brand)">${a.icon}</span>
           <span>${isKa ? a.ka : a.en}</span>
@@ -931,20 +1023,30 @@
       // Footer note
       document.getElementById('text-free-note').textContent = t.freeNote;
       document.getElementById('verified-text').textContent = t.verifiedText;
+      document.getElementById('badge-verified').style.display = isDemo ? '' : 'none';
+
+      // Viral badge: auto-hidden in white-label mode
+      const viralBadge = document.getElementById('p-viral-badge');
+      if (viralBadge) {
+        viralBadge.style.display = isWhiteLabel ? 'none' : '';
+        const viralLinkText = document.getElementById('p-viral-text');
+        if (viralLinkText && t.viralBadgeText) viralLinkText.innerHTML = t.viralBadgeText;
+      }
 
       // 1-Tap WhatsApp Booking Button
-      const rawPhone = prop.agent_phone || '+995599102030';
+      const rawPhone = prop.agent_phone || (isDemo ? '+995599102030' : '');
       const cleanPhone = rawPhone.replace(/[^0-9]/g, '');
       const waMsg = t.waMessage.replace('{name}', title).replace('{id}', prop.id || 'RIGZEA');
       const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(waMsg)}`;
 
       const btnWa = document.getElementById('btn-whatsapp');
       btnWa.href = waUrl;
+      btnWa.style.display = cleanPhone ? '' : 'none';
       document.getElementById('btn-whatsapp-text').textContent = t.btnWhatsApp;
 
       const btnCall = document.getElementById('btn-call');
       btnCall.href = `tel:${rawPhone}`;
-      if (isWhiteLabel) {
+      if (isWhiteLabel || !cleanPhone) {
         btnCall.style.display = 'none';
       }
     }
@@ -1017,7 +1119,8 @@
 
     // Lightbox zoom
     const lightbox = document.getElementById('lightbox');
-    const lightboxImg = document.getElementById('lightbox-img');
+    // Created here rather than in the markup, so the page never ships an image tag with no source.
+    const lightboxImg = lightbox.appendChild(Object.assign(document.createElement('img'), { id: 'lightbox-img', alt: '' }));
     const lightboxClose = document.getElementById('lightbox-close');
     const slidesEl = document.getElementById('gallery-slides');
 
@@ -1037,8 +1140,48 @@
       if (e.target === lightbox) lightbox.classList.remove('open');
     });
 
+    // -------------------------------------------------------------------------
+    // Engagement: tells the agent the link was opened or a contact button was used.
+    // A random id kept in this browser stands in for "a visitor": no IP, no fingerprint.
+    // The agent's own signed-in browser is left out, so previewing a link does not count.
+    // -------------------------------------------------------------------------
+    const isAgentBrowser = () => { try { return Object.keys(localStorage).some(k => /^sb-.*-auth-token$/.test(k)); } catch { return false; } };
+
+    function visitorId() {
+      try {
+        let id = localStorage.getItem('rigzea_vid');
+        if (!id) { id = crypto.randomUUID(); localStorage.setItem('rigzea_vid', id); }
+        return id;
+      } catch { return null; } // storage blocked: not counted, the page works the same
+    }
+
+    function track(kind) {
+      if (isDemo || !prop || document.body.dataset.state !== 'ready' || isAgentBrowser()) return;
+      const visitor = visitorId();
+      if (!visitor) return;
+      const payload = JSON.stringify({ ref: prop.public_slug || prop.id, kind, visitor, recipient: params.get('r') || null });
+      try {
+        if (!navigator.sendBeacon || !navigator.sendBeacon('/api/track', new Blob([payload], { type: 'application/json' }))) {
+          fetch('/api/track', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload, keepalive: true }).catch(() => {});
+        }
+      } catch { /* tracking must never affect the page */ }
+    }
+
+    // An open counts once the listing has been on screen for five seconds, which leaves out instant bounces.
+    let visibleMs = 0, visibleSince = null, viewSent = false;
+    function tickView() {
+      if (viewSent || document.body.dataset.state !== 'ready') return;
+      if (document.visibilityState === 'visible') {
+        if (visibleSince === null) visibleSince = Date.now();
+        if (visibleMs + (Date.now() - visibleSince) >= 5000) { viewSent = true; track('view'); return; }
+      } else if (visibleSince !== null) { visibleMs += Date.now() - visibleSince; visibleSince = null; }
+      setTimeout(tickView, 500);
+    }
+    document.getElementById('btn-whatsapp')?.addEventListener('click', () => track('whatsapp'));
+    document.getElementById('btn-call')?.addEventListener('click', () => track('call'));
+
     // Initialize
-    loadData();
+    loadData().then(tickView);
   })();
   </script>
 </body>

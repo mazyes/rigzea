@@ -3,6 +3,16 @@
   "outputDirectory": "rigzea",
   "cleanUrls": true,
   "trailingSlash": true,
+  "rewrites": [
+    {
+      "source": "/p/:slug",
+      "destination": "/p/index.html"
+    },
+    {
+      "source": "/p/:slug/",
+      "destination": "/p/index.html"
+    }
+  ],
   "headers": [
     {
       "source": "/fonts/(.*)",

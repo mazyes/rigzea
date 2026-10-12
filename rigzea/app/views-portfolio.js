@@ -43,9 +43,9 @@
           const flags = [overdue && `<span class="t-danger">${overdue} ვადაგადაც.</span>`, pend && `<span class="t-warn">${pend} თანხმობა</span>`].filter(Boolean).join(' · ');
           return `<a class="row" href="#/apartments/${a.id}" style="--cols:${cols}">
             <span class="cell-main"><strong>${esc(a.name)}</strong><span>${esc([a.address, a.city].filter(Boolean).join(', '))}</span></span>
-            <span class="cell-meta" data-label="მფლობელი">${esc(H.owner(a.owner_id)?.name || '—')}</span>
+            <span class="cell-meta" data-label="მფლობელი">${esc(H.owner(a.owner_id)?.name || '-')}</span>
             <span class="cell-meta" data-label="საქმე">${open.length}</span>
-            <span class="cell-meta" data-label="ჯავშანი">${next ? (next.check_in <= R.isoDate() ? `გასვლა ${esc(R.dayLabel(next.check_out))}` : `შესვლა ${esc(R.dayLabel(next.check_in))}`) : '—'}</span>
+            <span class="cell-meta" data-label="ჯავშანი">${next ? (next.check_in <= R.isoDate() ? `გასვლა ${esc(R.dayLabel(next.check_out))}` : `შესვლა ${esc(R.dayLabel(next.check_in))}`) : '-'}</span>
             <span class="cell-meta">${flags}</span>
             <span class="cell-status">${R.badge(L.aptStatus[a.status] || a.status, L.aptStatusTone[a.status])}</span>
             <span class="cell-actions"><button type="button" class="btn btn-ghost btn-sm" data-new-task="${a.id}">+ საქმე</button><button type="button" class="btn btn-ghost btn-sm" data-new-exp="${a.id}">+ ხარჯი</button></span>
@@ -106,6 +106,14 @@
     const events = S.data.events.filter(e => e.apartment_id === id);
     const photos = tasks.flatMap(t => (t.photos || []).map(p => ({ ...p, task: t })));
     const archived = a.status === 'archived';
+    const listingPhotos = (Array.isArray(a.photos) ? a.photos : []).map(p => typeof p === 'string' ? p : p?.url).filter(Boolean);
+    const published = a.is_published !== false;
+    const link = R.listingUrl(a);
+    const linkEvents = (S.data.linkEvents || []).filter(e => e.apartment_id === id);
+    const viewEvents = linkEvents.filter(e => e.kind === 'view');
+    const namedLinks = (S.data.shareLinks || []).filter(l => l.apartment_id === id);
+    const linkOf = (e) => namedLinks.find(l => l.id === e.share_link_id);
+    const EVENT_LABEL = { view: 'ბმული გაიხსნა', whatsapp: 'WhatsApp-ის ღილაკს დააჭირეს', call: 'ზარის ღილაკს დააჭირეს' };
 
     $('#view').innerHTML = `
       <div class="page-head">
@@ -120,24 +128,73 @@
         </div>
       </div>
 
-      <!-- Marketing Showcase & Broker Tools -->
-      <section class="card" style="margin-bottom:16px;background:linear-gradient(135deg, rgba(10,92,68,0.06) 0%, rgba(10,92,68,0.02) 100%);border:1px solid rgba(10,92,68,0.25)">
-        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
-          <div>
-            <h3 style="margin:0 0 4px;font-size:15px;display:flex;align-items:center;gap:6px">
-              <span style="color:var(--brand)">${icon('external', 18)}</span>
-              სტუმრის Smart Showcase & გაქირავების ინსტრუმენტები
-            </h3>
-            <p class="muted small" style="margin:0">გააზიარე ბინა კლიენტებთან და პარტნიორებთან 1 კლიკით. მესაკუთრის საკონტაქტო ნომერი დამალულია.</p>
+      <!-- Share: the client link first, then the tools around it -->
+      <section class="card share-card" style="margin-bottom:16px">
+        <div class="share-head">
+          <div class="share-link">
+            <span class="field-label">კლიენტის ბმული</span>
+            <a id="a-link" href="${esc(link)}" target="_blank" rel="noopener">${esc(link.replace(/^https?:\/\//, ''))}</a>
           </div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <button type="button" class="btn btn-primary btn-sm" id="btn-share-renter">${icon('copy', 14)} სტუმრის ბმული</button>
-            <button type="button" class="btn btn-secondary btn-sm" id="btn-share-wl">🛡️ White-Label ბმული</button>
-            <button type="button" class="btn btn-secondary btn-sm" id="btn-open-post">${icon('whatsapp', 14)} WhatsApp & FB პოსტი</button>
-            <button type="button" class="btn btn-secondary btn-sm" id="btn-open-lease">${icon('file', 14)} საიჯარო ხელშეკრულება</button>
-            <button type="button" class="btn btn-ghost btn-sm" id="btn-apt-deal">+ გარიგება</button>
+          <div class="share-actions">
+            <button type="button" class="btn btn-primary btn-sm" id="btn-share-renter">${icon('copy', 14)} ბმულის კოპირება</button>
+            <a class="btn btn-secondary btn-sm" id="btn-share-wa" href="${esc(R.whatsappUrl(a.name + '\n' + link))}" target="_blank" rel="noopener">${icon('whatsapp', 14)} WhatsApp</a>
+            <button type="button" class="btn btn-ghost btn-sm" id="btn-toggle-publish" aria-pressed="${published}">${published ? 'დამალვა' : 'გამოქვეყნება'}</button>
           </div>
         </div>
+        ${published ? '' : '<div class="notice" style="margin-top:12px">ბმული დამალულია: კლიენტი მას ვერ გახსნის, სანამ არ გამოაქვეყნებ.</div>'}
+        ${published && !listingPhotos.length ? '<div class="notice" style="margin-top:12px">ბმულის გაგზავნამდე დაამატე ფოტოები. ფოტოების გარეშე კლიენტი მხოლოდ აღწერას ნახავს.</div>' : ''}
+        <div class="share-tools">
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-share-wl">🛡️ White-Label ბმული</button>
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-open-post">${icon('whatsapp', 14)} WhatsApp & FB პოსტი</button>
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-open-lease">${icon('file', 14)} საიჯარო ხელშეკრულება</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="btn-apt-deal">+ გარიგება</button>
+        </div>
+      </section>
+
+      <section class="card" id="a-photos-card" style="margin-bottom:16px">
+        <div class="card-head">
+          <h2>${icon('camera', 18)} ფოტოები <span class="count">${listingPhotos.length}</span></h2>
+          <label class="btn btn-secondary btn-sm" id="a-photo-add" style="cursor:pointer">${icon('plus', 15)} ფოტოების დამატება<input type="file" id="a-photo-input" accept="image/*" multiple hidden /></label>
+        </div>
+        ${listingPhotos.length ? `<div class="lp-grid">${listingPhotos.map((url, i) => `
+          <figure class="lp-item">
+            <img src="${esc(url)}" alt="ფოტო ${i + 1}" loading="lazy" decoding="async" />
+            ${i === 0 ? '<figcaption class="lp-cover">მთავარი ფოტო</figcaption>' : ''}
+            <div class="lp-actions">
+              <button type="button" data-photo-move="-1" data-i="${i}" aria-label="ფოტოს წინ გადატანა" ${i === 0 ? 'disabled' : ''}><span class="lp-flip">${icon('chevronRight', 16)}</span></button>
+              <button type="button" data-photo-move="1" data-i="${i}" aria-label="ფოტოს უკან გადატანა" ${i === listingPhotos.length - 1 ? 'disabled' : ''}>${icon('chevronRight', 16)}</button>
+              <button type="button" data-photo-del data-i="${i}" aria-label="ფოტოს წაშლა">${icon('close', 16)}</button>
+            </div>
+          </figure>`).join('')}</div>`
+          : '<div class="empty-inline" style="padding:24px">ფოტოები ჯერ არ არის. პირველი ფოტო ბმულზე მთავარ ფოტოდ გამოჩნდება.</div>'}
+      </section>
+
+      <!-- Engagement: who opened the link, and links made for one client -->
+      <section class="card" id="a-engagement" style="margin-bottom:16px">
+        <div class="card-head">
+          <h2>${icon('external', 18)} ნახვები <span class="muted small" style="font-weight:400">ბოლო 30 დღე</span></h2>
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-named-link">${icon('plus', 15)} ბმული კლიენტისთვის</button>
+        </div>
+        <div class="eng-stats">
+          <div class="stat"><span class="stat-label">ნახვა</span><span class="stat-value" id="eng-views">${viewEvents.length}</span></div>
+          <div class="stat"><span class="stat-label">სხვადასხვა მნახველი (სავარაუდოდ)</span><span class="stat-value" id="eng-unique">${new Set(viewEvents.map(e => e.visitor_id)).size}</span></div>
+          <div class="stat"><span class="stat-label">დაკავშირების ცდა</span><span class="stat-value" id="eng-contacts">${linkEvents.length - viewEvents.length}</span></div>
+          <div class="stat"><span class="stat-label">ბოლოს გაიხსნა</span><span class="stat-value" style="font-size:15px" id="eng-last">${viewEvents[0] ? esc(R.dateTime(viewEvents[0].created_at)) : '-'}</span></div>
+        </div>
+        ${namedLinks.length ? `<div class="rows" id="eng-links">${namedLinks.map(l => {
+          const opens = viewEvents.filter(e => e.share_link_id === l.id);
+          return `<div class="row" style="--cols:minmax(0,1.4fr) minmax(0,1fr) auto">
+            <span class="cell-main"><strong>${esc(l.recipient_name)}</strong>${l.is_active === false ? ' <span class="muted small">(გათიშულია)</span>' : ''}</span>
+            <span class="cell-meta">${opens.length ? `${opens.length} ნახვა · ${esc(R.dateTime(opens[0].created_at))}` : 'ჯერ არ გახსნილა'}</span>
+            <span style="display:flex;gap:6px">
+              ${l.is_active === false ? '' : `<button type="button" class="btn btn-ghost btn-sm" data-link-copy="${esc(l.token)}">${icon('copy', 14)} კოპირება</button><button type="button" class="btn btn-ghost btn-sm" data-link-off="${esc(l.id)}">გათიშვა</button>`}
+            </span></div>`;
+        }).join('')}</div>` : ''}
+        ${linkEvents.length ? `<div class="rows" id="eng-activity">${linkEvents.slice(0, 8).map(e => `<div class="row" style="--cols:minmax(0,1fr) auto">
+            <span class="cell-main">${esc(EVENT_LABEL[e.kind] || e.kind)}${linkOf(e) ? ` <span class="muted">· „${esc(linkOf(e).recipient_name)}“-ის ბმული</span>` : ' <span class="muted">· საერთო ბმული</span>'}</span>
+            <span class="cell-meta">${esc(R.dateTime(e.created_at))}</span></div>`).join('')}</div>`
+          : '<div class="empty-inline" style="padding:20px 16px">ბმული ჯერ არავის გაუხსნია. გაუგზავნე კლიენტს და ნახვები აქ გამოჩნდება.</div>'}
+        <p class="muted small" style="margin:0;padding:0 16px 14px">ნახვა ითვლება, როცა გვერდი 5 წამს მაინც ღიაა. კლიენტის სახელი ჩანს მხოლოდ მისთვის შექმნილ ბმულზე; თუ ბმულს სხვას გადაუგზავნის, ნახვა მაინც ამ ბმულზე ჩაიწერება.</p>
       </section>
 
       <!-- Deals & Commission Tracker Section -->
@@ -189,8 +246,8 @@
         <div class="stack">
           <section class="card"><div class="stats">
             <div class="stat"><span class="stat-label">ახლა</span><span class="stat-value" style="font-size:15px">${current ? esc(current.guest_name) : 'თავისუფალია'}</span><span class="stat-note">${current ? `გასვლა ${esc(R.dayLabel(current.check_out))}, ${esc(String(current.check_out_time || '').slice(0, 5))}` : ''}</span></div>
-            <div class="stat"><span class="stat-label">შემდეგი შესვლა</span><span class="stat-value" style="font-size:15px">${nextIn ? esc(R.dayLabel(nextIn.check_in)) + ', ' + esc(String(nextIn.check_in_time || '').slice(0, 5)) : '—'}</span><span class="stat-note">${nextIn ? esc(nextIn.guest_name) : ''}</span></div>
-            <div class="stat"><span class="stat-label">შემდეგი საქმე</span><span class="stat-value" style="font-size:15px">${nextTask ? esc(R.dateTime(H.taskTime(nextTask))) : '—'}</span><span class="stat-note">${nextTask ? esc(nextTask.title) : ''}</span></div>
+            <div class="stat"><span class="stat-label">შემდეგი შესვლა</span><span class="stat-value" style="font-size:15px">${nextIn ? esc(R.dayLabel(nextIn.check_in)) + ', ' + esc(String(nextIn.check_in_time || '').slice(0, 5)) : '-'}</span><span class="stat-note">${nextIn ? esc(nextIn.guest_name) : ''}</span></div>
+            <div class="stat"><span class="stat-label">შემდეგი საქმე</span><span class="stat-value" style="font-size:15px">${nextTask ? esc(R.dateTime(H.taskTime(nextTask))) : '-'}</span><span class="stat-note">${nextTask ? esc(nextTask.title) : ''}</span></div>
           </div></section>
 
           <section class="card"><div class="card-head"><h2>აქტიური საქმეები <span class="count">${open.length}</span></h2><a class="link-btn small" href="#/tasks" id="a-all-tasks">ყველა საქმე (${tasks.length})</a></div>
@@ -216,8 +273,8 @@
         <div class="stack">
           <section class="card"><div class="card-head"><h2>მფლობელი</h2>${owner ? `<a class="link-btn small" href="#/owners/${owner.id}">პროფილი</a>` : ''}</div>
             <div class="card-body">${owner ? `<dl class="kv"><dt>სახელი</dt><dd>${esc(owner.name)}</dd>
-              <dt>ტელეფონი</dt><dd>${owner.phone ? `<a href="tel:${esc(owner.phone)}">${esc(owner.phone)}</a>` : '—'}</dd>
-              <dt>ელფოსტა</dt><dd>${owner.email ? `<a href="mailto:${esc(owner.email)}">${esc(owner.email)}</a>` : '—'}</dd>
+              <dt>ტელეფონი</dt><dd>${owner.phone ? `<a href="tel:${esc(owner.phone)}">${esc(owner.phone)}</a>` : '-'}</dd>
+              <dt>ელფოსტა</dt><dd>${owner.email ? `<a href="mailto:${esc(owner.email)}">${esc(owner.email)}</a>` : '-'}</dd>
               <dt>საკომისიო</dt><dd>${Number(a.commission_pct || 0)}%</dd></dl>`
               : '<p class="muted">მფლობელი არ არის მითითებული. თანხმობებისა და ამონაწერებისთვის მიუთითე მფლობელი.</p><button class="btn btn-secondary btn-sm" style="margin-top:8px" id="a-set-owner">მფლობელის მითითება</button>'}</div></section>
 
@@ -234,7 +291,7 @@
                 <span>${esc(R.date(rv.check_in))} → ${esc(R.date(rv.check_out))}${Number(rv.expected_income) ? ' · ' + money(rv.expected_income) : ''}</span>
                 ${conflict ? '<span class="t-danger small">კონფლიქტი: თარიღები სხვა ჯავშანს ემთხვევა</span>' : ''}</span>
                 <span>${hasClean ? R.badge('დასუფთავება დაგეგმილია', 'ok') : `<button type="button" class="btn btn-secondary btn-sm" data-clean="${rv.id}">დასუფთავების დაგეგმვა</button>`}</span></div>`;
-            }).join('')}</div>` : App.emptyInline('მომავალი ჯავშანი არ არის. დაამატე ჯავშანი — სისტემა შემოგთავაზებს დასუფთავებას გასვლის შემდეგ.')}</section>
+            }).join('')}</div>` : App.emptyInline('მომავალი ჯავშანი არ არის. დაამატე ჯავშანი, სისტემა შემოგთავაზებს დასუფთავებას გასვლის შემდეგ.')}</section>
 
           <section class="card"><div class="card-head"><h2>${icon('key', 16)} დაშვება</h2>${hasAccess(a) ? '<button type="button" class="btn btn-ghost btn-sm" id="a-reveal" aria-expanded="false">ჩვენება</button>' : ''}</div>
             <div class="card-body">${hasAccess(a) ? `<div id="a-access" hidden><dl class="kv">
@@ -244,7 +301,7 @@
                 ${a.parking_info ? `<dt>პარკინგი</dt><dd>${esc(a.parking_info)}</dd>` : ''}
                 ${a.access_instructions ? `<dt>ინსტრუქცია</dt><dd style="white-space:pre-wrap">${esc(a.access_instructions)}</dd>` : ''}</dl></div>
                 <p class="muted small" id="a-access-note">დაშვების მონაცემები დამალულია. ჩანს მენეჯერებისთვის და იმ თანამშრომლისთვის, ვისაც ამ ბინაში აქტიური საქმე აქვს.</p>`
-              : '<p class="muted small">კარის კოდი, Wi-Fi და ინსტრუქცია არ არის შევსებული. დაამატე „რედაქტირებიდან“ — დამლაგებელი მათ საქმესთან ერთად ნახავს.</p>'}</div></section>
+              : '<p class="muted small">კარის კოდი, Wi-Fi და ინსტრუქცია არ არის შევსებული. დაამატე „რედაქტირებიდან“. დამლაგებელი მათ საქმესთან ერთად ნახავს.</p>'}</div></section>
           ${!archived && App.isAdmin() ? `<button type="button" class="btn btn-danger-outline" id="a-archive">ბინის დაარქივება</button>` : ''}
         </div>
       </div>`;
@@ -264,6 +321,73 @@
     // Marketing Showcase & Deals Bindings
     $('#btn-share-renter')?.addEventListener('click', () => App.copyRenterLink(id, false));
     $('#btn-share-wl')?.addEventListener('click', () => App.copyRenterLink(id, true));
+
+    // Links made for one client
+    $('#btn-named-link')?.addEventListener('click', () => R.dialog({
+      title: 'ბმული კლიენტისთვის', submitLabel: 'ბმულის შექმნა და კოპირება',
+      body: `<div class="form-grid">
+        <label class="field span-2"><span class="field-label">კლიენტის სახელი</span><input name="recipient_name" required maxlength="80" placeholder="მაგ.: ნინო, ვაკეში ეძებს" data-error="ჩაწერე, ვისთვისაა ბმული." /></label>
+        ${aptDeals.length ? `<label class="field span-2"><span class="field-label">გარიგება (არასავალდებულო)</span><select name="deal_id"><option value="">არ არის მიბმული</option>${aptDeals.map(d => `<option value="${esc(d.id)}">${esc(d.client_name)}</option>`).join('')}</select></label>` : ''}
+        <p class="muted small span-2" style="margin:0">ამ ბმულის ნახვები კლიენტის სახელით გამოჩნდება.</p></div>`,
+      onSubmit: async (_f, f) => {
+        const token = Array.from(crypto.getRandomValues(new Uint8Array(10)), b => (b % 36).toString(36)).join('');
+        const row = await q(sb.from('share_links').insert({ organization_id: S.org.id, apartment_id: id, token, recipient_name: f.recipient_name.trim(), deal_id: f.deal_id || null, created_by: S.user.id }).select().single());
+        S.data.shareLinks = [row, ...(S.data.shareLinks || [])];
+        R.copyText(R.listingUrl(a, { recipient: row.token }), `ბმული დაკოპირდა: ${row.recipient_name}`);
+        App.render();
+      },
+    }));
+    $$('[data-link-copy]').forEach(b => b.addEventListener('click', () => R.copyText(R.listingUrl(a, { recipient: b.dataset.linkCopy }), 'ბმული დაკოპირდა')));
+    $$('[data-link-off]').forEach(b => b.addEventListener('click', () => run(b, async () => {
+      const row = await q(sb.from('share_links').update({ is_active: false }).eq('id', b.dataset.linkOff).select().single());
+      S.data.shareLinks = (S.data.shareLinks || []).map(l => l.id === row.id ? row : l);
+      App.render();
+    }, { success: 'ბმული გაითიშა' })));
+
+    // Publish switch and listing photos
+    const saveListing = async (patch) => {
+      const row = await q(sb.from('apartments').update(patch).eq('id', id).select().single());
+      App.upsertLocal('apartments', row);
+      App.render();
+    };
+    $('#btn-toggle-publish')?.addEventListener('click', (e) => run(e.currentTarget, () => saveListing({ is_published: !published }),
+      { success: published ? 'ბმული დაიმალა' : 'ბმული გამოქვეყნდა' }));
+    $('#a-photo-input')?.addEventListener('change', (e) => {
+      const files = [...e.target.files];
+      e.target.value = '';
+      if (!files.length) return;
+      const room = MAX_LISTING_PHOTOS - listingPhotos.length;
+      if (room <= 0) { toast(`ერთ ბინაზე მაქსიმუმ ${MAX_LISTING_PHOTOS} ფოტოა.`, { type: 'error' }); return; }
+      run($('#a-photo-add'), async () => {
+        const added = [];
+        try {
+          for (const file of files.slice(0, room)) {
+            if (file.size > 25 * 1024 * 1024) throw new Error(`„${file.name}“ 25 მბ-ზე დიდია.`);
+            added.push(await R.uploadFile(S.org.id, `apartments/${id}`, await R.downscaleImage(file)));
+          }
+        } finally {
+          // Keep whatever did upload, even when a later file fails.
+          if (added.length) await saveListing({ photos: [...listingPhotos, ...added] });
+        }
+        if (files.length > room) toast(`დაემატა მხოლოდ ${room}: ერთ ბინაზე მაქსიმუმ ${MAX_LISTING_PHOTOS} ფოტოა.`, { type: 'info' });
+      }, { success: 'ფოტოები დაემატა', retry: false });
+    });
+    $$('[data-photo-move]').forEach(b => b.addEventListener('click', () => {
+      const i = Number(b.dataset.i), j = i + Number(b.dataset.photoMove);
+      if (j < 0 || j >= listingPhotos.length) return;
+      const next = [...listingPhotos];
+      [next[i], next[j]] = [next[j], next[i]];
+      run(b, () => saveListing({ photos: next }));
+    }));
+    $$('[data-photo-del]').forEach(b => b.addEventListener('click', async () => {
+      const i = Number(b.dataset.i);
+      const ok = await R.confirm({ title: 'ფოტოს წაშლა', message: 'ფოტო წაიშლება ბინიდან და კლიენტის ბმულიდან.', confirmLabel: 'წაშლა', danger: true });
+      if (!ok) return;
+      run(b, async () => {
+        await saveListing({ photos: listingPhotos.filter((_, n) => n !== i) });
+        R.removeFile(listingPhotos[i]);
+      }, { success: 'ფოტო წაიშალა' });
+    }));
     $('#btn-open-post')?.addEventListener('click', () => App.openPostGenerator(a));
     $('#btn-open-lease')?.addEventListener('click', () => App.openLeaseAgreementGenerator(a));
     $('#btn-apt-deal')?.addEventListener('click', () => App.openDealForm(null, { apartment_id: id, deal_amount: a.monthly_rent, currency: a.currency || 'USD' }));
@@ -287,6 +411,8 @@
     $('#a-restore')?.addEventListener('click', (e) => setAptStatus(a, 'active', e.target));
     App.bindNextActions($('#view'));
   }
+
+  const MAX_LISTING_PHOTOS = 20;
 
   const hasAccess = (a) => a.door_code || a.wifi_name || a.wifi_password || a.parking_info || a.access_instructions;
 
@@ -345,6 +471,16 @@
             <label class="field"><span class="field-label">წინასწარი გადახდის პირობები</span><input name="prepayment_terms" value="${esc(v.prepayment_terms || '')}" placeholder="1-ლი და ბოლო თვე + 1 თვის დეპოზიტი" /></label>
             <label class="field"><span class="field-label">აგენტის WhatsApp ნომერი</span><input type="tel" name="agent_phone" value="${esc(v.agent_phone || S.org.contact_phone || '')}" placeholder="+995599001122" /><span class="field-hint">ნახვის დაჯავშნის ღილაკისთვის</span></label>
             <label class="field span-2"><span class="field-label">ბინის აღწერა (ქართულად)</span><textarea name="description" rows="3" placeholder="ქირავდება თანამედროვე ბინა...">${esc(v.description || '')}</textarea></label>
+            <label class="field span-2"><span class="field-label">აღწერა ინგლისურად (უცხოელი კლიენტისთვის)</span><textarea name="description_en" rows="3" placeholder="Bright two-bedroom apartment near Vake Park...">${esc(v.description_en || '')}</textarea></label>
+            <fieldset class="field span-2 amenity-set"><legend class="field-label">კეთილმოწყობა</legend>
+              ${R.AMENITIES.map(m => `<label class="check"><input type="checkbox" name="amenity" value="${m.id}" ${(v.amenities || []).includes(m.id) ? 'checked' : ''} /><span>${esc(m.label)}</span></label>`).join('')}
+            </fieldset>
+            <label class="field"><span class="field-label">კლიენტის ბმული</span>
+              <select name="is_published">
+                <option value="true" ${v.is_published !== false ? 'selected' : ''}>გამოქვეყნებულია</option>
+                <option value="false" ${v.is_published === false ? 'selected' : ''}>დამალულია</option>
+              </select>
+            </label>
           </div>
         </div>
 
@@ -365,7 +501,7 @@
           </div>
         </div>
         <div class="form-grid" style="gap:8px"><label class="field"><span class="field-label">Check-in</span><input type="time" name="checkin_time" value="${esc(String(v.checkin_time || '14:00').slice(0, 5))}" /></label><label class="field"><span class="field-label">Check-out</span><input type="time" name="checkout_time" value="${esc(String(v.checkout_time || '12:00').slice(0, 5))}" /></label></div>
-        <div class="form-section span-2"><div class="form-section-title">დაშვება <span class="muted small">— ჩანს მხოლოდ მენეჯერებისთვის</span></div>
+        <div class="form-section span-2"><div class="form-section-title">დაშვება <span class="muted small">ჩანს მხოლოდ მენეჯერებისთვის</span></div>
           <div class="form-grid">
             <label class="field"><span class="field-label">კარის კოდი</span><input name="door_code" value="${esc(v.door_code || '')}" autocomplete="off" /></label>
             <label class="field"><span class="field-label">პარკინგი</span><input name="parking_info" value="${esc(v.parking_info || '')}" /></label>
@@ -383,8 +519,10 @@
           area_sqm: f.area_sqm ? Number(f.area_sqm) : null, floor: f.floor?.trim() || null, total_floors: f.total_floors ? Number(f.total_floors) : null,
           pets_allowed: f.pets_allowed === 'true', utilities_estimate: f.utilities_estimate ? Number(f.utilities_estimate) : null,
           prepayment_terms: f.prepayment_terms?.trim() || null, agent_phone: f.agent_phone?.trim() || null,
-          description: f.description?.trim() || null,
-          owner_id: f.owner_id || null, status: f.status, is_archived: f.status === 'archived', commission_pct: Number(f.commission_pct || 0),
+          description: f.description?.trim() || null, description_en: f.description_en?.trim() || null,
+          amenities: [..._f.querySelectorAll('input[name="amenity"]:checked')].map(i => i.value),
+          is_published: f.is_published !== 'false',
+          owner_id: f.owner_id || null, status: f.status, is_archived: f.status === 'archived', commission_pct: f.commission_pct != null && f.commission_pct !== '' ? Number(f.commission_pct) : Number(v.commission_pct ?? 20),
           rental_type: f.rental_type || 'short_term', tenant_name: f.tenant_name?.trim() || null, tenant_phone: f.tenant_phone?.trim() || null,
           monthly_rent: f.monthly_rent ? Number(f.monthly_rent) : null, rent_due_day: f.rent_due_day ? Number(f.rent_due_day) : 1,
           deposit_amount: f.deposit_amount ? Number(f.deposit_amount) : null, lease_end: f.lease_end || null,
@@ -392,9 +530,18 @@
           door_code: f.door_code.trim() || null, parking_info: f.parking_info.trim() || null, wifi_name: f.wifi_name.trim() || null,
           wifi_password: f.wifi_password.trim() || null, access_instructions: f.access_instructions.trim() || null, notes: f.notes.trim() || null,
         };
-        const row = edit
-          ? await q(sb.from('apartments').update(payload).eq('id', a.id).select().single())
-          : await App.insertOnce('apartments', { id, organization_id: S.org.id, ...payload });
+        const save = (p) => edit
+          ? q(sb.from('apartments').update(p).eq('id', a.id).select().single())
+          : App.insertOnce('apartments', { id, organization_id: S.org.id, ...p });
+        let row;
+        try {
+          row = await save(edit ? payload : { ...payload, public_slug: R.makeSlug(payload.name) });
+        } catch (err) {
+          // A database that has not had the sharing migration lacks these columns; save the rest instead of failing.
+          if (!/public_slug|is_published/.test(String(err?.message || err))) throw err;
+          const { is_published, ...rest } = payload;
+          row = await save(rest);
+        }
         App.upsertLocal('apartments', row);
         App.logEvent(row.id, edit ? 'apartment_updated' : 'apartment_created', edit ? 'ბინის მონაცემები განახლდა' : 'ბინა დაემატა', row.name);
         toast(edit ? 'ბინა განახლდა' : `ბინა დაემატა: ${row.name}`, { type: 'success' });
@@ -486,21 +633,21 @@
         else if (st === 'approved' && exp && exp.status === 'approved') action = `<a class="btn btn-ghost btn-sm" href="#/finance?status=approved">ხარჯის აღრიცხვა</a>`;
         return `<div class="row ${a.task_id ? 'clickable' : ''}" style="--cols:${cols}" ${a.task_id ? `data-go="${App.taskHref(a.task_id)}"` : ''}>
           <span class="cell-main"><strong>${esc(a.title || a.description || 'ხარჯი')}</strong><span>${esc(a.description && a.title ? a.description : '')}</span></span>
-          <span class="cell-meta">${esc(H.aptName(a.apartment_id))} · ${esc(H.owner(a.owner_id)?.name || '—')}</span>
+          <span class="cell-meta">${esc(H.aptName(a.apartment_id))} · ${esc(H.owner(a.owner_id)?.name || '-')}</span>
           <span class="cell-meta num strong">${money(a.amount)}</span>
           <span class="cell-meta" data-label="მოთხოვნილია">${esc(R.date(a.created_at))}</span>
           <span class="cell-meta">${st === 'pending' ? `<span class="${Date.now() - new Date(a.created_at) > 24 * 3600e3 ? 't-danger' : 't-warn'}">${esc(R.elapsed(a.created_at))} ელოდება</span>` : a.responded_at ? `პასუხი ${esc(R.date(a.responded_at))}` : ''}</span>
           <span class="cell-status">${R.approvalBadge(a)}${exp && st === 'approved' ? `<div class="small muted">${exp.status === 'approved' ? 'ჯერ არ არის გაწეული' : L.expense[exp.status]}</div>` : ''}</span>
           <span class="cell-actions">${action}${st === 'pending' ? `<button type="button" class="btn btn-ghost btn-sm" data-cancel-appr="${a.id}">გაუქმება</button>` : ''}</span>
         </div>`;
-      }).join('')}</div>` : `<div class="empty">${icon('owner', 28)}<h3>${apprFilter === 'pending' ? 'პასუხის მომლოდინე მოთხოვნა არ არის' : 'ჩანაწერი არ არის'}</h3><p>თანხმობის მოთხოვნით მფლობელი ტელეფონიდან ერთი ბმულით დაადასტურებს ან უარყოფს ხარჯს — მაგ.: „ონკანის გამოცვლა, ₾180“.</p><button class="btn btn-primary" type="button" id="o-appr-empty">თანხმობის მოთხოვნა</button></div>`}</section>`;
+      }).join('')}</div>` : `<div class="empty">${icon('owner', 28)}<h3>${apprFilter === 'pending' ? 'პასუხის მომლოდინე მოთხოვნა არ არის' : 'ჩანაწერი არ არის'}</h3><p>თანხმობის მოთხოვნით მფლობელი ტელეფონიდან ერთი ბმულით დაადასტურებს ან უარყოფს ხარჯს, მაგ.: „ონკანის გამოცვლა, ₾180“.</p><button class="btn btn-primary" type="button" id="o-appr-empty">თანხმობის მოთხოვნა</button></div>`}</section>`;
     $$('[data-af]', root).forEach(b => b.addEventListener('click', () => { apprFilter = b.dataset.af; App.render(); }));
     $$('[data-go]', root).forEach(rw => rw.addEventListener('click', (e) => { if (!e.target.closest('button,a')) App.go(rw.dataset.go); }));
     $('#o-appr-empty')?.addEventListener('click', () => App.openApprovalForm({}));
     App.bindApprovalShare(root);
     $$('[data-cancel-appr]', root).forEach(b => b.addEventListener('click', async () => {
       const a = S.data.approvals.find(x => x.id === b.dataset.cancelAppr);
-      const ok = await R.confirm({ title: 'მოთხოვნის გაუქმება', message: `„${a.title || a.description}“ (${money(a.amount)}) — მფლობელის ბმული აღარ იმუშავებს.`, confirmLabel: 'გაუქმება', danger: true });
+      const ok = await R.confirm({ title: 'მოთხოვნის გაუქმება', message: `„${a.title || a.description}“ (${money(a.amount)}): მფლობელის ბმული აღარ იმუშავებს.`, confirmLabel: 'გაუქმება', danger: true });
       if (!ok) return;
       run(b, async () => {
         const row = await q(sb.from('approvals').update({ status: 'cancelled' }).eq('id', a.id).select().single());
@@ -521,8 +668,8 @@
         const apts = S.data.apartments.filter(a => a.owner_id === o.id && a.status !== 'archived');
         const pend = S.data.approvals.filter(a => a.owner_id === o.id && R.approvalStatus(a) === 'pending').length;
         return `<a class="row" href="#/owners/${o.id}" style="--cols:${cols}"><span class="cell-main"><strong>${esc(o.name)}</strong><span>${o.user_id ? 'პორტალთან დაკავშირებული' : ''}</span></span>
-          <span class="cell-meta">${esc([o.phone, o.email].filter(Boolean).join(' · ') || '—')}</span>
-          <span class="cell-meta" data-label="ბინები">${apts.length ? esc(apts.map(a => a.name).join(', ')) : '—'}</span>
+          <span class="cell-meta">${esc([o.phone, o.email].filter(Boolean).join(' · ') || '-')}</span>
+          <span class="cell-meta" data-label="ბინები">${apts.length ? esc(apts.map(a => a.name).join(', ')) : '-'}</span>
           <span class="cell-status">${pend ? R.badge(`${pend} ელოდება`, 'warn') : ''}</span></a>`;
       }).join('')}</div>` : `<div class="empty">${icon('owner', 28)}<h3>მფლობელი ჯერ არ არის დამატებული</h3><p>მფლობელს უგზავნი ხარჯის თანხმობებს და თვიურ ამონაწერებს. საკმარისია სახელი და ტელეფონი.</p><button class="btn btn-primary" type="button" id="o-new-empty">მფლობელის დამატება</button></div>`}</section>`;
     $('#o-new-empty')?.addEventListener('click', () => openOwnerForm());
@@ -543,9 +690,9 @@
         <section class="card"><div class="card-head"><h2>ამონაწერები</h2></div>${statements.length ? `<div class="rows">${statements.map(s => `<a class="row" href="#/finance/statement/${s.id}" style="--cols:minmax(0,1fr) auto auto"><span class="cell-main"><strong>${esc(H.aptName(s.apartment_id))} · ${esc(monthLabel(s.month_period))}</strong><span>წმინდა ${money(s.net_result)}</span></span>${R.badge(L.statement[s.status], L.statementTone[s.status])}</a>`).join('')}</div>` : App.emptyInline('ამონაწერი ჯერ არ მომზადებულა. მოამზადე „ფინანსებში“.')}</section>
       </div><div class="stack">
         <section class="card"><div class="card-head"><h2>კონტაქტი</h2></div><div class="card-body"><dl class="kv">
-          <dt>ტელეფონი</dt><dd>${o.phone ? `<a href="tel:${esc(o.phone)}">${esc(o.phone)}</a>` : '—'}</dd>
-          <dt>ელფოსტა</dt><dd>${o.email ? `<a href="mailto:${esc(o.email)}">${esc(o.email)}</a>` : '—'}</dd>
-          <dt>ანგარიში</dt><dd>${esc(o.payout_account || '—')}</dd>
+          <dt>ტელეფონი</dt><dd>${o.phone ? `<a href="tel:${esc(o.phone)}">${esc(o.phone)}</a>` : '-'}</dd>
+          <dt>ელფოსტა</dt><dd>${o.email ? `<a href="mailto:${esc(o.email)}">${esc(o.email)}</a>` : '-'}</dd>
+          <dt>ანგარიში</dt><dd>${esc(o.payout_account || '-')}</dd>
           ${o.notes ? `<dt>შენიშვნა</dt><dd style="white-space:pre-wrap">${esc(o.notes)}</dd>` : ''}</dl></div></section>
       </div></div>`;
     $('#ow-edit').onclick = () => openOwnerForm(o);
@@ -621,7 +768,7 @@
           const apt = H.apt(form.apartment_id.value);
           const owner = apt && H.owner(apt.owner_id);
           const p = $('[data-owner]', form);
-          p.textContent = !apt ? '' : owner ? `მფლობელი: ${owner.name}${owner.phone ? ' · ' + owner.phone : ''}` : 'ამ ბინას მფლობელი არ ჰყავს მითითებული — ჯერ მიუთითე მფლობელი ბინის რედაქტირებით.';
+          p.textContent = !apt ? '' : owner ? `მფლობელი: ${owner.name}${owner.phone ? ' · ' + owner.phone : ''}` : 'ამ ბინას მფლობელი არ ჰყავს მითითებული. ჯერ მიუთითე მფლობელი ბინის რედაქტირებით.';
           p.className = 'field-hint' + (apt && !owner ? ' t-danger' : '');
         };
         form.apartment_id.addEventListener('change', sync);

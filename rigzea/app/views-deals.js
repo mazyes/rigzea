@@ -27,7 +27,7 @@
 
   // Format currency with symbol
   function formatDealMoney(amount, currency = 'USD') {
-    if (!amount && amount !== 0) return '—';
+    if (!amount && amount !== 0) return '-';
     const num = Number(amount).toLocaleString('en-US', { maximumFractionDigits: 0 });
     return currency === 'USD' ? `$${num}` : `${num} ₾`;
   }
@@ -205,13 +205,7 @@
       if (newStage === 'closed') patch.closed_at = new Date().toISOString();
       if (newStage === 'deposit') patch.deposit_paid_at = new Date().toISOString();
 
-      let row;
-      try {
-        row = await q(sb.from('deals').update(patch).eq('id', deal.id).select().single());
-      } catch {
-        // Fallback local update
-        row = { ...deal, ...patch };
-      }
+      const row = await q(sb.from('deals').update(patch).eq('id', deal.id).select().single());
       App.upsertLocal('deals', row);
       toast(`სტატუსი განახლდა: ${L.dealStage[newStage] || newStage}`, { type: 'success' });
       App.render();
@@ -374,15 +368,9 @@
           created_by: S.user.id
         };
 
-        let row;
-        try {
-          row = edit
-            ? await q(sb.from('deals').update(payload).eq('id', deal.id).select().single())
-            : await App.insertOnce('deals', { id, ...payload });
-        } catch (err) {
-          console.warn('Deals remote write notice:', err);
-          row = { id, ...payload, updated_at: new Date().toISOString() };
-        }
+        const row = edit
+          ? await q(sb.from('deals').update(payload).eq('id', deal.id).select().single())
+          : await App.insertOnce('deals', { id, ...payload });
 
         App.upsertLocal('deals', row);
         toast(edit ? 'გარიგება განახლდა' : `ახალი გარიგება შეიქმნა: ${row.client_name}`, { type: 'success' });
@@ -463,8 +451,8 @@
           }
 
           container.innerHTML = filtered.map(a => {
-            const rentText = a.monthly_rent ? (a.currency === 'GEL' ? `${a.monthly_rent} ₾` : `$${a.monthly_rent}`) : '—';
-            const showcaseUrl = `${location.origin}/p/?id=${a.id}`;
+            const rentText = a.monthly_rent ? (a.currency === 'GEL' ? `${a.monthly_rent} ₾` : `$${a.monthly_rent}`) : '-';
+            const showcaseUrl = R.listingUrl(a);
             return `
               <div class="card" style="padding:12px;display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--surface)">
                 <div>
@@ -489,7 +477,7 @@
           }).join('');
 
           $$('[data-mm-copy]', form).forEach(b => b.addEventListener('click', () => {
-            const url = `${location.origin}/p/?id=${b.dataset.mmCopy}`;
+            const url = R.listingUrl(apts.find(x => x.id === b.dataset.mmCopy) || { id: b.dataset.mmCopy });
             copyText(url, 'სტუმრის ბმული დაკოპირდა!');
           }));
 
@@ -521,8 +509,8 @@
     const gel = isUSD ? Math.round(rent * 2.7) : rent;
     const priceStr = isUSD ? `$${usd} / თვეში (~${gel} ₾)` : `${gel} ₾ / თვეში (~$${usd})`;
 
-    const publicUrl = `${location.origin}/p/?id=${a.id}`;
-    const whiteLabelUrl = `${location.origin}/p/?id=${a.id}&wl=1`;
+    const publicUrl = R.listingUrl(a);
+    const whiteLabelUrl = R.listingUrl(a, { whiteLabel: true });
 
     const city = a.city || 'თბილისი';
     const district = a.district || (a.city === 'ბათუმი' ? 'ბულვარი' : 'ვაკე');
@@ -643,7 +631,7 @@ ${publicUrl}
     const tenantName = deal?.client_name || a.tenant_name || 'დავით ბერიძე';
     const tenantPhone = deal?.client_phone || a.tenant_phone || '+995 599 00 11 22';
     const ownerName = owner?.name || S.org.name || 'მესაკუთრე';
-    const ownerPhone = owner?.phone || S.org.contact_phone || '—';
+    const ownerPhone = owner?.phone || S.org.contact_phone || '-';
 
     const cur = deal?.currency || a.currency || 'USD';
     const rent = deal?.deal_amount || a.monthly_rent || 1200;
@@ -750,7 +738,7 @@ ${publicUrl}
 
   // Link copy helper
   App.copyRenterLink = (aptId, isWhiteLabel = false) => {
-    const url = isWhiteLabel ? `${location.origin}/p/?id=${aptId}&wl=1` : `${location.origin}/p/?id=${aptId}`;
+    const url = R.listingUrl((S.data.apartments || []).find(x => x.id === aptId) || { id: aptId }, { whiteLabel: isWhiteLabel });
     copyText(url, isWhiteLabel ? 'White-Label ბმული დაკოპირდა!' : 'სტუმრის ბმული დაკოპირდა!');
   };
 

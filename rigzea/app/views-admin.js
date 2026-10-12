@@ -30,7 +30,7 @@
           const self = m.user_id === S.user.id;
           return `<div class="row" style="--cols:${cols}"><span class="cell-main"><strong>${esc(m.display_name || 'უსახელო')}${self ? ' <span class="muted">(შენ)</span>' : ''}</strong><span>წევრია ${esc(R.date(m.created_at))}-დან</span></span>
             <span class="cell-meta">${App.isAdmin() && !self && m.role !== 'owner' ? `<select class="input" data-role="${m.id}" aria-label="როლი" style="min-height:32px">${['admin', 'manager', 'staff'].map(r => `<option value="${r}" ${m.role === r ? 'selected' : ''}>${L.role[r]}</option>`).join('')}</select>` : esc(L.role[m.role])}</span>
-            <span class="cell-meta">${m.phone ? `<a href="tel:${esc(m.phone)}">${esc(m.phone)}</a>` : '—'}</span>
+            <span class="cell-meta">${m.phone ? `<a href="tel:${esc(m.phone)}">${esc(m.phone)}</a>` : '-'}</span>
             <span class="cell-meta" data-label="საქმე"><a href="#/tasks" data-filter-assignee="${m.id}">${open.length}</a>${overdue ? ` <span class="t-danger">(${overdue} ვადაგადაც.)</span>` : ''}</span>
             <span class="cell-actions">${App.isAdmin() && !self && m.role !== 'owner' ? `<button type="button" class="btn btn-ghost btn-sm" data-remove="${m.id}">გუნდიდან ამოშლა</button>` : ''}</span></div>`;
         }).join('')}</div></section>
@@ -38,7 +38,7 @@
         ${invitations === null ? '<div class="skeleton"><i></i><i></i></div>' : invitationsError ? `<div class="error-state"><p>მოწვევები ვერ ჩაიტვირთა. ${esc(R.friendlyError(invitationsError))}</p><button class="btn btn-secondary btn-sm" id="t-inv-retry">ხელახლა ცდა</button></div>`
           : pendingInv.length ? `<div class="rows">${pendingInv.map(i => `<div class="row" style="--cols:minmax(0,1fr) 150px auto"><span class="cell-main"><strong>${esc(i.email)}</strong><span>გაიგზავნა ${esc(R.date(i.created_at))}</span></span><span class="cell-meta">${esc(L.role[i.role])}</span><span class="cell-actions">${App.isAdmin() ? `<button type="button" class="btn btn-ghost btn-sm" data-cancel-inv="${i.id}">გაუქმება</button>` : ''}</span></div>`).join('')}</div>`
           : App.emptyInline('ღია მოწვევა არ არის.')}
-        <div class="card-foot">მოწვეული ადამიანი რეგისტრირდება მისამართზე <strong>${esc(location.origin)}/app/</strong> იმავე ელფოსტით — სამუშაო სივრცე ავტომატურად დაემატება. ელფოსტით ავტომატური გაგზავნა ჯერ არ არის ჩართული, ამიტომ ბმული თავად გაუგზავნე. <button type="button" class="link-btn" id="t-copy">ბმულის კოპირება</button></div>
+        <div class="card-foot">მოწვეული ადამიანი რეგისტრირდება მისამართზე <strong>${esc(location.origin)}/app/</strong> იმავე ელფოსტით, სამუშაო სივრცე ავტომატურად დაემატება. ელფოსტით ავტომატური გაგზავნა ჯერ არ არის ჩართული, ამიტომ ბმული თავად გაუგზავნე. <button type="button" class="link-btn" id="t-copy">ბმულის კოპირება</button></div>
       </section>`;
 
     $('#t-invite')?.addEventListener('click', openInvite);
@@ -125,7 +125,64 @@
         App.renderShell();
       }, { success: 'კომპანიის მონაცემები შენახულია' });
     };
+    renderTelegramCard($('#s-body'));
   };
+
+  // Each member links their own Telegram with a one-time code, so notifications reach the right person.
+  function renderTelegramCard(root) {
+    if (!App.isManager()) return;
+    const card = document.createElement('section');
+    card.className = 'card';
+    card.id = 's-telegram';
+    card.style.cssText = 'max-width:640px;margin-top:16px';
+    root.appendChild(card);
+    const bot = window.RIGZEA_CONFIG.TELEGRAM_BOT;
+    const head = `<div class="card-head"><h2>${icon('telegram', 18)} Telegram</h2></div>`;
+
+    const draw = async (code = null) => {
+      let st;
+      try { st = await q(sb.rpc('get_my_telegram_link', { p_org: S.org.id })); }
+      catch { card.innerHTML = `${head}<div class="card-body"><p class="muted small">Telegram-ის დაკავშირება ამ ანგარიშზე ჯერ არ არის ჩართული.</p></div>`; return; }
+
+      if (st?.linked) {
+        card.innerHTML = `${head}<div class="card-body">
+          <p>დაკავშირებულია${st.user_name ? ': <strong>' + esc(st.user_name) + '</strong>' : ''}.</p>
+          <label class="field" style="max-width:340px;margin:12px 0"><span class="field-label">შეტყობინება ბმულის გახსნაზე</span>
+            <select id="tg-notify">
+              <option value="all" ${st.notify_views === 'all' ? 'selected' : ''}>ყველა ბმული</option>
+              <option value="named" ${st.notify_views === 'named' ? 'selected' : ''}>მხოლოდ კლიენტისთვის შექმნილი ბმულები</option>
+              <option value="off" ${st.notify_views === 'off' ? 'selected' : ''}>გამორთულია</option>
+            </select></label>
+          <p class="muted small" style="margin:0 0 12px">ერთი კლიენტის ერთ ბინაზე საათში ერთხელ მოგწერთ, რომ არ შეგაწუხოთ.</p>
+          <button type="button" class="btn btn-ghost btn-sm" id="tg-unlink">გათიშვა</button></div>`;
+        $('#tg-notify', card).onchange = (e) => run(null, () => q(sb.rpc('set_my_telegram_notify', { p_org: S.org.id, p_mode: e.target.value })), { success: 'შენახულია' });
+        $('#tg-unlink', card).onclick = async (e) => {
+          const ok = await R.confirm({ title: 'Telegram-ის გათიშვა', message: 'შეტყობინებებს Telegram-ში აღარ მიიღებ.', confirmLabel: 'გათიშვა' });
+          if (ok) run(e.target, async () => { await q(sb.rpc('unlink_my_telegram', { p_org: S.org.id })); await draw(); }, { success: 'Telegram გაითიშა' });
+        };
+        return;
+      }
+
+      card.innerHTML = `${head}<div class="card-body">
+        <p class="muted small" style="margin-top:0">დააკავშირე Telegram, რომ შეტყობინებები პირდაპირ იქ მიიღო.</p>
+        ${code ? `<div class="notice" style="display:block">
+            <p style="margin:0 0 10px">1. გახსენი ბოტი და დააჭირე Start-ს:</p>
+            <a class="btn btn-primary btn-sm" id="tg-open" href="https://t.me/${esc(bot)}?start=${esc(code)}" target="_blank" rel="noopener">${icon('telegram', 15)} Telegram-ის გახსნა</a>
+            <p style="margin:10px 0 0">ან გაუგზავნე @${esc(bot)}-ს ეს კოდი: <strong id="tg-code">${esc(code)}</strong>. კოდი 15 წუთი მოქმედებს.</p>
+          </div>
+          <button type="button" class="btn btn-secondary btn-sm" id="tg-check" style="margin-top:12px">შევამოწმოთ კავშირი</button>`
+        : '<button type="button" class="btn btn-primary btn-sm" id="tg-connect">დაკავშირება</button>'}</div>`;
+      const connect = $('#tg-connect', card);
+      if (connect) connect.onclick = (e) => run(e.target, async () => draw(await q(sb.rpc('create_telegram_link_code', { p_org: S.org.id }))), { retry: false });
+      const check = $('#tg-check', card);
+      if (check) check.onclick = (e) => run(e.target, async () => {
+        const now = await q(sb.rpc('get_my_telegram_link', { p_org: S.org.id }));
+        if (now?.linked) { toast('Telegram დაკავშირებულია', { type: 'success' }); await draw(); }
+        else toast('ჯერ არ არის დაკავშირებული. გაუგზავნე ბოტს კოდი და სცადე ხელახლა.', { type: 'info' });
+      }, { retry: false });
+    };
+    draw();
+  }
 
   // ===========================================================================
   // IMPORT (Excel / CSV)
@@ -137,7 +194,7 @@
       example: [['Orbi City · 1204', 'შერიფ ხიმშიაშვილის 7', '1204', 'ბათუმი', 'ნინო ქავთარაძე', '4821#', 'Orbi1204', 'sea-view-24', '20']],
       toRow: (r, ctx) => {
         const owner = r.owner ? ctx.ownerByName(r.owner) : null;
-        if (r.owner && !owner) return { error: `მფლობელი „${r.owner}“ ვერ მოიძებნა — ჯერ მფლობელები შემოიტანე` };
+        if (r.owner && !owner) return { error: `მფლობელი „${r.owner}“ ვერ მოიძებნა. ჯერ მფლობელები შემოიტანე` };
         const pct = r.commission_pct === '' || r.commission_pct == null ? 20 : Number(String(r.commission_pct).replace('%', ''));
         if (isNaN(pct)) return { error: 'საკომისიო რიცხვი უნდა იყოს' };
         if (ctx.apartmentByName(r.name)) return { error: 'ასეთი ბინა უკვე არსებობს' };
@@ -249,11 +306,11 @@
     const ok = rows ? rows.filter(r => r.row) : [];
     const bad = rows ? rows.filter(r => r.error) : [];
     root.innerHTML = `<section class="card"><div class="card-body form-stack">
-      <p class="muted">შემოიტანე არსებული სია Excel-დან (.xlsx) ან CSV-დან. ჯერ შემოიტანე მფლობელები, შემდეგ ბინები, შემდეგ ხარჯები — ბინები მფლობელს სახელით უკავშირდება. შემოტანამდე ნახავ შედეგს და შეცდომებს.</p>
+      <p class="muted">შემოიტანე არსებული სია Excel-დან (.xlsx) ან CSV-დან. ჯერ შემოიტანე მფლობელები, შემდეგ ბინები, შემდეგ ხარჯები. ბინები მფლობელს სახელით უკავშირდება. შემოტანამდე ნახავ შედეგს და შეცდომებს.</p>
       <div class="seg" role="radiogroup" aria-label="რას შემოიტან">${Object.entries(IMPORTS).map(([k, d]) => `<label><input type="radio" name="kind" value="${k}" ${importState.kind === k ? 'checked' : ''}><span>${d.label}</span></label>`).join('')}</div>
       <div class="toolbar" style="margin:0"><label class="btn btn-primary" style="cursor:pointer">${icon('upload', 16)} ფაილის არჩევა<input type="file" id="imp-file" accept=".csv,.xlsx,.xls" hidden /></label>
         <button type="button" class="btn btn-secondary" id="imp-template">${icon('file', 16)} შაბლონის ჩამოტვირთვა (CSV)</button>
-        <span class="small muted">სვეტები: ${def.columns.map(([, l, r]) => r ? `<strong>${esc(l)}</strong>` : esc(l)).join(', ')} (მუქი — სავალდებულო)</span></div>
+        <span class="small muted">სვეტები: ${def.columns.map(([, l, r]) => r ? `<strong>${esc(l)}</strong>` : esc(l)).join(', ')} (მუქი: სავალდებულო)</span></div>
     </div>
     ${rows ? `<div class="card-head"><h2>${esc(importState.fileName)} · ${ok.length} მზადაა${bad.length ? `, <span class="t-danger">${bad.length} შეცდომით</span>` : ''}</h2>
         <div style="display:flex;gap:8px"><button type="button" class="btn btn-ghost btn-sm" id="imp-clear">გასუფთავება</button><button type="button" class="btn btn-primary btn-sm" id="imp-go" ${ok.length ? '' : 'disabled'}>${ok.length} ჩანაწერის შემოტანა</button></div></div>

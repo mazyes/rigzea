@@ -915,8 +915,7 @@ revoke execute on function public.notify_managers(uuid, text, text, text, text, 
 -- Public approval page, property showcase, and Telegram webhook use the anon key
 grant execute on function public.get_public_approval(text), public.respond_public_approval(text, text, text) to anon;
 grant execute on function public.get_public_showcase(uuid) to anon;
-grant execute on function public.link_telegram_chat(bigint, uuid, text), public.get_linked_telegram_org(bigint), public.get_telegram_org(uuid),
-  public.get_telegram_apartments(uuid), public.telegram_create_task_record(uuid, uuid, text, text, numeric, text) to anon;
+-- Telegram functions are server-only: see section 12.
 
 -- -----------------------------------------------------------------------------
 -- 11. FILE STORAGE (receipts and photos under <organization_id>/...)
@@ -937,3 +936,368 @@ create policy "rigzea files read" on storage.objects for select using (bucket_id
 create policy "rigzea files upload" on storage.objects for insert to authenticated with check (bucket_id = 'rigzea-files' and public.can_write_org_folder(name));
 create policy "rigzea files update" on storage.objects for update to authenticated using (bucket_id = 'rigzea-files' and public.can_write_org_folder(name));
 create policy "rigzea files delete" on storage.objects for delete to authenticated using (bucket_id = 'rigzea-files' and public.can_write_org_folder(name));
+
+-- =============================================================================
+-- 12. SHARING (mirror of supabase/migrations/20261012120000_sharing_foundations.sql, sections 1-3)
+-- =============================================================================
+-- -----------------------------------------------------------------------------
+-- 1. LISTINGS: public slug and publish switch
+-- -----------------------------------------------------------------------------
+alter table public.apartments add column if not exists public_slug text;
+alter table public.apartments add column if not exists is_published boolean not null default true;
+
+update public.apartments set public_slug = substr(md5(gen_random_uuid()::text), 1, 10) where public_slug is null or public_slug = '';
+
+create unique index if not exists uq_apartments_public_slug on public.apartments(public_slug);
+
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'apartments_public_slug_format') then
+    alter table public.apartments add constraint apartments_public_slug_format check (public_slug ~ '^[a-z0-9-]{6,80}$');
+  end if;
+end $$;
+
+-- The app sends a readable slug; this covers rows created any other way (import, SQL, older clients).
+create or replace function public.apartments_set_slug()
+returns trigger language plpgsql as $$
+begin
+  if new.public_slug is null or new.public_slug = '' then
+    new.public_slug := substr(md5(gen_random_uuid()::text), 1, 10);
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_apartments_slug on public.apartments;
+create trigger trg_apartments_slug before insert on public.apartments
+  for each row execute function public.apartments_set_slug();
+
+-- -----------------------------------------------------------------------------
+-- 2. PUBLIC LISTING LOOKUP (slug or id). Missing, archived and unpublished all look the same.
+-- -----------------------------------------------------------------------------
+create or replace function public.get_public_listing(p_ref text)
+returns jsonb language plpgsql stable security definer set search_path = public as $$
+declare
+  v_apt public.apartments%rowtype;
+  v_org record;
+  v_id uuid;
+begin
+  if p_ref is null or length(p_ref) > 100 then
+    return jsonb_build_object('success', false);
+  end if;
+  if p_ref ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' then
+    v_id := p_ref::uuid;
+  end if;
+
+  select * into v_apt from public.apartments
+  where (public_slug = lower(p_ref) or id = v_id)
+    and coalesce(is_archived, false) = false
+    and status <> 'archived'
+    and is_published
+  limit 1;
+  if not found then
+    return jsonb_build_object('success', false);
+  end if;
+
+  select name, contact_phone into v_org from public.organizations where id = v_apt.organization_id;
+
+  -- Only fields meant for the public. Owner details, door code, wifi and notes never leave here.
+  return jsonb_build_object(
+    'success', true,
+    'apartment', jsonb_build_object(
+      'id', v_apt.id,
+      'public_slug', v_apt.public_slug,
+      'name', v_apt.name,
+      'address', v_apt.address,
+      'city', v_apt.city,
+      'district', v_apt.district,
+      'rooms', coalesce(v_apt.rooms, v_apt.bedrooms),
+      'bedrooms', v_apt.bedrooms,
+      'floor', v_apt.floor,
+      'total_floors', v_apt.total_floors,
+      'area_sqm', v_apt.area_sqm,
+      'monthly_rent', v_apt.monthly_rent,
+      'currency', coalesce(v_apt.currency, 'USD'),
+      'rental_type', v_apt.rental_type,
+      'pets_allowed', coalesce(v_apt.pets_allowed, false),
+      'utilities_estimate', v_apt.utilities_estimate,
+      'prepayment_terms', v_apt.prepayment_terms,
+      'deposit_amount', v_apt.deposit_amount,
+      'agent_phone', coalesce(v_apt.agent_phone, v_org.contact_phone),
+      'photos', coalesce(v_apt.photos, '[]'::jsonb),
+      'description', v_apt.description,
+      'description_en', v_apt.description_en,
+      'amenities', coalesce(v_apt.amenities, '[]'::jsonb)
+    ),
+    'agency', jsonb_build_object(
+      'name', v_org.name,
+      'phone', coalesce(v_apt.agent_phone, v_org.contact_phone)
+    )
+  );
+end;
+$$;
+
+-- Old links call the id-based function; route them through the same rules.
+create or replace function public.get_public_showcase(p_apartment_id uuid)
+returns jsonb language sql stable security definer set search_path = public as $$
+  select public.get_public_listing(p_apartment_id::text);
+$$;
+
+revoke execute on function public.get_public_listing(text) from public;
+grant execute on function public.get_public_listing(text) to anon, authenticated, service_role;
+revoke execute on function public.get_public_showcase(uuid) from public;
+grant execute on function public.get_public_showcase(uuid) to anon, authenticated, service_role;
+
+-- -----------------------------------------------------------------------------
+-- 3. TELEGRAM: link by one-time code, per user. Linking by organisation id is closed.
+-- -----------------------------------------------------------------------------
+alter table public.telegram_chats add column if not exists user_id uuid references auth.users(id) on delete cascade;
+alter table public.telegram_chats add column if not exists notify_views text not null default 'all';
+
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'telegram_chats_notify_views_check') then
+    alter table public.telegram_chats add constraint telegram_chats_notify_views_check check (notify_views in ('all', 'named', 'off'));
+  end if;
+end $$;
+
+create index if not exists idx_telegram_chats_org on public.telegram_chats(organization_id);
+
+create table if not exists public.telegram_link_codes (
+  code text primary key,
+  organization_id uuid not null references public.organizations(id) on delete cascade,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  expires_at timestamptz not null default now() + interval '15 minutes',
+  used_at timestamptz
+);
+alter table public.telegram_link_codes enable row level security; -- no policies: only reachable through the functions below
+
+-- A signed-in manager asks for a code, then sends it to the bot.
+create or replace function public.create_telegram_link_code(p_org uuid)
+returns text language plpgsql security definer set search_path = public as $$
+declare v_code text;
+begin
+  if not public.is_org_manager(p_org) then
+    raise exception 'not allowed';
+  end if;
+  delete from public.telegram_link_codes where user_id = auth.uid() or expires_at < now();
+  v_code := upper(substr(md5(gen_random_uuid()::text), 1, 10));
+  insert into public.telegram_link_codes (code, organization_id, user_id) values (v_code, p_org, auth.uid());
+  return v_code;
+end;
+$$;
+
+-- Called by the bot with the service key. A code works once and for 15 minutes.
+create or replace function public.redeem_telegram_link_code(p_code text, p_chat_id bigint, p_user_name text default null)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare v_row public.telegram_link_codes%rowtype; v_org record;
+begin
+  select * into v_row from public.telegram_link_codes
+  where code = upper(trim(p_code)) and used_at is null and expires_at > now()
+  for update;
+  if not found then
+    return jsonb_build_object('success', false);
+  end if;
+  update public.telegram_link_codes set used_at = now() where code = v_row.code;
+
+  insert into public.telegram_chats (chat_id, organization_id, user_id, user_name)
+  values (p_chat_id, v_row.organization_id, v_row.user_id, p_user_name)
+  on conflict (chat_id) do update
+    set organization_id = excluded.organization_id, user_id = excluded.user_id,
+        user_name = coalesce(excluded.user_name, telegram_chats.user_name), linked_at = now();
+
+  select id, name, city into v_org from public.organizations where id = v_row.organization_id;
+  return jsonb_build_object('success', true, 'org_id', v_org.id, 'org_name', v_org.name, 'city', v_org.city);
+end;
+$$;
+
+-- What the settings screen shows for the signed-in user.
+create or replace function public.get_my_telegram_link(p_org uuid)
+returns jsonb language sql stable security definer set search_path = public as $$
+  select coalesce(
+    (select jsonb_build_object('linked', true, 'user_name', user_name, 'linked_at', linked_at, 'notify_views', notify_views)
+     from public.telegram_chats where user_id = auth.uid() and organization_id = p_org order by linked_at desc limit 1),
+    jsonb_build_object('linked', false));
+$$;
+
+create or replace function public.set_my_telegram_notify(p_org uuid, p_mode text)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if p_mode not in ('all', 'named', 'off') then raise exception 'invalid mode'; end if;
+  update public.telegram_chats set notify_views = p_mode where user_id = auth.uid() and organization_id = p_org;
+end;
+$$;
+
+create or replace function public.unlink_my_telegram(p_org uuid)
+returns void language sql security definer set search_path = public as $$
+  delete from public.telegram_chats where user_id = auth.uid() and organization_id = p_org;
+$$;
+
+revoke execute on function public.create_telegram_link_code(uuid), public.get_my_telegram_link(uuid),
+  public.set_my_telegram_notify(uuid, text), public.unlink_my_telegram(uuid) from public, anon;
+grant execute on function public.create_telegram_link_code(uuid), public.get_my_telegram_link(uuid),
+  public.set_my_telegram_notify(uuid, text), public.unlink_my_telegram(uuid) to authenticated;
+
+revoke execute on function public.redeem_telegram_link_code(text, bigint, text) from public, anon, authenticated;
+grant execute on function public.redeem_telegram_link_code(text, bigint, text) to service_role;
+
+-- These trusted a caller-supplied organisation id, and organisation ids are visible in public file URLs.
+-- From here on only the bot's server key may call them.
+revoke execute on function public.link_telegram_chat(bigint, uuid, text), public.get_linked_telegram_org(bigint),
+  public.get_telegram_org(uuid), public.get_telegram_apartments(uuid),
+  public.telegram_create_task_record(uuid, uuid, text, text, numeric, text) from public, anon, authenticated;
+grant execute on function public.get_linked_telegram_org(bigint), public.get_telegram_apartments(uuid),
+  public.telegram_create_task_record(uuid, uuid, text, text, numeric, text) to service_role;
+
+-- =============================================================================
+-- 13. LINK TRACKING (mirror of supabase/migrations/20261012130000_link_tracking.sql)
+-- =============================================================================
+-- -----------------------------------------------------------------------------
+-- 1. NAMED LINKS: a listing link made for one client, so an open can be tied to that link
+-- -----------------------------------------------------------------------------
+create table if not exists public.share_links (
+  id uuid primary key default gen_random_uuid(),
+  organization_id uuid not null references public.organizations(id) on delete cascade,
+  apartment_id uuid not null references public.apartments(id) on delete cascade,
+  token text not null unique check (token ~ '^[a-z0-9]{8,24}$'),
+  recipient_name text not null,
+  deal_id uuid references public.deals(id) on delete set null,
+  created_by uuid references auth.users(id) on delete set null,
+  is_active boolean not null default true,
+  expires_at timestamptz,
+  created_at timestamptz not null default now()
+);
+create index if not exists idx_share_links_apartment on public.share_links(apartment_id);
+create index if not exists idx_share_links_org on public.share_links(organization_id, created_at desc);
+
+-- -----------------------------------------------------------------------------
+-- 2. EVENTS: one row per counted open or contact tap. No IP address, no user agent.
+--    visitor_id is a random id kept in the visitor's own browser.
+-- -----------------------------------------------------------------------------
+create table if not exists public.link_events (
+  id bigint generated always as identity primary key,
+  organization_id uuid not null references public.organizations(id) on delete cascade,
+  apartment_id uuid not null references public.apartments(id) on delete cascade,
+  share_link_id uuid references public.share_links(id) on delete set null,
+  kind text not null check (kind in ('view', 'whatsapp', 'call')),
+  visitor_id text not null,
+  notified_at timestamptz,
+  created_at timestamptz not null default now()
+);
+create index if not exists idx_link_events_apartment on public.link_events(apartment_id, created_at desc);
+create index if not exists idx_link_events_org on public.link_events(organization_id, created_at desc);
+create index if not exists idx_link_events_visitor on public.link_events(visitor_id, created_at desc);
+
+alter table public.share_links enable row level security;
+alter table public.link_events enable row level security;
+
+do $$
+begin
+  if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'share_links' and policyname = 'share_links_select') then
+    create policy share_links_select on public.share_links for select using (public.is_org_manager(organization_id));
+    create policy share_links_insert on public.share_links for insert with check (public.is_org_manager(organization_id));
+    create policy share_links_update on public.share_links for update using (public.is_org_manager(organization_id));
+    create policy share_links_delete on public.share_links for delete using (public.is_org_manager(organization_id));
+  end if;
+  -- Events are read-only for the organisation's managers. Nobody inserts directly: only record_link_event does.
+  if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'link_events' and policyname = 'link_events_select') then
+    create policy link_events_select on public.link_events for select using (public.is_org_manager(organization_id));
+  end if;
+end $$;
+
+-- -----------------------------------------------------------------------------
+-- 3. RECORDING. Called only by the server (api/track.js) with the service key.
+--    Returns whether the event was counted and, when a notification is due, who to tell.
+-- -----------------------------------------------------------------------------
+create or replace function public.record_link_event(p_ref text, p_kind text, p_visitor text, p_recipient text default null)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare
+  v_apt public.apartments%rowtype;
+  v_id uuid;
+  v_link public.share_links%rowtype;
+  v_has_link boolean := false;
+  v_event bigint;
+  v_title text;
+  v_message text;
+  v_chats jsonb;
+begin
+  if p_kind not in ('view', 'whatsapp', 'call') or p_ref is null or length(p_ref) > 100
+     or p_visitor is null or p_visitor !~ '^[a-z0-9-]{8,64}$' then
+    return jsonb_build_object('ok', false);
+  end if;
+  if p_ref ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' then
+    v_id := p_ref::uuid;
+  end if;
+
+  select * into v_apt from public.apartments
+  where (public_slug = lower(p_ref) or id = v_id)
+    and coalesce(is_archived, false) = false and status <> 'archived' and is_published
+  limit 1;
+  if not found then
+    return jsonb_build_object('ok', false);
+  end if;
+
+  -- Rate limits: one browser, then one listing, per minute.
+  if (select count(*) from public.link_events where visitor_id = p_visitor and created_at > now() - interval '1 minute') >= 20
+     or (select count(*) from public.link_events where apartment_id = v_apt.id and created_at > now() - interval '1 minute') >= 120 then
+    return jsonb_build_object('ok', false, 'reason', 'rate');
+  end if;
+
+  -- A refresh is not a new open: the same browser, listing and action count once per 30 minutes.
+  if exists (select 1 from public.link_events
+             where visitor_id = p_visitor and apartment_id = v_apt.id and kind = p_kind
+               and created_at > now() - interval '30 minutes') then
+    return jsonb_build_object('ok', true, 'counted', false);
+  end if;
+
+  if p_recipient is not null then
+    select * into v_link from public.share_links
+    where token = lower(p_recipient) and apartment_id = v_apt.id and is_active
+      and (expires_at is null or expires_at > now());
+    v_has_link := found;
+  end if;
+
+  insert into public.link_events (organization_id, apartment_id, share_link_id, kind, visitor_id)
+  values (v_apt.organization_id, v_apt.id, case when v_has_link then v_link.id end, p_kind, p_visitor)
+  returning id into v_event;
+
+  -- Notify at most once per browser and listing per hour, and at most 20 times per organisation per hour.
+  if exists (select 1 from public.link_events
+             where visitor_id = p_visitor and apartment_id = v_apt.id and notified_at > now() - interval '60 minutes')
+     or (select count(*) from public.link_events
+         where organization_id = v_apt.organization_id and notified_at > now() - interval '60 minutes') >= 20 then
+    return jsonb_build_object('ok', true, 'counted', true);
+  end if;
+
+  update public.link_events set notified_at = now() where id = v_event;
+
+  v_title := case p_kind when 'view' then 'ბმული გაიხსნა: ' when 'whatsapp' then 'WhatsApp-ით დაკავშირება: ' else 'ზარის ღილაკი: ' end || v_apt.name;
+  -- A link can be forwarded, so the wording names the link, never the person.
+  v_message := case when v_has_link then '„' || v_link.recipient_name || '“-სთვის გაგზავნილი ბმულიდან.' else 'ბინის საერთო ბმულიდან.' end;
+
+  if v_has_link and v_link.created_by is not null then
+    perform public.notify_user(v_apt.organization_id, v_link.created_by, v_title, v_message, 'info',
+      '/app/#/apartments/' || v_apt.id, 'link:' || v_event);
+  else
+    perform public.notify_managers(v_apt.organization_id, v_title, v_message, 'info',
+      '/app/#/apartments/' || v_apt.id, 'link:' || v_event);
+  end if;
+
+  select coalesce(jsonb_agg(chat_id), '[]'::jsonb) into v_chats from (
+    select chat_id from public.telegram_chats
+    where organization_id = v_apt.organization_id
+      and notify_views <> 'off'
+      and (notify_views = 'all' or v_has_link)
+      and (not v_has_link or v_link.created_by is null or user_id is null or user_id = v_link.created_by)
+    limit 10) t;
+
+  return jsonb_build_object('ok', true, 'counted', true, 'notify', jsonb_build_object(
+    'chat_ids', v_chats, 'kind', p_kind, 'apartment_id', v_apt.id, 'apartment_name', v_apt.name,
+    'recipient', case when v_has_link then v_link.recipient_name end));
+end;
+$$;
+
+revoke execute on function public.record_link_event(text, text, text, text) from public, anon, authenticated;
+grant execute on function public.record_link_event(text, text, text, text) to service_role;
+
