@@ -746,7 +746,7 @@
     if (window.XLSX?.utils) return Promise.resolve(window.XLSX);
     return new Promise((resolve, reject) => {
       const s = document.createElement('script');
-      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+      s.src = '/vendor/xlsx.full.min.js';
       s.onload = () => (window.XLSX?.utils ? resolve(window.XLSX) : reject(new Error('Excel-ის ბიბლიოთეკა ვერ ჩაიტვირთა. გამოიყენე CSV.')));
       s.onerror = () => reject(new Error('Excel-ის ბიბლიოთეკა ვერ ჩაიტვირთა. შეამოწმე ინტერნეტი ან გამოიყენე CSV.'));
       document.head.appendChild(s);

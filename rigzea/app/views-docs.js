@@ -48,7 +48,7 @@
     if (window.qrcode) return Promise.resolve(window.qrcode);
     return new Promise((resolve) => {
       const s = document.createElement('script');
-      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js';
+      s.src = '/vendor/qrcode.min.js';
       s.onload = () => resolve(window.qrcode || null);
       s.onerror = () => resolve(null);
       document.head.appendChild(s);

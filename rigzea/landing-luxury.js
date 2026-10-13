@@ -1129,9 +1129,9 @@
   const phonePhoto = document.querySelector('#phone-main-photo');
   const photoDots = document.querySelectorAll('.lx-photo-dot');
   const apartmentPhotos = [
-    'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=720&q=85',
-    'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=720&q=85',
-    'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=720&q=85'
+    '/img/1600585154340-be6161a56a0c.jpg',
+    '/img/1600607687939-ce8a6c25118c.jpg',
+    '/img/1512917774080-9991f1c4c750.jpg'
   ];
 
   photoDots.forEach(dot => {

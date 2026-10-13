@@ -104,8 +104,8 @@
     @media (min-width: 520px) { .p-bottom-price { display: flex; } }
     .p-bottom-price small { font-size: 11px; color: var(--muted); }
     .p-bottom-price b { font-size: 18px; color: var(--brand); line-height: 1.1; }
-    .p-btn-wa { flex: 1; background: #1fa855; color: #fff; border-radius: 12px; padding: 13px 18px; font-size: 15px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 10px; text-decoration: none; min-height: 48px; box-sizing: border-box; }
-    .p-btn-wa:hover { background: #1a9449; }
+    .p-btn-wa { flex: 1; background: #157f3f; color: #fff; border-radius: 12px; padding: 13px 18px; font-size: 15px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 10px; text-decoration: none; min-height: 48px; box-sizing: border-box; }
+    .p-btn-wa:hover { background: #126b35; }
     .p-btn-call { background: var(--surface-2); border: 1px solid var(--line); color: #0f172a; border-radius: 12px; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; text-decoration: none; flex: none; }
 
     @media print {
@@ -271,10 +271,10 @@
         pets_allowed: true, utilities_estimate: 220, prepayment_terms: 'პირველი და ბოლო თვე', deposit_amount: 1250, badge: 'new', lat: 41.7096, lng: 44.7612,
         amenities: ['wifi', 'ac', 'heating', 'furnished', 'balcony', 'dishwasher', 'washing_machine', 'elevator', 'parking'],
         photos: [
-          'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=1400&q=80',
-          'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=1400&q=80',
-          'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=1400&q=80',
-          'https://images.unsplash.com/photo-1484154218962-a197022b5858?auto=format&fit=crop&w=1400&q=80',
+          '/img/1502672260266-1c1ef2d93688.jpg',
+          '/img/1560448204-e02f11c3d0e2.jpg',
+          '/img/1522708323590-d24dbb6b0267.jpg',
+          '/img/1484154218962-a197022b5858.jpg',
         ].map((url, i) => ({ url, thumb: url.replace('w=1400', 'w=320'), order: i })),
         description: 'ქირავდება მზიანი, ახალგარემონტებული ბინა ვაკის ცენტრში.\n\n• ორი იზოლირებული საძინებელი და ფართო მისაღები.\n• სრულად აღჭურვილი სამზარეულო.\n• აივნიდან ქალაქის ხედი იშლება.',
         description_en: 'Sunny, newly renovated apartment in central Vake.\n\n• Two separate bedrooms and a spacious living room.\n• Fully equipped kitchen.\n• City view from the balcony.',
@@ -316,8 +316,9 @@
     }
 
     function visitorId() {
-      let v = store.get('rigzea_vid');
-      if (!v) { v = (crypto.randomUUID ? crypto.randomUUID() : String(Math.random()).slice(2) + Date.now()).replace(/-/g, ''); store.set('rigzea_vid', v); }
+      let v = null;
+      try { v = sessionStorage.getItem('rigzea_vid'); } catch { /* storage unavailable */ }
+      if (!v) { v = (crypto.randomUUID ? crypto.randomUUID() : String(Math.random()).slice(2) + Date.now()).replace(/-/g, ''); try { sessionStorage.setItem('rigzea_vid', v); } catch { /* storage unavailable */ } }
       return v;
     }
 
@@ -396,7 +397,7 @@
           <h1>${esc(nf ? L.notFoundTitle : L.errorTitle)}</h1>
           <p>${esc(nf ? L.notFoundText : L.errorText)}</p>
           ${nf ? '' : `<button type="button" class="btn btn-primary" id="p-retry">${esc(L.retry)}</button>`}
-        </section>${WL ? '' : `<p class="p-footer"><a href="/">${esc(L.powered)}</a></p>`}`;
+        </section><p class="p-footer">${WL ? '' : `<a href="/">${esc(L.powered)}</a> · `}<a href="/legal/privacy/">კონფიდენციალურობა / Privacy</a></p>`;
         $('#p-retry')?.addEventListener('click', load);
         return;
       }
@@ -493,7 +494,7 @@
           <div><strong>${esc(agentName || ag.name)}</strong><span>${esc(agentName && ag.name ? `${L.agent} · ${ag.name}` : agentName ? L.agent : L.agency)}</span></div>
         </div></section>` : ''}
 
-        ${WL ? '' : `<p class="p-footer"><a href="/">${esc(L.powered)}</a></p>`}`;
+        <p class="p-footer">${WL ? '' : `<a href="/">${esc(L.powered)}</a> · `}<a href="/legal/privacy/">კონფიდენციალურობა / Privacy</a></p>`;
 
       // Contact bar
       const digits = phone.replace(/[^0-9]/g, '');

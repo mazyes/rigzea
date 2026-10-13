@@ -3407,3 +3407,14 @@ p, li { text-wrap: pretty; }
   .lx-cmp-table .lx-cmp-group { padding: 0; background: var(--lx-obsidian-card-solid); border-radius: var(--lx-r-lg) var(--lx-r-lg) 0 0; }
   .lx-cmp-table .lx-cmp-group th { padding: 16px 14px 10px; background: none; }
 }
+
+/* Mock agent in the hero phone: initials, not a stock photo of a real person */
+.lx-broker-initials { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--lx-emerald-primary); color: #fff; font-size: 10.5px; font-weight: 700; }
+
+/* Footer: legal links and operator details */
+.lx-footer-legal { margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--lx-border-subtle); display: flex; flex-wrap: wrap; gap: 10px 24px; justify-content: space-between; align-items: center; font-size: 13px; color: var(--lx-text-muted); }
+.lx-footer-legal nav { display: flex; flex-wrap: wrap; gap: 8px 20px; }
+.lx-footer-legal a { color: var(--lx-text-silver); text-decoration: underline; text-underline-offset: 3px; }
+.lx-footer-legal a:hover { color: var(--lx-mint-neon); }
+.lx-footer-legal p { margin: 0; }
+.lx-footer-legal p:empty { display: none; }

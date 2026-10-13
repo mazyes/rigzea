@@ -16,7 +16,7 @@
   --line-strong: #c9ced5;
   --ink: #15202b;
   --ink-2: #3b4754;
-  --muted: #687482;
+  --muted: #5b6673;
   --brand: #0a5c44;
   --brand-hover: #084b38;
   --brand-soft: #e7f1ed;
@@ -470,6 +470,9 @@ button.row { width: 100%; border: 0; border-bottom: 1px solid var(--line); backg
 .auth-demo-prompt { margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--line); }
 .auth-demo-prompt .btn { font-size: 13.5px; border-color: var(--line-strong); background: var(--surface-2); }
 .auth-demo-prompt .btn:hover { background: var(--brand-soft); color: var(--brand); border-color: var(--brand); }
+.auth-consent { display: flex; gap: 10px; align-items: flex-start; font-size: 13px; line-height: 1.5; color: var(--muted); cursor: pointer; }
+.auth-consent input { margin-top: 3px; width: 18px; height: 18px; flex: none; accent-color: var(--brand); }
+.auth-consent a { color: var(--brand); text-decoration: underline; }
 .auth-foot { margin-top: 16px; font-size: 13px; color: var(--muted); text-align: center; }
 .boot { min-height: 100vh; display: grid; place-items: center; color: var(--muted); }
 

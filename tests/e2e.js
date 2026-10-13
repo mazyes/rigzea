@@ -266,6 +266,7 @@ test('11. plans: trial banner, apartment cap upgrade modal, branding, export, pl
   await page.locator('#plan-banner', { hasText: 'დარჩენილია 5 დღე' }).waitFor();
   assert(await page.evaluate(() => App.can('export') && App.can('whitelabel')), 'trial has every feature');
   // Free plan holds 3 active apartments: going past that is refused with the upgrade modal
+  await page.waitForFunction(() => App.S.data && App.S.org && !document.querySelector('.skeleton'));
   // The plan is set inside the same call: a background refresh may reload the workspace between calls.
   assert.deepStrictEqual(await page.evaluate(() => {
     App.S.org.plan = 'starter';
