@@ -569,7 +569,7 @@
     top:     { id: 'top', name: 'გუნდი', price: 99, apartments: 150, seats: 3, features: ['profile', 'contracts', 'matchmaker', 'reminders', 'selections', 'analytics', 'export'],
       bullets: ['150 აქტიური ობიექტი', '3 სამუშაო ადგილი', 'მრავალობიექტიანი გვერდი', 'ანალიტიკა და ექსპორტი'] },
     agency:  { id: 'agency', name: 'სააგენტო', price: 249, apartments: null, seats: null, features: ALL_FEATURES,
-      bullets: ['ულიმიტო ობიექტები', '10+ აგენტის სამუშაო ადგილი', 'White-label ბრენდირება', 'პერსონალური მენეჯერი'] },
+      bullets: ['ულიმიტო ობიექტები', '10+ აგენტის სამუშაო ადგილი', 'White-label ბრენდირება', 'პრიორიტეტული მხარდაჭერა'] },
   };
   const PLAN_ORDER = ['starter', 'pro', 'top', 'agency'];
   const FEATURE_LABEL = {
@@ -646,7 +646,7 @@
     return R.dialog({
       title, subtitle: text, wide: true,
       body: `${planCardsHtml(rec, st.trial ? null : st.eff)}
-        <p class="plan-contact">გააქტიურება მარტივია: მოგვწერე WhatsApp-ში ან დარეკე <a href="tel:${CONTACT.phone}">${CONTACT.phone}</a> და პაკეტს იმავე დღეს ჩავრთავთ. პორტფელის გადმოტანაში უფასოდ დაგეხმარებით.</p>
+        <p class="plan-contact">გააქტიურება მარტივია: მოგვწერე WhatsApp-ში ან დარეკე <a href="tel:${CONTACT.phone}">${CONTACT.phone}</a> და პაკეტს იმავე დღეს ჩავრთავთ.</p>
         <div class="plan-cta"><a class="btn btn-primary" href="${esc(waLink(PLANS[rec]))}" target="_blank" rel="noopener">${icon('whatsapp', 16)} მოგვწერე WhatsApp-ში</a><button type="button" class="btn btn-ghost" data-close>მოგვიანებით</button></div>`,
     });
   }
