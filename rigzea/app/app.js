@@ -555,15 +555,15 @@
   }
 
   // ---------------------------------------------------------------------------
-  // Plans, trial and feature gates (mirrors supabase/patches/04_plans.sql)
+  // Plans, trial and feature gates (mirrors plan_limit and plan_has_feature in supabase/patches/10 and 11)
   // ---------------------------------------------------------------------------
   const CONTACT = { phone: '+995599000000', wa: '995599000000' };
   const ALL_FEATURES = ['profile', 'contracts', 'matchmaker', 'reminders', 'selections', 'analytics', 'export', 'whitelabel'];
   // apartments / seats: null = unlimited. A seat is an owner/admin/manager member; field staff are free.
   const PLANS = {
     trial:   { id: 'trial', name: 'საცდელი', price: 0, apartments: 50, seats: 3, features: ALL_FEATURES },
-    starter: { id: 'starter', name: 'დამწყები', price: 0, apartments: 10, seats: 1, features: [],
-      bullets: ['10 აქტიური ობიექტი', 'ჭკვიანი ბმულები', 'საკომისიოს კალკულატორი'] },
+    starter: { id: 'starter', name: 'დამწყები', price: 0, apartments: 3, seats: 1, features: [],
+      bullets: ['3 აქტიური ობიექტი', 'ჭკვიანი ბმულები', 'საკომისიოს კალკულატორი'] },
     pro:     { id: 'pro', name: 'პრო აგენტი', price: 39, apartments: 50, seats: 1, features: ['profile', 'contracts', 'matchmaker', 'reminders'],
       bullets: ['50 აქტიური ობიექტი', 'ორენოვანი ხელშეკრულებები', 'ბინის შერჩევა კლიენტის მოთხოვნით', 'ვადის გასვლის შეხსენებები'] },
     top:     { id: 'top', name: 'გუნდი', price: 99, apartments: 150, seats: 3, features: ['profile', 'contracts', 'matchmaker', 'reminders', 'selections', 'analytics', 'export'],

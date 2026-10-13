@@ -265,15 +265,19 @@ test('11. plans: trial banner, apartment cap upgrade modal, branding, export, pl
   await page.goto(BASE + '/app/');
   await page.locator('#plan-banner', { hasText: 'დარჩენილია 5 დღე' }).waitFor();
   assert(await page.evaluate(() => App.can('export') && App.can('whitelabel')), 'trial has every feature');
-  // Starter with 4 apartments: cap 10 -> adding 7 more is refused with the upgrade modal
-  await page.evaluate(() => { App.S.org.plan = 'starter'; });
-  assert.strictEqual(await page.evaluate(() => App.guardLimit('apartments')), true);
-  assert.strictEqual(await page.evaluate(() => App.guardLimit('apartments', 7)), false);
+  // Free plan holds 3 active apartments: going past that is refused with the upgrade modal
+  // The plan is set inside the same call: a background refresh may reload the workspace between calls.
+  assert.deepStrictEqual(await page.evaluate(() => {
+    App.S.org.plan = 'starter';
+    const used = App.activeApartments();
+    return [App.PLANS.starter.apartments, App.guardLimit('apartments', 3 - used), App.guardLimit('apartments', 4 - used)];
+  }), [3, true, false]);
   await page.locator('dialog[open] h2', { hasText: 'ობიექტების ლიმიტი ამოიწურა' }).waitFor();
+  await page.locator('dialog[open]', { hasText: 'მაქსიმუმ 3 აქტიური ობიექტია' }).waitFor();
   await page.screenshot({ path: process.env.SHOT_DIR ? process.env.SHOT_DIR + '/upgrade-modal.png' : undefined });
   await page.locator('dialog[open] a[href*="wa.me"]').first().waitFor();
   await page.keyboard.press('Escape');
-  assert.strictEqual(await page.evaluate(() => App.can('export')), false);
+  assert.strictEqual(await page.evaluate(() => { App.S.org.plan = 'starter'; return App.can('export'); }), false);
   // Expired trial = locked, banner says so
   await page.evaluate(() => { App.S.org.plan = 'trial'; App.S.org.trial_ends_at = new Date(Date.now() - 864e5).toISOString(); App.renderShell(); });
   await page.locator('#plan-banner', { hasText: 'საცდელი პერიოდი დასრულდა' }).waitFor();
