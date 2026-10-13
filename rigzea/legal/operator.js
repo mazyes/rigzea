@@ -4,7 +4,7 @@ window.RIGZEA_OPERATOR = {
   name: 'რიგზეა (Rigzea)',     // legal name: company (შპს ...) or individual entrepreneur (ი/მ ...)
   id: '',       // identification code
   address: 'თბილისი, საქართველო',  // legal address
-  email: 'info@rigzea.com',    // contact email for privacy and refund requests
+  email: 'contact@rigzea.com',    // contact email for privacy and refund requests
   phone: '+995 599 54 85 75',    // contact phone, international format
 };
 
