@@ -227,16 +227,35 @@
     return R.dialog({
       title: 'Telegram-ის დაკავშირება',
       subtitle: 'შეხსენებებს ბოტი პირდაპირ Telegram-ში გამოგიგზავნით',
-      body: `<p class="dlg-text">დააგენერირე ერთჯერადი კოდი და გამოუგზავნე ბოტს <b>@Rigzea_bot</b>. კოდი მოქმედებს 15 წუთის განმავლობაში.</p>
+      body: `<p class="dlg-text">დააგენერირე ერთჯერადი კოდი და გამოუგზავნე ბოტს <a href="https://t.me/Rigzeabot" target="_blank" rel="noopener"><b>@Rigzeabot</b></a>. კოდი მოქმედებს 15 წუთის განმავლობაში.</p>
         <div id="tg-code" class="calc" style="font-size:22px;font-weight:600;letter-spacing:.12em;text-align:center;padding:14px" aria-live="polite">—</div>
         <p class="field-hint" id="tg-hint">კოდის მისაღებად დააჭირე ღილაკს.</p>
-        <button type="button" class="btn btn-secondary" id="tg-gen">კოდის შექმნა</button>`,
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px">
+          <button type="button" class="btn btn-secondary" id="tg-gen">კოდის შექმნა</button>
+          <a class="btn btn-primary" id="tg-open" href="https://t.me/Rigzeabot" target="_blank" rel="noopener" style="display:none">ბოტში გახსნა</a>
+          <button type="button" class="btn btn-ghost btn-sm" id="tg-copy" style="display:none">კოპირება</button>
+        </div>`,
       onOpen: (form) => {
+        let currentCode = '';
         $('#tg-gen', form).addEventListener('click', (e) => run(e.currentTarget, async () => {
           const res = await q(sb.rpc('create_telegram_link_code', { p_org: S.org.id }));
-          $('#tg-code', form).textContent = res.code;
-          $('#tg-hint', form).innerHTML = `ბოტს გაუგზავნე: <code>/start ${esc(res.code)}</code>`;
+          const code = typeof res === 'string' ? res : (res?.code || '');
+          currentCode = code;
+          $('#tg-code', form).textContent = code;
+          $('#tg-hint', form).innerHTML = `ბოტს გაუგზავნე: <code>/start ${esc(code)}</code>`;
+          const openBtn = $('#tg-open', form);
+          if (openBtn && code) {
+            openBtn.href = `https://t.me/Rigzeabot?start=${encodeURIComponent(code)}`;
+            openBtn.style.display = 'inline-flex';
+          }
+          const copyBtn = $('#tg-copy', form);
+          if (copyBtn && code) {
+            copyBtn.style.display = 'inline-flex';
+          }
         }));
+        $('#tg-copy', form)?.addEventListener('click', () => {
+          if (currentCode) R.copyText(`/start ${currentCode}`, 'ბრძანება დაკოპირდა');
+        });
       },
     });
   }

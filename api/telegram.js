@@ -1,6 +1,6 @@
 /**
  * რიგზეა (Rigzea) - Vercel Serverless Telegram Webhook Handler
- * Bot: @Rigzea_bot
+ * Bot: @Rigzeabot
  */
 
 import { timingSafeEqual } from 'node:crypto';

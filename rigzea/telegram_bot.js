@@ -1,7 +1,7 @@
 /**
  * რიგზეა (Rigzea) Real Telegram Bot Service (Local Polling & Fallback Daemon)
  * Local development only. Secrets come from environment variables; not deployed (see .vercelignore).
- * Username: @Rigzea_bot
+ * Username: @Rigzeabot
  */
 
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
@@ -292,5 +292,5 @@ async function pollTelegram() {
   }
 }
 
-console.log(`🤖 Rigzea Telegram Bot started successfully for @Rigzea_bot...`);
+console.log(`🤖 Rigzea Telegram Bot started successfully for @Rigzeabot...`);
 pollTelegram();

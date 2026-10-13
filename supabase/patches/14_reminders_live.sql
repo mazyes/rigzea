@@ -10,6 +10,14 @@
 --   * consume_telegram_link_code and get_telegram_renewals for the bot;
 --   * track_link_event_notify: the link statistics event plus who to tell in Telegram.
 -- Every bot / cron function is service_role only: the anon key is public.
+--
+-- Additive only: one nullable column, one index and seven new functions. No
+-- existing table data, policy or function is changed. To undo:
+--   drop function if exists public.track_link_event_notify(text, text, text, uuid), public.get_telegram_renewals(uuid, integer),
+--     public.close_stale_telegram_notifications(), public.mark_telegram_sent(uuid[]), public.pending_telegram_notifications(integer),
+--     public.scan_lease_renewals(uuid), public.consume_telegram_link_code(text, bigint, text);
+--   drop index if exists public.idx_notifications_tg_pending;
+--   alter table public.notifications drop column if exists sent_telegram_at;
 -- =============================================================================
 
 -- -----------------------------------------------------------------------------

@@ -240,6 +240,14 @@
   // ---- platform admin tab ---------------------------------------------------
   let platformOrgs = null;
   let platformAdmins = null;
+  async function sendPlanEmail(orgId) {
+    try {
+      const { data: { session } } = await sb.auth.getSession();
+      const res = await fetch('/api/plan-email/', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token || ''}` }, body: JSON.stringify({ org: orgId }) });
+      const out = await res.json().catch(() => ({}));
+      return res.ok && out.ok ? out : { ok: false };
+    } catch { return { ok: false }; }
+  }
   async function renderPlatformTab(root) {
     if (!S.platformAdmin) { root.innerHTML = '<div class="card"><div class="empty-inline">ამ გვერდზე წვდომა არ გაქვს.</div></div>'; return; }
     if (platformOrgs === null) {
@@ -297,6 +305,11 @@
       $('[data-save]', row).onclick = (e) => run(e.currentTarget, async () => {
         const res = await q(sb.rpc('admin_set_org_plan', { p_org: row.dataset.org, p_plan: sel.value, p_days: days.value === '' ? null : Number(days.value) }));
         if (row.dataset.org === S.org.id) { Object.assign(S.org, { plan: res.plan, trial_ends_at: res.trial_ends_at, plan_expires_at: res.plan_expires_at }); App.renderShell(); }
+        // A paid plan: the owner gets a confirmation email. The plan stays active even if the email fails.
+        if (['pro', 'top', 'agency'].includes(res.plan)) {
+          const mail = await sendPlanEmail(row.dataset.org);
+          toast(mail.ok ? `მფლობელს წერილი გაეგზავნა: ${mail.to}` : 'მფლობელს წერილი ვერ გაეგზავნა. შეატყობინე თავად.', { type: mail.ok ? 'success' : 'error' });
+        }
         platformOrgs = null;
         await renderPlatformTab(root);
       }, { success: 'პაკეტი გააქტიურდა' });

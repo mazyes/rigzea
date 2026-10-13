@@ -4,6 +4,9 @@
  * All secrets come from environment variables - nothing is hardcoded.
  */
 
+import fs from 'node:fs';
+import path from 'node:path';
+
 export const BASE_APP_URL = process.env.APP_BASE_URL || 'https://rigzea.com';
 
 export class ConfigError extends Error {}
@@ -34,6 +37,38 @@ export function sendMessage(chatId, text, extra = {}) {
 }
 
 const supabaseUrl = () => (process.env.SUPABASE_URL || 'https://cuioodytwyzykqlrjfej.supabase.co').replace(/\/$/, '');
+
+// Supabase URL + anon key for calls made on behalf of a signed-in user:
+// env vars first, otherwise the public values in rigzea/js/config.js.
+let cachedPublic = null;
+export function publicConfig() {
+  if (cachedPublic) return cachedPublic;
+  let key = process.env.SUPABASE_ANON_KEY || '';
+  if (!key) {
+    try {
+      const src = fs.readFileSync(path.join(process.cwd(), 'rigzea', 'js', 'config.js'), 'utf8');
+      key = (src.match(/SUPABASE_ANON_KEY:\s*['"]([^'"]+)['"]/) || [])[1] || '';
+    } catch { /* missing file: the caller reports "not configured" */ }
+  }
+  cachedPublic = { url: supabaseUrl(), key };
+  return cachedPublic;
+}
+
+// Supabase RPC as the signed-in caller (their JWT, so RLS and role checks apply).
+export async function callRpcAs(token, functionName, params = {}) {
+  const { url, key } = publicConfig();
+  try {
+    const res = await fetch(`${url}/rest/v1/rpc/${functionName}`, {
+      method: 'POST',
+      headers: { apikey: key, Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(params),
+    });
+    return { ok: res.ok, status: res.status, data: res.ok ? await res.json().catch(() => null) : null };
+  } catch (e) {
+    console.error(`RPC ${functionName} error:`, e.message);
+    return { ok: false, status: 0, data: null };
+  }
+}
 
 // Supabase RPC with the service-role key (server only). Returns null on failure.
 export async function callRpc(functionName, params = {}) {
