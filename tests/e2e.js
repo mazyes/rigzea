@@ -288,7 +288,7 @@ test('11. plans: trial banner, apartment cap upgrade modal, branding, export, pl
   assert.strictEqual(await page.locator('#plan-banner').isHidden(), true, 'no banner for a fresh paid plan');
   // Plan tab
   await page.goto(BASE + '/app/#/settings/plan');
-  await page.locator('#view h2', { hasText: 'ტოპ აგენტი' }).waitFor();
+  await page.locator('#view h2', { hasText: 'გუნდი' }).waitFor();
   await page.screenshot({ path: process.env.SHOT_DIR ? process.env.SHOT_DIR + '/plan-tab.png' : undefined, fullPage: true });
   // Branding
   await page.goto(BASE + '/app/#/settings');

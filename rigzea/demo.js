@@ -116,7 +116,7 @@
     { id: 'lease', icon: 'file', title: 'ორენოვანი ხელშეკრულება', sub: '11 მუხლი ქართულად და ინგლისურად, PDF', run: () => go('#/deals?type=rental', null, () => App.openLeaseAgreementGenerator(App.H.apt(IDS.vera), App.H.deal(IDS.dealVera))) },
     { id: 'comm', icon: 'wallet', title: 'საკომისიოები და ექსპორტი', sub: 'თვე, აგენტი, სრული, პარტნიორის წილი, სუფთა, CSV', run: () => go('#/deals/commissions') },
     { id: 'renew', icon: 'clock', title: 'განახლებები და Telegram', sub: 'ხელშეკრულებები 30, 14 და 3 დღეში', run: () => go('#/today', '[data-renew]') },
-    { id: 'plans', icon: 'check', title: 'პაკეტები', sub: 'დამწყები, პრო, ტოპ აგენტი, სააგენტო', run: () => go('#/settings/plan') },
+    { id: 'plans', icon: 'check', title: 'პაკეტები', sub: 'დამწყები, პრო აგენტი, გუნდი, სააგენტო', run: () => go('#/settings/plan') },
     { id: 'brand', icon: 'settings', title: 'White-label ბრენდინგი', sub: 'ლოგო, სახელი და ფერი საჯარო გვერდებზე', run: () => go('#/settings', '#brand-card') },
   ];
   const seen = new Set((store.get('rigzea_demo_seen') || '').split(',').filter(Boolean));
