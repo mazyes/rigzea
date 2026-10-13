@@ -14,6 +14,23 @@
     dealVera: 'e1e00000-0000-4000-8000-000000000004', dealElene: 'e1e00000-0000-4000-8000-000000000006',
     vakeSlug: 'vake-chavchavadze-3-otakhiani', selection: 'elene7vake2k',
   };
+  // Smart import needs the server; the demo answers with a sample listing instead.
+  const realFetch = window.fetch.bind(window);
+  window.fetch = (input, init) => {
+    if (typeof input === 'string' && input.startsWith('/api/import-listing')) {
+      const img = (id) => `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=1200&q=80`;
+      const listing = {
+        source: 'demo', title: 'იყიდება 3 ოთახიანი ბინა საბურთალოზე', name: 'საბურთალო · ნუცუბიძის ქ., 3-ოთახიანი', transaction_type: 'sale', property_type: 'apartment',
+        city: 'თბილისი', district: 'საბურთალო', address: 'შალვა ნუცუბიძის ქ.', area_sqm: 86, floor: 7, total_floors: 14, rooms: 3, bedrooms: 2, bathrooms: 1,
+        price: 139000, currency: 'USD', price_sqm: 1616, lat: 41.7262, lng: 44.7338, cadastral_code: null,
+        description: 'ნათელი 3-ოთახიანი ბინა ახალ კორპუსში. ახალი რემონტი, ჩაშენებული სამზარეულო და ხედი ქალაქზე. მეტრომდე ფეხით 7 წუთია.',
+        images: [img('1502672260266-1c1ef2d93688'), img('1484154218962-a197022b5858'), img('1600607687939-ce8a6c25118c')],
+      };
+      return new Promise(r => setTimeout(() => r(new Response(JSON.stringify({ ok: true, listing }), { status: 200, headers: { 'Content-Type': 'application/json' } })), 600));
+    }
+    return realFetch(input, init);
+  };
+
   const store = {
     get: (k) => { try { return localStorage.getItem(k); } catch { return null; } },
     set: (k, v) => { try { localStorage.setItem(k, v); } catch { /* per-viewer convenience only */ } },
@@ -110,6 +127,7 @@
     { id: 'nav', icon: 'menu', title: 'გაქირავება და გაყიდვა ცალ-ცალკე', sub: 'მენიუში: ბინები, მდგმურები, მეპატრონეები, მყიდველები, გამყიდველები', run: () => go('#/apartments?type=sale') },
     { id: 'listing', icon: 'camera', title: 'ბინა ფოტოებით და ჭკვიანი ბმულით', sub: 'გალერეა, კეთილმოწყობა, ბეჯი, ნახვები და WhatsApp-ის დაწკაპუნებები', run: () => go(`#/apartments/${IDS.vake}`, '.listing-card') },
     { id: 'client', icon: 'external', title: 'რას ხედავს კლიენტი', sub: 'საჯარო გვერდი /p/ ფოტოგალერეით', run: () => window.open(demoHref(`/p/${IDS.vakeSlug}/`), '_blank', 'noopener') },
+    { id: 'import', icon: 'link', title: 'განცხადების შევსება ლინკიდან', sub: 'ჩასვი MyHome / SS.ge / Place.ge ბმული და ფორმა თავისით ივსება', run: () => go('#/apartments?type=sale', null, () => App.openApartmentForm(null, { transaction_type: 'sale' })) },
     { id: 'cobroker', icon: 'whatsapp', title: 'კოლეგასთან გაზიარება', sub: 'მეპატრონის ნომერი დამალულია, პირობა და ტექსტი WhatsApp-ისთვის მზადაა', run: () => go(`#/apartments/${IDS.vake}`, null, () => App.openCoBrokerShare(App.H.apt(IDS.vake))) },
     { id: 'pdf', icon: 'printer', title: 'PDF პრეზენტაცია 1 კლიკით', sub: 'VIP კატალოგი ან ერთგვერდიანი ფლაერი, QR კოდით', run: () => go(`#/apartments/${IDS.vake}`, null, () => App.openPresentation(App.H.apt(IDS.vake))) },
     { id: 'legal', icon: 'file', title: 'ხელშეკრულებები და რეესტრი', sub: 'ექსკლუზივი, საბროკერო, ბე, მიღება-ჩაბარება და NAPR შემოწმება', run: () => go('#/deals/documents?type=sale') },

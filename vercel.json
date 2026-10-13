@@ -4,7 +4,8 @@
   "cleanUrls": true,
   "trailingSlash": true,
   "functions": {
-    "api/p.js": { "includeFiles": "rigzea/{p/index.html,js/config.js}" }
+    "api/p.js": { "includeFiles": "rigzea/{p/index.html,js/config.js}" },
+    "api/import-listing.js": { "includeFiles": "rigzea/js/config.js" }
   },
   "rewrites": [
     { "source": "/p/:ref([A-Za-z0-9-]{3,80})", "destination": "/api/p?ref=:ref" },

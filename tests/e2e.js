@@ -851,6 +851,47 @@ test('20. documents: PDF presentation templates, auto-filled sale contract, regi
   return page;
 });
 
+test('21. smart import: a listing link fills the new property form, errors are explained', async (browser) => {
+  const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
+  let mode = 'ok';
+  await page.route('**/api/import-listing', async (route) => {
+    const body = JSON.parse(route.request().postData() || '{}');
+    if (mode === 'blocked') return route.fulfill({ status: 502, contentType: 'application/json', body: JSON.stringify({ ok: false, error: 'blocked', message: 'საიტმა ავტომატური წაკითხვა დაბლოკა. შეავსე ველები ხელით ან სცადე მოგვიანებით.' }) });
+    assert(route.request().headers().authorization?.startsWith('Bearer '), 'request is authenticated');
+    assert(body.url.includes('myhome.ge'));
+    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, listing: {
+      source: 'myhome.ge', name: 'მთაწმინდა · რუსთაველის გამზ., 4-ოთახიანი', transaction_type: 'sale', property_type: 'apartment', city: 'თბილისი', district: 'მთაწმინდა', address: 'რუსთაველის გამზ.',
+      area_sqm: 115, floor: 1, total_floors: 3, rooms: 4, bedrooms: 3, bathrooms: 1, price: 123000, currency: 'USD', price_sqm: 1070, lat: 41.69, lng: 44.79, cadastral_code: null,
+      description: 'ნათელი ბინა ცენტრში.', images: [] } }) });
+  });
+  await page.goto(BASE + '/app/#/apartments?type=rent');
+  await page.locator('#btn-apt-new').click();
+  const dlg = page.locator('dialog[open]');
+
+  await dlg.locator('#apt-import-url').fill('https://example.com/listing');
+  await dlg.locator('#apt-import-go').click();
+  await dlg.locator('#apt-import-msg.t-danger').waitFor();
+
+  mode = 'blocked';
+  await dlg.locator('#apt-import-url').fill('https://www.myhome.ge/pr/26242248/');
+  await dlg.locator('#apt-import-go').click();
+  await dlg.locator('#apt-import-msg.t-danger', { hasText: 'დაბლოკა' }).waitFor();
+
+  mode = 'ok';
+  await dlg.locator('#apt-import-go').click();
+  await dlg.locator('#apt-import-msg.t-ok').waitFor();
+  assert.strictEqual(await dlg.locator('#apt-tx-type').inputValue(), 'sale', 'transaction type switches to sale');
+  assert.strictEqual(await dlg.locator('input[name=name]').inputValue(), 'მთაწმინდა · რუსთაველის გამზ., 4-ოთახიანი');
+  assert.strictEqual(await dlg.locator('#apt-sale-price').inputValue(), '123000');
+  assert.strictEqual(await dlg.locator('#apt-price-sqm').inputValue(), '1070');
+  assert.strictEqual(await dlg.locator('input[name=rooms]').inputValue(), '4');
+  await dlg.locator('[data-submit]').click();
+  await page.locator('.toast-success', { hasText: 'ობიექტი დაემატა' }).waitFor();
+  const row = (await db(page)).tables.apartments.find(a => a.name.startsWith('მთაწმინდა · რუსთაველის'));
+  assert(row.transaction_type === 'sale' && Number(row.sale_price) === 123000 && Number(row.area_sqm) === 115 && row.district === 'მთაწმინდა', 'imported values are saved');
+  return page;
+});
+
 (async () => {
   const server = await serve();
   const browser = await launch();

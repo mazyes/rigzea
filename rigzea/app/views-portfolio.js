@@ -124,7 +124,8 @@
       }
     });
     draw();
-    return { get: () => items.map((p, i) => ({ url: p.url, thumb: p.thumb || p.url, order: i })), busy: () => pending > 0 };
+    const addUrls = (urls) => { urls.slice(0, Math.max(0, MAX_PHOTOS - items.length)).forEach(u => { if (!items.some(p => p.url === u)) items.push({ url: u, thumb: u }); }); draw(); };
+    return { get: () => items.map((p, i) => ({ url: p.url, thumb: p.thumb || p.url, order: i })), busy: () => pending > 0, addUrls };
   }
 
   function openPhotosDialog(a) {
@@ -561,7 +562,12 @@
     let pm;
     return R.dialog({
       title: edit ? 'ობიექტის რედაქტირება' : 'ახალი უძრავი ქონება', wide: true, submitLabel: edit ? 'შენახვა' : 'ობიექტის დამატება',
-      body: `<div class="form-grid">
+      body: `${edit ? '' : `<div class="import-box" id="apt-import">
+          <label class="field"><span class="field-label">${icon('link', 14)} განცხადების ლინკი (MyHome.ge / SS.ge / Place.ge)</span>
+            <div class="import-row"><input type="url" id="apt-import-url" placeholder="https://www.myhome.ge/pr/..." inputmode="url" autocomplete="off" />
+              <button type="button" class="btn btn-primary" id="apt-import-go">${icon('sparkle', 16)} 1-წამიანი შევსება</button></div></label>
+          <p class="small" id="apt-import-msg" role="status">ჩასვი ბმული და ველები თავისით შეივსება. შემდეგ გადახედე, მიუთითე მეპატრონე და შეინახე.</p>
+        </div>`}<div class="form-grid">
         <label class="field"><span class="field-label">დასახელება</span><input name="name" required maxlength="120" value="${esc(v.name || '')}" placeholder="მაგ.: Orbi City · 1204" data-error="ჩაწერე ობიექტის სახელი." /></label>
         <label class="field"><span class="field-label">ნომერი / ბინა</span><input name="unit_number" value="${esc(v.unit_number || '')}" placeholder="1204" /></label>
         <label class="field"><span class="field-label">მისამართი</span><input name="address" required value="${esc(v.address || '')}" placeholder="ქუჩა და ნომერი" data-error="ჩაწერე მისამართი." /></label>
@@ -705,6 +711,37 @@
             sqmInput.value = Math.round(sp / ar);
           }
         };
+        // Smart import: read a listing page and fill the form; the agent reviews before saving.
+        const importBtn = $('#apt-import-go', form);
+        const importMsg = $('#apt-import-msg', form);
+        const setField = (name, value) => { const el = form.elements[name]; if (el && value !== null && value !== undefined && value !== '') { el.value = value; el.dispatchEvent(new Event('input', { bubbles: true })); el.dispatchEvent(new Event('change', { bubbles: true })); } };
+        const say = (text, tone) => { importMsg.textContent = text; importMsg.className = `small ${tone === 'error' ? 't-danger' : tone === 'ok' ? 't-ok' : ''}`; };
+        importBtn?.addEventListener('click', async () => {
+          const url = $('#apt-import-url', form).value.trim();
+          if (!/^https?:\/\/([\w-]+\.)*(myhome\.ge|ss\.ge|place\.ge)\//i.test(url)) { say('ჩასვი განცხადების ბმული MyHome.ge-დან, SS.ge-დან ან Place.ge-დან.', 'error'); return; }
+          importBtn.disabled = true; importBtn.classList.add('is-busy'); say('ვკითხულობთ განცხადებას…');
+          try {
+            const { data: { session } } = await sb.auth.getSession();
+            const res = await fetch('/api/import-listing', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token || ''}` }, body: JSON.stringify({ url }) });
+            const out = await res.json().catch(() => ({}));
+            if (!res.ok || !out.ok) throw new Error(out.message || 'განცხადება ვერ წავიკითხეთ. შეავსე ველები ხელით.');
+            const l = out.listing;
+            setField('transaction_type', l.transaction_type); setField('property_type', l.property_type);
+            setField('name', l.name); setField('address', l.address || l.district); setField('city', l.city); setField('district', l.district);
+            setField('rooms', l.rooms); setField('bedrooms', l.bedrooms); setField('bathrooms', l.bathrooms);
+            setField('area_sqm', l.area_sqm); setField('floor', l.floor); setField('total_floors', l.total_floors);
+            setField('description', l.description); setField('lat', l.lat); setField('lng', l.lng);
+            if (l.cadastral_code) setField('cadastral_code', l.cadastral_code);
+            if (l.transaction_type === 'sale') { setField('currency_sale', l.currency); setField('sale_price', l.price); if (l.price_sqm) setField('price_sqm', l.price_sqm); }
+            else { setField('currency', l.currency); setField('monthly_rent', l.price); }
+            if (pm && Array.isArray(l.images)) pm.addUrls(l.images);
+            const filled = [l.price && 'ფასი', l.area_sqm && 'ფართი', l.rooms && 'ოთახები', l.address && 'მისამართი', l.images?.length && `${l.images.length} ფოტო`].filter(Boolean).join(', ');
+            say(`შევსებულია: ${filled || 'ძირითადი ველები'}. სხვა სააგენტოს კონტაქტები აღწერიდან ამოღებულია. გადახედე, მიუთითე მეპატრონე და შეინახე.`, 'ok');
+          } catch (err) {
+            say(err.message || 'განცხადება ვერ წავიკითხეთ. შეავსე ველები ხელით.', 'error');
+          } finally { importBtn.disabled = false; importBtn.classList.remove('is-busy'); }
+        });
+
         // Cadastral code: format while typing and warn when the object is already in the workspace.
         const cadInput = $('#apt-cadastral', form);
         const dupBox = $('#apt-dup', form);
