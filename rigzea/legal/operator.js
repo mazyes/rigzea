@@ -5,7 +5,7 @@ window.RIGZEA_OPERATOR = {
   id: '',       // identification code
   address: 'თბილისი, საქართველო',  // legal address
   email: 'contact@rigzea.com',    // contact email for privacy and refund requests
-  phone: '+995 599 54 85 75',    // contact phone, international format
+  phone: '',    // contact phone, international format (left empty so it does not show on public site)
 };
 
 (function () {
