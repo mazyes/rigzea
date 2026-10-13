@@ -30,14 +30,28 @@ function config() {
   return cachedCfg;
 }
 
+const bearer = (req) => String(req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+
 // Only signed-in users may import, so the route cannot be used as an open page fetcher.
 async function isSignedIn(req) {
-  const token = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+  const token = bearer(req);
   const { url, key } = config();
   if (!token || !url || !key) return false;
   try {
     const res = await fetch(`${url}/auth/v1/user`, { headers: { apikey: key, Authorization: `Bearer ${token}` } });
     return res.ok;
+  } catch { return false; }
+}
+
+// Link import is a paid feature: the database says whether the caller's own workspace includes it.
+async function planAllowsImport(req, org) {
+  const { url, key } = config();
+  if (!/^[0-9a-f-]{36}$/i.test(String(org || ''))) return false;
+  try {
+    const res = await fetch(`${url}/rest/v1/rpc/my_org_has_feature`, { method: 'POST',
+      headers: { apikey: key, Authorization: `Bearer ${bearer(req)}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_org: org, p_feature: 'import' }) });
+    return res.ok && (await res.json()) === true;
   } catch { return false; }
 }
 
@@ -69,6 +83,7 @@ module.exports = async (req, res) => {
   if (!(await isSignedIn(req))) return res.status(401).json({ ok: false, error: 'auth', message: 'სესია ამოიწურა. შედი ანგარიშში თავიდან და სცადე ხელახლა.' });
 
   const body = typeof req.body === 'string' ? (() => { try { return JSON.parse(req.body); } catch { return {}; } })() : (req.body || {});
+  if (!(await planAllowsImport(req, body.org))) return res.status(403).json({ ok: false, error: 'plan', message: 'ბმულით შევსება შენს პაკეტში არ შედის. ხელმისაწვდომია „პრო აგენტი“ პაკეტიდან.' });
   if (String(body.url || '').length > 600) return res.status(400).json({ ok: false, error: 'url', message: 'ბმული ძალიან გრძელია. ჩასვი განცხადების პირდაპირი ბმული.' });
   const target = hostOf(body.url);
   if (!target) return res.status(400).json({ ok: false, error: 'url', message: 'ჩასვი განცხადების ბმული MyHome.ge-დან, SS.ge-დან ან Place.ge-დან.' });

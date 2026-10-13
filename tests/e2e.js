@@ -284,7 +284,7 @@ test('11. plans: trial banner, apartment cap upgrade modal, branding, export, pl
     App.S.org.plan = 'trial'; App.S.org.trial_ends_at = new Date(Date.now() - 864e5).toISOString(); App.renderShell();
     const st = App.planState();
     return { eff: st.eff, trialEnded: st.trialEnded, trial: st.trial, apartments: App.S.data.apartments.length, active: App.activeApartments(),
-      paused: App.pausedApartmentIds().size, features: ['contracts', 'matchmaker', 'selections', 'export', 'profile'].filter(f => App.can(f)) };
+      paused: App.pausedApartmentIds().size, features: ['contracts', 'matchmaker', 'selections', 'export', 'profile', 'import', 'presentation'].filter(f => App.can(f)) };
   });
   assert.deepStrictEqual([ended.eff, ended.trialEnded, ended.trial, ended.features.length], ['starter', true, false, 0]);
   assert.strictEqual(ended.apartments, before, 'no property is removed when the trial ends');

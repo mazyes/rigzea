@@ -720,12 +720,13 @@
         const setField = (name, value) => { const el = form.elements[name]; if (el && value !== null && value !== undefined && value !== '') { el.value = value; el.dispatchEvent(new Event('input', { bubbles: true })); el.dispatchEvent(new Event('change', { bubbles: true })); } };
         const say = (text, tone) => { importMsg.textContent = text; importMsg.className = `small ${tone === 'error' ? 't-danger' : tone === 'ok' ? 't-ok' : ''}`; };
         importBtn?.addEventListener('click', async () => {
+          if (!App.guardFeature('import')) return;
           const url = $('#apt-import-url', form).value.trim();
           if (!/^https?:\/\/([\w-]+\.)*(myhome\.ge|ss\.ge|place\.ge)\//i.test(url)) { say('ჩასვი განცხადების ბმული MyHome.ge-დან, SS.ge-დან ან Place.ge-დან.', 'error'); return; }
           importBtn.disabled = true; importBtn.classList.add('is-busy'); say('ვკითხულობთ განცხადებას…');
           try {
             const { data: { session } } = await sb.auth.getSession();
-            const res = await fetch('/api/import-listing/', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token || ''}` }, body: JSON.stringify({ url }) });
+            const res = await fetch('/api/import-listing/', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token || ''}` }, body: JSON.stringify({ url, org: S.org.id }) });
             const out = await res.json().catch(() => ({}));
             if (!res.ok || !out.ok) {
               // The server explains known cases; the rest are mapped here so the agent always knows what to do next.
