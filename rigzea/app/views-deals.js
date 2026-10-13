@@ -235,7 +235,7 @@
       <article class="deal-card">
         <div class="deal-card-head">
           <div class="cell-main">
-            <strong>${esc(d.client_name)}</strong>
+            <strong>${esc(d.client_name)} ${H.flagTag(H.contactByPhone(d.client_phone))}</strong>
             <span class="small muted">${d.contact_type ? R.contactBadge(d.contact_type) + ' · ' : ''}${d.client_phone ? `<a href="tel:${esc(d.client_phone)}">${esc(d.client_phone)}</a>` : ''}</span>
           </div>
           <button type="button" class="icon-btn" data-deal-edit="${d.id}" title="რედაქტირება" aria-label="რედაქტირება: ${esc(d.client_name)}">${icon('wrench', 14)}</button>
@@ -304,7 +304,8 @@
             </select>
           </label>
           <label class="field"><span class="field-label">კლიენტის სახელი</span><input name="client_name" required value="${esc(v.client_name || '')}" placeholder="მაგ.: დავით ბერიძე" data-error="შეიყვანე კლიენტის სახელი." /></label>
-          <label class="field"><span class="field-label">კლიენტის ტელეფონი</span><input type="tel" name="client_phone" value="${esc(v.client_phone || '')}" placeholder="+995 5XX XX XX XX" /></label>
+          <label class="field"><span class="field-label">კლიენტის ტელეფონი</span><input type="tel" name="client_phone" id="deal-client-phone" value="${esc(v.client_phone || '')}" placeholder="+995 5XX XX XX XX" /></label>
+          <div class="span-2" id="deal-flag" hidden></div>
           <label class="field span-2"><span class="field-label">ობიექტი პორტფოლიოდან</span>
             <select name="apartment_id" id="deal-apt-select">
               <option value="">— აირჩიე ობიექტი —</option>
@@ -359,6 +360,16 @@
           <label class="field span-2"><span class="field-label">შენიშვნა / კლიენტის მოთხოვნები</span><textarea name="notes" rows="2" placeholder="მაგ.: ეძებს წყნარ ადგილს, ბიუჯეტი $100K-მდე">${esc(v.notes || '')}</textarea></label>
         </div>`,
       onOpen: (form) => {
+        // Warn as soon as the typed number belongs to a client the team marked as unreliable.
+        const phoneInput = $('#deal-client-phone', form);
+        const flagBox = $('#deal-flag', form);
+        const checkClient = () => {
+          const c = H.contactByPhone(phoneInput.value);
+          flagBox.hidden = !c?.is_flagged;
+          flagBox.innerHTML = c?.is_flagged ? `<div class="notice notice-danger" id="deal-flag-banner">${icon('alert', 16)}<div><strong>არასანდო კლიენტი: ${esc(c.name)}</strong>${c.flag_note ? `<br>${esc(c.flag_note)}` : ''}</div></div>` : '';
+        };
+        phoneInput.addEventListener('input', checkClient);
+        checkClient();
         const typeSelect = $('#deal-type-select', form);
         const commTypeSelect = $('#deal-comm-type', form);
         const stageSelect = $('#deal-stage-select', form);
@@ -989,6 +1000,87 @@
         out.addEventListener('input', sync);
         $('#btn-copy-post', form).onclick = () => copyText(out.value, 'პოსტის ტექსტი დაკოპირდა');
         $('#btn-copy-wl', form).onclick = () => copyText(wlUrl, 'White-label ბმული დაკოპირდა (აგენტის კონტაქტის გარეშე)');
+      },
+    });
+  };
+
+  // ===========================================================================
+  // CO-BROKER SHARE (text for colleagues: WhatsApp deep link and broker chat groups)
+  // ===========================================================================
+  const CB_TERMS = [['split', '50/50 სააგენტოებთან'], ['percent', '1% კოლეგას'], ['fixed', 'ფიქსირებული $1000 კოლეგას']];
+  const CB_TERM_TEXT = { split: 'საკომისიო იყოფა 50/50', percent: 'კოლეგას 1% გარიგების თანხიდან', fixed: 'კოლეგას ფიქსირებული $1000' };
+  // Street without the building number, so the exact address stays with the listing agent.
+  const streetOnly = (address) => String(address || '').replace(/[\s,]*(№|N)?\s*\d+\s*[ა-ჰa-zA-Z]?(\s*[/-]\s*\d+)?\s*$/, '').trim();
+
+  function coBrokerText(a, o) {
+    const isSale = a.transaction_type === 'sale';
+    const cur = (a.currency || 'USD').toUpperCase() === 'GEL' ? 'GEL' : 'USD';
+    const other = cur === 'USD' ? 'GEL' : 'USD';
+    const base = Number(isSale ? a.sale_price : a.monthly_rent) || 0;
+    const price = base ? Math.round(base * (1 + (Number(o.margin) || 0) / 100)) : 0;
+    const alt = price ? convert(price, cur, other) : null;
+    const priceText = price ? `${fmtMoney(price, cur)}${alt !== null ? ` (${fmtMoney(alt, other)})` : ''}${isSale ? '' : ' / თვე'}` : 'შეთანხმებით';
+    const where = (o.shortAddress
+      ? [a.city, a.district, streetOnly(a.address)]
+      : [a.city, a.district, a.address, a.unit_number && `ბინა ${a.unit_number}`]).filter(Boolean).join(', ');
+    const owner = H.owner(a.owner_id);
+    const phone = a.agent_phone || S.member?.phone || S.org?.contact_phone || '';
+    // The public page shows the real price, so the link is left out when a margin is added.
+    const link = Number(o.margin) > 0 ? '' : listingUrl(a, true);
+    const rows = [
+      `🤝 ${isSale ? 'იყიდება' : 'ქირავდება'} · თანამშრომლობა კოლეგებთან`,
+      `📍 ლოკაცია: ${where || 'დაზუსტებით'}`,
+      a.area_sqm && `📐 ფართი: ${a.area_sqm} მ²${a.floor ? ` · სართული ${a.floor}${a.total_floors ? '/' + a.total_floors : ''}` : ''}`,
+      a.rooms && `🛏️ ოთახები: ${a.rooms}${a.bedrooms ? ` (საძინებელი: ${a.bedrooms})` : ''}`,
+      `💰 ფასი: ${priceText}`,
+      `🤝 პირობა: ${CB_TERM_TEXT[o.terms] || CB_TERM_TEXT.split}`,
+      !o.hideOwner && owner && `👤 მეპატრონე: ${owner.name}${owner.phone ? ', ' + owner.phone : ''}`,
+      !o.hideOwner && a.cadastral_code && `🗂 საკადასტრო კოდი: ${a.cadastral_code}`,
+      link && '\n📸 ფოტოები და დეტალები (შეგიძლია კლიენტს გადაუგზავნო):',
+      link && `👉 ${link}`,
+      phone ? `\n📲 კლიენტი თუ გყავს, მომწერე ან დამირეკე: ${phone}` : '\n📲 კლიენტი თუ გყავს, მომწერე პირადში.',
+    ];
+    return rows.filter(x => typeof x === 'string' && x).join('\n');
+  }
+
+  App.openCoBrokerShare = (a) => {
+    if (!a) return undefined;
+    const tag = (s) => (s ? '#' + String(s).replace(/[^\p{L}\p{N}]+/gu, '') : '');
+    const hashtags = ['#თანამშრომლობა', a.transaction_type === 'sale' ? '#იყიდება' : '#ქირავდება', tag(a.city), tag(a.district)].filter(Boolean).join(' ');
+    return R.dialog({
+      title: 'კოლეგასთან გაზიარება',
+      subtitle: a.name,
+      wide: true,
+      body: `
+        <div class="form-grid">
+          <label class="check span-2"><input type="checkbox" id="cb-hide" checked /> <span>მეპატრონის ნომრისა და საკადასტრო კოდის დამალვა</span></label>
+          <label class="check span-2"><input type="checkbox" id="cb-short" checked /> <span>მისამართის შემოკლება <span class="muted">(მხოლოდ უბანი და ქუჩა)</span></span></label>
+          <label class="field"><span class="field-label">საკომისიოს პირობა</span><select id="cb-terms">${CB_TERMS.map(([v, l]) => `<option value="${v}">${l}</option>`).join('')}</select></label>
+          <label class="field"><span class="field-label">ფასის მარჟა (+%)</span><input type="number" id="cb-margin" min="0" max="50" step="0.5" placeholder="0" inputmode="decimal" /><span class="field-hint" id="cb-margin-hint">არასავალდებულო</span></label>
+        </div>
+        <label class="sr-only" for="cb-output">გასაზიარებელი ტექსტი</label>
+        <textarea id="cb-output" rows="12" class="input post-output"></textarea>
+        <div class="post-actions">
+          <a class="btn btn-wa" id="cb-wa" href="#" target="_blank" rel="noopener">${icon('whatsapp', 16)} WhatsApp-ით გაგზავნა</a>
+          <button type="button" class="btn btn-secondary" id="cb-tg">${icon('telegram', 16)} კოპირება Telegram ჯგუფისთვის</button>
+          <button type="button" class="btn btn-ghost" id="cb-copy">${icon('copy', 16)} ტექსტის კოპირება</button>
+        </div>`,
+      onOpen: (form) => {
+        const out = $('#cb-output', form);
+        const wa = $('#cb-wa', form);
+        const sync = () => { wa.href = R.whatsappUrl(out.value); };
+        const build = () => {
+          const margin = Number($('#cb-margin', form).value) || 0;
+          out.value = coBrokerText(a, { hideOwner: $('#cb-hide', form).checked, shortAddress: $('#cb-short', form).checked, terms: $('#cb-terms', form).value, margin });
+          $('#cb-margin-hint', form).textContent = margin > 0 ? 'ბმული არ ემატება: საჯარო გვერდზე რეალური ფასი ჩანს.' : 'არასავალდებულო';
+          sync();
+        };
+        ['cb-hide', 'cb-short', 'cb-terms'].forEach(x => $(`#${x}`, form).addEventListener('change', build));
+        $('#cb-margin', form).addEventListener('input', build);
+        out.addEventListener('input', sync);
+        $('#cb-copy', form).onclick = () => copyText(out.value, 'ტექსტი დაკოპირდა');
+        $('#cb-tg', form).onclick = () => copyText(`${out.value}\n\n${hashtags}`, 'დაკოპირდა. ჩასვი Telegram ჯგუფში.');
+        build();
       },
     });
   };

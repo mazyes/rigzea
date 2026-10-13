@@ -726,6 +726,90 @@ test('17. navigation: rentals and sales sections scope apartments, contacts and 
   return phone;
 });
 
+test('18. co-broker share: owner data hidden by default, toggles rebuild the text, daily digest', async (browser) => {
+  const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
+  await page.goto(BASE + '/app/#/apartments/dddddddd-0000-4000-8000-000000000001');
+  await page.locator('#a-share').click();
+  const dlg = page.locator('dialog[open]');
+  const text = () => dlg.locator('#cb-output').inputValue();
+  let t = await text();
+  assert(!t.includes('577 00 11 22') && !t.includes('დავით მამულაშვილი'), 'owner is hidden by default');
+  assert(t.includes('შერიფ ხიმშიაშვილის') && !t.includes('ხიმშიაშვილის 7'), 'building number is removed from the address');
+  assert(t.includes('50/50'), 'default commission terms');
+  assert(t.includes('/p/?id='), 'white-label link is included');
+  assert((await dlg.locator('#cb-wa').getAttribute('href')).startsWith('https://wa.me/?text='), 'WhatsApp deep link');
+
+  await dlg.locator('#cb-hide').uncheck();
+  await dlg.locator('#cb-short').uncheck();
+  await dlg.locator('#cb-terms').selectOption('percent');
+  t = await text();
+  assert(t.includes('დავით მამულაშვილი') && t.includes('577 00 11 22'), 'owner shown when the toggle is off');
+  assert(t.includes('ხიმშიაშვილის 7'), 'full address when shortening is off');
+  assert(t.includes('1%') && !t.includes('50/50'), 'commission terms follow the selector');
+  await dlg.locator('#cb-margin').fill('10');
+  assert(!(await text()).includes('/p/?id='), 'link is dropped when a price margin is added');
+  assert(decodeURIComponent(await dlg.locator('#cb-wa').getAttribute('href')).includes('1%'), 'WhatsApp link carries the current text');
+  await page.keyboard.press('Escape');
+
+  await page.goto(BASE + '/app/#/today');
+  await page.locator('#btn-digest').click();
+  const digest = await page.locator('dialog[open] #digest-output').inputValue();
+  assert(digest.includes('დღევანდელი ნახვები') && digest.includes('ცხელი ობიექტები'), 'digest lists viewings and hot listings');
+  assert((await page.locator('dialog[open] #digest-tg').getAttribute('href')).startsWith('https://t.me/share/url?'), 'Telegram share link');
+  return page;
+});
+
+test('19. trust: cadastral duplicate banner, unreliable client flag warns in contact and deal forms', async (browser) => {
+  const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
+  // Save a cadastral code on an existing property (dots are inserted while typing)
+  await page.goto(BASE + '/app/#/apartments/dddddddd-0000-4000-8000-000000000001');
+  await page.locator('#a-edit').click();
+  await page.locator('dialog[open] #apt-cadastral').fill('01101400901' + '1');
+  assert.strictEqual(await page.locator('dialog[open] #apt-cadastral').inputValue(), '01.10.14.009.011');
+  await page.locator('dialog[open] [data-submit]').click();
+  await page.locator('dialog[open]').waitFor({ state: 'detached' });
+  assert.strictEqual((await db(page)).tables.apartments.find(a => a.id === 'dddddddd-0000-4000-8000-000000000001').cadastral_code, '01.10.14.009.011');
+
+  // Adding another property with the same code warns immediately
+  await page.goto(BASE + '/app/#/apartments?type=rent');
+  await page.locator('#btn-apt-new').click();
+  const dlg = page.locator('dialog[open]');
+  await dlg.locator('#apt-cadastral').fill('01101400901');
+  assert(await dlg.locator('#apt-dup').isHidden(), 'no warning for an incomplete code');
+  await dlg.locator('input[name=name]').fill('დუბლიკატი');
+  await dlg.locator('input[name=address]').fill('შერიფ ხიმშიაშვილის 7');
+  await dlg.locator('[data-submit]').click();
+  await dlg.locator('.form-error', { hasText: 'საკადასტრო კოდი არასრულია' }).waitFor();
+  await dlg.locator('#apt-cadastral').fill('01101400901' + '1');
+  const banner = await dlg.locator('#apt-dup-banner').innerText();
+  assert(banner.includes('ობიექტი უკვე ბაზაშია') && banner.includes('Orbi City · 1204') && banner.includes('სტატუსი'), 'duplicate banner names the existing property');
+  await page.keyboard.press('Escape');
+
+  // Mark a buyer as unreliable
+  await page.goto(BASE + '/app/#/owners/cccccccc-0000-4000-8000-000000000003');
+  await page.locator('#ow-edit').click();
+  await page.locator('dialog[open] #ow-flag').check();
+  await page.locator('dialog[open] textarea[name=flag_note]').fill('არ იხდის საკომისიოს');
+  await page.locator('dialog[open] [data-submit]').click();
+  await page.locator('dialog[open]').waitFor({ state: 'detached' });
+  assert((await page.locator('#ow-flag-banner').innerText()).includes('არ იხდის საკომისიოს'));
+  const flagged = (await db(page)).tables.owners.find(o => o.id === 'cccccccc-0000-4000-8000-000000000003');
+  assert(flagged.is_flagged === true && flagged.flagged_by_name, 'flag and who set it are saved');
+
+  // The same number typed in a new deal or a new contact shows the warning
+  await page.goto(BASE + '/app/#/deals?type=sale');
+  await page.locator('#btn-deal-new').click();
+  await page.locator('dialog[open] #deal-client-phone').fill('591 00 22 33');
+  assert((await page.locator('dialog[open] #deal-flag-banner').innerText()).includes('არ იხდის საკომისიოს'));
+  await page.keyboard.press('Escape');
+  await page.goto(BASE + '/app/#/owners?type=buyer');
+  await page.locator('#o-body .badge-danger', { hasText: 'არასანდო' }).waitFor();
+  await page.locator('#o-new').click();
+  await page.locator('dialog[open] input[name=phone]').fill('+995591002233');
+  assert((await page.locator('dialog[open] #ow-dup-banner').innerText()).includes('არასანდო კლიენტი'));
+  return page;
+});
+
 (async () => {
   const server = await serve();
   const browser = await launch();

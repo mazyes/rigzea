@@ -122,6 +122,17 @@
     dealStageTone: { enquiry: 'neutral', contacted: 'info', viewing: 'warn', offer: 'warn', negotiation: 'warn', deposit: 'warn', closed: 'ok', lost: 'muted', active: 'info' },
   };
 
+  // Phone numbers are compared by their last 9 digits, so +995 599 12 34 56 equals 599123456.
+  const phoneKey = (p) => { const d = String(p || '').replace(/\D/g, ''); return d.length >= 9 ? d.slice(-9) : ''; };
+  // Georgian cadastral code: 01.10.14.009.011, optionally with unit segments (.01.008).
+  const CADASTRAL_RE = /^\d{2}\.\d{2}\.\d{2}\.\d{3}\.\d{3}(\.\d{2}(\.\d{3})?)?$/;
+  const cadastralFormat = (v) => {
+    const d = String(v || '').replace(/\D/g, '').slice(0, 18);
+    const out = []; let i = 0;
+    for (const n of [2, 2, 2, 3, 3, 2, 3]) { if (i >= d.length) break; out.push(d.slice(i, i + n)); i += n; }
+    return out.join('.');
+  };
+
   const badge = (text, tone = 'neutral') => `<span class="badge badge-${tone}">${esc(text)}</span>`;
   const taskBadge = (s) => badge(L.taskStatus[s] || s, L.taskStatusTone[s]);
   const approvalStatus = (a) => (a.status === 'pending' && a.expires_at && new Date(a.expires_at) < new Date()) ? 'expired' : a.status;
@@ -361,7 +372,7 @@
   window.R = {
     sb, $, $$, esc, money, toDate, isoDate, monthKey, time, date, dayLabel, dateTime, relative, elapsed, span, sameDay,
     MONTHS, WEEKDAYS, L, badge, taskBadge, approvalStatus, approvalBadge, expenseBadge, dealBadge, transactionBadge, contactBadge, icon,
-    friendlyError, q, toast, run, dialog, confirm, ask, uploadFile, copyText, applyTheme, uuid,
+    friendlyError, phoneKey, CADASTRAL_RE, cadastralFormat, q, toast, run, dialog, confirm, ask, uploadFile, copyText, applyTheme, uuid,
     whatsappUrl: (text) => `https://wa.me/?text=${encodeURIComponent(text)}`,
     telegramUrl: (text, url) => `https://t.me/share/url?url=${encodeURIComponent(url || '')}&text=${encodeURIComponent(text || '')}`,
   };

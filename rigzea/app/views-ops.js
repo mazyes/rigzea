@@ -288,6 +288,52 @@
     ];
   }
 
+  // Morning summary for the team chat: today's viewings, hot listings and overdue work.
+  function dailyDigestText() {
+    const now = new Date();
+    const today = R.isoDate();
+    const price = (a) => { const v = a.transaction_type === 'sale' ? a.sale_price : a.monthly_rent; return v ? `${(a.currency || 'USD') === 'GEL' ? '' : '$'}${Math.round(Number(v)).toLocaleString('en-US')}${(a.currency || 'USD') === 'GEL' ? ' ₾' : ''}${a.transaction_type === 'sale' ? '' : ' / თვე'}` : 'ფასი შეთანხმებით'; };
+    const viewings = S.data.tasks.filter(t => t.type === 'viewing' && H.isOpen(t) && H.taskTime(t) && R.isoDate(new Date(H.taskTime(t))) === today)
+      .sort((a, b) => String(H.taskTime(a)).localeCompare(String(H.taskTime(b))));
+    const hot = S.data.apartments.filter(a => a.badge === 'hot' && a.status === 'active');
+    const overdue = S.data.tasks.filter(H.isOverdue).length;
+    return [
+      `☀️ დილა მშვიდობისა! ${R.WEEKDAYS[now.getDay()]}, ${now.getDate()} ${R.MONTHS[now.getMonth()]}`,
+      '',
+      `🗓 დღევანდელი ნახვები: ${viewings.length}`,
+      ...viewings.map(t => `• ${R.time(H.taskTime(t))} · ${H.aptName(t.apartment_id)}${t.assigned_to ? ' · ' + H.memberName(t.assigned_to) : ''}`),
+      '',
+      `🔥 ცხელი ობიექტები: ${hot.length}`,
+      ...hot.map(a => `• ${a.name} · ${price(a)}`),
+      ...(overdue ? ['', `⏰ ვადაგადაცილებული საქმე: ${overdue}`] : []),
+    ].join('\n');
+  }
+
+  function openDailyDigest() {
+    const text = dailyDigestText();
+    return R.dialog({
+      title: 'დღის შეჯამება',
+      subtitle: 'გაუგზავნე გუნდს Telegram-ში ან WhatsApp-ში',
+      body: `<label class="sr-only" for="digest-output">შეჯამების ტექსტი</label>
+        <textarea id="digest-output" rows="12" class="input post-output">${esc(text)}</textarea>
+        <div class="post-actions">
+          <button type="button" class="btn btn-primary" id="digest-copy">${icon('copy', 16)} ტექსტის კოპირება</button>
+          <a class="btn btn-secondary" id="digest-tg" target="_blank" rel="noopener">${icon('telegram', 16)} Telegram</a>
+          <a class="btn btn-wa" id="digest-wa" target="_blank" rel="noopener">${icon('whatsapp', 16)} WhatsApp</a>
+        </div>`,
+      onOpen: (form) => {
+        const out = $('#digest-output', form);
+        const sync = () => {
+          $('#digest-wa', form).href = R.whatsappUrl(out.value);
+          $('#digest-tg', form).href = `https://t.me/share/url?url=${encodeURIComponent(location.origin + '/app/')}&text=${encodeURIComponent(out.value)}`;
+        };
+        out.addEventListener('input', sync);
+        $('#digest-copy', form).onclick = () => R.copyText(out.value, 'შეჯამება დაკოპირდა');
+        sync();
+      },
+    });
+  }
+
   App.views.today = () => {
     const now = new Date();
     const att = attentionItems();
@@ -362,6 +408,7 @@
     $('#view').innerHTML = `
       <div class="page-head">
         <div><h1>დღეს</h1><p class="page-sub">${R.WEEKDAYS[now.getDay()]}, ${now.getDate()} ${R.MONTHS[now.getMonth()]}</p></div>
+        <div class="page-actions"><button type="button" class="btn btn-secondary" id="btn-digest">${icon('telegram', 16)} დღის შეჯამება</button></div>
       </div>
       <section class="card" style="margin-bottom:16px">
         <div class="card-head">
@@ -440,6 +487,7 @@
     $('#btn-hide-setup')?.addEventListener('click', () => { localStorage.setItem('rigzea_setup_hidden_' + S.org.id, '1'); App.render(); });
     $$('[data-renew]').forEach(b => b.addEventListener('click', () => openRenew(S.data.apartments.find(a => a.id === b.dataset.renew))));
     $('#btn-tg-link')?.addEventListener('click', openTelegramLink);
+    $('#btn-digest').onclick = openDailyDigest;
     bindSetup($('#view'));
     bindAlertActions($('#view'), att);
     bindApprovalShare($('#view'));

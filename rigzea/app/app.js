@@ -224,6 +224,9 @@
     memberName: (id) => idx.member.get(id)?.display_name || 'უსახელო წევრი',
     deal: (id) => idx.deal?.get(id),
     task: (id) => idx.task.get(id),
+    // Contact with the same phone number (duplicates and the unreliable-client warning).
+    contactByPhone: (phone, exceptId = null) => { const k = R.phoneKey(phone); return k ? S.data.owners.find(o => o.id !== exceptId && R.phoneKey(o.phone) === k) : undefined; },
+    flagTag: (o) => (o?.is_flagged ? `<span class="badge badge-danger" title="${esc(o.flag_note || '')}">არასანდო</span>` : ''),
     isOpen: (t) => !['done', 'cancelled'].includes(t.status),
     isOverdue: (t) => H.isOpen(t) && t.due_date && new Date(t.due_date) < new Date(),
     approvalLink: (a) => `${location.origin}/approve/?token=${encodeURIComponent(a.token)}`,
@@ -510,7 +513,7 @@
           const res = [
             ...S.data.apartments.filter(a => has(a.name, a.unit_number, a.address, a.city, H.owner(a.owner_id)?.name)).slice(0, 6).map(a => ({ href: `#/apartments/${a.id}`, icon: 'building', title: a.name, sub: [a.address, a.city].filter(Boolean).join(', ') })),
             ...S.data.tasks.filter(t => has(t.title, t.description, H.aptName(t.apartment_id))).slice(0, 6).map(t => ({ href: taskHref(t.id), icon: 'tasks', title: t.title, sub: `${H.aptName(t.apartment_id)} · ${L.taskStatus[t.status]}` })),
-            ...S.data.owners.filter(o => has(o.name, o.phone, o.email)).slice(0, 4).map(o => ({ href: `#/owners/${o.id}`, icon: 'owner', title: o.name, sub: o.phone || o.email || '' })),
+            ...S.data.owners.filter(o => has(o.name, o.phone, o.email)).slice(0, 4).map(o => ({ href: `#/owners/${o.id}`, icon: 'owner', title: o.name, sub: (o.is_flagged ? 'არასანდო კლიენტი · ' : '') + (o.phone || o.email || '') })),
           ];
           out.innerHTML = res.length ? res.map(x => `<a class="row" style="--cols:24px minmax(0,1fr)" href="${x.href}">${icon(x.icon)}<span class="cell-main"><strong>${esc(x.title)}</strong><span>${esc(x.sub)}</span></span></a>`).join('') : '<p class="empty-inline">ვერაფერი მოიძებნა.</p>';
           $$('a', out).forEach(a => a.addEventListener('click', () => dlg.close()));

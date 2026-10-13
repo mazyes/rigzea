@@ -230,7 +230,7 @@
     const STATUS = [['current', 'ყველა მიმდინარე'], ['active', 'აქტიური'], ['reserved', 'დაჯავშნილი'], ['rented', 'გაქირავებული'], ['sold', 'გაყიდული'], ['maintenance', 'რემონტზე'], ['vacant', 'არააქტიური'], ['archived', 'დაარქივებული']]
       .filter(([id]) => !(sec === 'sale' && id === 'rented') && !(sec === 'rent' && id === 'sold'));
     if (!STATUS.some(([id]) => id === af.status)) af.status = 'current';
-    const cols = 'minmax(0,2fr) minmax(0,1.2fr) 120px 110px 140px 120px 150px';
+    const cols = 'minmax(0,2fr) minmax(0,1.2fr) 120px 110px 140px 120px 190px';
 
     $('#view').innerHTML = `
       <div class="page-head"><div><h1>${title}</h1><p class="page-sub">${inScope} ობიექტი ${sec ? 'ამ სექციაში' : 'პორტფოლიოში'}</p></div>
@@ -262,7 +262,7 @@
             <span class="cell-meta" data-label="საქმე">${open.length}</span>
             <span class="cell-meta" data-label="ჯავშანი">${next ? (next.check_in <= R.isoDate() ? `გასვლა ${esc(R.dayLabel(next.check_out))}` : `შესვლა ${esc(R.dayLabel(next.check_in))}`) : (isSale ? (viewings ? `${viewings} ნახვა` : '—') : '—')}</span>
             <span class="cell-status">${R.badge(L.aptStatus[a.status] || a.status, L.aptStatusTone[a.status])}</span>
-            <span class="cell-actions"><button type="button" class="btn btn-ghost btn-sm" data-new-task="${a.id}">+ საქმე</button><button type="button" class="btn btn-ghost btn-sm" data-new-exp="${a.id}">+ ხარჯი</button></span>
+            <span class="cell-actions"><button type="button" class="btn btn-ghost btn-sm" data-new-task="${a.id}">+ საქმე</button><button type="button" class="btn btn-ghost btn-sm" data-new-exp="${a.id}">+ ხარჯი</button><button type="button" class="btn btn-ghost btn-sm" data-share-apt="${a.id}" title="კოლეგასთან გაზიარება" aria-label="კოლეგასთან გაზიარება: ${esc(a.name)}">${icon('whatsapp', 14)}</button></span>
           </a>`;
         }).join('')}</div>` : `<div class="empty">${icon('building', 28)}<h3>${apts.length ? (inScope ? 'ობიექტი ვერ მოიძებნა' : (sec === 'sale' ? 'გასაყიდი ბინა ჯერ არ არის' : 'გასაქირავებელი ბინა ჯერ არ არის')) : 'ობიექტი ჯერ არ არის დამატებული'}</h3>
           <p>${apts.length ? (inScope ? 'შეცვალე ძებნა ან ფილტრი.' : 'დაამატე ობიექტი ზედა ღილაკით.') : 'დაამატე ბინა ან კომერციული ფართი სახელით და მისამართით, მაგ.: „Orbi City · 1204“. ბევრი ობიექტი გაქვს? გამოიყენე Excel/CSV იმპორტი.'}</p>
@@ -278,6 +278,7 @@
     $('#btn-apt-empty')?.addEventListener('click', () => openApartmentForm(null, formDefaults));
     $$('[data-new-task]').forEach(b => b.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); App.openTaskForm({ apartmentId: b.dataset.newTask }); }));
     $$('[data-new-exp]').forEach(b => b.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); App.openExpenseForm({ apartmentId: b.dataset.newExp }); }));
+    $$('[data-share-apt]').forEach(b => b.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); App.openCoBrokerShare(H.apt(b.dataset.shareApt)); }));
   };
 
   // ===========================================================================
@@ -330,9 +331,10 @@
     $('#view').innerHTML = `
       <div class="page-head">
         <div><div class="crumbs"><a href="#/apartments?type=${App.aptSection(a)}">${isSale ? 'გასაყიდი ბინები' : 'გასაქირავებელი ბინები'}</a> ›</div>
-          <h1>${esc(a.name)}</h1><p class="page-sub">${esc([a.address, a.unit_number && 'ბინა ' + a.unit_number, a.city].filter(Boolean).join(', '))} · ${R.transactionBadge(a.transaction_type || (a.rental_type === 'long_term' ? 'long_term' : 'daily'))} ${R.badge(L.aptStatus[a.status] || a.status, L.aptStatusTone[a.status])}</p></div>
+          <h1>${esc(a.name)}</h1><p class="page-sub">${esc([a.address, a.unit_number && 'ბინა ' + a.unit_number, a.city].filter(Boolean).join(', '))}${a.cadastral_code ? ' · საკადასტრო ' + esc(a.cadastral_code) : ''} · ${R.transactionBadge(a.transaction_type || (a.rental_type === 'long_term' ? 'long_term' : 'daily'))} ${R.badge(L.aptStatus[a.status] || a.status, L.aptStatusTone[a.status])}</p></div>
         <div class="page-actions">
           <a class="btn btn-secondary" href="/guide/?apt=${encodeURIComponent(a.id)}" target="_blank" title="სტუმრის ციფრული გზამკვლევი და A5 ბარათი">${icon('sparkle', 16)} სტუმრის QR</a>
+          <button type="button" class="btn btn-secondary" id="a-share">${icon('whatsapp', 16)} კოლეგასთან გაზიარება</button>
           <button type="button" class="btn btn-secondary" id="a-viewing">${icon('clock', 16)} დათვალიერება</button>
           <button type="button" class="btn btn-primary" id="a-task">${icon('plus', 16)} საქმე</button>
           <button type="button" class="btn btn-secondary" id="a-exp">+ ხარჯი</button>
@@ -499,6 +501,7 @@
     $('#listing-url')?.addEventListener('focus', (e) => e.target.select());
     loadLinkStats(id);
     $('#btn-open-post')?.addEventListener('click', () => App.openPostGenerator(a));
+    $('#a-share')?.addEventListener('click', () => App.openCoBrokerShare(a));
     const openViewing = () => App.openTaskForm({ apartmentId: id, type: 'viewing', prefill: { title: `დათვალიერება: ${a.name}` } });
     $('#btn-apt-viewing')?.addEventListener('click', openViewing);
     $('#a-viewing')?.addEventListener('click', openViewing);
@@ -560,6 +563,8 @@
         <label class="field"><span class="field-label">ქალაქი</span><input name="city" value="${esc(v.city || '')}" list="city-list" /><datalist id="city-list"><option>თბილისი</option><option>ბათუმი</option><option>ქუთაისი</option><option>გუდაური</option><option>ბაკურიანი</option></datalist></label>
         <label class="field"><span class="field-label">რაიონი / უბანი</span><input name="district" value="${esc(v.district || '')}" list="district-list" placeholder="ვაკე, საბურთალო, ბულვარი..." /><datalist id="district-list"><option>ვაკე</option><option>საბურთალო</option><option>ვერა</option><option>მთაწმინდა</option><option>ჩუღურეთი</option><option>ორთაჭალა</option><option>დიღომი</option><option>ძველი ბულვარი</option><option>ახალი ბულვარი</option><option>რუსთაველი</option></datalist></label>
         <label class="field"><span class="field-label">მესაკუთრე (Owner Vault)</span><select name="owner_id"><option value="">არ არის მითითებული</option>${S.data.owners.map(o => `<option value="${o.id}" ${o.id === v.owner_id ? 'selected' : ''}>${esc(o.name)} (${esc(L.contactType[o.contact_type] || 'მესაკუთრე')})</option>`).join('')}</select></label>
+        <label class="field"><span class="field-label">საკადასტრო კოდი</span><input name="cadastral_code" id="apt-cadastral" value="${esc(v.cadastral_code || '')}" placeholder="01.10.14.009.011" inputmode="numeric" autocomplete="off" /><span class="field-hint">წერტილები თავისით ჩაისმება. დუბლიკატს ბაზაში ავტომატურად ვამოწმებთ.</span></label>
+        <div class="span-2" id="apt-dup" hidden></div>
         <label class="field"><span class="field-label">ტრანზაქციის ტიპი</span>
           <select name="transaction_type" id="apt-tx-type">
             <option value="sale" ${txType === 'sale' ? 'selected' : ''}>იყიდება (გაყიდვა)</option>
@@ -695,6 +700,20 @@
             sqmInput.value = Math.round(sp / ar);
           }
         };
+        // Cadastral code: format while typing and warn when the object is already in the workspace.
+        const cadInput = $('#apt-cadastral', form);
+        const dupBox = $('#apt-dup', form);
+        const checkCadastral = () => {
+          const code = cadInput.value.trim();
+          const dup = code && S.data.apartments.find(x => x.id !== id && x.cadastral_code === code);
+          const complete = R.CADASTRAL_RE.test(code);
+          dupBox.hidden = !dup;
+          dupBox.innerHTML = dup ? `<div class="notice notice-warn" id="apt-dup-banner">${icon('alert', 16)}<div><strong>ობიექტი უკვე ბაზაშია!</strong> ${esc(dup.name)}<br>აგენტი: ${esc(dup.agent_name || 'არ არის მითითებული')} | დამატებულია: ${esc(R.date(dup.created_at))} | სტატუსი: ${esc(L.aptStatus[dup.status] || dup.status)}</div></div>` : '';
+          cadInput.setCustomValidity(code && !complete ? 'invalid' : '');
+        };
+        cadInput.dataset.error = 'საკადასტრო კოდი არასრულია. მაგ.: 01.10.14.009.011';
+        cadInput.addEventListener('input', () => { cadInput.value = R.cadastralFormat(cadInput.value); checkCadastral(); });
+        checkCadastral();
         saleInput?.addEventListener('input', calcM2);
         areaInput?.addEventListener('input', calcM2);
         sqmInput?.addEventListener('input', () => { sqmInput.dataset.manual = '1'; });
@@ -711,6 +730,7 @@
         const payload = {
           name: f.name.trim(), unit_number: f.unit_number.trim() || null, address: f.address.trim(), city: f.city.trim() || null,
           district: f.district?.trim() || null, currency: cur,
+          cadastral_code: f.cadastral_code?.trim() || null,
           transaction_type: txType,
           property_type: f.property_type || 'apartment',
           sale_price: salePrice,
@@ -920,7 +940,7 @@
         const isClient = ['buyer', 'renter'].includes(ct);
         const budgetStr = o.budget_max ? `ბიუჯეტი: ${o.budget_min ? o.budget_min + '–' : ''}${o.budget_max} ${o.budget_currency || 'USD'}` : '';
         const prefStr = [o.preferred_city, o.preferred_district].filter(Boolean).join(', ');
-        return `<a class="row" href="#/owners/${o.id}" style="--cols:${cols}"><span class="cell-main"><strong>${esc(o.name)}</strong><span>${o.user_id ? 'პორტალთან დაკავშირებული' : (o.lead_source ? 'წყარო: ' + (L.leadSource[o.lead_source] || o.lead_source) : '')}</span></span>
+        return `<a class="row" href="#/owners/${o.id}" style="--cols:${cols}"><span class="cell-main"><strong>${esc(o.name)} ${H.flagTag(o)}</strong><span>${o.user_id ? 'პორტალთან დაკავშირებული' : (o.lead_source ? 'წყარო: ' + (L.leadSource[o.lead_source] || o.lead_source) : '')}</span></span>
           <span class="cell-meta">${R.contactBadge(ct)}</span>
           <span class="cell-meta">${esc([o.phone, o.email].filter(Boolean).join(' · ') || '—')}${budgetStr ? `<div class="small t-ok" style="font-weight:600">${esc(budgetStr)}</div>` : ''}</span>
           <span class="cell-meta" data-label="დეტალები">${apts.length ? esc(apts.map(a => a.name).join(', ')) : (prefStr ? esc(prefStr) : (typeof o.requirements === 'string' && o.requirements ? esc(o.requirements.slice(0, 40)) : '—'))}</span>
@@ -943,6 +963,7 @@
     $('#view').innerHTML = `
       <div class="page-head"><div><div class="crumbs"><a href="${contactsHref(ct)}">${CONTACT_PAGES[ct]?.title || 'კონტაქტები'}</a> ›</div><h1>${esc(o.name)}</h1><p class="page-sub">${R.contactBadge(ct)} · ${apts.length} ობიექტი</p></div>
         <div class="page-actions"><button type="button" class="btn btn-secondary" id="ow-appr">თანხმობის მოთხოვნა</button><button type="button" class="btn btn-ghost" id="ow-edit">რედაქტირება</button></div></div>
+      ${o.is_flagged ? `<div class="notice notice-danger" id="ow-flag-banner" style="margin-bottom:16px">${icon('alert', 16)}<div><strong>არასანდო / პრობლემური კლიენტი</strong>${o.flag_note ? `<br>${esc(o.flag_note)}` : ''}${o.flagged_by_name ? `<br><span class="small">მონიშნა: ${esc(o.flagged_by_name)}${o.flagged_at ? ' · ' + esc(R.date(o.flagged_at)) : ''}</span>` : ''}</div></div>` : ''}
       <div class="cols"><div class="stack">
         <section class="card"><div class="card-head"><h2>მიბმული ობიექტები</h2></div>${apts.length ? `<div class="rows">${apts.map(a => `<a class="row" href="#/apartments/${a.id}" style="--cols:minmax(0,1fr) auto"><span class="cell-main"><strong>${esc(a.name)}</strong><span>${esc(a.address || '')}</span></span>${R.badge(L.aptStatus[a.status], L.aptStatusTone[a.status])}</a>`).join('')}</div>` : App.emptyInline('ობიექტი არ არის მიბმული.')}</section>
         <section class="card"><div class="card-head"><h2>თანხმობები</h2></div>${approvals.length ? `<div class="rows">${approvals.map(a => `<div class="row" style="--cols:minmax(0,1fr) auto"><span class="cell-main"><strong>${esc(a.title || a.description || 'ხარჯი')} · ${money(a.amount)}</strong><span>${esc(H.aptName(a.apartment_id))} · ${esc(R.date(a.created_at))}${a.response_note ? ' · „' + esc(a.response_note) + '“' : ''}</span></span>${R.approvalBadge(a)}</div>`).join('')}</div>` : App.emptyInline('თანხმობის მოთხოვნა ჯერ არ ყოფილა.')}</section>
@@ -985,6 +1006,7 @@
         </label>
         <label class="field"><span class="field-label">სახელი და გვარი</span><input name="name" required value="${esc(o?.name || '')}" data-error="ჩაწერე სახელი." placeholder="მაგ.: დავით მამულაშვილი" /></label>
         <label class="field"><span class="field-label">ტელეფონი</span><input name="phone" type="tel" value="${esc(o?.phone || '')}" placeholder="+995 5XX XX XX XX" /></label>
+        <div class="span-2" id="ow-dup" hidden></div>
         <label class="field"><span class="field-label">ელფოსტა</span><input name="email" type="email" value="${esc(o?.email || '')}" data-error="ელფოსტის ფორმატი არასწორია." /></label>
         
         <div class="form-section span-2" id="ow-pref-section" style="background:var(--surface-2);padding:12px;border-radius:var(--r);border:1px solid var(--line)">
@@ -1011,8 +1033,27 @@
         <label class="field"><span class="field-label">Follow-up თარიღი</span><input type="date" name="follow_up_date" value="${esc(o?.follow_up_date || '')}" /></label>
         <label class="field span-2"><span class="field-label">საბანკო ანგარიში (მესაკუთრისთვის)</span><input name="payout_account" value="${esc(o?.payout_account || '')}" placeholder="GE00TB0000000000000000" /></label>
         <label class="field span-2"><span class="field-label">შიდა შენიშვნა</span><textarea name="notes" rows="2">${esc(o?.notes || '')}</textarea></label>
+        <div class="form-section span-2">
+          <label class="check"><input type="checkbox" name="is_flagged" id="ow-flag" ${o?.is_flagged ? 'checked' : ''} /> <span><strong>არასანდო / პრობლემური კლიენტი</strong><br><span class="small muted">გუნდის ყველა წევრი დაინახავს გაფრთხილებას, როცა ამ ნომერს შეიყვანს ან მოძებნის.</span></span></label>
+          <label class="field" id="ow-flag-note" hidden style="margin-top:10px"><span class="field-label">რა მოხდა</span><textarea name="flag_note" rows="2" placeholder="მაგ.: ჩვენების შემდეგ სცადა მეპატრონესთან პირდაპირ დაკავშირება; არ იხდის საკომისიოს">${esc(o?.flag_note || '')}</textarea></label>
+        </div>
       </div>`,
-      onSubmit: async (_f, v) => {
+      onOpen: (form) => {
+        const phoneInput = $('input[name=phone]', form);
+        const dupBox = $('#ow-dup', form);
+        const flag = $('#ow-flag', form);
+        const checkPhone = () => {
+          const dup = H.contactByPhone(phoneInput.value, edit ? o.id : null);
+          dupBox.hidden = !dup;
+          dupBox.innerHTML = dup ? `<div class="notice ${dup.is_flagged ? 'notice-danger' : 'notice-warn'}" id="ow-dup-banner">${icon('alert', 16)}<div><strong>${dup.is_flagged ? 'არასანდო კლიენტი!' : 'ეს ნომერი უკვე ბაზაშია.'}</strong> ${esc(dup.name)} · ${esc(L.contactType[dup.contact_type || 'owner'])} · დამატებულია: ${esc(R.date(dup.created_at))}${dup.is_flagged && dup.flag_note ? `<br>${esc(dup.flag_note)}` : ''}</div></div>` : '';
+        };
+        const syncFlag = () => { $('#ow-flag-note', form).hidden = !flag.checked; };
+        phoneInput.addEventListener('input', checkPhone);
+        flag.addEventListener('change', syncFlag);
+        checkPhone(); syncFlag();
+      },
+      onSubmit: async (form, v) => {
+        const flagged = $('#ow-flag', form).checked;
         const payload = {
           name: v.name.trim(),
           contact_type: v.contact_type || 'owner',
@@ -1028,6 +1069,10 @@
           follow_up_date: v.follow_up_date || null,
           payout_account: v.payout_account.trim() || null,
           notes: v.notes.trim() || null,
+          is_flagged: flagged,
+          flag_note: flagged ? (v.flag_note?.trim() || null) : null,
+          flagged_at: flagged ? (o?.is_flagged && o.flagged_at ? o.flagged_at : new Date().toISOString()) : null,
+          flagged_by_name: flagged ? (o?.is_flagged && o.flagged_by_name ? o.flagged_by_name : (S.member?.display_name || S.user.email)) : null,
         };
         const row = edit ? await q(sb.from('owners').update(payload).eq('id', o.id).select().single()) : await App.insertOnce('owners', { id, organization_id: S.org.id, ...payload });
         App.upsertLocal('owners', row);
