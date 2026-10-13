@@ -956,6 +956,8 @@
           photos: photoUrl ? [{ url: photoUrl, phase: 'problem', at: new Date().toISOString() }] : [], ...fields,
         });
         App.upsertLocal('tasks', row);
+        // A scheduled viewing opens the owner's contact to an agent: reload to pick it up.
+        if (App.isAgent() && row.type === 'viewing') App.refresh({ quiet: true });
         if (!form.dataset.logged) { App.logEvent(apt.id, 'task_created', `ახალი საქმე: ${row.title}`, row.assigned_to ? `დაინიშნა: ${H.memberName(row.assigned_to)}` : null, { task_id: row.id }); form.dataset.logged = '1'; }
 
         try {

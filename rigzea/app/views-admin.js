@@ -16,7 +16,15 @@
     S.seatInvites = invitations.filter(i => i.status === 'pending' && i.role !== 'staff').length;
   }
 
+  // The agent role needs supabase/patches/08_team.sql; offer it only where the database supports it.
+  let agentRole = null;
+  function checkAgentRole() {
+    agentRole = false;
+    sb.rpc('is_org_agent', { p_org: S.org.id }).then(({ error }) => { agentRole = !error; if (agentRole && App.route().name === 'team') App.render(); }, () => {});
+  }
+
   App.views.team = () => {
+    if (agentRole === null) checkAgentRole();
     if (invitations === null) { loadInvitations().then(() => App.route().name === 'team' && App.render()); }
     const members = S.data.members.slice().sort((a, b) => (a.display_name || '').localeCompare(b.display_name || ''));
     const pendingInv = (invitations || []).filter(i => i.status === 'pending');
@@ -30,7 +38,7 @@
           const overdue = open.filter(H.isOverdue).length;
           const self = m.user_id === S.user.id;
           return `<div class="row" style="--cols:${cols}"><span class="cell-main"><strong>${esc(m.display_name || 'უსახელო')}${self ? ' <span class="muted">(შენ)</span>' : ''}</strong><span>წევრია ${esc(R.date(m.created_at))}-დან</span></span>
-            <span class="cell-meta">${App.isAdmin() && !self && m.role !== 'owner' ? `<select class="input" data-role="${m.id}" aria-label="როლი" style="min-height:32px">${['admin', 'manager', 'staff'].map(r => `<option value="${r}" ${m.role === r ? 'selected' : ''}>${L.role[r]}</option>`).join('')}</select>` : esc(L.role[m.role])}</span>
+            <span class="cell-meta">${App.isAdmin() && !self && m.role !== 'owner' ? `<select class="input" data-role="${m.id}" aria-label="როლი" style="min-height:32px">${['admin', 'manager', 'agent', 'staff'].filter(r => r !== 'agent' || agentRole || m.role === 'agent').map(r => `<option value="${r}" ${m.role === r ? 'selected' : ''}>${L.role[r]}</option>`).join('')}</select>` : esc(L.role[m.role])}</span>
             <span class="cell-meta">${m.phone ? `<a href="tel:${esc(m.phone)}">${esc(m.phone)}</a>` : '—'}</span>
             <span class="cell-meta" data-label="საქმე"><a href="#/tasks" data-filter-assignee="${m.id}">${open.length}</a>${overdue ? ` <span class="t-danger">(${overdue} ვადაგადაც.)</span>` : ''}</span>
             <span class="cell-actions">${App.isAdmin() && !self && m.role !== 'owner' ? `<button type="button" class="btn btn-ghost btn-sm" data-remove="${m.id}">გუნდიდან ამოშლა</button>` : ''}</span></div>`;
@@ -83,6 +91,7 @@
         <label class="field"><span class="field-label">ელფოსტა</span><input type="email" name="email" required data-error="ჩაწერე სწორი ელფოსტა." placeholder="name@example.ge" /></label>
         <div class="field"><span class="field-label">როლი</span><div class="choice-list">
           <label class="choice"><input type="radio" name="role" value="staff" checked><span><strong>თანამშრომელი</strong><small>დამლაგებელი ან ტექნიკოსი: ხედავს მხოლოდ თავის საქმეებს, ჩეკლისტს და ბინის დაშვებას.</small></span></label>
+          <label class="choice" ${agentRole ? '' : 'style="display:none"'}><input type="radio" name="role" value="agent"><span><strong>აგენტი</strong><small>ხედავს საერთო ბაზას და თავის გარიგებებს. მეპატრონის ნომერი იხსნება ნახვის დანიშვნის შემდეგ. ფინანსებს ვერ ხედავს.</small></span></label>
           <label class="choice"><input type="radio" name="role" value="manager"><span><strong>მენეჯერი</strong><small>მართავს ბინებს, საქმეებს, ხარჯებს და თანხმობებს.</small></span></label>
           <label class="choice"><input type="radio" name="role" value="admin"><span><strong>ადმინისტრატორი</strong><small>მენეჯერის უფლებებს ემატება გუნდისა და პარამეტრების მართვა.</small></span></label>
         </div></div></div>`,

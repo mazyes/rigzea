@@ -448,7 +448,7 @@
 
         <div class="stack">
           <section class="card"><div class="card-head"><h2>მესაკუთრე / პარტნიორი</h2>${owner ? `<a class="link-btn small" href="#/owners/${owner.id}">პროფილი</a>` : ''}</div>
-            <div class="card-body">${owner ? `<dl class="kv"><dt>სახელი</dt><dd>${esc(owner.name)}</dd>
+            <div class="card-body">${a.owner_id && !owner ? `<div class="notice" id="a-owner-masked">${icon('key', 16)}<div><strong>მეპატრონის კონტაქტი დამალულია</strong><br>დანიშნე დათვალიერება და სახელი და ნომერი გამოჩნდება.</div></div>` : owner ? `<dl class="kv"><dt>სახელი</dt><dd>${esc(owner.name)}</dd>
               <dt>სტატუსი</dt><dd>${R.contactBadge(owner.contact_type || 'owner')}</dd>
               <dt>ტელეფონი</dt><dd>${owner.phone ? `<a href="tel:${esc(owner.phone)}">${esc(owner.phone)}</a>` : '—'}</dd>
               <dt>ელფოსტა</dt><dd>${owner.email ? `<a href="mailto:${esc(owner.email)}">${esc(owner.email)}</a>` : '—'}</dd>
@@ -722,7 +722,7 @@
           importBtn.disabled = true; importBtn.classList.add('is-busy'); say('ვკითხულობთ განცხადებას…');
           try {
             const { data: { session } } = await sb.auth.getSession();
-            const res = await fetch('/api/import-listing', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token || ''}` }, body: JSON.stringify({ url }) });
+            const res = await fetch('/api/import-listing/', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token || ''}` }, body: JSON.stringify({ url }) });
             const out = await res.json().catch(() => ({}));
             if (!res.ok || !out.ok) throw new Error(out.message || 'განცხადება ვერ წავიკითხეთ. შეავსე ველები ხელით.');
             const l = out.listing;
@@ -810,7 +810,7 @@
         try {
           row = edit
             ? await q(sb.from('apartments').update(payload).eq('id', a.id).select().single())
-            : await App.insertOnce('apartments', { id, organization_id: S.org.id, ...payload });
+            : await App.insertOnce('apartments', { id, organization_id: S.org.id, listing_agent_id: S.member?.id || null, ...payload });
         } catch (err) {
           if (err?.code === '23505' && /slug/i.test(err.message || '')) throw new Error('ეს ბმული უკვე დაკავებულია. აირჩიე სხვა მისამართი.');
           throw err;
@@ -1119,7 +1119,7 @@
           flagged_at: flagged ? (o?.is_flagged && o.flagged_at ? o.flagged_at : new Date().toISOString()) : null,
           flagged_by_name: flagged ? (o?.is_flagged && o.flagged_by_name ? o.flagged_by_name : (S.member?.display_name || S.user.email)) : null,
         };
-        const row = edit ? await q(sb.from('owners').update(payload).eq('id', o.id).select().single()) : await App.insertOnce('owners', { id, organization_id: S.org.id, ...payload });
+        const row = edit ? await q(sb.from('owners').update(payload).eq('id', o.id).select().single()) : await App.insertOnce('owners', { id, organization_id: S.org.id, assigned_to: S.member?.id || null, ...payload });
         App.upsertLocal('owners', row);
         App.render();
         toast(edit ? 'კონტაქტი განახლდა' : `კონტაქტი დაემატა: ${row.name}`, { type: 'success' });

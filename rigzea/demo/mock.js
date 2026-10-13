@@ -6,7 +6,7 @@
   'use strict';
   const KEY = 'rigzea_demo_db';
   const SESSION_KEY = 'rigzea_demo_session';
-  const VERSION = 6;
+  const VERSION = 7;
   const MAX_AGE = 12 * 3600e3; // reseed so relative dates (renewals, trial) stay fresh
 
   const notify = (message) => { try { window.dispatchEvent(new CustomEvent('rigzea-demo', { detail: message })); } catch { /* old browser */ } };
@@ -169,6 +169,7 @@
   const rpcs = {
     accept_my_invitations() { return 0; },
     is_platform_admin() { return false; },
+    is_org_agent() { return false; },
     scan_alerts() { return 0; },
     create_user_organization() { throw { message: 'სადემონსტრაციო რეჟიმში ახალი სამუშაო სივრცე არ იქმნება.' }; },
     create_telegram_link_code() {

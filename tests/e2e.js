@@ -854,7 +854,7 @@ test('20. documents: PDF presentation templates, auto-filled sale contract, regi
 test('21. smart import: a listing link fills the new property form, errors are explained', async (browser) => {
   const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
   let mode = 'ok';
-  await page.route('**/api/import-listing', async (route) => {
+  await page.route('**/api/import-listing/', async (route) => {
     const body = JSON.parse(route.request().postData() || '{}');
     if (mode === 'blocked') return route.fulfill({ status: 502, contentType: 'application/json', body: JSON.stringify({ ok: false, error: 'blocked', message: 'საიტმა ავტომატური წაკითხვა დაბლოკა. შეავსე ველები ხელით ან სცადე მოგვიანებით.' }) });
     assert(route.request().headers().authorization?.startsWith('Bearer '), 'request is authenticated');
@@ -890,6 +890,57 @@ test('21. smart import: a listing link fills the new property form, errors are e
   const row = (await db(page)).tables.apartments.find(a => a.name.startsWith('მთაწმინდა · რუსთაველის'));
   assert(row.transaction_type === 'sale' && Number(row.sale_price) === 123000 && Number(row.area_sqm) === 115 && row.district === 'მთაწმინდა', 'imported values are saved');
   return page;
+});
+
+test('22. team: commission split, payout marks, leaderboard and the agent role', async (browser) => {
+  const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
+  await page.goto(BASE + '/app/#/deals?type=sale');
+  await page.locator('#btn-deal-new').click();
+  const dlg = page.locator('dialog[open]');
+  await dlg.locator('input[name=client_name]').fill('ლევან ჩხეიძე');
+  await dlg.locator('#deal-amount').fill('200000');
+  await dlg.locator('#deal-comm-pct').fill('3');
+  await dlg.locator('#deal-listing-agent').selectOption({ label: 'ნინო ბერიძე' });
+  await dlg.locator('#deal-stage-select').selectOption('closed');
+  // net 6 000: 25% + 25% to the agents, 50% to the agency
+  const split = (await dlg.locator('#deal-split-out').innerText()).replace(/\s+/g, ' ');
+  assert((split.match(/\$1,500/g) || []).length === 2 && split.includes('$3,000') && split.includes('სააგენტო (50%)'), 'split amounts: ' + split);
+  await dlg.locator('#deal-listing-split').fill('80');
+  assert((await dlg.locator('#deal-split-out').innerText()).includes('100%-ს აღემატება'), 'over 100% is refused');
+  await dlg.locator('#deal-listing-split').fill('25');
+  await dlg.locator('[data-submit]').click();
+  await page.locator('.toast-success', { hasText: 'გარიგება დაემატა' }).waitFor();
+  const deal = (await db(page)).tables.deals.find(x => x.client_name === 'ლევან ჩხეიძე');
+  assert(deal.listing_agent_id && deal.selling_agent_id && Number(deal.listing_split) === 25 && Number(deal.selling_split) === 25);
+
+  await page.goto(BASE + '/app/#/deals/commissions?type=sale');
+  const payouts = page.locator('#team-payouts');
+  await payouts.waitFor();
+  assert.strictEqual(await payouts.locator(`[data-payout="${deal.id}"]`).count(), 2, 'one payout line per agent');
+  await payouts.locator(`[data-payout="${deal.id}"][data-role="listing"]`).click();
+  await page.locator(`[data-payout="${deal.id}"][data-role="listing"][aria-pressed="true"]`).waitFor();
+  assert.strictEqual((await db(page)).tables.deals.find(x => x.id === deal.id).listing_paid, true);
+  const board = (await page.locator('#leaderboard').innerText()).replace(/\s+/g, ' ');
+  assert(board.includes('ნინო ბერიძე') && board.includes('$200,000') && board.includes('$3,000'), 'leaderboard: ' + board);
+  await page.context().close();
+
+  // Agent: no finance or team pages, owner contact hidden until a viewing exists
+  const agent = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
+  await agent.addInitScript(() => {
+    const d = JSON.parse(localStorage.getItem('rigzea_mockdb') || 'null') || structuredClone(window.__MOCK_SEED);
+    d.tables.organization_members.find(m => m.user_id === 'aaaaaaaa-0000-4000-8000-000000000001').role = 'agent';
+    // What row-level security returns to an agent: other people's contacts are absent.
+    d.tables.owners = d.tables.owners.filter(o => o.contact_type === 'buyer');
+    localStorage.setItem('rigzea_mockdb', JSON.stringify(d));
+  });
+  await agent.goto(BASE + '/app/#/finance');
+  await agent.getByRole('heading', { name: 'დღეს', exact: true }).waitFor();
+  assert.strictEqual(await agent.locator('#rail a[href="#/finance"], #rail a[href="#/team"], #rail a[href="#/settings"]').count(), 0, 'management pages are not in the menu');
+  assert.strictEqual(await agent.locator('#rail a[href="#/deals?type=sale"]').count(), 1);
+  await agent.goto(BASE + '/app/#/apartments/dddddddd-0000-4000-8000-000000000001');
+  await agent.locator('#a-owner-masked').waitFor();
+  assert(!(await agent.locator('#view').innerText()).includes('577 00 11 22'), 'owner phone is not shown');
+  return agent;
 });
 
 (async () => {

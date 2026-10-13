@@ -114,7 +114,7 @@
     contactType: { buyer: 'მყიდველი', renter: 'მდგმური', owner: 'მეპატრონე', seller: 'გამყიდველი', other: 'სხვა' },
     contactTypeTone: { buyer: 'ok', renter: 'info', owner: 'warn', seller: 'ok', other: 'neutral' },
     leadSource: { instagram: 'Instagram', facebook: 'Facebook', myhome: 'MyHome.ge', ss_ge: 'SS.ge', referral: 'რეკომენდაცია', walk_in: 'ოფისში მოსვლა', website: 'ვებსაიტი', other: 'სხვა' },
-    role: { owner: 'ანგარიშის მფლობელი', admin: 'ადმინისტრატორი', manager: 'მენეჯერი', staff: 'თანამშრომელი' },
+    role: { owner: 'ანგარიშის მფლობელი', admin: 'ადმინისტრატორი', manager: 'მენეჯერი', agent: 'აგენტი', staff: 'თანამშრომელი' },
     source: { airbnb: 'Airbnb', booking: 'Booking.com', direct: 'პირდაპირი', other: 'სხვა' },
     statement: { draft: 'მონახაზი', finalized: 'დასრულებული', sent: 'გაგზავნილი' },
     statementTone: { draft: 'neutral', finalized: 'ok', sent: 'ok' },

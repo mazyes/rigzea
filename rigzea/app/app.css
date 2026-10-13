@@ -708,3 +708,9 @@ button.row { width: 100%; border: 0; border-bottom: 1px solid var(--line); backg
 .import-row input { flex: 1; min-width: 0; }
 .import-box p { margin-top: 8px; color: var(--ink-2); }
 @media (max-width: 600px) { .import-row { flex-direction: column; } }
+
+/* team split in the deal form */
+.deal-split-out { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 10px; }
+.deal-split-out > div { background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r-sm); padding: 8px 10px; display: flex; flex-direction: column; gap: 2px; }
+.deal-split-out span { color: var(--muted); }
+@media (max-width: 600px) { .deal-split-out { grid-template-columns: 1fr; } }

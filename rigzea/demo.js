@@ -136,6 +136,7 @@
     { id: 'post', icon: 'whatsapp', title: 'პოსტის გენერატორი', sub: 'ქართული, English, WhatsApp და Co-Brokering 50/50', run: () => go(`#/apartments/${IDS.vake}`, null, () => App.openPostGenerator(App.H.apt(IDS.vake))) },
     { id: 'lease', icon: 'file', title: 'ორენოვანი ხელშეკრულება', sub: '11 მუხლი ქართულად და ინგლისურად, PDF', run: () => go('#/deals?type=rental', null, () => App.openLeaseAgreementGenerator(App.H.apt(IDS.vera), App.H.deal(IDS.dealVera))) },
     { id: 'comm', icon: 'wallet', title: 'საკომისიოები და ექსპორტი', sub: 'თვე, აგენტი, სრული, პარტნიორის წილი, სუფთა, CSV', run: () => go('#/deals/commissions') },
+    { id: 'team', icon: 'team', title: 'გუნდის წილები და რეიტინგი', sub: 'ობიექტის აგენტი, მყიდველის აგენტი, სააგენტო; გადახდის სტატუსი', run: () => go('#/deals/commissions?type=sale') },
     { id: 'renew', icon: 'clock', title: 'განახლებები და Telegram', sub: 'ხელშეკრულებები 30, 14 და 3 დღეში', run: () => go('#/today', '[data-renew]') },
     { id: 'plans', icon: 'check', title: 'პაკეტები', sub: 'დამწყები, პრო აგენტი, გუნდი, სააგენტო', run: () => go('#/settings/plan') },
     { id: 'brand', icon: 'settings', title: 'White-label ბრენდინგი', sub: 'ლოგო, სახელი და ფერი საჯარო გვერდებზე', run: () => go('#/settings', '#brand-card') },

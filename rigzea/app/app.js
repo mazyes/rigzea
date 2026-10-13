@@ -19,6 +19,9 @@
   const MANAGER_ROLES = ['owner', 'admin', 'manager'];
   const isManager = () => MANAGER_ROLES.includes(S.member?.role);
   const isAdmin = () => ['owner', 'admin'].includes(S.member?.role);
+  // Agents work with the shared inventory and their own deals; finances and team settings are closed to them.
+  const isAgent = () => S.member?.role === 'agent';
+  const AGENT_CLOSED = ['finance', 'team', 'settings'];
 
   // ---------------------------------------------------------------------------
   // Screens
@@ -289,6 +292,7 @@
       { id: 'settings', label: 'პარამეტრები', icon: 'settings', href: '#/settings' },
     ] },
   ];
+  const navGroups = () => (isAgent() ? NAV.filter(g => g.id !== 'manage') : NAV);
   const CONTACT_NAV = { renter: 'renters', owner: 'landlords', buyer: 'buyers', seller: 'sellers' };
   const aptSection = (a) => (a?.transaction_type === 'sale' ? 'sale' : 'rent');
   const contactSection = (ct) => (['buyer', 'seller'].includes(ct) ? 'sale' : 'rent');
@@ -334,7 +338,7 @@
     const key = S.data ? navKey() : route().name;
     const counts = navCounts();
     const section = sectionOf(key);
-    $('#rail').innerHTML = NAV.map(g => `${g.label ? `<div class="nav-group">${g.label}</div>` : ''}${navLinks(g, key, counts)}`).join('')
+    $('#rail').innerHTML = navGroups().map(g => `${g.label ? `<div class="nav-group">${g.label}</div>` : ''}${navLinks(g, key, counts)}`).join('')
       + `<div class="rail-foot">${S.data ? `${S.data.apartments.filter(a => a.status !== 'archived').length} ბინა · ${S.data.owners.length} კონტაქტი · ${S.data.members.length} წევრი` : ''}</div>`;
 
     // Phone: two primary pages, the two sections, and the full menu.
@@ -390,7 +394,7 @@
     const counts = navCounts();
     R.dialog({
       title: 'მენიუ',
-      body: `<nav class="menu-list" style="padding:0">${NAV.map(g => `${g.label ? `<div class="nav-group">${g.label}</div>` : ''}${navLinks(g, key, counts, '')}`).join('')}
+      body: `<nav class="menu-list" style="padding:0">${navGroups().map(g => `${g.label ? `<div class="nav-group">${g.label}</div>` : ''}${navLinks(g, key, counts, '')}`).join('')}
         <button type="button" data-action="signout">${icon('logout')} გამოსვლა</button></nav>`,
       onOpen: (form, dlg) => $$('a', form).forEach(a => a.addEventListener('click', () => dlg.close())),
     });
@@ -409,6 +413,7 @@
       return;
     }
     const r = route();
+    if (isAgent() && AGENT_CLOSED.includes(r.name)) { location.hash = '#/today'; return; }
     renderShell();
     const view = views[r.name] || views.today;
     try {
@@ -682,7 +687,7 @@
     $('#btn-plan-banner').onclick = () => openUpgrade(st.locked ? { kind: 'locked' } : { kind: 'info' });
   }
 
-  window.App = { S, H, views, aptSection, contactSection, isManager, isAdmin, refresh, render, renderShell, go, route, taskHref, closeTaskOverlay, upsertLocal, logEvent,
+  window.App = { S, H, views, aptSection, contactSection, isManager, isAdmin, isAgent, refresh, render, renderShell, go, route, taskHref, closeTaskOverlay, upsertLocal, logEvent,
     PLANS, PLAN_ORDER, FEATURE_LABEL, CONTACT, planState, can, guardLimit, guardFeature, openUpgrade, planCardsHtml, waLink, activeApartments, seatsUsed };
 
   document.addEventListener('DOMContentLoaded', () => {

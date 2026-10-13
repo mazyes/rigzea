@@ -65,6 +65,26 @@
     return { dealAmount: amount, isSale, commType, baseComm, bonus, gross, hasPartner, cobrokerPct, partnerShare, net };
   }
 
+
+  // Team split of the net commission (after the external partner's share).
+  function calcSplit(d) {
+    const c = calcCommission(d);
+    const listingPct = d.listing_agent_id ? Number(d.listing_split ?? 25) : 0;
+    const sellingPct = d.selling_agent_id ? Number(d.selling_split ?? 25) : 0;
+    const listing = (c.net * listingPct) / 100, selling = (c.net * sellingPct) / 100;
+    return { ...c, listingPct, sellingPct, listing, selling, house: c.net - listing - selling };
+  }
+  App.calcSplit = calcSplit;
+  // Amount in both currencies when the workspace has an FX rate.
+  function bothCur(amount, cur) {
+    const other = cur === 'GEL' ? 'USD' : 'GEL';
+    const alt = convert(amount, cur, other);
+    if (alt === null) return fmtMoney(amount, cur);
+    return `${fmtMoney(cur === 'USD' ? amount : alt, 'USD')} · ${fmtMoney(cur === 'GEL' ? amount : alt, 'GEL')}`;
+  }
+  const memberName = (id) => S.data.members.find(m => m.id === id)?.display_name || '—';
+  const deskMembers = () => S.data.members.filter(m => m.role !== 'staff');
+
   // Sums a per-deal value in one currency. missing = deals that could not be converted (no FX rate).
   function sumIn(deals, cur, pick) {
     let value = 0, missing = 0;
@@ -282,8 +302,11 @@
   function openDealForm(deal = null, defaults = {}) {
     const edit = Boolean(deal);
     const isDefSale = defaults.deal_type === 'sale';
-    const v = deal || { deal_type: isDefSale ? 'sale' : 'rental', contact_type: isDefSale ? 'buyer' : 'renter', stage: isDefSale ? 'enquiry' : 'active', apartment_id: '', currency: 'USD', commission_type: 'percent', commission_percent: isDefSale ? 3 : 50, cobroker_split: 50, deal_amount: '', owner_bonus: 0, commission_amount: '', ...defaults };
+    const v = deal || { deal_type: isDefSale ? 'sale' : 'rental', contact_type: isDefSale ? 'buyer' : 'renter', stage: isDefSale ? 'enquiry' : 'active', apartment_id: '', currency: 'USD', commission_type: 'percent', commission_percent: isDefSale ? 3 : 50, cobroker_split: 50, deal_amount: '', owner_bonus: 0, commission_amount: '',
+      listing_agent_id: H.apt(defaults.apartment_id)?.listing_agent_id || '', selling_agent_id: S.member?.id || '', listing_split: 25, selling_split: 25, ...defaults };
     const id = deal?.id || R.uuid();
+    const canSplit = App.isManager();
+    const agentOptions = (sel) => `<option value="">არ არის</option>${deskMembers().map(m => `<option value="${m.id}" ${m.id === sel ? 'selected' : ''}>${esc(m.display_name || 'უსახელო')}</option>`).join('')}`;
     const numOr = (val, dflt) => (val === '' || val === undefined || val === null ? dflt : Number(val));
 
     return R.dialog({
@@ -351,6 +374,18 @@
               <div><small class="muted">შენი სუფთა საკომისიო</small><strong id="deal-calc-net">—</strong></div>
               <div id="deal-calc-breakdown" class="small muted"></div>
             </div>
+          </div>
+
+          <div class="form-section span-2" id="deal-split-section">
+            <div class="form-section-title">${icon('team', 16)} გუნდის წილები</div>
+            <div class="form-grid">
+              <label class="field"><span class="field-label">ობიექტის აგენტი</span><select name="listing_agent_id" id="deal-listing-agent" ${canSplit ? '' : 'disabled'}>${agentOptions(v.listing_agent_id)}</select></label>
+              <label class="field"><span class="field-label">ობიექტის აგენტის წილი (%)</span><input type="number" name="listing_split" id="deal-listing-split" min="0" max="100" step="1" value="${esc(v.listing_split ?? 25)}" ${canSplit ? '' : 'disabled'} /></label>
+              <label class="field"><span class="field-label">მყიდველის აგენტი</span><select name="selling_agent_id" id="deal-selling-agent" ${canSplit ? '' : 'disabled'}>${agentOptions(v.selling_agent_id)}</select></label>
+              <label class="field"><span class="field-label">მყიდველის აგენტის წილი (%)</span><input type="number" name="selling_split" id="deal-selling-split" min="0" max="100" step="1" value="${esc(v.selling_split ?? 25)}" ${canSplit ? '' : 'disabled'} /></label>
+            </div>
+            <div id="deal-split-out" class="deal-split-out small"></div>
+            ${canSplit ? '' : '<p class="field-hint">წილებს ადმინისტრატორი ან მენეჯერი ადგენს.</p>'}
           </div>
 
           <label class="field"><span class="field-label">სამიზნე / დასრულების თარიღი</span><input type="date" name="target_move_in" value="${esc(v.target_move_in || '')}" /></label>
@@ -421,6 +456,11 @@
           const cur = curSelect.value;
           $('#deal-calc-net', form).textContent = fmtMoney(c.net, cur);
           $('#deal-calc-breakdown', form).innerHTML = `სრული საკომისიო: ${fmtMoney(c.gross, cur)}<br>${c.hasPartner ? `პარტნიორის წილი: −${fmtMoney(c.partnerShare, cur)}` : 'პარტნიორის გარეშე'}`;
+          const lp = $('#deal-listing-agent', form).value ? numOr($('#deal-listing-split', form).value, 0) : 0;
+          const sp = $('#deal-selling-agent', form).value ? numOr($('#deal-selling-split', form).value, 0) : 0;
+          const part = (label, amount) => `<div><span>${label}</span><strong>${bothCur(amount, cur)}</strong></div>`;
+          $('#deal-split-out', form).innerHTML = lp + sp > 100 ? '<span class="t-danger">წილების ჯამი 100%-ს აღემატება.</span>'
+            : part(`ობიექტის აგენტი (${lp}%)`, (c.net * lp) / 100) + part(`მყიდველის აგენტი (${sp}%)`, (c.net * sp) / 100) + part(`სააგენტო (${100 - lp - sp}%)`, (c.net * (100 - lp - sp)) / 100);
         };
 
         typeSelect.addEventListener('change', () => { syncType(); updateCalc(); });
@@ -439,7 +479,7 @@
           }
           updateCalc();
         });
-        ['deal-amount', 'deal-comm-pct', 'deal-comm-fixed', 'deal-bonus', 'deal-partner', 'deal-partner-split', 'deal-currency'].forEach(x => {
+        ['deal-amount', 'deal-comm-pct', 'deal-comm-fixed', 'deal-bonus', 'deal-partner', 'deal-partner-split', 'deal-currency', 'deal-listing-agent', 'deal-listing-split', 'deal-selling-agent', 'deal-selling-split'].forEach(x => {
           $(`#${x}`, form)?.addEventListener('input', updateCalc);
           $(`#${x}`, form)?.addEventListener('change', updateCalc);
         });
@@ -474,6 +514,13 @@
           notes: f.notes?.trim() || null,
           updated_at: new Date().toISOString(),
         };
+        // Split fields are disabled for agents, so their values come from the deal itself.
+        if (canSplit) {
+          Object.assign(payload, { listing_agent_id: f.listing_agent_id || null, selling_agent_id: f.selling_agent_id || null, listing_split: numOr(f.listing_split, 25), selling_split: numOr(f.selling_split, 25) });
+          if (payload.listing_split + payload.selling_split > 100) throw new Error('აგენტების წილების ჯამი 100%-ს არ უნდა აღემატებოდეს.');
+        } else if (!edit) {
+          Object.assign(payload, { listing_agent_id: v.listing_agent_id || null, selling_agent_id: v.selling_agent_id || null });
+        }
         const c = calcCommission(payload);
         if (payload.commission_type === 'percent') {
           payload.commission_amount = c.baseComm;
@@ -556,6 +603,7 @@
         </div>
       </section>
 
+      ${leaderboardHtml(rows)}${teamPayoutsHtml(rows)}
       <section class="card">
         ${rows.length ? `
           <div class="rows" style="--cols:minmax(0,2fr) minmax(0,1fr) 180px 80px 90px 90px 100px">
@@ -581,7 +629,97 @@
     $('#cm-agent').addEventListener('change', (e) => { commFilter.agent = e.target.value; App.render(); });
     bindCurToggle();
     $('#cm-fx')?.addEventListener('click', openFxDialog);
+    bindPayouts();
     $$('[data-export]').forEach(b => b.addEventListener('click', () => exportDeals(rows, b.dataset.export, b, commFilter.month || 'all')));
+  }
+
+
+  // ---------------------------------------------------------------------------
+  // Team payouts and leaderboard (commissions tab)
+  // ---------------------------------------------------------------------------
+  const STAGE_ORDER = ['enquiry', 'contacted', 'viewing', 'offer', 'negotiation', 'deposit', 'closed'];
+  const stageIdx = (d) => STAGE_ORDER.indexOf(d.stage === 'active' ? 'enquiry' : d.stage);
+
+  function teamPayoutsHtml(rows) {
+    const closed = rows.filter(d => d.stage === 'closed' && (d.listing_agent_id || d.selling_agent_id));
+    if (!closed.length) return '';
+    const canPay = App.isManager();
+    const lines = closed.flatMap(d => {
+      const s = calcSplit(d); const dc = d.currency || 'USD';
+      const line = (role, label, memberId, amount, pct, paid) => `<div class="row comm-row" style="--cols:minmax(0,1.4fr) minmax(0,1.4fr) 90px minmax(0,1.2fr) 130px">
+        <span class="cell-main"><strong>${esc(memberName(memberId))}</strong><span>${label} · ${pct}%</span></span>
+        <span class="cell-meta">${esc(d.client_name)}${d.apartment_id ? ' · ' + esc(H.aptName(d.apartment_id)) : ''}</span>
+        <span class="cell-meta">${esc(R.date(d.closed_at || d.updated_at))}</span>
+        <span class="cell-right"><strong>${bothCur(amount, dc)}</strong></span>
+        <span class="cell-actions">${canPay
+          ? `<button type="button" class="btn btn-sm ${paid ? 'btn-ghost' : 'btn-secondary'}" data-payout="${d.id}" data-role="${role}" aria-pressed="${paid}">${paid ? icon('check', 14) + ' გადახდილია' : 'გადასახდელია'}</button>`
+          : R.badge(paid ? 'გადახდილია' : 'გადასახდელია', paid ? 'ok' : 'warn')}</span></div>`;
+      return [
+        d.listing_agent_id ? line('listing', 'ობიექტის აგენტი', d.listing_agent_id, s.listing, s.listingPct, d.listing_paid) : '',
+        d.selling_agent_id ? line('selling', 'მყიდველის აგენტი', d.selling_agent_id, s.selling, s.sellingPct, d.selling_paid) : '',
+      ];
+    }).join('');
+    const cur = displayCur();
+    const house = sumIn(closed, cur, d => calcSplit(d).house);
+    const due = sumIn(closed, cur, d => { const s = calcSplit(d); return (d.listing_paid ? 0 : s.listing) + (d.selling_paid ? 0 : s.selling); });
+    return `<section class="card" style="margin-bottom:16px" id="team-payouts">
+      <div class="card-head"><h2>${icon('team', 18)} გუნდის გადახდები</h2><span class="small muted">სააგენტოს წილი: <strong>${fmtMoney(house.value, cur)}</strong> · აგენტებისთვის გადასახდელი: <strong>${fmtMoney(due.value, cur)}</strong></span></div>
+      <div class="rows">${lines}</div></section>`;
+  }
+
+  // Ranking for the selected period: closed volume, deals won, commission earned, viewing → offer rate.
+  function leaderboardHtml(rows) {
+    if (!App.isManager()) return '';
+    const cur = displayCur();
+    const all = (S.data.deals || []).filter(inSection);
+    const byUser = (uid) => S.data.members.find(m => m.user_id === uid)?.id || null;
+    const agentOf = (d) => d.selling_agent_id || d.listing_agent_id || byUser(d.created_by);
+    const stats = new Map();
+    const get = (id) => { if (!stats.has(id)) stats.set(id, { id, won: 0, volume: [], earned: [], viewed: 0, offered: 0 }); return stats.get(id); };
+    rows.filter(d => d.stage === 'closed').forEach(d => {
+      const s = calcSplit(d);
+      const main = agentOf(d);
+      if (main) { const m = get(main); m.won += 1; m.volume.push(d); }
+      if (d.listing_agent_id) get(d.listing_agent_id).earned.push([d, s.listing]);
+      if (d.selling_agent_id) get(d.selling_agent_id).earned.push([d, s.selling]);
+      if (!d.listing_agent_id && !d.selling_agent_id && main) get(main).earned.push([d, s.net]);
+    });
+    all.forEach(d => {
+      const id = agentOf(d); if (!id) return;
+      const hadViewing = stageIdx(d) >= 2 || S.data.tasks.some(t => t.deal_id === d.id && t.type === 'viewing');
+      if (hadViewing) { const m = get(id); m.viewed += 1; if (stageIdx(d) >= 3) m.offered += 1; }
+    });
+    const list = [...stats.values()].map(m => ({
+      ...m,
+      vol: sumIn(m.volume, cur, d => d.deal_amount).value,
+      comm: m.earned.reduce((sum, [d, amount]) => { const v = convert(amount, d.currency || 'USD', cur); return sum + (v === null ? 0 : v); }, 0),
+      rate: m.viewed ? Math.round((m.offered / m.viewed) * 100) : null,
+    })).sort((a, b) => b.comm - a.comm || b.vol - a.vol || b.viewed - a.viewed);
+    if (!list.length) return '';
+    return `<section class="card" style="margin-bottom:16px" id="leaderboard">
+      <div class="card-head"><h2>${icon('sparkle', 18)} აგენტების რეიტინგი</h2><span class="small muted">არჩეული პერიოდი · ნახვიდან შეთავაზებამდე: ყველა გარიგება</span></div>
+      <div class="rows" style="--cols:32px minmax(0,1.6fr) 90px minmax(0,1fr) minmax(0,1fr) 130px">
+        <div class="rows-head"><span>#</span><span>აგენტი</span><span>მოგებული</span><span class="cell-right">დახურული მოცულობა</span><span class="cell-right">საკომისიო</span><span class="cell-right">ნახვა → შეთავაზება</span></div>
+        ${list.map((m, i) => `<div class="row comm-row"><span class="cell-meta"><strong>${i + 1}</strong></span>
+          <span class="cell-main"><strong>${esc(memberName(m.id))}</strong></span>
+          <span class="cell-meta">${m.won}</span>
+          <span class="cell-right">${fmtMoney(m.vol, cur)}</span>
+          <span class="cell-right"><strong class="t-ok">${fmtMoney(m.comm, cur)}</strong></span>
+          <span class="cell-right">${m.rate === null ? '—' : `${m.rate}% <span class="small muted">(${m.offered}/${m.viewed})</span>`}</span></div>`).join('')}
+      </div></section>`;
+  }
+
+  function bindPayouts() {
+    $$('[data-payout]').forEach(b => b.addEventListener('click', () => {
+      const deal = H.deal(b.dataset.payout);
+      if (!deal) return undefined;
+      const field = b.dataset.role === 'listing' ? 'listing_paid' : 'selling_paid';
+      return run(b, async () => {
+        const row = await q(sb.from('deals').update({ [field]: !deal[field], updated_at: new Date().toISOString() }).eq('id', deal.id).select().single());
+        App.upsertLocal('deals', row);
+        App.render();
+      });
+    }));
   }
 
   function openFxDialog() {
