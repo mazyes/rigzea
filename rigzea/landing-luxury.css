@@ -3358,3 +3358,52 @@ p, li { text-wrap: pretty; }
 
 /* Inside the tilted phone a press-scale re-sorts the button in 3D and the release misses it, so the press state there is a tint instead */
 .lx-phone-mockup .lx-particle-btn:active { transform: none; filter: brightness(1.15); }
+
+/* ==========================================================================
+   PLAN COMPARISON TABLE
+   ========================================================================== */
+.lx-cmp-link { text-align: center; margin: 28px 0 0; font-size: 14px; }
+.lx-cmp-link a { color: var(--lx-mint-neon); text-decoration: underline; text-underline-offset: 4px; }
+.lx-cmp { margin-top: 56px; scroll-margin-top: 96px; }
+.lx-cmp-head { text-align: center; margin-bottom: 24px; }
+.lx-cmp-head h3 { font-size: clamp(22px, 2.6vw, 28px); font-weight: 700; color: var(--lx-text-white); margin: 0 0 8px; text-wrap: balance; }
+.lx-cmp-head p { font-size: 14.5px; color: var(--lx-text-silver); margin: 0; }
+.lx-cmp-scroll { overflow-x: auto; border: 1px solid var(--lx-border-subtle); border-radius: var(--lx-r-lg); background: var(--lx-obsidian-card); }
+.lx-cmp-scroll:focus-visible { outline: none; box-shadow: var(--lx-focus-ring); }
+.lx-cmp-table { width: 100%; min-width: 720px; border-collapse: collapse; font-size: 13.5px; }
+.lx-cmp-table th, .lx-cmp-table td { padding: 12px 14px; text-align: center; border-bottom: 1px solid var(--lx-border-subtle); color: var(--lx-text-silver); vertical-align: middle; }
+.lx-cmp-table tbody tr:last-child th, .lx-cmp-table tbody tr:last-child td { border-bottom: 0; }
+.lx-cmp-table thead th { position: sticky; top: 0; background: var(--lx-obsidian-card-solid); color: var(--lx-text-white); font-weight: 700; font-size: 14px; white-space: nowrap; }
+.lx-cmp-table thead th small { display: block; margin-top: 2px; font-size: 12px; font-weight: 500; color: var(--lx-text-muted); }
+.lx-cmp-table thead th.is-featured { color: var(--lx-mint-neon); }
+.lx-cmp-table th:first-child { text-align: left; width: 40%; min-width: 260px; font-weight: 500; color: var(--lx-text-white); position: sticky; left: 0; background: var(--lx-obsidian-card-solid); }
+.lx-cmp-table tbody th span { display: block; margin-top: 2px; font-size: 12px; font-weight: 400; line-height: 1.4; color: var(--lx-text-muted); }
+.lx-cmp-table .lx-cmp-group th { text-align: left; padding: 18px 14px 8px; font-size: 12px; font-weight: 700; letter-spacing: 0.04em; color: var(--lx-mint-neon); background: var(--lx-obsidian-card-solid); }
+.lx-cmp-yes { display: inline-flex; color: var(--lx-mint-neon); }
+.lx-cmp-no { display: inline-block; width: 10px; height: 2px; border-radius: 2px; background: var(--lx-text-dark); vertical-align: middle; }
+.lx-cmp-notes { list-style: none; margin: 24px 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.lx-cmp-notes li { padding: 18px 20px; border: 1px solid var(--lx-border-subtle); border-radius: var(--lx-r-md); background: rgba(255, 255, 255, 0.03); font-size: 13px; line-height: 1.55; color: var(--lx-text-silver); }
+.lx-cmp-notes strong { display: block; margin-bottom: 4px; color: var(--lx-text-white); font-size: 14px; }
+@media (max-width: 860px) {
+  .lx-cmp-notes { grid-template-columns: 1fr; }
+  .lx-cmp-table { font-size: 13px; }
+  .lx-cmp-table th:first-child { min-width: 190px; width: auto; }
+  .lx-cmp-table th, .lx-cmp-table td { padding: 11px 10px; }
+}
+/* Phones: every feature becomes a small block with the four plans under it, so nothing hides behind a sideways scroll */
+@media (max-width: 720px) {
+  .lx-cmp-scroll { overflow: visible; }
+  .lx-cmp-table { min-width: 0; display: block; }
+  .lx-cmp-table thead { display: none; }
+  .lx-cmp-table tbody { display: block; }
+  .lx-cmp-table tbody tr { display: grid; grid-template-columns: repeat(4, 1fr); border-bottom: 1px solid var(--lx-border-subtle); padding: 12px 14px; row-gap: 10px; }
+  .lx-cmp-table tbody tr:last-child { border-bottom: 0; }
+  .lx-cmp-table tbody th, .lx-cmp-table tbody td { border: 0; padding: 0; position: static; background: none; min-width: 0; width: auto; }
+  .lx-cmp-table tbody th { grid-column: 1 / -1; }
+  .lx-cmp-table tbody th:first-child { background: none; position: static; min-width: 0; width: auto; }
+  .lx-cmp-table tbody td { display: flex; flex-direction: column; align-items: center; gap: 5px; font-size: 12.5px; }
+  .lx-cmp-table tbody td::before { content: attr(data-plan); font-size: 11px; color: var(--lx-text-muted); }
+  .lx-cmp-table tbody td .lx-cmp-no { margin: 8px 0 6px; }
+  .lx-cmp-table .lx-cmp-group { padding: 0; background: var(--lx-obsidian-card-solid); border-radius: var(--lx-r-lg) var(--lx-r-lg) 0 0; }
+  .lx-cmp-table .lx-cmp-group th { padding: 16px 14px 10px; background: none; }
+}
