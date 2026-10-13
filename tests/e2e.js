@@ -300,6 +300,26 @@ test('11. plans: trial banner, apartment cap upgrade modal, branding, export, pl
   await page.locator('.toast', { hasText: 'პაკეტი გააქტიურდა' }).waitFor();
   await page.waitForFunction(() => App.planState().key === 'top' && App.can('export'));
   assert.strictEqual(await page.locator('#plan-banner').isHidden(), true, 'no banner for a fresh paid plan');
+  // Platform admins: an unknown email is refused, a registered user can be added and removed, the last admin cannot be removed
+  await page.goto(BASE + '/app/#/settings/platform');
+  await page.locator('#p-admins [data-admin]').first().waitFor();
+  assert.strictEqual(await page.locator('#p-admins [data-revoke]').count(), 0, 'the only admin has no remove button');
+  await page.fill('#p-admin-add input[name=email]', 'nobody@example.ge');
+  await page.click('#p-admin-add [type=submit]');
+  await page.locator('dialog[open] [type=submit]').click();
+  await page.locator('.toast', { hasText: 'მომხმარებელი ვერ მოიძებნა' }).waitFor();
+  for (let i = page.errors.length - 1; i >= 0; i--) if (page.errors[i].includes('მომხმარებელი ვერ მოიძებნა')) page.errors.splice(i, 1); // the refusal above is expected
+  await page.fill('#p-admin-add input[name=email]', USERS.staff.email);
+  await page.click('#p-admin-add [type=submit]');
+  await page.locator('dialog[open] [type=submit]').click();
+  await page.locator(`#p-admins [data-admin="${USERS.staff.email}"]`).waitFor();
+  assert.strictEqual((await db(page)).tables.platform_admins.filter(x => !x.revoked_at).length, 2);
+  await page.locator(`#p-admins [data-admin="${USERS.staff.email}"] [data-revoke]`).click();
+  await page.locator('dialog[open] [type=submit]').click();
+  await page.locator('.toast', { hasText: 'ადმინის უფლება მოიხსნა' }).waitFor();
+  const admins = (await db(page)).tables.platform_admins;
+  assert.strictEqual(admins.length, 2, 'a removed admin row is kept');
+  assert.strictEqual(admins.filter(x => !x.revoked_at).length, 1);
   // Plan tab
   await page.goto(BASE + '/app/#/settings/plan');
   await page.locator('#view h2', { hasText: 'გუნდი' }).waitFor();

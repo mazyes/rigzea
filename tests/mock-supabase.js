@@ -163,7 +163,28 @@
       return org.id;
     },
     accept_my_invitations() { return 0; },
-    is_platform_admin() { return T('platform_admins').some(x => x.user_id === uid()); },
+    is_platform_admin() { return T('platform_admins').some(x => x.user_id === uid() && !x.revoked_at); },
+    list_platform_admins() {
+      if (!rpcs.is_platform_admin()) throw { message: 'ამ მოქმედების უფლება არ გაქვს.', code: '42501' };
+      return T('platform_admins').filter(x => !x.revoked_at).map(x => ({ user_id: x.user_id, email: db.users.find(u => u.id === x.user_id)?.email || '', granted_at: x.created_at || now(), granted_by_email: db.users.find(u => u.id === x.granted_by)?.email || null }));
+    },
+    grant_platform_admin(a) {
+      if (!rpcs.is_platform_admin()) throw { message: 'ამ მოქმედების უფლება არ გაქვს.', code: '42501' };
+      const u = db.users.find(x => x.email === a.p_email);
+      if (!u) throw { message: 'ამ ელფოსტით მომხმარებელი ვერ მოიძებნა.' };
+      const row = T('platform_admins').find(x => x.user_id === u.id);
+      if (row) { row.revoked_at = null; row.granted_by = uid(); } else T('platform_admins').push({ user_id: u.id, granted_by: uid(), created_at: now(), revoked_at: null });
+      return { user_id: u.id, email: u.email };
+    },
+    revoke_platform_admin(a) {
+      if (!rpcs.is_platform_admin()) throw { message: 'ამ მოქმედების უფლება არ გაქვს.', code: '42501' };
+      const u = db.users.find(x => x.email === a.p_email);
+      const row = u && T('platform_admins').find(x => x.user_id === u.id && !x.revoked_at);
+      if (!row) throw { message: 'ამ ელფოსტით პლატფორმის ადმინი ვერ მოიძებნა.' };
+      if (T('platform_admins').filter(x => !x.revoked_at).length <= 1) throw { message: 'ბოლო ადმინის უფლების მოხსნა შეუძლებელია.' };
+      row.revoked_at = now();
+      return { user_id: u.id, email: u.email };
+    },
     admin_list_orgs() {
       if (!rpcs.is_platform_admin()) throw { message: 'ამ მოქმედების უფლება არ გაქვს.' };
       return T('organizations').map(o => ({ id: o.id, name: o.name, city: o.city, plan: o.plan || 'trial', effective_plan: o.plan || 'trial', trial_ends_at: o.trial_ends_at || null, plan_expires_at: o.plan_expires_at || null, created_at: o.created_at, owner_email: 'owner@example.ge', apartments_count: T('apartments').filter(a => a.organization_id === o.id).length, members_count: T('organization_members').filter(m => m.organization_id === o.id).length }));

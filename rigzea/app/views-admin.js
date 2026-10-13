@@ -239,11 +239,12 @@
 
   // ---- platform admin tab ---------------------------------------------------
   let platformOrgs = null;
+  let platformAdmins = null;
   async function renderPlatformTab(root) {
     if (!S.platformAdmin) { root.innerHTML = '<div class="card"><div class="empty-inline">ამ გვერდზე წვდომა არ გაქვს.</div></div>'; return; }
     if (platformOrgs === null) {
       root.innerHTML = '<div class="card"><div class="skeleton"><i></i><i></i><i></i></div></div>';
-      try { platformOrgs = await q(sb.rpc('admin_list_orgs')); }
+      try { platformOrgs = await q(sb.rpc('admin_list_orgs')); platformAdmins = await q(sb.rpc('list_platform_admins')).catch(() => null); }
       catch (err) { root.innerHTML = `<div class="card"><div class="error-state"><p>სია ვერ ჩაიტვირთა. ${esc(R.friendlyError(err))}</p><button class="btn btn-secondary btn-sm" id="p-retry">ხელახლა ცდა</button></div></div>`; $('#p-retry').onclick = () => renderPlatformTab(root); return; }
       if (App.route().id !== 'platform') return;
     }
@@ -263,7 +264,33 @@
         <span><select class="input" data-plan aria-label="პაკეტი" style="min-height:32px">${['trial', 'starter', 'pro', 'top', 'agency'].map(p => `<option value="${p}" ${o.plan === p ? 'selected' : ''}>${p === 'trial' ? 'საცდელი' : esc(App.PLANS[p].name)}</option>`).join('')}</select></span>
         <span><input class="input" type="number" min="1" max="3650" data-days value="${o.plan === 'trial' || o.plan === 'starter' ? '' : 30}" placeholder="${o.plan === 'trial' ? '14' : '—'}" aria-label="დღეების რაოდენობა" style="min-height:32px" ${o.plan === 'starter' ? 'disabled' : ''} /></span>
         <span class="cell-meta">${statusText(o)}</span>
-        <span class="cell-actions"><button type="button" class="btn btn-primary btn-sm" data-save>გააქტიურება</button></span></div>`).join('')}</div></section>`;
+        <span class="cell-actions"><button type="button" class="btn btn-primary btn-sm" data-save>გააქტიურება</button></span></div>`).join('')}</div></section>
+      ${platformAdmins ? `<section class="card" style="margin-top:16px" id="p-admins"><div class="card-head"><h2>პლატფორმის ადმინები <span class="count">${platformAdmins.length}</span></h2></div>
+      <div class="card-body" style="padding-top:0"><p class="muted small" style="margin-top:0">ადმინი ააქტიურებს პაკეტებს ყველა სამუშაო სივრცისთვის. უფლებას იძლევა მხოლოდ მოქმედი ადმინი; ყველა მინიჭება, მოხსნა და პაკეტის ცვლილება ჟურნალში იწერება.</p>
+        <form id="p-admin-add" style="display:flex;gap:8px;flex-wrap:wrap" novalidate><input class="input" type="email" name="email" required placeholder="რეგისტრირებული მომხმარებლის ელფოსტა" aria-label="ახალი ადმინის ელფოსტა" style="flex:1;min-width:220px" /><button type="submit" class="btn btn-secondary">უფლების მიცემა</button></form></div>
+      <div class="rows">${platformAdmins.map(a => `<div class="row" style="--cols:minmax(0,1fr) auto" data-admin="${esc(a.email)}">
+        <span class="cell-main"><strong>${esc(a.email)}</strong><span>${esc(R.date(a.granted_at, { withYear: true }))}${a.granted_by_email ? ` · მიანიჭა ${esc(a.granted_by_email)}` : ' · მინიჭებულია ბაზიდან'}</span></span>
+        <span class="cell-actions">${platformAdmins.length > 1 ? '<button type="button" class="btn btn-ghost btn-sm" data-revoke>მოხსნა</button>' : ''}</span></div>`).join('')}</div></section>` : ''}`;
+    const reloadAdmins = async () => { platformAdmins = await q(sb.rpc('list_platform_admins')); await renderPlatformTab(root); };
+    const addForm = $('#p-admin-add', root);
+    if (addForm) addForm.onsubmit = async (e) => {
+      e.preventDefault();
+      const email = addForm.email.value.trim().toLowerCase();
+      if (!/^\S+@\S+\.\S+$/.test(email)) { toast('ჩაწერე სწორი ელფოსტა.', { type: 'error' }); return; }
+      const ok = await R.confirm({ title: 'პლატფორმის ადმინის უფლება', message: `${email} შეძლებს ყველა სამუშაო სივრცის ნახვას და პაკეტების გააქტიურებას. დარწმუნებული ხარ?`, confirmLabel: 'უფლების მიცემა', danger: true });
+      if (!ok) return;
+      run(addForm.querySelector('[type=submit]'), async () => { await q(sb.rpc('grant_platform_admin', { p_email: email })); await reloadAdmins(); }, { success: 'ადმინის უფლება მიენიჭა' });
+    };
+    $$('[data-admin] [data-revoke]', root).forEach(b => b.onclick = async () => {
+      const email = b.closest('[data-admin]').dataset.admin;
+      const ok = await R.confirm({ title: 'ადმინის უფლების მოხსნა', message: `${email} ვეღარ გაააქტიურებს პაკეტებს.`, confirmLabel: 'მოხსნა', danger: true });
+      if (!ok) return;
+      run(b, async () => {
+        await q(sb.rpc('revoke_platform_admin', { p_email: email }));
+        if (email === String(S.user.email || '').toLowerCase()) { S.platformAdmin = false; App.go('#/settings'); return; }
+        await reloadAdmins();
+      }, { success: 'ადმინის უფლება მოიხსნა' });
+    });
     $$('[data-org]', root).forEach(row => {
       const sel = $('[data-plan]', row), days = $('[data-days]', row);
       sel.onchange = () => { days.disabled = sel.value === 'starter'; days.value = sel.value === 'trial' || sel.value === 'starter' ? '' : '30'; days.placeholder = sel.value === 'trial' ? '14' : '—'; };
