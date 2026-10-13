@@ -746,7 +746,9 @@
             if (pm && Array.isArray(l.images)) pm.addUrls(l.images);
             const filled = [l.price && 'ფასი', l.area_sqm && 'ფართი', l.rooms && 'ოთახები', l.address && 'მისამართი', l.images?.length && `${l.images.length} ფოტო`].filter(Boolean).join(', ');
             const missing = [!l.price && 'ფასი', !l.area_sqm && 'ფართი', !l.address && 'მისამართი'].filter(Boolean).join(', ');
-            say(`შევსებულია: ${filled || 'ძირითადი ველები'}.${missing ? ` ვერ ვიპოვეთ: ${missing}.` : ''} სხვა სააგენტოს კონტაქტები აღწერიდან ამოღებულია.${l.images?.length ? ' ფოტოები წყარო საიტზე რჩება: თუ განცხადება წაიშლება, ისინიც გაქრება, ამიტომ მნიშვნელოვანი ფოტოები თავად ატვირთე.' : ''} გადახედე, მიუთითე მეპატრონე და შეინახე.`, 'ok');
+            // The demo has no server, so it cannot read the pasted link; say so instead of implying it did.
+            if (l.source === 'demo') say('დემო რეჟიმში ბმული არ იკითხება: ფორმა შეივსო სანიმუშო განცხადებით, რომ ნახო, როგორ მუშაობს. რეალურ ანგარიშში ფორმა შენი ბმულის მონაცემებით და ფოტოებით შეივსება.', 'ok');
+            else say(`შევსებულია: ${filled || 'ძირითადი ველები'}.${missing ? ` ვერ ვიპოვეთ: ${missing}.` : ''} სხვა სააგენტოს კონტაქტები აღწერიდან ამოღებულია.${l.images?.length ? ' ფოტოები წყარო საიტზე რჩება: თუ განცხადება წაიშლება, ისინიც გაქრება, ამიტომ მნიშვნელოვანი ფოტოები თავად ატვირთე.' : ''} გადახედე, მიუთითე მეპატრონე და შეინახე.`, 'ok');
           } catch (err) {
             say(err instanceof TypeError ? 'ინტერნეტთან კავშირი ვერ დამყარდა. შეამოწმე კავშირი და სცადე ხელახლა.' : (err.message || 'განცხადება ვერ წავიკითხეთ. შეავსე ველები ხელით.'), 'error');
           } finally { importBtn.disabled = false; importBtn.classList.remove('is-busy'); }
