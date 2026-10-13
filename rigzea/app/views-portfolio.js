@@ -27,7 +27,7 @@
     return `${base.length >= 3 ? base + '-' : 'bina-'}${Math.random().toString(36).slice(2, 6)}`;
   }
 
-  const listingUrl = (a, wl = false) => `${location.origin}/p/${encodeURIComponent(a.slug || a.id)}/${wl ? '?wl=1' : ''}`;
+  const listingUrl = (a, wl = false) => R.listingUrl(a, wl);
   const listingPhotos = (a) => (Array.isArray(a.photos) ? a.photos : [])
     .map((p, i) => typeof p === 'string' ? { url: p, thumb: p, order: i } : { url: p?.url, thumb: p?.thumb || p?.url, order: p?.order ?? i })
     .filter(p => p.url).sort((x, y) => x.order - y.order);

@@ -1,9 +1,14 @@
 // Smart import: POST { url } → normalized listing fields for the "new property" form.
 // Reads one public listing page from MyHome.ge, SS.ge or Place.ge on behalf of a signed-in user.
 // No paid services: a single fetch and local parsing (api/_import-parse.js).
-const fs = require('fs');
-const path = require('path');
-const { hostOf, parseListing } = require('./_import-parse.js');
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import importParse from './_import-parse.js';
+const { hostOf, parseListing } = importParse;
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36';
 const MAX_BYTES = 3 * 1024 * 1024;
@@ -70,14 +75,32 @@ async function fetchPage(url, site) {
         continue;
       }
       if (!res.ok) return { status: res.status };
-      const buf = Buffer.from(await res.arrayBuffer());
-      return { status: 200, html: buf.subarray(0, MAX_BYTES).toString('utf8') };
+      const chunks = [];
+      let total = 0;
+      if (res.body && typeof res.body.getReader === 'function') {
+        const reader = res.body.getReader();
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          chunks.push(value);
+          total += value.byteLength;
+          if (total >= MAX_BYTES) {
+            try { ctrl.abort(); } catch {}
+            break;
+          }
+        }
+      } else {
+        const buf = Buffer.from(await res.arrayBuffer());
+        chunks.push(buf);
+      }
+      const combined = Buffer.concat(chunks.map(c => Buffer.from(c)));
+      return { status: 200, html: combined.subarray(0, MAX_BYTES).toString('utf8') };
     }
     return { status: 502 };
   } finally { clearTimeout(timer); }
 }
 
-module.exports = async (req, res) => {
+export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   if (req.method !== 'POST') return res.status(405).json({ ok: false, error: 'method' });
   if (!(await isSignedIn(req))) return res.status(401).json({ ok: false, error: 'auth', message: 'სესია ამოიწურა. შედი ანგარიშში თავიდან და სცადე ხელახლა.' });

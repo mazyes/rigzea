@@ -17,10 +17,22 @@
   const WEEKDAYS = ['კვირა', 'ორშაბათი', 'სამშაბათი', 'ოთხშაბათი', 'ხუთშაბათი', 'პარასკევი', 'შაბათი'];
 
   const numberFmt = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 });
-  const money = (n) => {
+  const money = (n, currency = 'GEL') => {
     if (n === null || n === undefined || n === '' || isNaN(n)) return '—';
     const v = Number(n);
-    return (v < 0 ? '−₾' : '₾') + numberFmt.format(Math.abs(v)).replace(/,/g, ' ');
+    const sign = v < 0 ? '−' : '';
+    const formatted = numberFmt.format(Math.abs(v)).replace(/,/g, ' ');
+    const cur = String(currency || 'GEL').toUpperCase();
+    if (cur === 'USD') return `${sign}$${formatted}`;
+    if (cur === 'EUR') return `${sign}€${formatted}`;
+    return `${sign}₾${formatted}`;
+  };
+
+  const listingUrl = (a, wl = false) => {
+    if (!a) return '';
+    const origin = typeof location !== 'undefined' ? location.origin : '';
+    const slug = encodeURIComponent(a.slug || a.id || '');
+    return `${origin}/p/${slug}/${wl ? '?wl=1' : ''}`;
   };
 
   const pad = (n) => String(n).padStart(2, '0');
@@ -349,8 +361,19 @@
     if (file.size > 10 * 1024 * 1024) throw new Error('ფაილი 10 მბ-ზე დიდია.');
     const ext = (file.name.split('.').pop() || 'bin').toLowerCase().replace(/[^a-z0-9]/g, '');
     const path = `${orgId}/${folder}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-    await q(sb.storage.from('rigzea-files').upload(path, file, { cacheControl: '3600', upsert: false }));
-    return sb.storage.from('rigzea-files').getPublicUrl(path).data.publicUrl;
+    const isPrivate = ['receipts', 'tasks', 'approvals'].some(p => folder.startsWith(p));
+    const bucket = isPrivate ? 'rigzea-private' : 'rigzea-public';
+    try {
+      await q(sb.storage.from(bucket).upload(path, file, { cacheControl: '3600', upsert: false }));
+      if (isPrivate) {
+        const signed = await sb.storage.from(bucket).createSignedUrl(path, 60 * 60 * 24 * 365);
+        return signed.data?.signedUrl || sb.storage.from(bucket).getPublicUrl(path).data.publicUrl;
+      }
+      return sb.storage.from(bucket).getPublicUrl(path).data.publicUrl;
+    } catch {
+      await q(sb.storage.from('rigzea-files').upload(path, file, { cacheControl: '3600', upsert: false }));
+      return sb.storage.from('rigzea-files').getPublicUrl(path).data.publicUrl;
+    }
   }
 
   async function copyText(text, okMsg = 'დაკოპირდა') {
@@ -370,7 +393,7 @@
   const uuid = () => (crypto.randomUUID ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => { const r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16); }));
 
   window.R = {
-    sb, $, $$, esc, money, toDate, isoDate, monthKey, time, date, dayLabel, dateTime, relative, elapsed, span, sameDay,
+    sb, $, $$, esc, money, listingUrl, toDate, isoDate, monthKey, time, date, dayLabel, dateTime, relative, elapsed, span, sameDay,
     MONTHS, WEEKDAYS, L, badge, taskBadge, approvalStatus, approvalBadge, expenseBadge, dealBadge, transactionBadge, contactBadge, icon,
     friendlyError, phoneKey, CADASTRAL_RE, cadastralFormat, q, toast, run, dialog, confirm, ask, uploadFile, copyText, applyTheme, uuid,
     whatsappUrl: (text) => `https://wa.me/?text=${encodeURIComponent(text)}`,

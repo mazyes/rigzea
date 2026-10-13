@@ -181,7 +181,7 @@
     const toCur = (n, from, to) => { if (from === to) return Number(n); const r = fx(); if (!r) return null; return to === 'GEL' ? n * r : n / r; };
     const digits = (p) => String(p || '').replace(/[^0-9]/g, '');
     const waLink = (phone, text) => `https://wa.me/${digits(phone)}?text=${encodeURIComponent(text)}`;
-    const detailsUrl = (a) => `/p/?id=${encodeURIComponent(a.slug || a.id)}`;
+    const detailsUrl = (a) => `/p/${encodeURIComponent(a.slug || a.id)}/`;
 
     function setLang(next) {
       lang = next;

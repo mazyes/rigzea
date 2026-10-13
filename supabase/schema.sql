@@ -95,6 +95,9 @@ create table public.apartments (
   deposit_amount numeric(10,2),
   lease_end date,
   notes text,
+  slug text,
+  public_slug text,
+  is_published boolean not null default true,
   is_archived boolean default false,
   created_at timestamptz default now(),
   updated_at timestamptz default now()
@@ -329,6 +332,8 @@ create table public.telegram_chats (
   chat_id bigint primary key,
   organization_id uuid references public.organizations(id) on delete cascade,
   user_name text,
+  notify_views text default 'all',
+  notify_reminders boolean default true,
   linked_at timestamptz default now()
 );
 
@@ -918,9 +923,47 @@ grant execute on function public.get_public_showcase(uuid) to anon;
 grant execute on function public.link_telegram_chat(bigint, uuid, text), public.get_linked_telegram_org(bigint), public.get_telegram_org(uuid),
   public.get_telegram_apartments(uuid), public.telegram_create_task_record(uuid, uuid, text, text, numeric, text) to anon;
 
+create or replace function public.get_guest_guide(p_apartment_id uuid)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_res jsonb;
+begin
+  select jsonb_build_object(
+    'id', a.id,
+    'name', a.name,
+    'city', a.city,
+    'address', a.address,
+    'unit_number', a.unit_number,
+    'wifi_name', a.wifi_name,
+    'wifi_password', a.wifi_password,
+    'door_code', a.door_code,
+    'checkin_time', to_char(a.checkin_time, 'HH24:MI'),
+    'checkout_time', to_char(a.checkout_time, 'HH24:MI'),
+    'access_instructions', a.access_instructions,
+    'parking_info', a.parking_info,
+    'contact_phone', coalesce(a.agent_phone, o.contact_phone)
+  )
+  into v_res
+  from public.apartments a
+  left join public.organizations o on o.id = a.organization_id
+  where a.id = p_apartment_id
+    and a.is_archived = false
+    and a.status != 'archived';
+
+  return v_res;
+end;
+$$;
+grant execute on function public.get_guest_guide(uuid) to anon, authenticated;
+
 -- -----------------------------------------------------------------------------
 -- 11. FILE STORAGE (receipts and photos under <organization_id>/...)
 -- -----------------------------------------------------------------------------
+insert into storage.buckets (id, name, public) values ('rigzea-public', 'rigzea-public', true) on conflict (id) do nothing;
+insert into storage.buckets (id, name, public) values ('rigzea-private', 'rigzea-private', false) on conflict (id) do nothing;
 insert into storage.buckets (id, name, public) values ('rigzea-files', 'rigzea-files', true) on conflict (id) do nothing;
 
 create function public.can_write_org_folder(p_path text)
@@ -933,7 +976,15 @@ end;
 $$;
 grant execute on function public.can_write_org_folder(text) to authenticated;
 
-create policy "rigzea files read" on storage.objects for select using (bucket_id = 'rigzea-files');
-create policy "rigzea files upload" on storage.objects for insert to authenticated with check (bucket_id = 'rigzea-files' and public.can_write_org_folder(name));
-create policy "rigzea files update" on storage.objects for update to authenticated using (bucket_id = 'rigzea-files' and public.can_write_org_folder(name));
-create policy "rigzea files delete" on storage.objects for delete to authenticated using (bucket_id = 'rigzea-files' and public.can_write_org_folder(name));
+-- Public bucket policies
+create policy "rigzea public read" on storage.objects for select using (bucket_id in ('rigzea-public', 'rigzea-files'));
+create policy "rigzea public upload" on storage.objects for insert to authenticated with check (bucket_id in ('rigzea-public', 'rigzea-files') and public.can_write_org_folder(name));
+create policy "rigzea public update" on storage.objects for update to authenticated using (bucket_id in ('rigzea-public', 'rigzea-files') and public.can_write_org_folder(name));
+create policy "rigzea public delete" on storage.objects for delete to authenticated using (bucket_id in ('rigzea-public', 'rigzea-files') and public.can_write_org_folder(name));
+
+-- Private bucket policies (receipts, internal documents)
+create policy "rigzea private read" on storage.objects for select to authenticated using (bucket_id = 'rigzea-private' and public.can_write_org_folder(name));
+create policy "rigzea private upload" on storage.objects for insert to authenticated with check (bucket_id = 'rigzea-private' and public.can_write_org_folder(name));
+create policy "rigzea private update" on storage.objects for update to authenticated using (bucket_id = 'rigzea-private' and public.can_write_org_folder(name));
+create policy "rigzea private delete" on storage.objects for delete to authenticated using (bucket_id = 'rigzea-private' and public.can_write_org_folder(name));
+

@@ -2,8 +2,12 @@
 // Routes (vercel.json): /p/<slug-or-id>/  and  /p/?id=<id>  →  /api/p?ref=...
 // Returns rigzea/p/index.html with og:* tags and the listing JSON injected, so the
 // page renders without a second request. Falls back to the plain page on any error.
-const fs = require('fs');
-const path = require('path');
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const ROOT = [path.join(__dirname, '..', 'rigzea'), path.join(process.cwd(), 'rigzea')]
   .find(d => fs.existsSync(path.join(d, 'p', 'index.html'))) || path.join(process.cwd(), 'rigzea');
@@ -104,7 +108,7 @@ function buildMeta(listing, pageUrl, whiteLabel) {
   return { tags, title: site ? `${title} · ${site}` : title };
 }
 
-module.exports = async (req, res) => {
+export default async function handler(req, res) {
   let html;
   try { html = readHtml(); } catch (e) {
     res.statusCode = 500;
@@ -149,6 +153,6 @@ module.exports = async (req, res) => {
   out = out.replace('</head>', `  ${boot}\n</head>`);
   res.setHeader('Cache-Control', found ? 'public, max-age=0, s-maxage=60, stale-while-revalidate=300' : 'public, max-age=0, s-maxage=30');
   return res.end(out);
-};
+}
 
-module.exports.buildMeta = buildMeta;
+export { buildMeta };

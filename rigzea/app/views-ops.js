@@ -370,12 +370,19 @@
     const inNegotiation = deals.filter(d => ['offer', 'negotiation', 'deposit'].includes(d.stage));
     const closedDeals = deals.filter(d => d.stage === 'closed');
 
+    const rate = Number(App.state?.usdRate || S.org?.fx_rate || 2.7);
     let expectedComm = 0;
     let earnedComm = 0;
     deals.forEach(d => {
-      const comm = Number(d.actual_commission || d.expected_commission || 0);
-      if (d.stage === 'closed') earnedComm += comm;
-      else if (d.stage !== 'lost') expectedComm += comm;
+      let net = d.net_commission ?? d.commission_amount;
+      if (net === undefined || net === null) {
+        net = App.calcSplit ? App.calcSplit(d).net : 0;
+      }
+      net = Number(net || 0);
+      const isUSD = (d.currency || 'USD').toUpperCase() === 'USD';
+      const netGEL = isUSD ? net * rate : net;
+      if (d.stage === 'closed') earnedComm += netGEL;
+      else if (d.stage !== 'lost') expectedComm += netGEL;
     });
 
     const counts = {

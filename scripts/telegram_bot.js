@@ -1,14 +1,17 @@
 /**
  * რიგზეა (Rigzea) Real Telegram Bot Service (Local Polling & Fallback Daemon)
- * Local development only. Secrets come from environment variables; not deployed (see .vercelignore).
+ * Local development only. Secrets come from environment variables; not deployed.
  * Username: @Rigzeabot
  */
 
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-const SUPABASE_URL = 'https://cuioodytwyzykqlrjfej.supabase.co';
-const SUPABASE_ANON_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY; // service role: Telegram RPCs are no longer callable with the anon key
+const SUPABASE_URL = process.env.SUPABASE_URL || 'https://cuioodytwyzykqlrjfej.supabase.co';
+const SUPABASE_ANON_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY; // service role
 if (!TELEGRAM_BOT_TOKEN || !SUPABASE_ANON_KEY) { console.error('Set TELEGRAM_BOT_TOKEN and SUPABASE_SERVICE_ROLE_KEY'); process.exit(1); }
-const BASE_APP_URL = 'https://rigzea.com';
+const BASE_APP_URL = process.env.BASE_APP_URL || 'https://rigzea.com';
+
+const escapeRegExp = (s) => String(s || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const esc = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 // Supabase RPC Helper
 async function callRpc(functionName, params = {}) {
@@ -22,9 +25,7 @@ async function callRpc(functionName, params = {}) {
       },
       body: JSON.stringify(params)
     });
-    if (!res.ok) {
-      return null;
-    }
+    if (!res.ok) return null;
     return await res.json();
   } catch (e) {
     return null;
@@ -60,7 +61,7 @@ async function sendMessage(chatId, text, extra = {}) {
 function parseGeorgianTaskText(rawText, apartments = []) {
   const text = rawText.trim();
 
-  // 1. Extract amount (e.g., "170 ლარი", "170ლ", "₾170", "170 gel", "170")
+  // 1. Extract amount
   let amount = 0;
   const amountMatch = text.match(/(?:₾\s*(\d+(?:\.\d+)?))|(?:(\d+(?:\.\d+)?)\s*(?:ლარი|ლ|₾|gel|GEL))/i) || text.match(/\b(\d+)\s*(?:ლარი|ლ|₾)?\b/);
   if (amountMatch) {
@@ -72,7 +73,7 @@ function parseGeorgianTaskText(rawText, apartments = []) {
   for (const apt of apartments) {
     const name = apt.name || apt.title || '';
     const unit = apt.unit_number || name.match(/\d+/)?.[0];
-    if (unit && new RegExp(`\\b${unit}(?:-ში|ში)?\\b`, 'i').test(text)) {
+    if (unit && new RegExp(`\\b${escapeRegExp(unit)}(?:-ში|ში)?\\b`, 'i').test(text)) {
       matchedApt = apt;
       break;
     }
@@ -89,10 +90,10 @@ function parseGeorgianTaskText(rawText, apartments = []) {
     const name = matchedApt.name || matchedApt.title || '';
     const unit = matchedApt.unit_number || name.match(/\d+/)?.[0];
     if (unit) {
-      issueTitle = issueTitle.replace(new RegExp(`\\b${unit}(?:-ში|ში)?\\b`, 'gi'), '');
+      issueTitle = issueTitle.replace(new RegExp(`\\b${escapeRegExp(unit)}(?:-ში|ში)?\\b`, 'gi'), '');
     }
     if (name) {
-      issueTitle = issueTitle.replace(new RegExp(name, 'gi'), '');
+      issueTitle = issueTitle.replace(new RegExp(escapeRegExp(name), 'gi'), '');
     }
   }
   issueTitle = issueTitle.replace(/^[,.\s-]+|[,.\s-]+$/g, '').trim();
@@ -115,16 +116,10 @@ async function handleUpdate(update) {
   const text = msg.text.trim();
   const userName = msg.from.first_name || 'მმართველი';
 
-  // Check for UUID pattern in message (e.g. "95671f98-50fc-4d29-9a0c-b298639359d0" or "/link 95671f98...")
   const uuidMatch = text.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
 
-  // ---------------------------------------------------------------------------
-  // 1. COMMAND: Link Organization
-  // ---------------------------------------------------------------------------
   if (uuidMatch) {
     const orgId = uuidMatch[0].toLowerCase();
-    
-    // Link chat RPC
     const linkRes = await callRpc('link_telegram_chat', {
       p_chat_id: chatId,
       p_org_id: orgId,
@@ -132,32 +127,26 @@ async function handleUpdate(update) {
     });
 
     if (linkRes && linkRes.success) {
-      await sendMessage(chatId, `🇬🇪 <b>მოგესალმებით რიგზეას Telegram ასისტენტში, ${userName}!</b>\n\nთქვენი პროფილი წარმატებით დაუკავშირდა კომპანიას:\n🏢 <b>${linkRes.org_name}</b> (${linkRes.city || 'საქართველო'})\n\nახლა შეგიძლიათ პირდაპირ მომწეროთ ქართულად ნებისმიერი საქმე ან ხარჯი, მაგალითად:\n• <i>1204-ში კონდიციონერი გაფუჭდა, 170 ლარია</i>\n• <i>ბინა 7-ში ონკანი ჟონავს, 85 ლარი</i>\n• <i>ვაკე 18-ში დასუფთავება ხვალ 14:00-ზე</i>\n\n📌 <b>ბრძანებები:</b>\n/today — დღის საოპერაციო მდგომარეობა\n/apartments — ბინების სია\n/help — დახმარება`);
+      await sendMessage(chatId, `🇬🇪 <b>მოგესალმებით რიგზეას Telegram ასისტენტში, ${esc(userName)}!</b>\n\nთქვენი პროფილი წარმატებით დაუკავშირდა კომპანიას:\n🏢 <b>${esc(linkRes.org_name)}</b> (${esc(linkRes.city || 'საქართველო')})\n\nახლა შეგიძლიათ პირდაპირ მომწეროთ ქართულად ნებისმიერი საქმე ან ხარჯი, მაგალითად:\n• <i>1204-ში კონდიციონერი გაფუჭდა, 170 ლარია</i>\n• <i>ბინა 7-ში ონკანი ჟონავს, 85 ლარი</i>\n• <i>ვაკე 18-ში დასუფთავება ხვალ 14:00-ზე</i>\n\n📌 <b>ბრძანებები:</b>\n/today — დღის საოპერაციო მდგომარეობა\n/apartments — ბინების სია\n/help — დახმარება`);
       return;
     }
 
     const orgs = await callRpc('get_telegram_org', { p_org_id: orgId });
     if (orgs && orgs.length > 0) {
       const org = orgs[0];
-      await sendMessage(chatId, `🇬🇪 <b>მოგესალმებით რიგზეას ასისტენტში, ${userName}!</b>\n\nთქვენი პროფილი დაკავშირებულია:\n🏢 <b>${org.name}</b> (${org.city || 'საქართველო'})\n\nშეგიძლიათ პირდაპირ მომწეროთ საქმე ქართულად!`);
+      await sendMessage(chatId, `🇬🇪 <b>მოგესალმებით რიგზეას ასისტენტში, ${esc(userName)}!</b>\n\nთქვენი პროფილი დაკავშირებულია:\n🏢 <b>${esc(org.name)}</b> (${esc(org.city || 'საქართველო')})\n\nშეგიძლიათ პირდაპირ მომწეროთ საქმე ქართულად!`);
       return;
     }
 
-    await sendMessage(chatId, `❌ ორგანიზაცია ID-ით (<code>${orgId}</code>) ვერ მოიძებნა.\nგთხოვთ გადაამოწმოთ გასაღები რიგზეას პარამეტრებში.`);
+    await sendMessage(chatId, `❌ ორგანიზაცია ID-ით (<code>${esc(orgId)}</code>) ვერ მოიძებნა.\nგთხოვთ გადაამოწმოთ გასაღები რიგზეას პარამეტრებში.`);
     return;
   }
 
-  // ---------------------------------------------------------------------------
-  // 2. CHECK LINKED ORG
-  // ---------------------------------------------------------------------------
   const userOrg = await callRpc('get_linked_telegram_org', { p_chat_id: chatId });
 
-  // ---------------------------------------------------------------------------
-  // 3. COMMAND: /start
-  // ---------------------------------------------------------------------------
   if (text.startsWith('/start')) {
     if (userOrg && userOrg.orgName) {
-      await sendMessage(chatId, `🇬🇪 <b>მოგესალმებით, ${userName}!</b>\n\nთქვენი პროფილი დაკავშირებულია კომპანიასთან:\n🏢 <b>${userOrg.orgName}</b>\n\nუბრალოდ მომწერეთ ქართულად საქმე ან ხარჯი, მაგალითად:\n• <i>1204-ში კონდიციონერი გაფუჭდა, 170 ლარია</i>\n• <i>ბინა 7-ში ონკანი ჟონავს, 85 ლარი</i>`);
+      await sendMessage(chatId, `🇬🇪 <b>მოგესალმებით, ${esc(userName)}!</b>\n\nთქვენი პროფილი დაკავშირებულია კომპანიასთან:\n🏢 <b>${esc(userOrg.orgName)}</b>\n\nუბრალოდ მომწერეთ ქართულად საქმე ან ხარჯი, მაგალითად:\n• <i>1204-ში კონდიციონერი გაფუჭდა, 170 ლარია</i>\n• <i>ბინა 7-ში ონკანი ჟონავს, 85 ლარი</i>`);
       return;
     }
 
@@ -165,15 +154,11 @@ async function handleUpdate(update) {
     return;
   }
 
-  // Ensure organization is linked
   if (!userOrg || !userOrg.orgId) {
     await sendMessage(chatId, `⚠️ <b>კომპანია ჯერ არ არის დაკავშირებული.</b>\n\nგთხოვთ გადმოაგზავნოთ თქვენი კომპანიის გასაღები (UUID) რიგზეას სისტემიდან:\n<code>/link თქვენი_გასაღები</code>`);
     return;
   }
 
-  // ---------------------------------------------------------------------------
-  // 4. COMMAND: /apartments (List portfolio)
-  // ---------------------------------------------------------------------------
   if (text === '/apartments') {
     const apts = await callRpc('get_telegram_apartments', { p_org_id: userOrg.orgId });
     if (!apts || apts.length === 0) {
@@ -183,22 +168,20 @@ async function handleUpdate(update) {
 
     let response = `🏢 <b>აქტიური ბინების სია (${apts.length}):</b>\n\n`;
     apts.forEach((a, idx) => {
-      response += `${idx + 1}. <b>${a.name || a.title}</b>\n   📍 ${a.address || 'მისამართი'} (№${a.unit_number || '—'})\n`;
+      response += `${idx + 1}. <b>${esc(a.name || a.title || '')}</b>\n   📍 ${esc(a.address || 'მისამართი')} (№${esc(a.unit_number || '—')})\n`;
     });
-    response += `\n<i>საქმის დასამატებლად უბრალოდ მომწერეთ, მაგ: „${apts[0].unit_number || apts[0].name}-ში კონდიციონერი გაფუჭდა, 150 ლარია“</i>`;
+    const sampleUnit = apts[0]?.unit_number || apts[0]?.name || '';
+    response += `\n<i>საქმის დასამატებლად უბრალოდ მომწერეთ, მაგ: „${esc(sampleUnit)}-ში კონდიციონერი გაფუჭდა, 150 ლარია“</i>`;
 
     await sendMessage(chatId, response);
     return;
   }
 
-  // ---------------------------------------------------------------------------
-  // 5. COMMAND: /today or /status (Daily Briefing)
-  // ---------------------------------------------------------------------------
   if (text === '/today' || text === '/status') {
     const apts = await callRpc('get_telegram_apartments', { p_org_id: userOrg.orgId });
     const aptCount = apts?.length || 0;
 
-    let response = `📊 <b>დღის საოპერაციო მდგომარეობა — ${userOrg.orgName}</b>\n\n`;
+    let response = `📊 <b>დღის საოპერაციო მდგომარეობა — ${esc(userOrg.orgName)}</b>\n\n`;
     response += `• 🏢 <b>ბინების რაოდენობა:</b> ${aptCount}\n`;
     response += `• 🤖 <b>Telegram ასისტენტი:</b> აქტიურია\n\n`;
     response += `🔗 <a href="${BASE_APP_URL}/app/">სისტემაში გახსნა</a>`;
@@ -207,17 +190,11 @@ async function handleUpdate(update) {
     return;
   }
 
-  // ---------------------------------------------------------------------------
-  // 6. COMMAND: /help
-  // ---------------------------------------------------------------------------
   if (text === '/help') {
     await sendMessage(chatId, `ℹ️ <b>როგორ გამოვიყენოთ რიგზეას ბოტი:</b>\n\nუბრალოდ მომწერეთ საქმე ჩვეულებრივი ქართული ტექსტით, მაგალითად:\n• <i>1204-ში კონდიციონერი გაფუჭდა, 170 ლარია</i>\n• <i>ბინა 7-ში ონკანი ჟონავს, 85 ლარი</i>\n• <i>ვაკე 18-ში დასუფთავება ხვალ 14:00-ზე</i>\n\nრიგზეა ავტომატურად:\n1. ამოიცნობს ბინას და თანხას\n2. შექმნის საქმეს ბაზაში\n3. მოამზადებს მესაკუთრისთვის 1-Click თანხმობის ბმულს`);
     return;
   }
 
-  // ---------------------------------------------------------------------------
-  // 7. NATURAL LANGUAGE MESSAGE PROCESSING (NLP EXTRACTION)
-  // ---------------------------------------------------------------------------
   const apts = await callRpc('get_telegram_apartments', { p_org_id: userOrg.orgId });
 
   if (!apts || apts.length === 0) {
@@ -228,14 +205,14 @@ async function handleUpdate(update) {
   const parsed = parseGeorgianTaskText(text, apts);
 
   if (!parsed.matchedApt) {
-    let helpMsg = `⚠️ <b>ბინა ვერ ამოვიცანი ტექსტში.</b>\n\nგთხოვთ მიუთითოთ ბინის ნომერი ან სახელი, მაგალითად:\n• <i>${apts[0].unit_number || apts[0].name}-ში ${parsed.issueTitle}, ${parsed.amount > 0 ? parsed.amount + ' ლარი' : '150 ლარი'}</i>\n\n🏢 <b>თქვენი ბინები:</b>\n` + apts.slice(0, 5).map(a => `• ${a.name || a.title} (№${a.unit_number || '—'})`).join('\n');
+    const sampleUnit = apts[0]?.unit_number || apts[0]?.name || '';
+    let helpMsg = `⚠️ <b>ბინა ვერ ამოვიცანი ტექსტში.</b>\n\nგთხოვთ მიუთითოთ ბინის ნომერი ან სახელი, მაგალითად:\n• <i>${esc(sampleUnit)}-ში ${esc(parsed.issueTitle)}, ${parsed.amount > 0 ? parsed.amount + ' ლარი' : '150 ლარი'}</i>\n\n🏢 <b>თქვენი ბინები:</b>\n` + apts.slice(0, 5).map(a => `• ${esc(a.name || a.title || '')} (№${esc(a.unit_number || '—')})`).join('\n');
     await sendMessage(chatId, helpMsg);
     return;
   }
 
   const apt = parsed.matchedApt;
 
-  // Create Task and Approval atomically via Postgres RPC
   const createdRecord = await callRpc('telegram_create_task_record', {
     p_org_id: userOrg.orgId,
     p_apt_id: apt.id,
@@ -245,10 +222,9 @@ async function handleUpdate(update) {
     p_source: 'Telegram'
   });
 
-  // Send response
   let confirmation = `✅ <b>საქმე შეიქმნა და შენახულია ბაზაში!</b>\n\n` +
-    `🏢 <b>ბინა:</b> ${apt.name || apt.title} (${apt.address || ''})\n` +
-    `🛠 <b>საკითხი:</b> ${parsed.issueTitle}\n`;
+    `🏢 <b>ბინა:</b> ${esc(apt.name || apt.title)} (${esc(apt.address || '')})\n` +
+    `🛠 <b>საკითხი:</b> ${esc(parsed.issueTitle)}\n`;
 
   if (parsed.amount > 0 && createdRecord && createdRecord.token) {
     const approvalUrl = `${BASE_APP_URL}/approve/?token=${createdRecord.token}`;

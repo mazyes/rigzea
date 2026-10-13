@@ -185,18 +185,18 @@
       const [apartments, owners, tasks, approvals, expenses, income, reservations, events, members, notifications, statements, repairs, deals] = await Promise.all([
         q(sb.from('apartments').select('*').eq('organization_id', org).order('name')),
         q(sb.from('owners').select('*').eq('organization_id', org).order('name')),
-        q(sb.from('tasks').select('*').eq('organization_id', org).order('due_date', { ascending: true })),
-        q(sb.from('approvals').select('*').eq('organization_id', org).order('created_at', { ascending: false })),
-        q(sb.from('expenses').select('*').eq('organization_id', org).order('expense_date', { ascending: false })),
-        q(sb.from('income').select('*').eq('organization_id', org).order('income_date', { ascending: false })),
+        q(sb.from('tasks').select('*').eq('organization_id', org).order('due_date', { ascending: true }).limit(500)),
+        q(sb.from('approvals').select('*').eq('organization_id', org).order('created_at', { ascending: false }).limit(300)),
+        q(sb.from('expenses').select('*').eq('organization_id', org).order('expense_date', { ascending: false }).limit(500)),
+        q(sb.from('income').select('*').eq('organization_id', org).order('income_date', { ascending: false }).limit(500)),
         // Reservations need the operations RLS migration; treat a failure as "no data" rather than breaking the app.
         sb.from('reservations').select('*').eq('organization_id', org).gte('check_out', sinceIso).order('check_in').then(r => r.data || [], () => []),
         q(sb.from('activity_events').select('*').eq('organization_id', org).order('created_at', { ascending: false }).limit(200)),
         q(sb.from('organization_members').select('*').eq('organization_id', org)),
         q(sb.from('notifications').select('*').eq('organization_id', org).eq('user_id', S.user.id).order('created_at', { ascending: false }).limit(40)),
-        q(sb.from('monthly_reports').select('*').eq('organization_id', org).order('month_period', { ascending: false })),
+        q(sb.from('monthly_reports').select('*').eq('organization_id', org).order('month_period', { ascending: false }).limit(48)),
         q(sb.from('repairs').select('*').eq('organization_id', org)).catch(() => []),
-        sb.from('deals').select('*').eq('organization_id', org).order('created_at', { ascending: false }).then(r => r.data || [], () => []),
+        sb.from('deals').select('*').eq('organization_id', org).order('created_at', { ascending: false }).limit(500).then(r => r.data || [], () => []),
       ]);
       S.data = { apartments, owners, tasks, approvals, expenses, income, reservations, events, members, notifications, statements, repairs, deals: deals || [] };
       indexData();
@@ -583,7 +583,7 @@
   // ---------------------------------------------------------------------------
   // Plans, trial and feature gates (mirrors plan_limit and plan_has_feature in supabase/patches/10 and 11)
   // ---------------------------------------------------------------------------
-  const CONTACT = { phone: '+995599000000', wa: '995599000000' };
+  const CONTACT = { phone: '+995599548575', wa: '995599548575' };
   const ALL_FEATURES = ['profile', 'contracts', 'matchmaker', 'reminders', 'import', 'presentation', 'selections', 'analytics', 'export', 'whitelabel'];
   // apartments / seats: null = unlimited. A seat is an owner/admin/manager member; field staff are free.
   const PLANS = {

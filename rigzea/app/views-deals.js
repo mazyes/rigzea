@@ -31,9 +31,7 @@
   const curSym = (c) => (c === 'GEL' ? '₾' : '$');
 
   function fmtMoney(amount, currency = 'USD') {
-    if (amount === null || amount === undefined || amount === '' || isNaN(amount)) return '—';
-    const num = Math.round(Number(amount)).toLocaleString('en-US');
-    return currency === 'GEL' ? `${num} ₾` : `$${num}`;
+    return R.money(amount, currency);
   }
 
   // Converts between USD and GEL with the org rate; returns null when a rate is needed but missing.
@@ -50,10 +48,11 @@
     const amount = Number(deal.deal_amount || 0);
     const commType = deal.commission_type || 'percent';
     let baseComm = 0;
+    let commPct = 0;
     if (commType === 'fixed') {
       baseComm = Number(deal.commission_amount || 0);
     } else {
-      const commPct = Number(deal.commission_percent ?? (isSale ? 3 : 50));
+      commPct = Number(deal.commission_percent ?? (isSale ? 3 : 50));
       baseComm = (amount * commPct) / 100;
     }
     const bonus = Number(deal.owner_bonus || 0);
@@ -62,7 +61,7 @@
     const cobrokerPct = hasPartner ? Number(deal.cobroker_split ?? 50) : 0;
     const partnerShare = hasPartner ? (gross * cobrokerPct) / 100 : 0;
     const net = gross - partnerShare;
-    return { dealAmount: amount, isSale, commType, baseComm, bonus, gross, hasPartner, cobrokerPct, partnerShare, net };
+    return { dealAmount: amount, isSale, commType, commPct, baseComm, bonus, gross, hasPartner, cobrokerPct, partnerShare, net };
   }
 
 
@@ -99,7 +98,7 @@
   const dmy = (v) => { const d = R.toDate(v); return d ? `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.${d.getFullYear()}` : ''; };
   const randomSlug = () => { const a = 'abcdefghijkmnpqrstuvwxyz23456789'; const b = crypto.getRandomValues(new Uint8Array(12)); return Array.from(b, x => a[x % a.length]).join(''); };
   const selectionUrl = (slug) => `${location.origin}/p/s/?id=${encodeURIComponent(slug)}`;
-  const listingUrl = (a, wl = false) => `${location.origin}/p/?id=${encodeURIComponent(a.slug || a.id)}${wl ? '&wl=1' : ''}`;
+  const listingUrl = (a, wl = false) => R.listingUrl(a, wl);
   const aptPriceLabel = (a) => {
     if (!a) return '—';
     if (a.transaction_type === 'sale') return a.sale_price ? `${fmtMoney(a.sale_price, a.currency || 'USD')} (გაყიდვა)` : 'ფასი მითითებული არაა';
@@ -772,12 +771,17 @@
   }
 
   function exportDeals(deals, kind, btn, label) {
+    if (!App.guardFeature('export')) return undefined;
     if (!deals.length) { toast('საექსპორტო გარიგება არ არის.', { type: 'info' }); return undefined; }
     const name = `rigzea-deals-${label}`;
     const matrix = dealsMatrix(deals);
     if (kind === 'csv') {
-      const cell = (v) => { const s = String(v ?? ''); return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
-      download(new Blob(['﻿' + matrix.map(r => r.map(cell).join(',')).join('\r\n')], { type: 'text/csv;charset=utf-8' }), `${name}.csv`);
+      const cell = (v) => {
+        let s = String(v ?? '');
+        if (/^[=@+-]/.test(s)) s = "'" + s;
+        return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+      };
+      download(new Blob(['\ufeff' + matrix.map(r => r.map(cell).join(',')).join('\r\n')], { type: 'text/csv;charset=utf-8' }), `${name}.csv`);
       toast('CSV ფაილი ჩამოიტვირთა', { type: 'success' });
       return undefined;
     }
@@ -864,11 +868,17 @@
     let total = 0, got = 0;
     const add = (w, part) => { total += w; got += w * Math.max(0, Math.min(1, part)); };
     const norm = (s) => String(s || '').trim().toLowerCase();
+    const isSale = a.transaction_type === 'sale';
+    if (c.transaction_type && c.transaction_type !== 'all') {
+      const wantSale = c.transaction_type === 'sale' || c.transaction_type === 'buy';
+      if (wantSale !== isSale) return 0;
+    }
     if (c.city) add(15, norm(a.city) === norm(c.city) ? 1 : 0);
     if (c.district) add(25, a.district && (norm(a.district).includes(norm(c.district)) || norm(c.district).includes(norm(a.district))) ? 1 : 0);
     const min = Number(c.budget_min || 0), max = Number(c.budget_max || 0);
     if (min || max) {
-      const price = a.monthly_rent ? convert(a.monthly_rent, a.currency || 'USD', c.currency || 'USD') : null;
+      const rawPrice = isSale ? a.sale_price : a.monthly_rent;
+      const price = rawPrice ? convert(rawPrice, a.currency || 'USD', c.currency || 'USD') : null;
       if (price === null) add(30, 0);
       else if (max && price > max) add(30, 1 - (price - max) / (max * 0.25));
       else if (min && price < min) add(30, 1 - (min - price) / (min * 0.5));
@@ -904,6 +914,7 @@
             <label class="field"><span class="field-label">კლიენტის სახელი (ბმულზე გამოჩნდება)</span><input id="mm-client" maxlength="60" value="${esc(deal?.client_name || '')}" placeholder="მაგ.: მარიამი" /></label>
           </div>
           <div class="mm-grid">
+            <label class="field"><span class="field-label">ტიპი</span><select id="mm-type" data-c="transaction_type"><option value="">ნებისმიერი</option><option value="rent">ქირა</option><option value="sale">ყიდვა / გაყიდვა</option></select></label>
             <label class="field"><span class="field-label">ქალაქი</span><select id="mm-city" data-c="city"><option value="">ნებისმიერი</option>${cities.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('')}</select></label>
             <label class="field"><span class="field-label">უბანი</span><input id="mm-district" data-c="district" list="mm-district-list" placeholder="მაგ.: ვაკე" /><datalist id="mm-district-list">${districts.map(d => `<option value="${esc(d)}"></option>`).join('')}</datalist></label>
             <label class="field"><span class="field-label">ბიუჯეტი — მინ.</span><input type="number" min="0" step="50" id="mm-min" data-c="budget_min" /></label>
@@ -940,11 +951,15 @@
           $('#mm-count', form).textContent = scored.length;
           $('#mm-results', form).innerHTML = scored.length ? scored.map(({ a, s }) => {
             const tone = s === null ? '' : s >= 80 ? 'hi' : s >= 50 ? 'mid' : 'lo';
-            const facts = [[a.city, a.district].filter(Boolean).join(', '), a.rooms ? `${a.rooms} ოთახი` : '', a.bedrooms ? `${a.bedrooms} საძინებელი` : '', a.area_sqm ? `${a.area_sqm} მ²` : '', a.pets_allowed ? 'ცხოველი დასაშვებია' : ''].filter(Boolean).join(' · ');
+            const isSaleApt = a.transaction_type === 'sale';
+            const priceLabel = isSaleApt
+              ? (a.sale_price ? `${fmtMoney(a.sale_price, a.currency || 'USD')}${a.price_sqm ? ` (${fmtMoney(a.price_sqm, a.currency || 'USD')}/მ²)` : ''}` : '—')
+              : (a.monthly_rent ? `${fmtMoney(a.monthly_rent, a.currency || 'USD')} / თვე` : '—');
+            const facts = [[a.city, a.district].filter(Boolean).join(', '), isSaleApt ? 'იყიდება' : 'ქირავდება', a.rooms ? `${a.rooms} ოთახი` : '', a.bedrooms ? `${a.bedrooms} საძინებელი` : '', a.area_sqm ? `${a.area_sqm} მ²` : '', a.pets_allowed ? 'ცხოველი დასაშვებია' : ''].filter(Boolean).join(' · ');
             return `<label class="mm-item ${s !== null && s < 50 ? 'is-weak' : ''}">
               <input type="checkbox" value="${a.id}" ${picked.has(a.id) ? 'checked' : ''} />
               <span class="cell-main wrap"><strong>${esc(a.name)}</strong><span>${esc(facts || 'დეტალები შევსებული არ არის')}</span></span>
-              <span class="mm-side"><strong>${esc(a.monthly_rent ? fmtMoney(a.monthly_rent, a.currency || 'USD') : '—')}</strong>${s !== null ? `<span class="mm-score ${tone}">${s}% დამთხვევა</span>` : ''}</span>
+              <span class="mm-side"><strong>${esc(priceLabel)}</strong>${s !== null ? `<span class="mm-score ${tone}">${s}% დამთხვევა</span>` : ''}</span>
             </label>`;
           }).join('') : '<div class="empty-inline">პორტფოლიოში აქტიური ბინა არ არის.</div>';
           $$('#mm-results input[type=checkbox]', form).forEach(cb => cb.addEventListener('change', () => { cb.checked ? picked.add(cb.value) : picked.delete(cb.value); updateBar(); }));
@@ -959,7 +974,12 @@
         const dealSelect = $('#mm-deal', form);
         dealSelect.addEventListener('change', () => {
           linkedDeal = H.deal(dealSelect.value) || null;
-          if (linkedDeal) { $('#mm-client', form).value = linkedDeal.client_name || ''; fillCriteria(linkedDeal.criteria || {}); }
+          if (linkedDeal) {
+            $('#mm-client', form).value = linkedDeal.client_name || '';
+            const crit = { ...(linkedDeal.criteria || {}) };
+            if (!crit.transaction_type && linkedDeal.deal_type) crit.transaction_type = linkedDeal.deal_type;
+            fillCriteria(crit);
+          }
           updateList();
         });
         fields.forEach(el => { el.addEventListener('input', updateList); el.addEventListener('change', updateList); });
@@ -1027,12 +1047,20 @@
 
   App.openPostGenerator = (apartment) => {
     const a = apartment;
+    const isSale = a.transaction_type === 'sale';
     const cur = (a.currency || 'USD').toUpperCase() === 'GEL' ? 'GEL' : 'USD';
-    const rent = Number(a.monthly_rent || 0);
+    const priceAmount = Number((isSale ? a.sale_price : a.monthly_rent) || 0);
     const other = cur === 'USD' ? 'GEL' : 'USD';
-    const alt = rent ? convert(rent, cur, other) : null;
-    const priceKA = rent ? `${fmtMoney(rent, cur)} / თვე${alt !== null ? ` (~${fmtMoney(alt, other)})` : ''}` : 'ფასი შეთანხმებით';
-    const priceEN = rent ? `${fmtMoney(rent, cur)} / month${alt !== null ? ` (~${fmtMoney(alt, other)})` : ''}` : 'Price on request';
+    const alt = priceAmount ? convert(priceAmount, cur, other) : null;
+    const sqmPrice = a.price_sqm || (priceAmount && a.area_sqm ? Math.round(priceAmount / Number(a.area_sqm)) : null);
+
+    const priceKA = priceAmount
+      ? `${fmtMoney(priceAmount, cur)}${isSale ? '' : ' / თვე'}${alt !== null ? ` (~${fmtMoney(alt, other)})` : ''}${isSale && sqmPrice ? ` (${fmtMoney(sqmPrice, cur)}/მ²)` : ''}`
+      : 'ფასი შეთანხმებით';
+    const priceEN = priceAmount
+      ? `${fmtMoney(priceAmount, cur)}${isSale ? '' : ' / month'}${alt !== null ? ` (~${fmtMoney(alt, other)})` : ''}${isSale && sqmPrice ? ` (${fmtMoney(sqmPrice, cur)}/m²)` : ''}`
+      : 'Price on request';
+
     const publicUrl = listingUrl(a);
     const wlUrl = listingUrl(a, true);
     const phone = a.agent_phone || S.member?.phone || S.org?.contact_phone || '';
@@ -1047,14 +1075,14 @@
     const lines = (...xs) => xs.filter(x => x !== null && x !== undefined && x !== false && x !== '').join('\n');
 
     const postKA = lines(
-      `✨ ქირავდება ბინა${place ? ' · ' + place : ''}`,
+      isSale ? `✨ იყიდება ბინა${place ? ' · ' + place : ''}` : `✨ ქირავდება ბინა${place ? ' · ' + place : ''}`,
       `🏠 ${a.name}`,
       a.address && `📍 მისამართი: ${a.address}`,
       `💰 ფასი: ${priceKA}`,
       specsKA && `🚪 ${specsKA}`,
-      a.pets_allowed ? '🐾 შინაური ცხოველი: დასაშვებია' : '🚫 შინაური ცხოველი: დაუშვებელია',
-      a.utilities_estimate && `💡 კომუნალური: ~${a.utilities_estimate} ₾ / თვე`,
-      a.prepayment_terms && `🔑 პირობები: ${a.prepayment_terms}`,
+      !isSale && (a.pets_allowed ? '🐾 შინაური ცხოველი: დასაშვებია' : '🚫 შინაური ცხოველი: დაუშვებელია'),
+      !isSale && a.utilities_estimate && `💡 კომუნალური: ~${a.utilities_estimate} ₾ / თვე`,
+      !isSale && a.prepayment_terms && `🔑 პირობები: ${a.prepayment_terms}`,
       amKA.length && `\n✅ კეთილმოწყობა: ${amKA.join(', ')}`,
       a.description && `\n${String(a.description).trim()}`,
       '',
@@ -1062,18 +1090,18 @@
       `👉 ${publicUrl}`,
       '',
       phone ? `📲 ნახვის დასაჯავშნად მოგვწერეთ WhatsApp-ში ან დაგვირეკეთ:\n☎️ ${phone}` : '📲 ნახვის დასაჯავშნად მოგვწერეთ პირად შეტყობინებაში.',
-      ['#ქირავდება', '#ბინა', tag(a.city), tag(a.district)].filter(Boolean).join(' '),
+      [isSale ? '#იყიდება' : '#ქირავდება', '#ბინა', tag(a.city), tag(a.district)].filter(Boolean).join(' '),
     );
 
     const postEN = lines(
-      `✨ Apartment for rent${place ? ' · ' + place : ''}`,
+      isSale ? `✨ Apartment for sale${place ? ' · ' + place : ''}` : `✨ Apartment for rent${place ? ' · ' + place : ''}`,
       `🏠 ${a.name}`,
       a.address && `📍 Address: ${a.address}`,
-      `💰 Rent: ${priceEN}`,
+      isSale ? `💰 Price: ${priceEN}` : `💰 Rent: ${priceEN}`,
       specsEN && `🚪 ${specsEN}`,
-      a.pets_allowed ? '🐾 Pets: allowed' : '🚫 Pets: not allowed',
-      a.utilities_estimate && `💡 Utilities: ~${a.utilities_estimate} GEL / month`,
-      a.prepayment_terms && `🔑 Terms: ${a.prepayment_terms}`,
+      !isSale && (a.pets_allowed ? '🐾 Pets: allowed' : '🚫 Pets: not allowed'),
+      !isSale && a.utilities_estimate && `💡 Utilities: ~${a.utilities_estimate} GEL / month`,
+      !isSale && a.prepayment_terms && `🔑 Terms: ${a.prepayment_terms}`,
       amEN.length && `\n✅ Amenities: ${amEN.join(', ')}`,
       a.description_en && `\n${String(a.description_en).trim()}`,
       '',
@@ -1081,14 +1109,14 @@
       `👉 ${publicUrl}`,
       '',
       phone ? `📲 To book a viewing, message on WhatsApp or call:\n☎️ ${phone}` : '📲 To book a viewing, send us a private message.',
-      ['#ApartmentForRent', '#RentGeorgia', '#Expats'].join(' '),
+      isSale ? ['#ApartmentForSale', '#BuyPropertyGeorgia', '#RealEstateGeorgia'].join(' ') : ['#ApartmentForRent', '#RentGeorgia', '#Expats'].join(' '),
     );
 
     const postWA = lines(
       'გამარჯობა! გიგზავნით ბინის ვარიანტს:',
       `🏠 ${a.name}${place ? ' — ' + place : ''}`,
       `💰 ${priceKA}`,
-      [specsKA, a.pets_allowed ? '🐾 ცხოველი დასაშვებია' : ''].filter(Boolean).join(' · '),
+      [specsKA, !isSale && a.pets_allowed ? '🐾 ცხოველი დასაშვებია' : ''].filter(Boolean).join(' · '),
       '',
       'ფოტოები და ყველა დეტალი:',
       publicUrl,
@@ -1097,15 +1125,15 @@
     );
 
     const split = Number(a.cobroker_split ?? 50);
-    const commPct = Number(a.agent_commission_percent ?? 50);
-    const commAmount = rent ? (rent * commPct) / 100 + Number(a.owner_bonus || 0) : 0;
+    const commPct = Number(a.agent_commission_percent ?? (isSale ? 3 : 50));
+    const commAmount = priceAmount ? (priceAmount * commPct) / 100 + Number(a.owner_bonus || 0) : 0;
     const postCB = lines(
-      `🤝 Co-Brokering ${split}/${100 - split} · ქირავდება ბინა`,
+      `🤝 Co-Brokering ${split}/${100 - split} · ${isSale ? 'იყიდება ბინა' : 'ქირავდება ბინა'}`,
       `🏠 ${a.name}${place ? ' · ' + place : ''}`,
-      `💰 ქირა: ${priceKA}`,
+      `💰 ${isSale ? 'ფასი' : 'ქირა'}: ${priceKA}`,
       specsKA && `🚪 ${specsKA}`,
-      a.pets_allowed ? '🐾 ცხოველი დასაშვებია' : '🚫 ცხოველი დაუშვებელია',
-      rent ? `💼 საკომისიო: ${commPct}% პირველი თვის ქირიდან${Number(a.owner_bonus) ? ' + მესაკუთრის ბონუსი' : ''} (${fmtMoney(commAmount, cur)}), ვიყოფთ ${split}/${100 - split}` : `💼 საკომისიოს ვიყოფთ ${split}/${100 - split}`,
+      !isSale && (a.pets_allowed ? '🐾 ცხოველი დასაშვებია' : '🚫 ცხოველი დაუშვებელია'),
+      priceAmount ? `💼 საკომისიო: ${commPct}% ${isSale ? 'გაყიდვის ფასიდან' : 'პირველი თვის ქირიდან'}${Number(a.owner_bonus) ? ' + მესაკუთრის ბონუსი' : ''} (${fmtMoney(commAmount, cur)}), ვიყოფთ ${split}/${100 - split}` : `💼 საკომისიოს ვიყოფთ ${split}/${100 - split}`,
       '',
       '📸 ბმული კლიენტისთვის (ჩემი კონტაქტის გარეშე):',
       `👉 ${wlUrl}`,
@@ -1115,7 +1143,11 @@
 
     const posts = { ka: postKA, en: postEN, wa: postWA, cb: postCB };
     const tabs = [['ka', 'ქართული პოსტი'], ['en', 'English post'], ['wa', 'WhatsApp კლიენტს'], ['cb', 'Co-Brokering 50/50']];
-    const warnings = [!phone && 'საკონტაქტო ტელეფონი არ არის მითითებული — დაამატე ბინის ან კომპანიის პარამეტრებში.', !rent && 'ბინას ქირა არ აქვს მითითებული.', !a.description_en && 'ინგლისური აღწერა (description_en) არ არის — English პოსტი აღწერის გარეშე იქნება.'].filter(Boolean);
+    const warnings = [
+      !phone && 'საკონტაქტო ტელეფონი არ არის მითითებული — დაამატე ბინის ან კომპანიის პარამეტრებში.',
+      isSale ? (!priceAmount && 'ბინას გასაყიდი ფასი არ აქვს მითითებული.') : (!priceAmount && 'ბინას ქირა არ აქვს მითითებული.'),
+      !a.description_en && 'ინგლისური აღწერა (description_en) არ არის — English პოსტი აღწერის გარეშე იქნება.'
+    ].filter(Boolean);
 
     return R.dialog({
       title: 'პოსტის გენერატორი',

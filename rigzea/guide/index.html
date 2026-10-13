@@ -180,7 +180,7 @@
       }
 
       try {
-        const { data, error } = await sb.from('apartments').select('*').eq('id', aptId).single();
+        const { data, error } = await sb.rpc('get_guest_guide', { p_apartment_id: aptId });
         if (error || !data) throw error || new Error('Not found');
         aptData = data;
         render();

@@ -6,6 +6,8 @@
 import { timingSafeEqual } from 'node:crypto';
 import { BASE_APP_URL, requireEnv, esc, sendMessage, callRpc, fmtDate, daysText } from './_lib.js';
 
+const escapeRegExp = (s) => String(s || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 // Georgian NLP Parser
 function parseGeorgianTaskText(rawText, apartments = []) {
   const text = rawText.trim();
@@ -22,7 +24,7 @@ function parseGeorgianTaskText(rawText, apartments = []) {
   for (const apt of apartments) {
     const name = apt.name || apt.title || '';
     const unit = apt.unit_number || name.match(/\d+/)?.[0];
-    if (unit && new RegExp(`\\b${unit}(?:-ში|ში)?\\b`, 'i').test(text)) {
+    if (unit && new RegExp(`\\b${escapeRegExp(unit)}(?:-ში|ში)?\\b`, 'i').test(text)) {
       matchedApt = apt;
       break;
     }
@@ -39,10 +41,10 @@ function parseGeorgianTaskText(rawText, apartments = []) {
     const name = matchedApt.name || matchedApt.title || '';
     const unit = matchedApt.unit_number || name.match(/\d+/)?.[0];
     if (unit) {
-      issueTitle = issueTitle.replace(new RegExp(`\\b${unit}(?:-ში|ში)?\\b`, 'gi'), '');
+      issueTitle = issueTitle.replace(new RegExp(`\\b${escapeRegExp(unit)}(?:-ში|ში)?\\b`, 'gi'), '');
     }
     if (name) {
-      issueTitle = issueTitle.replace(new RegExp(name, 'gi'), '');
+      issueTitle = issueTitle.replace(new RegExp(escapeRegExp(name), 'gi'), '');
     }
   }
   issueTitle = issueTitle.replace(/^[,.\s-]+|[,.\s-]+$/g, '').trim();
@@ -115,9 +117,10 @@ async function handleUpdate(update) {
 
     let response = `🏢 <b>აქტიური ბინების სია (${apts.length}):</b>\n\n`;
     apts.forEach((a, idx) => {
-      response += `${idx + 1}. <b>${a.name || a.title}</b>\n   📍 ${a.address || 'მისამართი'} (№${a.unit_number || '—'})\n`;
+      response += `${idx + 1}. <b>${esc(a.name || a.title || '')}</b>\n   📍 ${esc(a.address || 'მისამართი')} (№${esc(a.unit_number || '—')})\n`;
     });
-    response += `\n<i>საქმის დასამატებლად უბრალოდ მომწერეთ, მაგ: „${apts[0].unit_number || apts[0].name}-ში კონდიციონერი გაფუჭდა, 150 ლარია“</i>`;
+    const sampleUnit = apts[0]?.unit_number || apts[0]?.name || '';
+    response += `\n<i>საქმის დასამატებლად უბრალოდ მომწერეთ, მაგ: „${esc(sampleUnit)}-ში კონდიციონერი გაფუჭდა, 150 ლარია“</i>`;
 
     await sendMessage(chatId, response);
     return;
@@ -170,7 +173,8 @@ async function handleUpdate(update) {
   const parsed = parseGeorgianTaskText(text, apts);
 
   if (!parsed.matchedApt) {
-    let helpMsg = `⚠️ <b>ბინა ვერ ამოვიცანი ტექსტში.</b>\n\nგთხოვთ მიუთითოთ ბინის ნომერი ან სახელი, მაგალითად:\n• <i>${apts[0].unit_number || apts[0].name}-ში ${parsed.issueTitle}, ${parsed.amount > 0 ? parsed.amount + ' ლარი' : '150 ლარი'}</i>\n\n🏢 <b>თქვენი ბინები:</b>\n` + apts.slice(0, 5).map(a => `• ${a.name || a.title} (№${a.unit_number || '—'})`).join('\n');
+    const sampleUnit = apts[0]?.unit_number || apts[0]?.name || '';
+    let helpMsg = `⚠️ <b>ბინა ვერ ამოვიცანი ტექსტში.</b>\n\nგთხოვთ მიუთითოთ ბინის ნომერი ან სახელი, მაგალითად:\n• <i>${esc(sampleUnit)}-ში ${esc(parsed.issueTitle)}, ${parsed.amount > 0 ? parsed.amount + ' ლარი' : '150 ლარი'}</i>\n\n🏢 <b>თქვენი ბინები:</b>\n` + apts.slice(0, 5).map(a => `• ${esc(a.name || a.title || '')} (№${esc(a.unit_number || '—')})`).join('\n');
     await sendMessage(chatId, helpMsg);
     return;
   }

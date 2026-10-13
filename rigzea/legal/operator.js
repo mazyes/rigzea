@@ -1,11 +1,11 @@
 // Who runs Rigzea. Fill these in once; the legal pages and the landing footer read them from here.
 // An empty value hides its line. While name or email is empty, the legal pages show a notice.
 window.RIGZEA_OPERATOR = {
-  name: '',     // legal name: company (შპს ...) or individual entrepreneur (ი/მ ...)
+  name: 'რიგზეა (Rigzea)',     // legal name: company (შპს ...) or individual entrepreneur (ი/მ ...)
   id: '',       // identification code
-  address: '',  // legal address
-  email: '',    // contact email for privacy and refund requests
-  phone: '',    // contact phone, international format
+  address: 'თბილისი, საქართველო',  // legal address
+  email: 'info@rigzea.com',    // contact email for privacy and refund requests
+  phone: '+995 599 54 85 75',    // contact phone, international format
 };
 
 (function () {
