@@ -12,3 +12,4 @@ __pycache__/
 tests/fixture-receipt.png
 screenshots/
 supabase/.temp/
+.env*
