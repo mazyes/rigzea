@@ -170,7 +170,7 @@
     });
 
     return {
-      users: [{ id: U.nino, email: 'demo@rigzea.ge', password: '', name: 'ნინო ბერიძე' }],
+      users: [{ id: U.nino, email: 'demo@rigzea.com', password: '', name: 'ნინო ბერიძე' }],
       tables: {
         organizations: [{ id: ORG, name: 'Mzeo Realty', city: 'თბილისი', contact_phone: phone, contact_email: 'hello@example.ge', plan: 'trial', trial_ends_at: at(11 * D + 2 * H), plan_expires_at: null, fx_rate: 2.7, agent_display_name: 'Mzeo Realty · ნინო ბერიძე', brand_color: null, logo_url: null, created_at: at(-3 * D) }],
         organization_members: [

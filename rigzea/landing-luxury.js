@@ -871,7 +871,7 @@
 🐾 შინაური ცხოველები: შეთანხმებით
 
 📸 სრული HD ფოტოები და დეტალები იხილეთ ჭკვიან ბმულზე:
-👉 rigzea.ge/p/vake-loft-42
+👉 rigzea.com/p/vake-loft-42
 
 📞 WhatsApp: +995 599 12 34 56 (გიორგი)`,
 
@@ -884,7 +884,7 @@
 💵 ფასი: $950/თვე (პირველი და ბოლო თვის გადახდით)
 
 ბინის ყველა HD ფოტო, ვიდეოტური, ზუსტი ლოკაცია და დეტალური პირობები შეგიძლიათ ნახოთ ამ ბმულზე:
-👉 rigzea.ge/p/vake-loft-42
+👉 rigzea.com/p/vake-loft-42
 
 თუ მოგეწონებათ, მომწერეთ და დღესვე შეგვიძლია ადგილზე ნახვა! 🤝`,
 
@@ -896,7 +896,7 @@
 🔑 გასაღები: მაქვს ადგილზე
 
 თუ გყავს რეალური კლიენტი, გადაუგზავნე ეს ჭკვიანი ბმული (მონაცემები სრულადაა):
-👉 rigzea.ge/p/vake-loft-42
+👉 rigzea.com/p/vake-loft-42
 
 დეტალებზე დამიკავშირდი: +995 599 12 34 56.`
   };
@@ -1153,7 +1153,7 @@
   if (phoneCopyLinkBtn) {
     phoneCopyLinkBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      const url = 'https://rigzea.ge/p/vake-loft-42';
+      const url = 'https://rigzea.com/p/vake-loft-42';
       navigator.clipboard?.writeText(url).catch(() => {});
       phoneCopyLinkBtn.style.color = '#fff';
       phoneCopyLinkBtn.style.background = 'rgba(0, 245, 155, 0.35)';

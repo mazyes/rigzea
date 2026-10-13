@@ -8,7 +8,7 @@ const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const SUPABASE_URL = 'https://cuioodytwyzykqlrjfej.supabase.co';
 const SUPABASE_ANON_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY; // service role: Telegram RPCs are no longer callable with the anon key
 if (!TELEGRAM_BOT_TOKEN || !SUPABASE_ANON_KEY) { console.error('Set TELEGRAM_BOT_TOKEN and SUPABASE_SERVICE_ROLE_KEY'); process.exit(1); }
-const BASE_APP_URL = 'https://rigzea-website.vercel.app';
+const BASE_APP_URL = 'https://rigzea.com';
 
 // Supabase RPC Helper
 async function callRpc(functionName, params = {}) {

@@ -35,7 +35,7 @@
   const clone = (v) => (typeof structuredClone === 'function' ? structuredClone(v) : JSON.parse(JSON.stringify(v)));
   const T = (name) => (db.tables[name] = db.tables[name] || []);
   const isPublicPage = () => window.__RIGZEA_DEMO_PUBLIC === true;
-  const demoUser = () => (db.users || [])[0] || { id: 'demo-user', email: 'demo@rigzea.ge', name: 'სადემონსტრაციო აგენტი' };
+  const demoUser = () => (db.users || [])[0] || { id: 'demo-user', email: 'demo@rigzea.com', name: 'სადემონსტრაციო აგენტი' };
   const session = () => {
     if (isPublicPage()) return null; // clients opening a link are visitors, not the team
     const u = demoUser();

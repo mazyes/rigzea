@@ -4,7 +4,7 @@
  * All secrets come from environment variables - nothing is hardcoded.
  */
 
-export const BASE_APP_URL = process.env.APP_BASE_URL || 'https://rigzea-website.vercel.app';
+export const BASE_APP_URL = process.env.APP_BASE_URL || 'https://rigzea.com';
 
 export class ConfigError extends Error {}
 
