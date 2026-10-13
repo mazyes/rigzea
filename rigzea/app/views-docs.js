@@ -350,7 +350,7 @@
 
   App.openLegalDoc = (type, { apartment = null, deal = null } = {}) => {
     const def = DOCS[type];
-    if (!def) return undefined;
+    if (!def || !App.guardFeature('contracts')) return undefined;
     let a = apartment || H.apt(deal?.apartment_id) || null;
     let dl = deal;
     const d = docDefaults(type, a, dl);
@@ -436,6 +436,7 @@
 
   // Template picker opened from a property page or a sale deal card.
   App.openDocChooser = ({ apartment = null, deal = null } = {}) => {
+    if (!App.guardFeature('contracts')) return undefined;
     const a = apartment || H.apt(deal?.apartment_id) || null;
     const rental = a && a.transaction_type !== 'sale' && !deal;
     return R.dialog({

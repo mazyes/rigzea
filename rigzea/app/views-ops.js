@@ -401,7 +401,7 @@
       }
     }
 
-    const ren = renewalItems();
+    const ren = App.can('reminders') ? renewalItems() : [];
     const sched = scheduleItems(scheduleDay);
     const tomorrowCount = scheduleItems(1).length;
 

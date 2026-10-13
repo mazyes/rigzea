@@ -570,7 +570,6 @@
       bullets: ['150 აქტიური ობიექტი', '3 სამუშაო ადგილი', 'მრავალობიექტიანი გვერდი', 'ანალიტიკა და ექსპორტი'] },
     agency:  { id: 'agency', name: 'სააგენტო', price: 249, apartments: null, seats: null, features: ALL_FEATURES,
       bullets: ['ულიმიტო ობიექტები', '10+ აგენტის სამუშაო ადგილი', 'White-label ბრენდირება', 'პერსონალური მენეჯერი'] },
-    locked:  { id: 'locked', name: 'დაბლოკილი', price: 0, apartments: 0, seats: 0, features: [] },
   };
   const PLAN_ORDER = ['starter', 'pro', 'top', 'agency'];
   const FEATURE_LABEL = {
@@ -581,17 +580,28 @@
 
   function planState() {
     const o = S.org || {};
-    const key = PLANS[o.plan] && o.plan !== 'locked' ? o.plan : 'trial';
-    let eff = key, daysLeft = null, lapsed = false;
+    const key = PLANS[o.plan] ? o.plan : 'trial';
+    let eff = key, daysLeft = null, lapsed = false, trialEnded = false;
     const end = key === 'trial' ? o.trial_ends_at : key === 'starter' ? null : o.plan_expires_at;
     if (end) {
       const ms = new Date(end) - Date.now();
       daysLeft = Math.max(0, Math.ceil(ms / 864e5));
-      if (ms < 0) { if (key === 'trial') eff = 'locked'; else { eff = 'starter'; lapsed = true; } }
+      // An ended trial or paid plan falls back to the free plan; nothing is deleted.
+      if (ms < 0) { eff = 'starter'; if (key === 'trial') trialEnded = true; else lapsed = true; }
     }
-    return { key, eff, plan: PLANS[eff], daysLeft, end, lapsed, locked: eff === 'locked', trial: key === 'trial' };
+    return { key, eff, plan: PLANS[eff], daysLeft, end, lapsed, trialEnded, trial: key === 'trial' && !trialEnded };
   }
-  const activeApartments = () => (S.data?.apartments || []).filter(a => a.status !== 'archived' && !a.is_archived).length;
+  const isActiveApt = (a) => a.status !== 'archived' && !a.is_archived;
+  const activeApartments = () => (S.data?.apartments || []).filter(isActiveApt).length;
+  // Active properties above the plan limit: they stay in the workspace, but their public links are paused.
+  // The oldest ones keep their links (same order as apartment_within_plan in the database).
+  function pausedApartmentIds() {
+    const cap = planState().plan.apartments;
+    if (cap === null) return new Set();
+    const active = (S.data?.apartments || []).filter(isActiveApt)
+      .sort((a, b) => String(a.created_at || '').localeCompare(String(b.created_at || '')) || String(a.id).localeCompare(String(b.id)));
+    return new Set(active.slice(cap).map(a => a.id));
+  }
   const seatsUsed = () => (S.data?.members || []).filter(m => m.role !== 'staff').length + (S.seatInvites || 0);
   const can = (feature) => planState().plan.features.includes(feature);
   const minPlanFor = (pred) => PLAN_ORDER.find(id => pred(PLANS[id])) || 'agency';
@@ -615,14 +625,11 @@
     }).join('')}</div>`;
   }
 
-  // reason: { kind: 'apartments'|'seats'|'feature'|'locked'|'info', feature?, count? }
+  // reason: { kind: 'apartments'|'seats'|'feature'|'info', feature?, count? }
   function openUpgrade(reason = { kind: 'info' }) {
     const st = planState();
     let title = 'აირჩიე შენი პაკეტი', text = 'გადადი უფრო დიდ პაკეტზე და გახსენი მეტი შესაძლებლობა.', rec = 'pro';
-    if (st.locked || reason.kind === 'locked') {
-      title = 'საცდელი პერიოდი დასრულდა';
-      text = 'შენი მონაცემები უსაფრთხოდაა და ნახვა შეგიძლია. ახალი ობიექტების დასამატებლად და ფუნქციების გასახსნელად აირჩიე პაკეტი.';
-    } else if (reason.kind === 'apartments') {
+    if (reason.kind === 'apartments') {
       const n = reason.count ?? activeApartments();
       title = 'ობიექტების ლიმიტი ამოიწურა';
       text = `${st.plan.name} პაკეტში მაქსიმუმ ${st.plan.apartments} აქტიური ობიექტია, ახლა გაქვს ${n}. გადადი პაკეტზე, რომელიც მეტს იტევს.`;
@@ -638,7 +645,7 @@
     }
     return R.dialog({
       title, subtitle: text, wide: true,
-      body: `${planCardsHtml(rec, st.key === 'trial' ? null : st.eff)}
+      body: `${planCardsHtml(rec, st.trial ? null : st.eff)}
         <p class="plan-contact">გააქტიურება მარტივია: მოგვწერე WhatsApp-ში ან დარეკე <a href="tel:${CONTACT.phone}">${CONTACT.phone}</a> და პაკეტს იმავე დღეს ჩავრთავთ. პორტფელის გადმოტანაში უფასოდ დაგეხმარებით.</p>
         <div class="plan-cta"><a class="btn btn-primary" href="${esc(waLink(PLANS[rec]))}" target="_blank" rel="noopener">${icon('whatsapp', 16)} მოგვწერე WhatsApp-ში</a><button type="button" class="btn btn-ghost" data-close>მოგვიანებით</button></div>`,
     });
@@ -652,7 +659,7 @@
       const cap = st.plan[kind];
       const used = kind === 'apartments' ? activeApartments() : seatsUsed();
       if (cap === null || used + add <= cap) return true;
-      openUpgrade(st.locked ? { kind: 'locked' } : { kind, count: used });
+      openUpgrade({ kind, count: used });
       return false;
     }
     return true;
@@ -660,7 +667,7 @@
   // Feature gate with dialog: if (!App.guardFeature('export')) return;
   function guardFeature(feature) {
     if (can(feature)) return true;
-    openUpgrade(planState().locked ? { kind: 'locked' } : { kind: 'feature', feature });
+    openUpgrade({ kind: 'feature', feature });
     return false;
   }
 
@@ -673,22 +680,25 @@
     }
     const st = planState();
     let tone = null, msg = '', cta = 'პაკეტის არჩევა';
-    if (st.locked) { tone = 'danger'; msg = 'საცდელი პერიოდი დასრულდა. მონაცემების ნახვა შეგიძლია, ახალი ობიექტებისა და ფუნქციების გასახსნელად აირჩიე პაკეტი.'; }
-    else if (st.lapsed) { tone = 'warn'; msg = `„${PLANS[st.key].name}“ პაკეტის ვადა ამოიწურა და ანგარიში დამწყები პაკეტზე გადავიდა. გასაგრძელებლად დაგვიკავშირდი.`; cta = 'განახლება'; }
+    const paused = pausedApartmentIds().size;
+    const pausedMsg = paused ? ` ${st.plan.apartments} ყველაზე ძველი ობიექტის ბმული მუშაობს, დანარჩენი ${paused} შეჩერებულია, სანამ პაკეტს არ აირჩევ.` : '';
+    if (st.trialEnded) { tone = 'warn'; msg = `საცდელი პერიოდი დასრულდა და ანგარიში უფასო პაკეტზე გადავიდა. შენი მონაცემები ადგილზეა.${pausedMsg}`; }
+    else if (st.lapsed) { tone = 'warn'; msg = `„${PLANS[st.key].name}“ პაკეტის ვადა ამოიწურა და ანგარიში უფასო პაკეტზე გადავიდა. შენი მონაცემები ადგილზეა.${pausedMsg}`; cta = 'განახლება'; }
     else if (st.trial) {
       tone = st.daysLeft !== null && st.daysLeft <= 3 ? 'warn' : 'info';
       msg = st.daysLeft === null ? 'საცდელი პერიოდი: ყველა ფუნქცია ღიაა.' : `საცდელი პერიოდი: დარჩენილია ${st.daysLeft} დღე. ყველა ფუნქცია ღიაა.`;
     } else if (st.daysLeft !== null && st.daysLeft <= 7) { tone = 'warn'; msg = `„${st.plan.name}“ პაკეტი მთავრდება ${st.daysLeft} დღეში.`; cta = 'განახლება'; }
+    else if (paused) { tone = 'warn'; msg = `აქტიური ობიექტი პაკეტის ლიმიტს აღემატება.${pausedMsg}`; }
     if (!tone) { el.hidden = true; el.innerHTML = ''; return; }
     el.hidden = false;
     el.className = `plan-banner plan-banner-${tone}`;
     el.setAttribute('role', 'status');
-    el.innerHTML = `<span>${esc(msg)}</span><button type="button" class="btn btn-sm ${tone === 'danger' ? 'btn-danger' : 'btn-secondary'}" id="btn-plan-banner">${cta}</button>`;
-    $('#btn-plan-banner').onclick = () => openUpgrade(st.locked ? { kind: 'locked' } : { kind: 'info' });
+    el.innerHTML = `<span>${esc(msg)}</span><button type="button" class="btn btn-sm btn-secondary" id="btn-plan-banner">${cta}</button>`;
+    $('#btn-plan-banner').onclick = () => openUpgrade(paused ? { kind: 'apartments' } : { kind: 'info' });
   }
 
   window.App = { S, H, views, aptSection, contactSection, isManager, isAdmin, isAgent, refresh, render, renderShell, go, route, taskHref, closeTaskOverlay, upsertLocal, logEvent,
-    PLANS, PLAN_ORDER, FEATURE_LABEL, CONTACT, planState, can, guardLimit, guardFeature, openUpgrade, planCardsHtml, waLink, activeApartments, seatsUsed };
+    PLANS, PLAN_ORDER, FEATURE_LABEL, CONTACT, planState, can, guardLimit, guardFeature, openUpgrade, planCardsHtml, waLink, activeApartments, pausedApartmentIds, seatsUsed };
 
   document.addEventListener('DOMContentLoaded', () => {
     hydrateIcons();

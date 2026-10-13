@@ -50,11 +50,7 @@
         <div class="card-foot">მოწვეული ადამიანი რეგისტრირდება მისამართზე <strong>${esc(location.origin)}/app/</strong> იმავე ელფოსტით — სამუშაო სივრცე ავტომატურად დაემატება. ელფოსტით ავტომატური გაგზავნა ჯერ არ არის ჩართული, ამიტომ ბმული თავად გაუგზავნე. <button type="button" class="link-btn" id="t-copy">ბმულის კოპირება</button></div>
       </section>`;
 
-    $('#t-invite')?.addEventListener('click', () => {
-      // Field staff are free; only block when no seat is left AND the plan is locked.
-      if (App.planState().locked) return App.openUpgrade({ kind: 'locked' });
-      openInvite();
-    });
+    $('#t-invite')?.addEventListener('click', () => openInvite());
     $('#t-copy').onclick = () => R.copyText(`${location.origin}/app/`, 'ბმული დაკოპირდა');
     $('#t-inv-retry')?.addEventListener('click', () => { invitations = null; App.render(); });
     $$('[data-filter-assignee]').forEach(a => a.addEventListener('click', (e) => { e.preventDefault(); App.setTaskFilter({ assignee: a.dataset.filterAssignee, status: 'active' }); App.go('#/tasks'); }));
@@ -221,19 +217,21 @@
     const st = App.planState();
     const apts = App.activeApartments(), seats = App.seatsUsed();
     const meter = (label, used, cap) => `<div class="field"><span class="field-label">${label}: <strong>${used}${cap === null ? '' : ' / ' + cap}</strong>${cap === null ? ' (ულიმიტო)' : ''}</span>${cap === null ? '' : `<div class="meter ${used >= cap ? 'is-full' : ''}" role="img" aria-label="${used} / ${cap}"><i style="width:${cap ? Math.min(100, Math.round(used / cap * 100)) : 100}%"></i></div>`}</div>`;
-    const planName = st.trial ? 'საცდელი პერიოდი' : App.PLANS[st.key].name;
+    const planName = st.trial ? 'საცდელი პერიოდი' : App.PLANS[st.eff].name;
     let status;
-    if (st.locked) status = '<span class="t-danger">საცდელი პერიოდი დასრულდა — ანგარიში დაბლოკილია (ნახვა შეგიძლია).</span>';
-    else if (st.lapsed) status = `<span class="t-warn">პაკეტის ვადა ამოიწურა ${esc(R.date(st.end))}-ს. ანგარიში დამწყებ პაკეტზეა.</span>`;
+    const paused = App.pausedApartmentIds().size;
+    if (st.trialEnded) status = `<span class="t-warn">საცდელი პერიოდი დასრულდა ${esc(R.date(st.end))}-ს. ანგარიში უფასო პაკეტზეა, შენი მონაცემები ადგილზეა.</span>`;
+    else if (st.lapsed) status = `<span class="t-warn">პაკეტის ვადა ამოიწურა ${esc(R.date(st.end))}-ს. ანგარიში უფასო პაკეტზეა, შენი მონაცემები ადგილზეა.</span>`;
     else if (st.trial) status = st.end ? `ყველა ფუნქცია ღიაა ${esc(R.date(st.end))}-მდე (დარჩენილია ${st.daysLeft} დღე).` : 'ყველა ფუნქცია ღიაა.';
     else status = st.end ? `აქტიურია ${esc(R.date(st.end))}-მდე (დარჩენილია ${st.daysLeft} დღე).` : 'აქტიურია.';
     root.innerHTML = `<section class="card" style="max-width:900px;margin-bottom:16px"><div class="card-head"><h2>შენი პაკეტი: ${esc(planName)}</h2></div><div class="card-body form-stack">
       <p style="margin:0">${status}</p>
+      ${paused ? `<div class="notice notice-warn" id="plan-paused"><span>აქტიური ობიექტი პაკეტის ლიმიტს აღემატება: ${st.plan.apartments} ყველაზე ძველი ობიექტის საჯარო ბმული მუშაობს, დანარჩენი ${paused} შეჩერებულია. ობიექტები არ წაშლილა: ბმულები დაბრუნდება, როცა უფრო დიდ პაკეტს აირჩევ ან ზედმეტ ობიექტებს დაარქივებ.</span></div>` : ''}
       <div class="form-grid">${meter('აქტიური ობიექტი', apts, st.plan.apartments)}${meter('სამუშაო ადგილი', seats, st.plan.seats)}</div>
       <div><span class="field-label">ფუნქციები</span><ul class="plan-features" style="list-style:none;padding:0;margin:6px 0 0;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:6px;font-size:13px">${Object.entries(App.FEATURE_LABEL).map(([k, l]) => App.can(k) ? `<li class="t-ok">✓ ${esc(l)}</li>` : `<li class="muted">🔒 ${esc(l)}</li>`).join('')}</ul></div>
     </div></section>
     <section class="card" style="max-width:900px"><div class="card-head"><h2>პაკეტები</h2></div><div class="card-body">
-      ${App.planCardsHtml(st.key === 'trial' || st.locked ? 'pro' : null, st.trial ? null : st.eff)}
+      ${App.planCardsHtml(st.key === 'trial' ? 'pro' : null, st.trial ? null : st.eff)}
       <p class="plan-contact">პაკეტის გასააქტიურებლად მოგვწერე WhatsApp-ში ან დარეკე <a href="tel:${App.CONTACT.phone}">${App.CONTACT.phone}</a>. გადახდის შემდეგ პაკეტს იმავე დღეს ჩავრთავთ.</p>
       <div class="plan-cta"><a class="btn btn-primary" href="${esc(App.waLink())}" target="_blank" rel="noopener">${icon('whatsapp', 16)} მოგვწერე WhatsApp-ში</a></div>
     </div></section>`;
@@ -251,9 +249,9 @@
     }
     const cols = 'minmax(0,1.5fr) minmax(0,1.2fr) 130px 90px 110px 100px';
     const statusText = (o) => {
-      if (o.effective_plan === 'locked') return '<span class="t-danger">დაბლოკილი</span>';
       const end = o.plan === 'trial' ? o.trial_ends_at : o.plan_expires_at;
       if (o.plan === 'starter') return 'უფასო';
+      if (o.effective_plan === 'starter') return `<span class="t-warn">${o.plan === 'trial' ? 'საცდელი დასრულდა' : 'ვადა გავიდა'}: უფასოზეა</span>`;
       return end ? `${esc(R.date(end))}-მდე` : 'ვადის გარეშე';
     };
     root.innerHTML = `<section class="card"><div class="card-head"><h2>სამუშაო სივრცეები <span class="count">${platformOrgs.length}</span></h2></div>

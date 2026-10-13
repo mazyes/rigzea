@@ -603,7 +603,7 @@
         </div>
       </section>
 
-      ${leaderboardHtml(rows)}${teamPayoutsHtml(rows)}
+      ${App.can('analytics') ? leaderboardHtml(rows) + teamPayoutsHtml(rows) : ''}
       <section class="card">
         ${rows.length ? `
           <div class="rows" style="--cols:minmax(0,2fr) minmax(0,1fr) 180px 80px 90px 90px 100px">
@@ -884,6 +884,7 @@
   App.matchScore = matchScore;
 
   function openMatchmakerModal(deal = null) {
+    if (!App.guardFeature('matchmaker')) return undefined;
     const apts = (S.data.apartments || []).filter(a => a.status !== 'archived');
     const uniq = (arr) => [...new Set(arr.filter(Boolean).map(s => String(s).trim()))].sort((x, y) => x.localeCompare(y));
     const cities = uniq(apts.map(a => a.city));
@@ -973,6 +974,7 @@
         let pendingId = null;
         $('#mm-create', form).addEventListener('click', (e) => {
           if (!picked.size) return;
+          if (!App.guardFeature('selections')) return;
           if (picked.size > 20) { toast('ერთ ბმულში მაქსიმუმ 20 ბინის დამატებაა შესაძლებელი.', { type: 'error' }); return; }
           // Public page shows listings in the current (best match first) order.
           const order = $$('#mm-results input[type=checkbox]', form).map(cb => cb.value).filter(id => picked.has(id));
@@ -1388,6 +1390,7 @@
   }
 
   App.openLeaseAgreementGenerator = async (apartment, deal = null) => {
+    if (!App.guardFeature('contracts')) return;
     const a = apartment;
     const owner = H.owner(a.owner_id);
     // Reopen the last saved contract for this deal/apartment, if any (the table may not exist yet).

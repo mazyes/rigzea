@@ -278,10 +278,20 @@ test('11. plans: trial banner, apartment cap upgrade modal, branding, export, pl
   await page.locator('dialog[open] a[href*="wa.me"]').first().waitFor();
   await page.keyboard.press('Escape');
   assert.strictEqual(await page.evaluate(() => { App.S.org.plan = 'starter'; return App.can('export'); }), false);
-  // Expired trial = locked, banner says so
-  await page.evaluate(() => { App.S.org.plan = 'trial'; App.S.org.trial_ends_at = new Date(Date.now() - 864e5).toISOString(); App.renderShell(); });
-  await page.locator('#plan-banner', { hasText: 'საცდელი პერიოდი დასრულდა' }).waitFor();
-  assert.strictEqual(await page.evaluate(() => App.guardLimit('apartments')), false);
+  // Ended trial = free plan: data stays, paid features close, links above the limit are paused
+  const before = await page.evaluate(() => App.S.data.apartments.length);
+  const ended = await page.evaluate(() => {
+    App.S.org.plan = 'trial'; App.S.org.trial_ends_at = new Date(Date.now() - 864e5).toISOString(); App.renderShell();
+    const st = App.planState();
+    return { eff: st.eff, trialEnded: st.trialEnded, trial: st.trial, apartments: App.S.data.apartments.length, active: App.activeApartments(),
+      paused: App.pausedApartmentIds().size, features: ['contracts', 'matchmaker', 'selections', 'export', 'profile'].filter(f => App.can(f)) };
+  });
+  assert.deepStrictEqual([ended.eff, ended.trialEnded, ended.trial, ended.features.length], ['starter', true, false, 0]);
+  assert.strictEqual(ended.apartments, before, 'no property is removed when the trial ends');
+  assert.strictEqual(ended.paused, Math.max(0, ended.active - 3), 'only links above the free limit are paused');
+  await page.locator('#plan-banner', { hasText: 'ანგარიში უფასო პაკეტზე გადავიდა' }).waitFor();
+  assert.strictEqual(await page.evaluate(() => { App.S.org.plan = 'trial'; App.S.org.trial_ends_at = new Date(Date.now() - 864e5).toISOString(); return App.guardFeature('selections'); }), false);
+  await page.locator('dialog[open] h2', { hasText: 'ეს ფუნქცია სხვა პაკეტშია' }).waitFor();
   await page.keyboard.press('Escape');
   // Platform admin activates Pro for this org
   await page.goto(BASE + '/app/#/settings/platform');

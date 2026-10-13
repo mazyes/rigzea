@@ -173,10 +173,12 @@
     const isSale = a.transaction_type === 'sale';
     const missing = [!photos.length && 'ფოტოები', !(isSale ? Number(a.sale_price) : Number(a.monthly_rent)) && (isSale ? 'გასაყიდი ფასი' : 'ფასი'), !a.description && 'აღწერა', !(a.amenities || []).length && 'კეთილმოწყობა', !a.agent_phone && !S.org.contact_phone && 'საკონტაქტო ნომერი'].filter(Boolean);
     const url = listingUrl(a);
+    const paused = App.pausedApartmentIds().has(a.id);
     return `<section class="card listing-card" style="margin-bottom:16px">
       <div class="card-head"><h2>${icon('link', 18)} განცხადების ბმული</h2>
         <a class="btn btn-ghost btn-sm" href="${esc(url)}" target="_blank" rel="noopener">${icon('external', 14)} გახსნა</a></div>
       <div class="card-body">
+        ${paused ? `<div class="notice notice-warn" id="listing-paused" style="margin-bottom:12px"><span>ეს ბმული შეჩერებულია: „${esc(App.planState().plan.name)}“ პაკეტში ${App.planState().plan.apartments} აქტიური ობიექტია და ეს ობიექტი ლიმიტს აღემატება. ობიექტი და მისი მონაცემები ადგილზეა.</span> <button type="button" class="btn btn-secondary btn-sm" id="listing-paused-upgrade">პაკეტების ნახვა</button></div>` : ''}
         <div class="listing-url"><input class="input" readonly value="${esc(url)}" aria-label="განცხადების ბმული" id="listing-url" /></div>
         <div class="listing-actions">
           <button type="button" class="btn btn-primary btn-sm" id="btn-share-renter">${icon('copy', 14)} ბმულის კოპირება</button>
@@ -257,7 +259,7 @@
             : (a.monthly_rent ? `<strong>${money(a.monthly_rent, a.currency || 'USD')}</strong><div class="small muted">${a.rental_type === 'short_term' ? '/ დღე' : '/ თვე'}</div>` : '—');
           const tt = a.transaction_type || (a.rental_type === 'long_term' ? 'long_term' : 'daily');
           return `<a class="row" href="#/apartments/${a.id}" style="--cols:${cols}">
-            <span class="cell-main"><strong>${esc(a.name)}</strong><span>${esc([a.address, a.city].filter(Boolean).join(', '))} · ${R.transactionBadge(tt)}</span></span>
+            <span class="cell-main"><strong>${esc(a.name)}</strong><span>${esc([a.address, a.city].filter(Boolean).join(', '))} · ${R.transactionBadge(tt)}${App.pausedApartmentIds().has(a.id) ? ' · <span class="t-warn">ბმული შეჩერებულია</span>' : ''}</span></span>
             <span class="cell-meta" data-label="მფლობელი">${esc(H.owner(a.owner_id)?.name || '—')}</span>
             <span class="cell-meta" data-label="ფასი">${priceHtml}</span>
             <span class="cell-meta" data-label="საქმე">${open.length}</span>
@@ -498,6 +500,7 @@
     $('#a-all-tasks')?.addEventListener('click', (e) => { e.preventDefault(); App.setTaskFilter({ apt: id, status: 'all' }); App.go('#/tasks'); });
     
     // Marketing Showcase & Deals Bindings
+    $('#listing-paused-upgrade')?.addEventListener('click', () => App.openUpgrade({ kind: 'apartments' }));
     $('#btn-share-renter')?.addEventListener('click', () => R.copyText(listingUrl(a), 'ბმული დაკოპირდა'));
     $('#btn-share-wl')?.addEventListener('click', () => R.copyText(listingUrl(a, true), 'White-label ბმული დაკოპირდა'));
     $('#btn-photos')?.addEventListener('click', () => openPhotosDialog(a));
