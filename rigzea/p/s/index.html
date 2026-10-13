@@ -239,7 +239,7 @@
           </a>
           ${photos.length >= 4 ? `<div class="s-thumbs">${photos.slice(1, 4).map(p => `<img src="${esc(p)}" alt="" loading="lazy" />`).join('')}</div>` : ''}
           <div class="s-body">
-            <div class="s-price">${a.price ? `<strong>${fmt(a.price, cur)}</strong><span>${alt !== null ? `(~${fmt(alt, other)}) ` : ''}${esc(t.perMonth)}</span>` : `<strong style="font-size:20px">${esc(t.onRequest)}</strong>`}</div>
+            <div class="s-price">${a.price ? `<strong>${fmt(a.price, cur)}</strong><span>${alt !== null ? `(~${fmt(alt, other)}) ` : ''}${a.transaction_type === 'sale' ? '' : esc(t.perMonth)}</span>` : `<strong style="font-size:20px">${esc(t.onRequest)}</strong>`}</div>
             <h2 class="s-title">${esc(a.title)}</h2>
             ${loc ? `<div class="s-loc">${ICON.pin}<span>${esc(loc)}</span></div>` : ''}
             ${chips.length ? `<div class="s-chips">${chips.map(c => `<span class="s-chip">${esc(c)}</span>`).join('')}</div>` : ''}

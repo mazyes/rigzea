@@ -5,7 +5,7 @@
 --   3. Role "agent": sees the shared inventory, works only with own deals and contacts.
 --      A property owner's contact becomes visible to an agent once the agent has a
 --      viewing scheduled for that property. Finances and team settings stay closed.
--- Idempotent: safe to run more than once in the Supabase SQL editor.
+-- Additive: no table, column or row is removed. Safe to run more than once.
 -- =============================================================================
 
 -- -----------------------------------------------------------------------------
@@ -51,15 +51,25 @@ end $$;
 
 -- -----------------------------------------------------------------------------
 -- 3. Role "agent"
+--    Existing policies are changed in place (ALTER POLICY); nothing is dropped
+--    except the two role lists, which are replaced by longer ones.
 -- -----------------------------------------------------------------------------
 do $$
 begin
-  alter table public.organization_members drop constraint if exists organization_members_role_check;
-  alter table public.organization_members add constraint organization_members_role_check
-    check (role in ('owner', 'admin', 'manager', 'agent', 'staff'));
-  alter table public.invitations drop constraint if exists invitations_role_check;
-  alter table public.invitations add constraint invitations_role_check
-    check (role in ('admin', 'manager', 'agent', 'staff'));
+  if exists (select 1 from pg_constraint where conname = 'organization_members_role_check' and pg_get_constraintdef(oid) not like '%agent%') then
+    alter table public.organization_members drop constraint organization_members_role_check;
+  end if;
+  if not exists (select 1 from pg_constraint where conname = 'organization_members_role_check') then
+    alter table public.organization_members add constraint organization_members_role_check
+      check (role in ('owner', 'admin', 'manager', 'agent', 'staff'));
+  end if;
+  if exists (select 1 from pg_constraint where conname = 'invitations_role_check' and pg_get_constraintdef(oid) not like '%agent%') then
+    alter table public.invitations drop constraint invitations_role_check;
+  end if;
+  if not exists (select 1 from pg_constraint where conname = 'invitations_role_check') then
+    alter table public.invitations add constraint invitations_role_check
+      check (role in ('admin', 'manager', 'agent', 'staff'));
+  end if;
 end $$;
 
 create or replace function public.is_org_agent(p_org uuid)
@@ -92,57 +102,6 @@ grant execute on function public.is_org_agent(uuid) to authenticated;
 grant execute on function public.agent_has_viewing(uuid) to authenticated;
 grant execute on function public.agent_can_see_contact(uuid, uuid, uuid) to authenticated;
 
--- Properties: the whole inventory is shared with agents; they edit only their own listings.
-drop policy if exists apartments_select on public.apartments;
-create policy apartments_select on public.apartments for select using (
-  public.is_org_manager(organization_id)
-  or public.is_org_agent(organization_id)
-  or owner_id in (select public.my_owner_ids())
-  or exists (select 1 from public.tasks t
-    where t.apartment_id = apartments.id and t.status in ('assigned', 'in_progress', 'blocked')
-      and t.assigned_to = public.my_member_id(apartments.organization_id)));
-drop policy if exists apartments_insert on public.apartments;
-create policy apartments_insert on public.apartments for insert with check (
-  public.is_org_manager(organization_id)
-  or (public.is_org_agent(organization_id) and listing_agent_id = public.my_member_id(organization_id)));
-drop policy if exists apartments_update on public.apartments;
-create policy apartments_update on public.apartments for update using (
-  public.is_org_manager(organization_id)
-  or (public.is_org_agent(organization_id) and listing_agent_id = public.my_member_id(organization_id)));
-
--- Contacts: own contacts, plus the owner of a property once a viewing is scheduled.
-drop policy if exists owners_select on public.owners;
-create policy owners_select on public.owners for select using (
-  public.is_org_manager(organization_id)
-  or user_id = auth.uid()
-  or public.agent_can_see_contact(id, organization_id, assigned_to));
-drop policy if exists owners_insert on public.owners;
-create policy owners_insert on public.owners for insert with check (
-  public.is_org_manager(organization_id)
-  or (public.is_org_agent(organization_id) and assigned_to = public.my_member_id(organization_id)));
-drop policy if exists owners_update on public.owners;
-create policy owners_update on public.owners for update using (
-  public.is_org_manager(organization_id)
-  or (public.is_org_agent(organization_id) and assigned_to = public.my_member_id(organization_id)));
-
--- Deals: an agent works with deals they created or are named on.
-drop policy if exists deals_select on public.deals;
-create policy deals_select on public.deals for select using (
-  public.is_org_manager(organization_id)
-  or (public.is_org_agent(organization_id) and (
-    created_by = auth.uid()
-    or public.my_member_id(organization_id) in (assigned_agent_id, listing_agent_id, selling_agent_id))));
-drop policy if exists deals_insert on public.deals;
-create policy deals_insert on public.deals for insert with check (
-  public.is_org_manager(organization_id)
-  or (public.is_org_agent(organization_id) and created_by = auth.uid()));
-drop policy if exists deals_update on public.deals;
-create policy deals_update on public.deals for update using (
-  public.is_org_manager(organization_id)
-  or (public.is_org_agent(organization_id) and (
-    created_by = auth.uid()
-    or public.my_member_id(organization_id) in (assigned_agent_id, listing_agent_id, selling_agent_id))));
-
 -- Split percentages and payout marks are set by managers only.
 create or replace function public.deals_split_guard()
 returns trigger language plpgsql security definer set search_path to 'public' as $$
@@ -159,40 +118,57 @@ begin
   end if;
   return new;
 end $$;
-revoke execute on function public.deals_split_guard() from public, anon;
-drop trigger if exists trg_deals_split_guard on public.deals;
-create trigger trg_deals_split_guard before insert or update on public.deals
-  for each row execute function public.deals_split_guard();
+revoke execute on function public.deals_split_guard() from public, anon, authenticated;
 
--- Tasks: agents create viewings and follow-ups and see the ones they created.
-drop policy if exists tasks_select on public.tasks;
-create policy tasks_select on public.tasks for select using (
-  public.is_org_manager(organization_id)
-  or assigned_to = public.my_member_id(organization_id)
-  or (public.is_org_agent(organization_id) and created_by = auth.uid()));
-drop policy if exists tasks_insert on public.tasks;
-create policy tasks_insert on public.tasks for insert with check (
-  public.is_org_manager(organization_id)
-  or (public.is_org_agent(organization_id) and created_by = auth.uid()));
-drop policy if exists tasks_update on public.tasks;
-create policy tasks_update on public.tasks for update using (
-  public.is_org_manager(organization_id)
-  or (public.is_org_agent(organization_id) and (created_by = auth.uid() or assigned_to = public.my_member_id(organization_id))));
+do $$
+begin
+  if not exists (select 1 from pg_trigger where tgname = 'trg_deals_split_guard' and tgrelid = 'public.deals'::regclass) then
+    create trigger trg_deals_split_guard before insert or update on public.deals
+      for each row execute function public.deals_split_guard();
+  end if;
+end $$;
 
--- Activity log entries written by agents.
-drop policy if exists activity_events_insert on public.activity_events;
-create policy activity_events_insert on public.activity_events for insert with check (
-  public.is_org_manager(organization_id) or public.is_org_agent(organization_id));
-
--- Saved documents: managers see all, agents their own.
-drop policy if exists contracts_select on public.contracts;
-drop policy if exists contracts_insert on public.contracts;
-drop policy if exists contracts_update on public.contracts;
-drop policy if exists contracts_delete on public.contracts;
-create policy contracts_select on public.contracts for select using (
-  public.is_org_manager(organization_id) or (public.is_org_agent(organization_id) and created_by = auth.uid()));
-create policy contracts_insert on public.contracts for insert with check (
-  public.is_org_manager(organization_id) or (public.is_org_agent(organization_id) and created_by = auth.uid()));
-create policy contracts_update on public.contracts for update using (
-  public.is_org_manager(organization_id) or (public.is_org_agent(organization_id) and created_by = auth.uid()));
-create policy contracts_delete on public.contracts for delete using (public.is_org_admin(organization_id));
+-- Sets each policy's rule: changes it in place when it exists, creates it otherwise.
+-- What an agent gets:
+--   properties  the whole inventory to read; write only own listings
+--   contacts    own contacts, plus the owner of a property once a viewing is scheduled
+--   deals       the ones they created or are named on
+--   tasks       the ones they created or are assigned to
+--   documents   their own
+-- Finance, approvals, invitations, team and workspace settings stay manager / admin only.
+do $$
+declare
+  r record;
+  mgr constant text := 'public.is_org_manager(organization_id)';
+  agt constant text := 'public.is_org_agent(organization_id)';
+  me constant text := 'public.my_member_id(organization_id)';
+  own_deal constant text := '(created_by = auth.uid() or public.my_member_id(organization_id) in (assigned_agent_id, listing_agent_id, selling_agent_id))';
+begin
+  for r in select * from (values
+    ('apartments', 'apartments_select', 'select',
+      mgr || ' or ' || agt || ' or owner_id in (select public.my_owner_ids()) or exists (select 1 from public.tasks t where t.apartment_id = apartments.id and t.status in (''assigned'', ''in_progress'', ''blocked'') and t.assigned_to = public.my_member_id(apartments.organization_id))'),
+    ('apartments', 'apartments_insert', 'insert', mgr || ' or (' || agt || ' and listing_agent_id = ' || me || ')'),
+    ('apartments', 'apartments_update', 'update', mgr || ' or (' || agt || ' and listing_agent_id = ' || me || ')'),
+    ('owners', 'owners_select', 'select', mgr || ' or user_id = auth.uid() or public.agent_can_see_contact(id, organization_id, assigned_to)'),
+    ('owners', 'owners_insert', 'insert', mgr || ' or (' || agt || ' and assigned_to = ' || me || ')'),
+    ('owners', 'owners_update', 'update', mgr || ' or (' || agt || ' and assigned_to = ' || me || ')'),
+    ('deals', 'deals_select', 'select', mgr || ' or (' || agt || ' and ' || own_deal || ')'),
+    ('deals', 'deals_insert', 'insert', mgr || ' or (' || agt || ' and created_by = auth.uid())'),
+    ('deals', 'deals_update', 'update', mgr || ' or (' || agt || ' and ' || own_deal || ')'),
+    ('tasks', 'tasks_select', 'select', mgr || ' or assigned_to = ' || me || ' or (' || agt || ' and created_by = auth.uid())'),
+    ('tasks', 'tasks_insert', 'insert', mgr || ' or (' || agt || ' and created_by = auth.uid())'),
+    ('tasks', 'tasks_update', 'update', mgr || ' or (' || agt || ' and (created_by = auth.uid() or assigned_to = ' || me || '))'),
+    ('activity_events', 'activity_events_insert', 'insert', mgr || ' or ' || agt),
+    ('contracts', 'contracts_select', 'select', mgr || ' or (' || agt || ' and created_by = auth.uid())'),
+    ('contracts', 'contracts_insert', 'insert', mgr || ' or (' || agt || ' and created_by = auth.uid())'),
+    ('contracts', 'contracts_update', 'update', mgr || ' or (' || agt || ' and created_by = auth.uid())'),
+    ('contracts', 'contracts_delete', 'delete', 'public.is_org_admin(organization_id)')
+  ) as t(tbl, pol, cmd, rule)
+  loop
+    if exists (select 1 from pg_policies where schemaname = 'public' and tablename = r.tbl and policyname = r.pol) then
+      execute format('alter policy %I on public.%I %s (%s)', r.pol, r.tbl, case when r.cmd = 'insert' then 'with check' else 'using' end, r.rule);
+    else
+      execute format('create policy %I on public.%I for %s %s (%s)', r.pol, r.tbl, r.cmd, case when r.cmd = 'insert' then 'with check' else 'using' end, r.rule);
+    end if;
+  end loop;
+end $$;

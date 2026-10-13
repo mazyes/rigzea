@@ -724,7 +724,13 @@
             const { data: { session } } = await sb.auth.getSession();
             const res = await fetch('/api/import-listing/', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token || ''}` }, body: JSON.stringify({ url }) });
             const out = await res.json().catch(() => ({}));
-            if (!res.ok || !out.ok) throw new Error(out.message || 'განცხადება ვერ წავიკითხეთ. შეავსე ველები ხელით.');
+            if (!res.ok || !out.ok) {
+              // The server explains known cases; the rest are mapped here so the agent always knows what to do next.
+              throw new Error(out.message || (res.status === 401 ? 'სესია ამოიწურა. შედი ანგარიშში თავიდან და სცადე ხელახლა.'
+                : res.status === 429 ? 'ძალიან ბევრი მოთხოვნა. სცადე ერთ წუთში.'
+                : res.status >= 500 ? 'იმპორტის სერვისი დროებით მიუწვდომელია. შეავსე ველები ხელით.'
+                : 'განცხადება ვერ წავიკითხეთ. შეავსე ველები ხელით.'));
+            }
             const l = out.listing;
             setField('transaction_type', l.transaction_type); setField('property_type', l.property_type);
             setField('name', l.name); setField('address', l.address || l.district); setField('city', l.city); setField('district', l.district);
@@ -736,9 +742,10 @@
             else { setField('currency', l.currency); setField('monthly_rent', l.price); }
             if (pm && Array.isArray(l.images)) pm.addUrls(l.images);
             const filled = [l.price && 'ფასი', l.area_sqm && 'ფართი', l.rooms && 'ოთახები', l.address && 'მისამართი', l.images?.length && `${l.images.length} ფოტო`].filter(Boolean).join(', ');
-            say(`შევსებულია: ${filled || 'ძირითადი ველები'}. სხვა სააგენტოს კონტაქტები აღწერიდან ამოღებულია. გადახედე, მიუთითე მეპატრონე და შეინახე.`, 'ok');
+            const missing = [!l.price && 'ფასი', !l.area_sqm && 'ფართი', !l.address && 'მისამართი'].filter(Boolean).join(', ');
+            say(`შევსებულია: ${filled || 'ძირითადი ველები'}.${missing ? ` ვერ ვიპოვეთ: ${missing}.` : ''} სხვა სააგენტოს კონტაქტები აღწერიდან ამოღებულია.${l.images?.length ? ' ფოტოები წყარო საიტზე რჩება: თუ განცხადება წაიშლება, ისინიც გაქრება, ამიტომ მნიშვნელოვანი ფოტოები თავად ატვირთე.' : ''} გადახედე, მიუთითე მეპატრონე და შეინახე.`, 'ok');
           } catch (err) {
-            say(err.message || 'განცხადება ვერ წავიკითხეთ. შეავსე ველები ხელით.', 'error');
+            say(err instanceof TypeError ? 'ინტერნეტთან კავშირი ვერ დამყარდა. შეამოწმე კავშირი და სცადე ხელახლა.' : (err.message || 'განცხადება ვერ წავიკითხეთ. შეავსე ველები ხელით.'), 'error');
           } finally { importBtn.disabled = false; importBtn.classList.remove('is-busy'); }
         });
 
@@ -1021,7 +1028,7 @@
           ${o.lead_source ? `<dt>წყარო</dt><dd>${esc(L.leadSource[o.lead_source] || o.lead_source)}</dd>` : ''}
           ${o.follow_up_date ? `<dt>Follow-up თარიღი</dt><dd>${esc(R.date(o.follow_up_date))}</dd>` : ''}
           ${o.payout_account ? `<dt>ანგარიში</dt><dd>${esc(o.payout_account)}</dd>` : ''}
-          ${o.requirements ? `<dt>მოთხოვნები</dt><dd style="white-space:pre-wrap">${esc(o.requirements)}</dd>` : ''}
+          ${reqText(o) ? `<dt>მოთხოვნები</dt><dd style="white-space:pre-wrap">${esc(reqText(o))}</dd>` : ''}
           ${o.notes ? `<dt>შიდა შენიშვნა</dt><dd style="white-space:pre-wrap">${esc(o.notes)}</dd>` : ''}</dl></div></section>
       </div></div>`;
     $('#ow-edit').onclick = () => openOwnerForm(o);
@@ -1029,6 +1036,9 @@
   }
   const monthLabel = (mk) => { const [y, m] = String(mk).split('-').map(Number); return `${R.MONTHS[m - 1]} ${y}`; };
   App.monthLabel = monthLabel;
+
+  // requirements is stored as text; older rows may hold an empty object.
+  const reqText = (o) => (typeof o?.requirements === 'string' ? o.requirements : '');
 
   function openOwnerForm(o = null, defaults = {}) {
     const edit = Boolean(o);
@@ -1065,7 +1075,7 @@
             </label>
             <label class="field"><span class="field-label">სასურველი ქალაქი</span><input name="preferred_city" value="${esc(o?.preferred_city || '')}" list="city-list" placeholder="თბილისი / ბათუმი" /></label>
             <label class="field"><span class="field-label">სასურველი უბანი</span><input name="preferred_district" value="${esc(o?.preferred_district || '')}" list="district-list" placeholder="ვაკე, საბურთალო..." /></label>
-            <label class="field span-2"><span class="field-label">დეტალური მოთხოვნები</span><textarea name="requirements" rows="2" placeholder="მაგ.: 2 საძინებელი, აივნით, ახალ კორპუსში, პარკინგით">${esc(o?.requirements || '')}</textarea></label>
+            <label class="field span-2"><span class="field-label">დეტალური მოთხოვნები</span><textarea name="requirements" rows="2" placeholder="მაგ.: 2 საძინებელი, აივნით, ახალ კორპუსში, პარკინგით">${esc(reqText(o))}</textarea></label>
           </div>
         </div>
 

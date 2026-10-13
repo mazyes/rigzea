@@ -258,7 +258,7 @@
       if (!sel) return { success: false, error: 'not_found' };
       const org = T('organizations').find(x => x.id === sel.organization_id) || {};
       const apartments = (sel.apartment_ids || []).map(id => T('apartments').find(x => x.id === id && x.organization_id === sel.organization_id && x.status !== 'archived')).filter(Boolean)
-        .map(x => ({ id: x.id, slug: x.slug || null, title: x.name, price: x.monthly_rent ?? null, currency: x.currency || 'USD', rooms: x.rooms ?? null, bedrooms: x.bedrooms ?? null, area_sqm: x.area_sqm ?? null, floor: x.floor ?? null, total_floors: x.total_floors ?? null, district: x.district || null, city: x.city || null, pets_allowed: !!x.pets_allowed, photos: (x.photos || []).slice(0, 4), agent_phone: x.agent_phone || null }));
+        .map(x => ({ id: x.id, slug: x.slug || null, title: x.name, transaction_type: x.transaction_type || 'long_term', price: (x.transaction_type === 'sale' ? x.sale_price : x.monthly_rent) ?? null, currency: x.currency || 'USD', rooms: x.rooms ?? null, bedrooms: x.bedrooms ?? null, area_sqm: x.area_sqm ?? null, floor: x.floor ?? null, total_floors: x.total_floors ?? null, district: x.district || null, city: x.city || null, pets_allowed: !!x.pets_allowed, photos: (x.photos || []).slice(0, 4), agent_phone: x.agent_phone || null }));
       if (!apartments.length) return { success: false, error: 'not_found' };
       return { success: true, selection: { client_name: sel.client_name, created_at: sel.created_at }, apartments, agency: { name: org.agent_display_name || org.name, phone: org.contact_phone || null, logo_url: org.logo_url || null, brand_color: org.brand_color || null, fx_rate: org.fx_rate ?? 2.7 } };
     },

@@ -7,6 +7,8 @@ const { hostOf, parseListing } = require('./_import-parse.js');
 
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36';
 const MAX_BYTES = 3 * 1024 * 1024;
+// Stay inside the default function time limit, so a slow site gets our message instead of a gateway error.
+const FETCH_TIMEOUT_MS = 8000;
 let cachedCfg = null;
 
 // Supabase URL + anon key: env vars first, otherwise the public values in rigzea/js/config.js.
@@ -41,7 +43,7 @@ async function isSignedIn(req) {
 
 async function fetchPage(url, site) {
   const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), 12000);
+  const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
   try {
     let current = url;
     for (let hop = 0; hop < 4; hop++) {
@@ -64,9 +66,10 @@ async function fetchPage(url, site) {
 module.exports = async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   if (req.method !== 'POST') return res.status(405).json({ ok: false, error: 'method' });
-  if (!(await isSignedIn(req))) return res.status(401).json({ ok: false, error: 'auth', message: 'იმპორტისთვის საჭიროა ანგარიშში შესვლა.' });
+  if (!(await isSignedIn(req))) return res.status(401).json({ ok: false, error: 'auth', message: 'სესია ამოიწურა. შედი ანგარიშში თავიდან და სცადე ხელახლა.' });
 
   const body = typeof req.body === 'string' ? (() => { try { return JSON.parse(req.body); } catch { return {}; } })() : (req.body || {});
+  if (String(body.url || '').length > 600) return res.status(400).json({ ok: false, error: 'url', message: 'ბმული ძალიან გრძელია. ჩასვი განცხადების პირდაპირი ბმული.' });
   const target = hostOf(body.url);
   if (!target) return res.status(400).json({ ok: false, error: 'url', message: 'ჩასვი განცხადების ბმული MyHome.ge-დან, SS.ge-დან ან Place.ge-დან.' });
 
@@ -74,13 +77,19 @@ module.exports = async (req, res) => {
     const page = await fetchPage(target.url, target.site);
     if (page.status !== 200) {
       const blocked = [401, 403, 429, 503].includes(page.status);
-      return res.status(502).json({ ok: false, error: blocked ? 'blocked' : 'fetch', message: blocked ? 'საიტმა ავტომატური წაკითხვა დაბლოკა. შეავსე ველები ხელით ან სცადე მოგვიანებით.' : 'განცხადება ვერ გაიხსნა. შეამოწმე ბმული.' });
+      const gone = [404, 410].includes(page.status);
+      return res.status(502).json({ ok: false, error: blocked ? 'blocked' : gone ? 'gone' : 'fetch', source_status: page.status,
+        message: blocked ? 'საიტმა ავტომატური წაკითხვა დაბლოკა. შეავსე ველები ხელით ან სცადე მოგვიანებით.'
+          : gone ? 'განცხადება ვერ მოიძებნა: შესაძლოა წაშლილია ან ბმული არასრულია.'
+          : 'განცხადების საიტი ახლა არ პასუხობს. სცადე ცოტა ხანში ან შეავსე ველები ხელით.' });
     }
     const listing = parseListing(target.site, page.html);
     if (!listing) return res.status(422).json({ ok: false, error: 'parse', message: 'ამ გვერდზე განცხადების მონაცემები ვერ ვიპოვეთ. ჩასვი კონკრეტული განცხადების ბმული.' });
     return res.status(200).json({ ok: true, listing });
   } catch (err) {
+    const timedOut = err && err.name === 'AbortError';
     console.error('import-listing:', err && err.message);
-    return res.status(502).json({ ok: false, error: 'fetch', message: 'განცხადება ვერ წავიკითხეთ. სცადე ხელახლა ან შეავსე ველები ხელით.' });
+    return res.status(502).json({ ok: false, error: timedOut ? 'timeout' : 'fetch',
+      message: timedOut ? 'განცხადების საიტი ძალიან ნელა პასუხობს. სცადე ხელახლა ან შეავსე ველები ხელით.' : 'განცხადება ვერ წავიკითხეთ. სცადე ხელახლა ან შეავსე ველები ხელით.' });
   }
 };
