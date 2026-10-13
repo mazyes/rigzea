@@ -213,18 +213,29 @@
     const apts = S.data.apartments;
     const cities = [...new Set(apts.map(a => a.city).filter(Boolean))];
     const s = af.q.trim().toLowerCase();
-    const inType = (a, tp) => tp === 'all' ? true : (a.transaction_type || (a.rental_type === 'long_term' ? 'long_term' : 'daily')) === tp;
+    // Section pages (#/apartments?type=rent|sale) are scoped to one side of the business.
+    const sec = ['rent', 'sale'].includes(r.params.get('type')) ? r.params.get('type') : null;
+    const txOf = (a) => a.transaction_type || (a.rental_type === 'long_term' ? 'long_term' : 'daily');
+    const inSec = (a) => !sec || (sec === 'sale') === (txOf(a) === 'sale');
+    const inType = (a, tp) => inSec(a) && (tp === 'all' || txOf(a) === tp);
+    const TYPES = sec === 'sale' ? [] : sec === 'rent'
+      ? [['all', 'ყველა'], ['long_term', 'გრძელვადიანი'], ['daily', 'დღიურად']]
+      : [['all', 'ყველა ტიპი'], ['sale', 'იყიდება'], ['long_term', 'ქირავდება'], ['daily', 'დღიურად']];
+    if (!TYPES.some(([id]) => id === af.type)) af.type = 'all';
+    const title = sec === 'sale' ? 'გასაყიდი ბინები' : sec === 'rent' ? 'გასაქირავებელი ბინები' : 'უძრავი ქონება';
+    const inScope = apts.filter(a => inSec(a) && a.status !== 'archived').length;
     const inStatus = (a, st) => st === 'current' ? !['archived', 'sold'].includes(a.status) : a.status === st;
     const base = apts.filter(a => (!af.city || a.city === af.city) && inType(a, af.type) && (!s || [a.name, a.unit_number, a.address, a.city, H.owner(a.owner_id)?.name].some(v => String(v || '').toLowerCase().includes(s))));
     const list = base.filter(a => inStatus(a, af.status));
-    const TYPES = [['all', 'ყველა ტიპი'], ['sale', 'იყიდება'], ['long_term', 'ქირავდება'], ['daily', 'დღიურად']];
-    const STATUS = [['current', 'ყველა მიმდინარე'], ['active', 'აქტიური'], ['reserved', 'დაჯავშნილი'], ['rented', 'გაქირავებული'], ['sold', 'გაყიდული'], ['maintenance', 'რემონტზე'], ['vacant', 'არააქტიური'], ['archived', 'დაარქივებული']];
+    const STATUS = [['current', 'ყველა მიმდინარე'], ['active', 'აქტიური'], ['reserved', 'დაჯავშნილი'], ['rented', 'გაქირავებული'], ['sold', 'გაყიდული'], ['maintenance', 'რემონტზე'], ['vacant', 'არააქტიური'], ['archived', 'დაარქივებული']]
+      .filter(([id]) => !(sec === 'sale' && id === 'rented') && !(sec === 'rent' && id === 'sold'));
+    if (!STATUS.some(([id]) => id === af.status)) af.status = 'current';
     const cols = 'minmax(0,2fr) minmax(0,1.2fr) 120px 110px 140px 120px 150px';
 
     $('#view').innerHTML = `
-      <div class="page-head"><div><h1>უძრავი ქონება</h1><p class="page-sub">${apts.filter(a => a.status !== 'archived').length} ობიექტი პორტფოლიოში</p></div>
+      <div class="page-head"><div><h1>${title}</h1><p class="page-sub">${inScope} ობიექტი ${sec ? 'ამ სექციაში' : 'პორტფოლიოში'}</p></div>
         <div class="page-actions"><a class="btn btn-secondary" href="#/settings/import">${icon('upload', 16)} იმპორტი</a><button type="button" class="btn btn-primary" id="btn-apt-new">${icon('plus', 16)} ობიექტის დამატება</button></div></div>
-      <div class="chips" role="group" aria-label="ტრანზაქციის ტიპი" style="margin-bottom:8px">${TYPES.map(([id, label]) => `<button type="button" class="chip" data-tp="${id}" aria-pressed="${af.type === id}">${label} <span class="count">${apts.filter(a => inType(a, id) && a.status !== 'archived').length}</span></button>`).join('')}</div>
+      ${TYPES.length ? `<div class="chips" role="group" aria-label="ტრანზაქციის ტიპი" style="margin-bottom:8px">${TYPES.map(([id, label]) => `<button type="button" class="chip" data-tp="${id}" aria-pressed="${af.type === id}">${label} <span class="count">${apts.filter(a => inType(a, id) && a.status !== 'archived').length}</span></button>`).join('')}</div>` : ''}
       <div class="chips" role="group" aria-label="სტატუსი">${STATUS.map(([id, label]) => `<button type="button" class="chip" data-st="${id}" aria-pressed="${af.status === id}">${label} <span class="count">${base.filter(a => inStatus(a, id)).length}</span></button>`).join('')}</div>
       <div class="toolbar">
         <div class="search-input grow">${icon('search', 16)}<input class="input" type="search" id="af-q" value="${esc(af.q)}" placeholder="სახელი, ნომერი, მისამართი, მფლობელი, ქალაქი" aria-label="ბინის ძებნა" /></div>
@@ -253,8 +264,8 @@
             <span class="cell-status">${R.badge(L.aptStatus[a.status] || a.status, L.aptStatusTone[a.status])}</span>
             <span class="cell-actions"><button type="button" class="btn btn-ghost btn-sm" data-new-task="${a.id}">+ საქმე</button><button type="button" class="btn btn-ghost btn-sm" data-new-exp="${a.id}">+ ხარჯი</button></span>
           </a>`;
-        }).join('')}</div>` : `<div class="empty">${icon('building', 28)}<h3>${apts.length ? 'ობიექტი ვერ მოიძებნა' : 'ობიექტი ჯერ არ არის დამატებული'}</h3>
-          <p>${apts.length ? 'შეცვალე ძებნა, ტრანზაქციის ტიპი ან სტატუსის ფილტრი.' : 'დაამატე ბინა ან კომერციული ფართი სახელით და მისამართით, მაგ.: „Orbi City · 1204“. ბევრი ობიექტი გაქვს? გამოიყენე Excel/CSV იმპორტი.'}</p>
+        }).join('')}</div>` : `<div class="empty">${icon('building', 28)}<h3>${apts.length ? (inScope ? 'ობიექტი ვერ მოიძებნა' : (sec === 'sale' ? 'გასაყიდი ბინა ჯერ არ არის' : 'გასაქირავებელი ბინა ჯერ არ არის')) : 'ობიექტი ჯერ არ არის დამატებული'}</h3>
+          <p>${apts.length ? (inScope ? 'შეცვალე ძებნა ან ფილტრი.' : 'დაამატე ობიექტი ზედა ღილაკით.') : 'დაამატე ბინა ან კომერციული ფართი სახელით და მისამართით, მაგ.: „Orbi City · 1204“. ბევრი ობიექტი გაქვს? გამოიყენე Excel/CSV იმპორტი.'}</p>
           ${apts.length ? '' : '<button class="btn btn-primary" type="button" id="btn-apt-empty">ობიექტის დამატება</button>'}</div>`}</section>`;
 
     let timer;
@@ -262,8 +273,9 @@
     $('#af-city')?.addEventListener('change', (e) => { af.city = e.target.value; App.render(); });
     $$('[data-tp]').forEach(b => b.addEventListener('click', () => { af.type = b.dataset.tp; App.render(); }));
     $$('[data-st]').forEach(b => b.addEventListener('click', () => { af.status = b.dataset.st; App.render(); }));
-    $('#btn-apt-new').onclick = () => openApartmentForm();
-    $('#btn-apt-empty')?.addEventListener('click', () => openApartmentForm());
+    const formDefaults = sec ? { transaction_type: sec === 'sale' ? 'sale' : 'long_term' } : {};
+    $('#btn-apt-new').onclick = () => openApartmentForm(null, formDefaults);
+    $('#btn-apt-empty')?.addEventListener('click', () => openApartmentForm(null, formDefaults));
     $$('[data-new-task]').forEach(b => b.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); App.openTaskForm({ apartmentId: b.dataset.newTask }); }));
     $$('[data-new-exp]').forEach(b => b.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); App.openExpenseForm({ apartmentId: b.dataset.newExp }); }));
   };
@@ -317,7 +329,7 @@
 
     $('#view').innerHTML = `
       <div class="page-head">
-        <div><div class="crumbs"><a href="#/apartments">უძრავი ქონება</a> ›</div>
+        <div><div class="crumbs"><a href="#/apartments?type=${App.aptSection(a)}">${isSale ? 'გასაყიდი ბინები' : 'გასაქირავებელი ბინები'}</a> ›</div>
           <h1>${esc(a.name)}</h1><p class="page-sub">${esc([a.address, a.unit_number && 'ბინა ' + a.unit_number, a.city].filter(Boolean).join(', '))} · ${R.transactionBadge(a.transaction_type || (a.rental_type === 'long_term' ? 'long_term' : 'daily'))} ${R.badge(L.aptStatus[a.status] || a.status, L.aptStatusTone[a.status])}</p></div>
         <div class="page-actions">
           <a class="btn btn-secondary" href="/guide/?apt=${encodeURIComponent(a.id)}" target="_blank" title="სტუმრის ციფრული გზამკვლევი და A5 ბარათი">${icon('sparkle', 16)} სტუმრის QR</a>
@@ -529,10 +541,10 @@
   // ===========================================================================
   // APARTMENT FORM
   // ===========================================================================
-  function openApartmentForm(a = null) {
+  function openApartmentForm(a = null, defaults = {}) {
     const edit = Boolean(a);
     if (!edit && App.guardLimit && !App.guardLimit('apartments')) return;
-    const v = a || { status: 'active', transaction_type: 'sale', property_type: 'apartment', city: S.org.city || 'ბათუმი', commission_pct: 20, checkin_time: '14:00', checkout_time: '12:00', currency: 'USD', pets_allowed: false, agent_commission_percent: 50, cobroker_split: 50, owner_bonus: 0 };
+    const v = a || { status: 'active', transaction_type: 'sale', property_type: 'apartment', city: S.org.city || 'ბათუმი', commission_pct: 20, checkin_time: '14:00', checkout_time: '12:00', currency: 'USD', pets_allowed: false, agent_commission_percent: 50, cobroker_split: 50, owner_bonus: 0, ...defaults };
     const id = a?.id || R.uuid();
     const sl = smartlinkReady();
     const amen = new Set(Array.isArray(v.amenities) ? v.amenities : []);
@@ -802,14 +814,40 @@
   let ownersTab = null;
   let apprFilter = 'pending';
 
+  // Section pages: one contact type each (#/owners?type=renter|owner|buyer|seller).
+  const CONTACT_PAGES = {
+    renter: { title: 'მდგმურები', one: 'მდგმური', add: 'მდგმურის დამატება', sub: 'ვინც ბინას ქირაობს ან ეძებს' },
+    owner: { title: 'მეპატრონეები', one: 'მეპატრონე', add: 'მეპატრონის დამატება', sub: 'ვისი ბინებიც გაქირავებაშია' },
+    buyer: { title: 'მყიდველები', one: 'მყიდველი', add: 'მყიდველის დამატება', sub: 'ვინც ბინის ყიდვას აპირებს' },
+    seller: { title: 'გამყიდველები', one: 'გამყიდველი', add: 'გამყიდველის დამატება', sub: 'ვინც ბინას ყიდის' },
+  };
+  const contactsHref = (ct) => (CONTACT_PAGES[ct] ? `#/owners?type=${ct}` : '#/owners?tab=owners');
+
+  function renderContactPage(r, type) {
+    const page = CONTACT_PAGES[type];
+    const count = S.data.owners.filter(o => (o.contact_type || 'owner') === type).length;
+    const pending = S.data.approvals.filter(a => R.approvalStatus(a) === 'pending');
+    const isOwner = type === 'owner';
+    const tab = isOwner && r.params.get('tab') === 'approvals' ? 'approvals' : 'list';
+    $('#view').innerHTML = `
+      <div class="page-head"><div><h1>${page.title}</h1><p class="page-sub">${count} ${page.one} · ${page.sub}</p></div>
+        <div class="page-actions">${isOwner ? '<button type="button" class="btn btn-secondary" id="o-appr">თანხმობის მოთხოვნა</button>' : ''}<button type="button" class="btn btn-primary" id="o-new">${icon('plus', 16)} ${page.add}</button></div></div>
+      ${isOwner ? `<div class="tabs" role="tablist"><a class="tab" role="tab" href="#/owners?type=owner" aria-selected="${tab === 'list'}">მეპატრონეები <span class="count">${count}</span></a><a class="tab" role="tab" href="#/owners?type=owner&tab=approvals" aria-selected="${tab === 'approvals'}">თანხმობები <span class="count">${pending.length}</span></a></div>` : ''}
+      <div id="o-body"></div>`;
+    $('#o-new').onclick = () => openOwnerForm(null, { contact_type: type });
+    $('#o-appr')?.addEventListener('click', () => App.openApprovalForm({}));
+    if (tab === 'approvals') renderApprovals($('#o-body')); else renderOwnersList($('#o-body'), type);
+  }
+
   App.views.owners = (r) => {
     if (r.id) return renderOwner(r.id);
+    if (CONTACT_PAGES[r.params.get('type')]) return renderContactPage(r, r.params.get('type'));
     const pending = S.data.approvals.filter(a => R.approvalStatus(a) === 'pending');
-    const tab = ownersTab || (pending.length ? 'approvals' : 'owners');
+    const tab = ownersTab || r.params.get('tab') || (pending.length ? 'approvals' : 'owners');
     $('#view').innerHTML = `
-      <div class="page-head"><div><h1>მფლობელები</h1><p class="page-sub">${S.data.owners.length} მფლობელი · ${pending.length} თანხმობა ელოდება პასუხს</p></div>
-        <div class="page-actions"><button type="button" class="btn btn-secondary" id="o-appr">თანხმობის მოთხოვნა</button><button type="button" class="btn btn-primary" id="o-new">${icon('plus', 16)} მფლობელის დამატება</button></div></div>
-      <div class="tabs" role="tablist"><button type="button" role="tab" class="tab" data-tab="approvals" aria-selected="${tab === 'approvals'}">თანხმობები <span class="count">${pending.length}</span></button><button type="button" role="tab" class="tab" data-tab="owners" aria-selected="${tab === 'owners'}">მფლობელები <span class="count">${S.data.owners.length}</span></button></div>
+      <div class="page-head"><div><h1>ყველა კონტაქტი</h1><p class="page-sub">${S.data.owners.length} კონტაქტი · ${pending.length} თანხმობა ელოდება პასუხს</p></div>
+        <div class="page-actions"><button type="button" class="btn btn-secondary" id="o-appr">თანხმობის მოთხოვნა</button><button type="button" class="btn btn-primary" id="o-new">${icon('plus', 16)} კონტაქტის დამატება</button></div></div>
+      <div class="tabs" role="tablist"><button type="button" role="tab" class="tab" data-tab="approvals" aria-selected="${tab === 'approvals'}">თანხმობები <span class="count">${pending.length}</span></button><button type="button" role="tab" class="tab" data-tab="owners" aria-selected="${tab === 'owners'}">კონტაქტები <span class="count">${S.data.owners.length}</span></button></div>
       <div id="o-body"></div>`;
     $$('[data-tab]').forEach(b => b.addEventListener('click', () => { ownersTab = b.dataset.tab; App.render(); }));
     $('#o-new').onclick = () => openOwnerForm();
@@ -861,16 +899,19 @@
 
   let ownerContactType = 'all';
 
-  function renderOwnersList(root) {
+  // fixedType: a section page shows one contact type and no type filter.
+  function renderOwnersList(root, fixedType = null) {
     const all = S.data.owners;
-    const TYPES = [['all', 'ყველა კონტაქტი'], ['owner', 'მესაკუთრეები'], ['seller', 'გამყიდველები'], ['buyer', 'მყიდველები'], ['renter', 'დამქირავებლები']];
-    const list = all.filter(o => ownerContactType === 'all' || (o.contact_type || 'owner') === ownerContactType);
+    const TYPES = [['all', 'ყველა კონტაქტი'], ['owner', 'მეპატრონეები'], ['seller', 'გამყიდველები'], ['buyer', 'მყიდველები'], ['renter', 'მდგმურები']];
+    const activeType = fixedType || ownerContactType;
+    const list = all.filter(o => activeType === 'all' || (o.contact_type || 'owner') === activeType);
+    const page = CONTACT_PAGES[fixedType];
     const cols = 'minmax(0,1.5fr) 110px minmax(0,1.2fr) minmax(0,1.3fr) 100px';
 
     root.innerHTML = `
-      <div class="chips" role="group" aria-label="კონტაქტის ტიპი" style="margin-bottom:12px">
+      ${fixedType ? '' : `<div class="chips" role="group" aria-label="კონტაქტის ტიპი" style="margin-bottom:12px">
         ${TYPES.map(([id, label]) => `<button type="button" class="chip" data-oct="${id}" aria-pressed="${ownerContactType === id}">${label} <span class="count">${all.filter(o => id === 'all' || (o.contact_type || 'owner') === id).length}</span></button>`).join('')}
-      </div>
+      </div>`}
       <section class="card">${list.length ? `<div class="rows"><div class="rows-head" style="--cols:${cols}"><span>სახელი</span><span>ტიპი</span><span>საკონტაქტო / ბიუჯეტი</span><span>ობიექტები / მოთხოვნა</span><span>თანხმობა</span></div>
       ${list.map(o => {
         const apts = S.data.apartments.filter(a => a.owner_id === o.id && a.status !== 'archived');
@@ -882,17 +923,17 @@
         return `<a class="row" href="#/owners/${o.id}" style="--cols:${cols}"><span class="cell-main"><strong>${esc(o.name)}</strong><span>${o.user_id ? 'პორტალთან დაკავშირებული' : (o.lead_source ? 'წყარო: ' + (L.leadSource[o.lead_source] || o.lead_source) : '')}</span></span>
           <span class="cell-meta">${R.contactBadge(ct)}</span>
           <span class="cell-meta">${esc([o.phone, o.email].filter(Boolean).join(' · ') || '—')}${budgetStr ? `<div class="small t-ok" style="font-weight:600">${esc(budgetStr)}</div>` : ''}</span>
-          <span class="cell-meta" data-label="დეტალები">${apts.length ? esc(apts.map(a => a.name).join(', ')) : (prefStr ? esc(prefStr) : (o.requirements ? esc(o.requirements.slice(0, 40)) : '—'))}</span>
+          <span class="cell-meta" data-label="დეტალები">${apts.length ? esc(apts.map(a => a.name).join(', ')) : (prefStr ? esc(prefStr) : (typeof o.requirements === 'string' && o.requirements ? esc(o.requirements.slice(0, 40)) : '—'))}</span>
           <span class="cell-status">${pend ? R.badge(`${pend} ელოდება`, 'warn') : ''}</span></a>`;
-      }).join('')}</div>` : `<div class="empty">${icon('owner', 28)}<h3>კონტაქტი ვერ მოიძებნა</h3><p>დაამატე მესაკუთრე, გამყიდველი, მყიდველი ან დამქირავებელი.</p><button class="btn btn-primary" type="button" id="o-new-empty">კონტაქტის დამატება</button></div>`}</section>`;
+      }).join('')}</div>` : `<div class="empty">${icon('owner', 28)}<h3>${page ? `${page.one} ჯერ არ არის დამატებული` : 'კონტაქტი ვერ მოიძებნა'}</h3><p>${page ? 'დაამატე სახელი და ტელეფონი. დანარჩენის შევსება მოგვიანებითაც შეიძლება.' : 'დაამატე მეპატრონე, გამყიდველი, მყიდველი ან მდგმური.'}</p><button class="btn btn-primary" type="button" id="o-new-empty">${page ? page.add : 'კონტაქტის დამატება'}</button></div>`}</section>`;
 
     $$('[data-oct]', root).forEach(b => b.addEventListener('click', () => { ownerContactType = b.dataset.oct; renderOwnersList(root); }));
-    $('#o-new-empty')?.addEventListener('click', () => openOwnerForm());
+    $('#o-new-empty')?.addEventListener('click', () => openOwnerForm(null, fixedType ? { contact_type: fixedType } : {}));
   }
 
   function renderOwner(id) {
     const o = H.owner(id);
-    if (!o) { $('#view').innerHTML = `<div class="card"><div class="empty"><h3>კონტაქტი ვერ მოიძებნა</h3><a class="btn btn-secondary" href="#/owners">კონტაქტების სია</a></div></div>`; return; }
+    if (!o) { $('#view').innerHTML = `<div class="card"><div class="empty"><h3>კონტაქტი ვერ მოიძებნა</h3><a class="btn btn-secondary" href="#/owners?tab=owners">კონტაქტების სია</a></div></div>`; return; }
     const apts = S.data.apartments.filter(a => a.owner_id === id);
     const approvals = S.data.approvals.filter(a => a.owner_id === id);
     const statements = S.data.statements.filter(s => apts.some(a => a.id === s.apartment_id));
@@ -900,7 +941,7 @@
     const isClient = ['buyer', 'renter'].includes(ct);
 
     $('#view').innerHTML = `
-      <div class="page-head"><div><div class="crumbs"><a href="#/owners">კონტაქტები</a> ›</div><h1>${esc(o.name)}</h1><p class="page-sub">${R.contactBadge(ct)} · ${apts.length} ობიექტი</p></div>
+      <div class="page-head"><div><div class="crumbs"><a href="${contactsHref(ct)}">${CONTACT_PAGES[ct]?.title || 'კონტაქტები'}</a> ›</div><h1>${esc(o.name)}</h1><p class="page-sub">${R.contactBadge(ct)} · ${apts.length} ობიექტი</p></div>
         <div class="page-actions"><button type="button" class="btn btn-secondary" id="ow-appr">თანხმობის მოთხოვნა</button><button type="button" class="btn btn-ghost" id="ow-edit">რედაქტირება</button></div></div>
       <div class="cols"><div class="stack">
         <section class="card"><div class="card-head"><h2>მიბმული ობიექტები</h2></div>${apts.length ? `<div class="rows">${apts.map(a => `<a class="row" href="#/apartments/${a.id}" style="--cols:minmax(0,1fr) auto"><span class="cell-main"><strong>${esc(a.name)}</strong><span>${esc(a.address || '')}</span></span>${R.badge(L.aptStatus[a.status], L.aptStatusTone[a.status])}</a>`).join('')}</div>` : App.emptyInline('ობიექტი არ არის მიბმული.')}</section>
@@ -925,20 +966,20 @@
   const monthLabel = (mk) => { const [y, m] = String(mk).split('-').map(Number); return `${R.MONTHS[m - 1]} ${y}`; };
   App.monthLabel = monthLabel;
 
-  function openOwnerForm(o = null) {
+  function openOwnerForm(o = null, defaults = {}) {
     const edit = Boolean(o);
     const id = o?.id || R.uuid();
-    const ct = o?.contact_type || 'owner';
+    const ct = o?.contact_type || defaults.contact_type || 'owner';
     return R.dialog({
-      title: edit ? 'კონტაქტის რედაქტირება' : 'ახალი კონტაქტი', submitLabel: edit ? 'შენახვა' : 'კონტაქტის დამატება',
+      title: edit ? 'კონტაქტის რედაქტირება' : (CONTACT_PAGES[ct] ? `ახალი ${CONTACT_PAGES[ct].one}` : 'ახალი კონტაქტი'), submitLabel: edit ? 'შენახვა' : 'დამატება',
       wide: true,
       body: `<div class="form-grid">
         <label class="field"><span class="field-label">კონტაქტის ტიპი</span>
           <select name="contact_type" id="ow-contact-type">
-            <option value="owner" ${ct === 'owner' ? 'selected' : ''}>მესაკუთრე (მფლობელი)</option>
+            <option value="owner" ${ct === 'owner' ? 'selected' : ''}>მეპატრონე (მესაკუთრე)</option>
             <option value="seller" ${ct === 'seller' ? 'selected' : ''}>გამყიდველი</option>
             <option value="buyer" ${ct === 'buyer' ? 'selected' : ''}>მყიდველი</option>
-            <option value="renter" ${ct === 'renter' ? 'selected' : ''}>დამქირავებელი</option>
+            <option value="renter" ${ct === 'renter' ? 'selected' : ''}>მდგმური</option>
             <option value="other" ${ct === 'other' ? 'selected' : ''}>სხვა კონტაქტი</option>
           </select>
         </label>

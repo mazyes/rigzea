@@ -111,7 +111,7 @@
     transactionType: { sale: 'იყიდება', long_term: 'ქირავდება', daily: 'დღიურად' },
     transactionTypeTone: { sale: 'ok', long_term: 'info', daily: 'warn' },
     propertyType: { apartment: 'ბინა', house: 'სახლი / აგარაკი', commercial: 'კომერციული', land: 'მიწის ნაკვეთი' },
-    contactType: { buyer: 'მყიდველი', renter: 'დამქირავებელი', owner: 'მესაკუთრე', seller: 'გამყიდველი', other: 'სხვა' },
+    contactType: { buyer: 'მყიდველი', renter: 'მდგმური', owner: 'მეპატრონე', seller: 'გამყიდველი', other: 'სხვა' },
     contactTypeTone: { buyer: 'ok', renter: 'info', owner: 'warn', seller: 'ok', other: 'neutral' },
     leadSource: { instagram: 'Instagram', facebook: 'Facebook', myhome: 'MyHome.ge', ss_ge: 'SS.ge', referral: 'რეკომენდაცია', walk_in: 'ოფისში მოსვლა', website: 'ვებსაიტი', other: 'სხვა' },
     role: { owner: 'ანგარიშის მფლობელი', admin: 'ადმინისტრატორი', manager: 'მენეჯერი', staff: 'თანამშრომელი' },

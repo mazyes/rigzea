@@ -261,41 +261,94 @@
     if (v) { history.replaceState(null, '', '/app/#/' + ({ dashboard: 'today', reports: 'finance' }[v] || v)); }
   }
 
+  // Navigation is grouped by what the user is doing: renting out or selling.
+  // Each item is one destination; ?type= scopes the shared list views to it.
   const NAV = [
-    { id: 'today', label: 'მთავარი', icon: 'today' },
-    { id: 'tasks', label: 'საქმეები', icon: 'tasks' },
-    { id: 'apartments', label: 'ბინები', icon: 'building' },
-    { id: 'deals', label: 'გარიგებები', icon: 'wallet' },
-    { id: 'owners', label: 'მფლობელები', icon: 'owner' },
-    { id: 'finance', label: 'ფინანსები', icon: 'wallet' },
-    { id: 'team', label: 'გუნდი', icon: 'team' },
-    { id: 'settings', label: 'პარამეტრები', icon: 'settings' },
+    { items: [
+      { id: 'today', label: 'მთავარი', icon: 'today', href: '#/today' },
+      { id: 'tasks', label: 'საქმეები', icon: 'tasks', href: '#/tasks' },
+    ] },
+    { id: 'rent', label: 'გაქირავება', icon: 'key', items: [
+      { id: 'rent-apts', label: 'ბინები', icon: 'building', href: '#/apartments?type=rent' },
+      { id: 'renters', label: 'მდგმურები', icon: 'user', href: '#/owners?type=renter' },
+      { id: 'landlords', label: 'მეპატრონეები', icon: 'owner', href: '#/owners?type=owner' },
+      { id: 'rent-deals', label: 'გარიგებები', icon: 'wallet', href: '#/deals?type=rental' },
+    ] },
+    { id: 'sale', label: 'გაყიდვა', icon: 'building', items: [
+      { id: 'sale-apts', label: 'ბინები', icon: 'building', href: '#/apartments?type=sale' },
+      { id: 'buyers', label: 'მყიდველები', icon: 'user', href: '#/owners?type=buyer' },
+      { id: 'sellers', label: 'გამყიდველები', icon: 'owner', href: '#/owners?type=seller' },
+      { id: 'sale-deals', label: 'გარიგებები', icon: 'wallet', href: '#/deals?type=sale' },
+    ] },
+    { id: 'manage', label: 'მართვა', items: [
+      { id: 'finance', label: 'ფინანსები', icon: 'wallet', href: '#/finance' },
+      { id: 'team', label: 'გუნდი', icon: 'team', href: '#/team' },
+      { id: 'settings', label: 'პარამეტრები', icon: 'settings', href: '#/settings' },
+    ] },
   ];
+  const CONTACT_NAV = { renter: 'renters', owner: 'landlords', buyer: 'buyers', seller: 'sellers' };
+  const aptSection = (a) => (a?.transaction_type === 'sale' ? 'sale' : 'rent');
+  const contactSection = (ct) => (['buyer', 'seller'].includes(ct) ? 'sale' : 'rent');
+  const sectionOf = (itemId) => NAV.find(g => g.items.some(i => i.id === itemId));
+
+  // The nav item the current route belongs to (detail pages follow their record).
+  function navKey(r = route()) {
+    const type = r.params.get('type');
+    if (r.name === 'apartments') {
+      if (r.id) return H.apt(r.id) ? `${aptSection(H.apt(r.id))}-apts` : null;
+      return type === 'sale' ? 'sale-apts' : type === 'rent' ? 'rent-apts' : null;
+    }
+    if (r.name === 'owners') {
+      if (r.id) return CONTACT_NAV[H.owner(r.id)?.contact_type || 'owner'] || null;
+      return type ? CONTACT_NAV[type] || null : 'landlords';
+    }
+    if (r.name === 'deals') return type === 'sale' ? 'sale-deals' : type === 'rental' ? 'rent-deals' : null;
+    return r.name;
+  }
 
   function navCounts() {
     if (!S.data) return {};
     const overdue = S.data.tasks.filter(H.isOverdue).length;
     const pending = S.data.approvals.filter(a => R.approvalStatus(a) === 'pending').length;
-    const activeDeals = (S.data.deals || []).filter(d => !['closed', 'lost'].includes(d.stage)).length;
+    const open = (S.data.deals || []).filter(d => !['closed', 'lost'].includes(d.stage));
+    const sale = open.filter(d => d.deal_type === 'sale').length;
+    const rent = open.length - sale;
+    const dealCount = (n) => (n ? { n, label: `${n} აქტიური გარიგება` } : null);
     return {
       tasks: overdue ? { n: overdue, danger: true, label: `${overdue} ვადაგადაცილებული` } : null,
-      owners: pending ? { n: pending, label: `${pending} პასუხს ელოდება` } : null,
-      deals: activeDeals ? { n: activeDeals, label: `${activeDeals} აქტიური გარიგება` } : null
+      landlords: pending ? { n: pending, label: `${pending} თანხმობა პასუხს ელოდება` } : null,
+      'rent-deals': dealCount(rent),
+      'sale-deals': dealCount(sale),
     };
   }
 
-  function renderShell() {
-    const r = route();
-    const counts = navCounts();
+  function navLinks(group, key, counts, cls = 'nav-item') {
     const countHtml = (c) => c ? `<span class="count ${c.danger ? 'count-danger' : ''}" title="${esc(c.label)}">${c.n}</span>` : '';
-    $('#rail').innerHTML = NAV.map(n => `<a class="nav-item" href="#/${n.id}" ${r.name === n.id ? 'aria-current="page"' : ''}>${icon(n.icon)}<span>${n.label}</span>${countHtml(counts[n.id])}</a>`).join('')
-      + `<div class="rail-foot">${S.data ? `${S.data.apartments.filter(a => a.status !== 'archived').length} ბინა · ${S.data.owners.length} მფლობელი · ${S.data.members.length} წევრი` : ''}</div>`;
+    return group.items.map(n => `<a class="${cls}" href="${n.href}" ${key === n.id ? 'aria-current="page"' : ''}>${icon(n.icon)}<span>${n.label}</span>${countHtml(counts[n.id])}</a>`).join('');
+  }
 
-    const mobile = ['today', 'tasks', 'apartments', 'deals', 'finance'];
-    const moreActive = !mobile.includes(r.name);
-    $('#bottom-nav').innerHTML = mobile.map(id => { const n = NAV.find(x => x.id === id); return `<a href="#/${id}" ${r.name === id ? 'aria-current="page"' : ''}>${icon(n.icon, 20)}<span>${n.label}</span>${countHtml(counts[id])}</a>`; }).join('')
-      + `<button type="button" id="btn-more" ${moreActive ? 'aria-current="page"' : ''}>${icon('menu', 20)}<span>მეტი</span>${countHtml(counts.owners)}</button>`;
+  function renderShell() {
+    const key = S.data ? navKey() : route().name;
+    const counts = navCounts();
+    const section = sectionOf(key);
+    $('#rail').innerHTML = NAV.map(g => `${g.label ? `<div class="nav-group">${g.label}</div>` : ''}${navLinks(g, key, counts)}`).join('')
+      + `<div class="rail-foot">${S.data ? `${S.data.apartments.filter(a => a.status !== 'archived').length} ბინა · ${S.data.owners.length} კონტაქტი · ${S.data.members.length} წევრი` : ''}</div>`;
+
+    // Phone: two primary pages, the two sections, and the full menu.
+    const tab = (href, ic, label, active, count) => `<a href="${href}" ${active ? 'aria-current="page"' : ''}>${icon(ic, 20)}<span>${label}</span>${count ? `<span class="count ${count.danger ? 'count-danger' : ''}">${count.n}</span>` : ''}</a>`;
+    const sectionTab = (id) => { const g = NAV.find(x => x.id === id); return tab(g.items[0].href, g.icon, g.label, section?.id === id); };
+    const inMenu = !['today', 'tasks'].includes(key) && !['rent', 'sale'].includes(section?.id);
+    $('#bottom-nav').innerHTML = tab('#/today', 'today', 'მთავარი', key === 'today') + tab('#/tasks', 'tasks', 'საქმეები', key === 'tasks', counts.tasks)
+      + sectionTab('rent') + sectionTab('sale')
+      + `<button type="button" id="btn-more" ${inMenu ? 'aria-current="page"' : ''}>${icon('menu', 20)}<span>მენიუ</span></button>`;
     $('#btn-more').onclick = openMoreSheet;
+
+    // Phone: the pages of the current section, right above the content.
+    const bar = $('#section-bar');
+    const showBar = ['rent', 'sale'].includes(section?.id);
+    bar.hidden = !showBar;
+    bar.setAttribute('aria-label', showBar ? section.label : 'სექცია');
+    bar.innerHTML = showBar ? navLinks(section, key, counts, 'section-tab') : '';
 
     // Organization switcher
     const sw = $('#org-switch');
@@ -330,10 +383,11 @@
   }
 
   function openMoreSheet() {
-    const r = route();
+    const key = navKey();
+    const counts = navCounts();
     R.dialog({
       title: 'მენიუ',
-      body: `<nav class="menu-list" style="padding:0">${NAV.filter(n => !['today', 'tasks', 'apartments', 'finance'].includes(n.id)).map(n => `<a href="#/${n.id}" data-close ${r.name === n.id ? 'aria-current="page"' : ''}>${icon(n.icon)} ${n.label}</a>`).join('')}
+      body: `<nav class="menu-list" style="padding:0">${NAV.map(g => `${g.label ? `<div class="nav-group">${g.label}</div>` : ''}${navLinks(g, key, counts, '')}`).join('')}
         <button type="button" data-action="signout">${icon('logout')} გამოსვლა</button></nav>`,
       onOpen: (form, dlg) => $$('a', form).forEach(a => a.addEventListener('click', () => dlg.close())),
     });
@@ -479,6 +533,8 @@
   // ---------------------------------------------------------------------------
   async function enterShell() {
     showScreen('shell');
+    // Created here so the app and demo pages share it without markup changes.
+    if (!$('#section-bar')) $('#view').insertAdjacentHTML('beforebegin', '<nav class="section-bar" id="section-bar" hidden></nav>');
     hydrateIcons();
     lastViewName = route().name;
     S.data = null;
@@ -623,7 +679,7 @@
     $('#btn-plan-banner').onclick = () => openUpgrade(st.locked ? { kind: 'locked' } : { kind: 'info' });
   }
 
-  window.App = { S, H, views, isManager, isAdmin, refresh, render, renderShell, go, route, taskHref, closeTaskOverlay, upsertLocal, logEvent,
+  window.App = { S, H, views, aptSection, contactSection, isManager, isAdmin, refresh, render, renderShell, go, route, taskHref, closeTaskOverlay, upsertLocal, logEvent,
     PLANS, PLAN_ORDER, FEATURE_LABEL, CONTACT, planState, can, guardLimit, guardFeature, openUpgrade, planCardsHtml, waLink, activeApartments, seatsUsed };
 
   document.addEventListener('DOMContentLoaded', () => {

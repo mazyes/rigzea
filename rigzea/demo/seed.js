@@ -1,4 +1,4 @@
-// Rigzea public demo: realistic sample portfolio for a Tbilisi rental agency.
+// Rigzea public demo: realistic sample portfolio for a Tbilisi agency that rents out and sells.
 // Dates are relative to the moment the demo is seeded (see demo/mock.js).
 (function () {
   'use strict';
@@ -28,6 +28,8 @@
     const U = { nino: 'a1e00000-0000-4000-8000-000000000001', ana: 'a1e00000-0000-4000-8000-000000000002', giorgi: 'a1e00000-0000-4000-8000-000000000003', levan: 'a1e00000-0000-4000-8000-000000000004' };
     const M = { nino: 'b1e00000-0000-4000-8000-000000000001', ana: 'b1e00000-0000-4000-8000-000000000002', giorgi: 'b1e00000-0000-4000-8000-000000000003', levan: 'b1e00000-0000-4000-8000-000000000004' };
     const O = (n) => 'c1e00000-0000-4000-8000-00000000000' + n;
+    const C = (n) => 'c2e00000-0000-4000-8000-00000000000' + n; // clients: renters and buyers
+    const SD = (n) => 'e2e00000-0000-4000-8000-00000000000' + n; // sale deals
     const A = (n) => 'd1e00000-0000-4000-8000-0000000000' + String(n).padStart(2, '0');
     const DL = (n) => 'e1e00000-0000-4000-8000-00000000000' + n;
     const TK = (n) => 'f1e00000-0000-4000-8000-00000000000' + n;
@@ -97,7 +99,26 @@
         owner_id: O(3), status: 'active', rental_type: 'long_term', monthly_rent: 1200, currency: 'GEL', rooms: 2, bedrooms: 1, area_sqm: 57, floor: '3', total_floors: 10,
         tenant_name: 'დავით სამხარაძე', tenant_phone: '+995 577 65 43 21', rent_due_day: 1, deposit_amount: 1200, lease_end: day(30), lat: 41.7700, lng: 44.7640,
         amenities: ['wifi', 'heating', 'elevator'], photos: photos('kitchen') },
-    ].map((a, i) => ({ ...base, commission_pct: 10, agent_commission_percent: 50, cobroker_split: 50, agent_name: 'ნინო ბერიძე', agent_phone: phone, is_archived: false, created_at: at(-(60 - i * 4) * D), ...a }));
+      // For sale
+      { id: A(11), name: 'ვაკე · ფალიაშვილის ქ., 3-ოთახიანი (იყიდება)', slug: 'vake-paliashvili-sale', city: 'თბილისი', district: 'ვაკე', address: 'ზაქარია ფალიაშვილის ქ. 52', unit_number: '17',
+        owner_id: O(7), transaction_type: 'sale', property_type: 'apartment', status: 'active', sale_price: 245000, price_sqm: 2333, currency: 'USD', rooms: 3, bedrooms: 2, bathrooms: 2, area_sqm: 105, floor: '5', total_floors: 10,
+        badge: 'new', lat: 41.7068, lng: 44.7712, amenities: ['heating', 'balcony', 'elevator', 'parking'],
+        description: '3-ოთახიანი ბინა ვაკეში, ახალ კორპუსში. მწვანე ჩარჩო, ორი სველი წერტილი, მიწისქვეშა პარკინგი.',
+        description_en: '3-room apartment in a new building in Vake. Two bathrooms and underground parking.',
+        photos: photos('living', 'kitchen', 'room') },
+      { id: A(12), name: 'საბურთალო · ყაზბეგის გამზ., 2-ოთახიანი (იყიდება)', slug: 'saburtalo-kazbegi-sale', city: 'თბილისი', district: 'საბურთალო', address: 'ალექსანდრე ყაზბეგის გამზ. 24', unit_number: '88',
+        owner_id: O(8), transaction_type: 'sale', property_type: 'apartment', status: 'reserved', sale_price: 128000, price_sqm: 1969, currency: 'USD', rooms: 2, bedrooms: 1, bathrooms: 1, area_sqm: 65, floor: '12', total_floors: 18,
+        badge: 'hot', lat: 41.7255, lng: 44.7560, amenities: ['heating', 'balcony', 'elevator'],
+        description: 'გარემონტებული 2-ოთახიანი ბინა ყაზბეგის გამზირზე, მეტროსთან ახლოს. ავეჯით და ტექნიკით.',
+        description_en: 'Renovated 2-room apartment on Kazbegi Avenue near the metro. Furnished.',
+        photos: photos('lounge', 'interior', 'kitchen') },
+      { id: A(13), name: 'წყნეთი · კერძო სახლი ეზოთი (იყიდება)', slug: 'tskneti-house-sale', city: 'თბილისი', district: 'წყნეთი', address: 'წყნეთის გზატკეცილი 31', unit_number: '',
+        owner_id: O(7), transaction_type: 'sale', property_type: 'house', status: 'active', sale_price: 390000, price_sqm: 1773, currency: 'USD', rooms: 6, bedrooms: 4, bathrooms: 3, area_sqm: 220, floor: '2', total_floors: 2,
+        badge: 'exclusive', lat: 41.6890, lng: 44.7010, amenities: ['heating', 'parking', 'security'],
+        description: 'ორსართულიანი სახლი წყნეთში, 600 მ² ეზოთი და ხეხილის ბაღით. ქალაქის ცენტრამდე 20 წუთია.',
+        description_en: 'Two-storey house in Tskneti with a 600 sqm garden, 20 minutes from the city centre.',
+        photos: photos('villa', 'house', 'living') },
+    ].map((a, i) => ({ ...base, transaction_type: 'long_term', property_type: 'apartment', commission_pct: 10, agent_commission_percent: 50, cobroker_split: 50, agent_name: 'ნინო ბერიძე', agent_phone: phone, is_archived: false, created_at: at(-(60 - i * 4) * D), ...a }));
 
     const deals = [
       { id: DL(1), apartment_id: A(1), client_name: 'ლუკა ჩიქოვანი', client_phone: '+995 591 11 22 33', stage: 'closed', deal_amount: 1200, currency: 'USD', commission_percent: 50, owner_bonus: 0, partner_agent: null, cobroker_split: 0, created_by: U.nino, created_at: lastMonth(10), closed_at: thisMonthPast(4), target_move_in: thisMonthAhead(1) },
@@ -110,10 +131,16 @@
         criteria: { city: 'თბილისი', district: 'ვაკე', budget_max: 1300, currency: 'USD', bedrooms: 1, pets: true } },
       { id: DL(7), apartment_id: A(6), client_name: 'ირაკლი მესხი', client_phone: '+995 571 23 45 67', stage: 'active', deal_amount: 1300, currency: 'GEL', commission_percent: 50, owner_bonus: 0, partner_agent: null, cobroker_split: 0, created_by: U.nino, created_at: thisMonthPast(1), target_move_in: thisMonthAhead(12) },
       { id: DL(8), apartment_id: A(7), client_name: 'Ahmet Yılmaz', client_phone: '+90 532 123 45 67', stage: 'viewing', deal_amount: 900, currency: 'USD', commission_percent: 50, owner_bonus: 0, partner_agent: 'ბექა დიასამიძე · Batumi Estate', cobroker_split: 50, created_by: U.giorgi, created_at: thisMonthPast(3), target_move_in: thisMonthAhead(8) },
+      // Sales
+      { id: SD(1), deal_type: 'sale', contact_type: 'buyer', apartment_id: A(11), client_name: 'ნინო ასათიანი', client_phone: '+995 599 71 82 93', stage: 'negotiation', deal_amount: 240000, currency: 'USD', commission_percent: 3, owner_bonus: 0, partner_agent: null, cobroker_split: 0, lead_source: 'myhome', created_by: U.nino, created_at: thisMonthPast(8), target_move_in: thisMonthAhead(15) },
+      { id: SD(2), deal_type: 'sale', contact_type: 'buyer', apartment_id: A(12), client_name: 'Michael Brandt', client_phone: '+49 170 555 0142', client_email: 'm.brandt@example.com', stage: 'deposit', deal_amount: 126000, currency: 'USD', commission_percent: 3, owner_bonus: 0, partner_agent: 'ლაშა გოგიბერიძე · Tbilisi Prime', partner_phone: '+995 595 44 55 66', cobroker_split: 50, lead_source: 'referral', created_by: U.ana, created_at: thisMonthPast(12), deposit_paid_at: thisMonthPast(2), target_move_in: thisMonthAhead(9) },
+      { id: SD(3), deal_type: 'sale', contact_type: 'buyer', apartment_id: A(13), client_name: 'გიგა ფხაკაძე', client_phone: '+995 577 36 47 58', stage: 'viewing', deal_amount: 390000, currency: 'USD', commission_percent: 3, owner_bonus: 0, partner_agent: null, cobroker_split: 0, lead_source: 'instagram', created_by: U.giorgi, created_at: thisMonthPast(3), target_move_in: thisMonthAhead(20) },
+      { id: SD(4), deal_type: 'sale', contact_type: 'buyer', apartment_id: null, client_name: 'სალომე ჯიქია', client_phone: '+995 593 15 26 37', stage: 'enquiry', deal_amount: 150000, currency: 'USD', commission_percent: 3, owner_bonus: 0, partner_agent: null, cobroker_split: 0, lead_source: 'facebook', created_by: U.nino, created_at: thisMonthPast(1), target_move_in: thisMonthAhead(25),
+        notes: 'ეძებს 2-ოთახიან ბინას საბურთალოზე ან დიდ დიღომში, ბიუჯეტი $150 000-მდე.' },
     ].map(d => {
       const gross = d.deal_amount * d.commission_percent / 100 + Number(d.owner_bonus || 0);
       const partner = d.partner_agent ? gross * d.cobroker_split / 100 : 0;
-      return { ...base, criteria: {}, commission_amount: d.deal_amount * d.commission_percent / 100, net_commission: gross - partner, updated_at: d.closed_at || d.created_at, ...d };
+      return { ...base, deal_type: 'rental', contact_type: 'renter', criteria: {}, commission_amount: d.deal_amount * d.commission_percent / 100, net_commission: gross - partner, updated_at: d.closed_at || d.created_at, ...d };
     });
 
     const tasks = [
@@ -158,7 +185,18 @@
           { id: O(4), ...base, name: 'ქეთევან ჯაფარიძე', phone: '+995 568 12 34 56', email: null, created_at: at(-35 * D) },
           { id: O(5), ...base, name: 'ნათია ბაქრაძე', phone: '+995 571 65 43 21', email: 'natia@example.ge', created_at: at(-30 * D) },
           { id: O(6), ...base, name: 'დავით ცქიტიშვილი', phone: '+995 555 24 68 10', email: null, created_at: at(-20 * D) },
-        ],
+          // Sellers
+          { id: O(7), ...base, contact_type: 'seller', name: 'ვახტანგ ერისთავი', phone: '+995 599 62 73 84', email: 'vakho@example.ge', lead_source: 'referral', created_at: at(-18 * D) },
+          { id: O(8), ...base, contact_type: 'seller', name: 'ეკა ნიჟარაძე', phone: '+995 571 48 59 60', email: null, lead_source: 'myhome', created_at: at(-12 * D) },
+          // Renters
+          { id: C(1), ...base, contact_type: 'renter', name: 'ელენე ხარაიშვილი', phone: '+995 555 98 76 54', email: null, budget_max: 1300, budget_currency: 'USD', preferred_city: 'თბილისი', preferred_district: 'ვაკე', requirements: '1 საძინებელი, შინაური ცხოველი დასაშვები', lead_source: 'instagram', created_at: at(-2 * D) },
+          { id: C(2), ...base, contact_type: 'renter', name: 'ირაკლი მესხი', phone: '+995 571 23 45 67', email: null, budget_max: 1400, budget_currency: 'GEL', preferred_city: 'თბილისი', preferred_district: 'დიდუბე', requirements: 'მეტროსთან ახლოს', lead_source: 'ss_ge', created_at: at(-1 * D) },
+          { id: C(3), ...base, contact_type: 'renter', name: 'Daniel Kowalski', phone: '+49 151 2345 6789', email: 'daniel.k@example.com', budget_max: 1000, budget_currency: 'USD', preferred_city: 'თბილისი', preferred_district: 'მთაწმინდა', requirements: 'ავეჯით, სწრაფი ინტერნეტი', lead_source: 'referral', created_at: at(-5 * D) },
+          // Buyers
+          { id: C(4), ...base, contact_type: 'buyer', name: 'ნინო ასათიანი', phone: '+995 599 71 82 93', email: 'nino.a@example.ge', budget_min: 200000, budget_max: 250000, budget_currency: 'USD', preferred_city: 'თბილისი', preferred_district: 'ვაკე', requirements: '3 ოთახი, პარკინგი', lead_source: 'myhome', created_at: at(-8 * D) },
+          { id: C(5), ...base, contact_type: 'buyer', name: 'Michael Brandt', phone: '+49 170 555 0142', email: 'm.brandt@example.com', budget_max: 130000, budget_currency: 'USD', preferred_city: 'თბილისი', preferred_district: 'საბურთალო', requirements: 'საინვესტიციო, გასაქირავებლად', lead_source: 'referral', created_at: at(-12 * D) },
+          { id: C(6), ...base, contact_type: 'buyer', name: 'სალომე ჯიქია', phone: '+995 593 15 26 37', email: null, budget_max: 150000, budget_currency: 'USD', preferred_city: 'თბილისი', preferred_district: 'საბურთალო', requirements: '2 ოთახი, ახალი რემონტი', lead_source: 'facebook', created_at: at(-1 * D) },
+        ].map(o => ({ contact_type: 'owner', ...o })),
         apartments,
         deals,
         tasks,

@@ -170,7 +170,7 @@
       const linked = a.task_id && H.task(a.task_id);
       if (!linked && !(Date.now() - new Date(a.created_at) > 24 * 3600e3)) return;
       add({ sev: 'warn', tags: ['owner', 'repair'], taskId: linked?.id, title: a.title || a.description || 'ხარჯის თანხმობა', sub: `${H.aptName(a.apartment_id)} · ${money(a.amount)}`,
-        why: `მფლობელი ${R.elapsed(a.created_at)} არ პასუხობს`, href: linked ? App.taskHref(linked.id) : '#/owners', action: { share: a.id } });
+        why: `მფლობელი ${R.elapsed(a.created_at)} არ პასუხობს`, href: linked ? App.taskHref(linked.id) : '#/owners?type=owner&tab=approvals', action: { share: a.id } });
     });
     open.filter(t => !seen.has(t.id) && t.status === 'blocked' && !S.data.approvals.some(a => a.task_id === t.id && a.status === 'pending')).forEach(t => add({
       sev: 'warn', tags: [tagOf(t)], taskId: t.id, title: t.title, sub: H.aptName(t.apartment_id), why: `შეჩერებულია: ${t.blocked_reason || 'მიზეზი არ არის მითითებული'}`, href: App.taskHref(t.id),
@@ -410,7 +410,7 @@
         </div>
         <div class="stack">
           <section class="card">
-            <div class="card-head"><h2>მფლობელის გადაწყვეტილებები <span class="count">${pendingApprovals.length}</span></h2><a class="link-btn small" href="#/owners">ყველა</a></div>
+            <div class="card-head"><h2>მფლობელის გადაწყვეტილებები <span class="count">${pendingApprovals.length}</span></h2><a class="link-btn small" href="#/owners?type=owner&tab=approvals">ყველა</a></div>
             ${pendingApprovals.length ? approvalsList(pendingApprovals.slice(0, 5), true) : emptyInline('პასუხის მომლოდინე მოთხოვნა არ არის.')}
           </section>
           <section class="card">

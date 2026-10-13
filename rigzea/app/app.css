@@ -249,6 +249,11 @@ img { max-width: 100%; display: block; }
 .nav-item:hover { background: var(--hover); }
 .nav-item[aria-current="page"] { background: var(--brand-soft); color: var(--brand); }
 .nav-item .count { margin-left: auto; }
+.nav-group { padding: 14px 10px 4px; font-size: 11.5px; font-weight: 600; letter-spacing: .02em; color: var(--muted); }
+.menu-list .nav-group { padding: 12px 10px 2px; }
+.menu-list a[aria-current="page"] { background: var(--brand-soft); color: var(--brand); }
+.menu-list a .count { margin-left: auto; }
+.section-bar { display: none; }
 .rail-foot { margin-top: auto; padding: 10px; font-size: 12px; color: var(--muted); border-top: 1px solid var(--line); }
 .main { min-width: 0; padding: 20px 24px 48px; }
 
@@ -481,7 +486,7 @@ button.row { width: 100%; border: 0; border-bottom: 1px solid var(--line); backg
 .print-only { display: none; }
 @media print {
   body { background: #fff; color: #000; }
-  .topbar, .rail, .bottom-nav, .page-actions, .chips, .toolbar, .no-print, #toast-host { display: none !important; }
+  .topbar, .rail, .bottom-nav, .section-bar, .page-actions, .chips, .toolbar, .no-print, #toast-host { display: none !important; }
   .layout { display: block; }
   .main { padding: 0; }
   .card { border: 0; box-shadow: none; }
@@ -521,6 +526,19 @@ button.row { width: 100%; border: 0; border-bottom: 1px solid var(--line); backg
     border: 0; background: none; font-size: 11px; font-weight: 500; color: var(--muted); text-decoration: none; position: relative; cursor: pointer;
   }
   .bottom-nav [aria-current="page"] { color: var(--brand); }
+
+  .section-bar:not([hidden]) {
+    display: flex; gap: 6px; padding: 8px 12px; overflow-x: auto; scrollbar-width: none;
+    position: sticky; top: var(--top); z-index: 20; background: var(--bg); border-bottom: 1px solid var(--line);
+  }
+  .section-tab {
+    display: inline-flex; align-items: center; gap: 6px; flex: none; min-height: 38px; padding: 0 12px;
+    border: 1px solid var(--line-strong); border-radius: 999px; background: var(--surface);
+    color: var(--ink-2); font-size: 13px; font-weight: 500; text-decoration: none; white-space: nowrap;
+  }
+  .section-tab .icon { width: 16px; height: 16px; }
+  .section-tab[aria-current="page"] { background: var(--brand); border-color: var(--brand); color: #fff; }
+  .section-tab[aria-current="page"] .count { background: color-mix(in srgb, #fff 25%, transparent); color: inherit; }
   .bottom-nav .count { position: absolute; top: 6px; left: calc(50% + 6px); min-width: 18px; height: 18px; font-size: 10.5px; }
 
   .page-head h1 { font-size: 18px; }

@@ -661,6 +661,71 @@ test('16. sales public listing: sales price, sqm price, no rental labels or inte
   return page;
 });
 
+test('17. navigation: rentals and sales sections scope apartments, contacts and deals', async (browser) => {
+  const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
+  await page.goto(BASE + '/app/');
+  await page.getByRole('heading', { name: 'დღეს', exact: true }).waitFor();
+
+  // Buyers and landlords are separate pages reached from the menu
+  await page.locator('#rail a[href="#/owners?type=buyer"]').click();
+  await page.getByRole('heading', { name: 'მყიდველები', exact: true }).waitFor();
+  await page.locator('#o-body .row', { hasText: 'გიორგი მაისურაძე' }).waitFor();
+  assert.strictEqual(await page.locator('#o-body .row', { hasText: 'დავით მამულაშვილი' }).count(), 0, 'landlord is not listed among buyers');
+  assert.strictEqual(await page.locator('#rail [aria-current="page"]').getAttribute('href'), '#/owners?type=buyer');
+
+  await page.locator('#rail a[href="#/owners?type=owner"]').click();
+  await page.getByRole('heading', { name: 'მეპატრონეები', exact: true }).waitFor();
+  await page.locator('#o-body .row', { hasText: 'დავით მამულაშვილი' }).waitFor();
+  assert.strictEqual(await page.locator('#o-body .row', { hasText: 'გიორგი მაისურაძე' }).count(), 0, 'buyer is not listed among landlords');
+
+  // A contact added from the tenants page is saved as a tenant
+  await page.locator('#rail a[href="#/owners?type=renter"]').click();
+  await page.getByRole('heading', { name: 'მდგმურები', exact: true }).waitFor();
+  await page.locator('#o-new').click();
+  const dlg = page.locator('dialog[open]');
+  assert.strictEqual(await dlg.locator('#ow-contact-type').inputValue(), 'renter');
+  await dlg.locator('input[name=name]').fill('ლიკა თოდუა');
+  await dlg.locator('[data-submit]').click();
+  await page.locator('dialog[open]').waitFor({ state: 'detached' });
+  await page.locator('#o-body .row', { hasText: 'ლიკა თოდუა' }).waitFor();
+  assert.strictEqual((await db(page)).tables.owners.find(o => o.name === 'ლიკა თოდუა').contact_type, 'renter');
+
+  // The contact's own page keeps the section highlighted
+  await page.locator('#o-body .row', { hasText: 'ლიკა თოდუა' }).click();
+  await page.getByRole('heading', { name: 'ლიკა თოდუა' }).waitFor();
+  assert.strictEqual(await page.locator('#rail [aria-current="page"]').getAttribute('href'), '#/owners?type=renter');
+
+  // Apartments and deals follow the section
+  await page.locator('#rail a[href="#/apartments?type=sale"]').click();
+  await page.getByRole('heading', { name: 'გასაყიდი ბინები', exact: true }).waitFor();
+  assert.strictEqual(await page.locator('[data-tp]').count(), 0, 'no type filter inside the sales section');
+  await page.locator('#rail a[href="#/deals?type=sale"]').click();
+  await page.getByRole('heading', { name: 'გაყიდვის გარიგებები', exact: true }).waitFor();
+  await page.locator('#btn-deal-new').click();
+  assert.strictEqual(await page.locator('dialog[open] #deal-type-select').inputValue(), 'sale');
+  await page.keyboard.press('Escape');
+  await page.context().close();
+
+  // Phone: section tabs above the content, sections in the bottom bar, the rest in the menu
+  const phone = await newPage(browser, { viewport: PHONE, login: USERS.manager });
+  for (const hash of ['#/apartments?type=rent', '#/owners?type=renter', '#/owners?type=owner&tab=approvals', '#/deals?type=sale']) {
+    await phone.goto(BASE + '/app/' + hash);
+    await phone.locator('#view h1').waitFor();
+    await phone.waitForTimeout(150);
+    const { sw, w } = await phone.evaluate(() => ({ sw: document.documentElement.scrollWidth, w: window.innerWidth }));
+    assert(sw <= w, `${hash} overflows: ${sw} > ${w}`);
+    assert.strictEqual(await phone.locator('#section-bar a').count(), 4, `${hash} shows the section pages`);
+  }
+  assert.strictEqual((await phone.locator('#bottom-nav [aria-current="page"]').innerText()).trim(), 'გაყიდვა');
+  await phone.locator('#section-bar a[href="#/owners?type=seller"]').click();
+  await phone.getByRole('heading', { name: 'გამყიდველები', exact: true }).waitFor();
+  await phone.locator('#btn-more').click();
+  await phone.locator('dialog[open] a[href="#/finance"]').click();
+  await phone.getByRole('heading', { name: 'ფინანსები', exact: true }).waitFor();
+  assert(await phone.locator('#section-bar').isHidden(), 'no section tabs outside a section');
+  return phone;
+});
+
 (async () => {
   const server = await serve();
   const browser = await launch();

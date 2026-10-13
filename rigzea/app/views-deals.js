@@ -90,17 +90,24 @@
   // DEALS VIEW (tabs: pipeline · commissions · selections)
   // ===========================================================================
   let dealTypeFilter = 'all';
+  // Section pages (#/deals?type=rental|sale) show one side of the business.
+  let dealSection = null;
+  const inSection = (d) => !dealSection || (dealSection === 'sale') === (d.deal_type === 'sale');
 
   App.views.deals = (r = {}) => {
     const tab = ['commissions', 'selections'].includes(r.id) ? r.id : 'pipeline';
-    const deals = S.data.deals || [];
+    const type = r.params?.get('type');
+    dealSection = ['rental', 'sale'].includes(type) ? type : null;
+    const qs = dealSection ? `?type=${dealSection}` : '';
+    const deals = (S.data.deals || []).filter(inSection);
     const activeCount = deals.filter(d => OPEN_STAGES.includes(d.stage)).length;
+    const title = dealSection === 'sale' ? 'გაყიდვის გარიგებები' : dealSection === 'rental' ? 'გაქირავების გარიგებები' : 'გარიგებები და საკომისიო';
 
     $('#view').innerHTML = `
       <div class="page-head">
         <div>
-          <h1>გარიგებები და საკომისიო</h1>
-          <p class="page-sub muted">${activeCount} აქტიური გარიგება · გაყიდვები და გაქირავება</p>
+          <h1>${title}</h1>
+          <p class="page-sub muted">${activeCount} აქტიური გარიგება${dealSection ? '' : ' · გაყიდვები და გაქირავება'}</p>
         </div>
         <div class="page-actions">
           <button type="button" class="btn btn-secondary" id="btn-matchmaker">${icon('sparkle', 16)} ბინების შერჩევა</button>
@@ -108,13 +115,13 @@
         </div>
       </div>
       <div class="tabs" role="tablist">
-        <a class="tab" role="tab" href="#/deals" aria-selected="${tab === 'pipeline'}">Pipeline (ეტაპები)</a>
-        <a class="tab" role="tab" href="#/deals/commissions" aria-selected="${tab === 'commissions'}">საკომისიოები</a>
-        <a class="tab" role="tab" href="#/deals/selections" aria-selected="${tab === 'selections'}">შერჩევები</a>
+        <a class="tab" role="tab" href="#/deals${qs}" aria-selected="${tab === 'pipeline'}">ეტაპები</a>
+        <a class="tab" role="tab" href="#/deals/commissions${qs}" aria-selected="${tab === 'commissions'}">საკომისიოები</a>
+        <a class="tab" role="tab" href="#/deals/selections${qs}" aria-selected="${tab === 'selections'}">შერჩევები</a>
       </div>
       <div id="deals-body"></div>`;
 
-    $('#btn-deal-new').onclick = () => openDealForm();
+    $('#btn-deal-new').onclick = () => openDealForm(null, dealSection ? { deal_type: dealSection } : {});
     $('#btn-matchmaker').onclick = () => openMatchmakerModal();
 
     if (tab === 'commissions') renderCommissions();
@@ -126,9 +133,9 @@
   // Pipeline
   // ---------------------------------------------------------------------------
   function renderPipeline() {
-    const allDeals = S.data.deals || [];
+    const allDeals = (S.data.deals || []).filter(inSection);
     const DEAL_TYPES = [['all', 'ყველა ტიპი'], ['sale', 'გაყიდვა'], ['rental', 'გაქირავება']];
-    const deals = allDeals.filter(d => dealTypeFilter === 'all' || (d.deal_type || 'rental') === dealTypeFilter);
+    const deals = allDeals.filter(d => dealSection || dealTypeFilter === 'all' || (d.deal_type || 'rental') === dealTypeFilter);
     const cur = displayCur();
     const open = deals.filter(d => OPEN_STAGES.includes(d.stage));
     const closed = deals.filter(d => d.stage === 'closed');
@@ -138,9 +145,9 @@
     const missing = pipe.missing + earned.missing;
 
     $('#deals-body').innerHTML = `
-      <div class="chips" role="group" aria-label="გარიგების ტიპი" style="margin-bottom:12px">
+      ${dealSection ? '' : `<div class="chips" role="group" aria-label="გარიგების ტიპი" style="margin-bottom:12px">
         ${DEAL_TYPES.map(([id, label]) => `<button type="button" class="chip" data-dt="${id}" aria-pressed="${dealTypeFilter === id}">${label} <span class="count">${allDeals.filter(d => id === 'all' || (d.deal_type || 'rental') === id).length}</span></button>`).join('')}
-      </div>
+      </div>`}
       <section class="card" style="margin-bottom:16px">
         <div class="stats">
           <div class="stat"><span class="stat-label">ღია გარიგებების მოცულობა</span><span class="stat-value">${fmtMoney(pipe.value, cur)}</span><span class="stat-note">${open.length} ღია გარიგება</span></div>
@@ -175,7 +182,7 @@
       </div>`;
 
     $$('[data-dt]').forEach(b => b.addEventListener('click', () => { dealTypeFilter = b.dataset.dt; renderPipeline(); }));
-    $('#btn-deal-empty')?.addEventListener('click', () => openDealForm());
+    $('#btn-deal-empty')?.addEventListener('click', () => openDealForm(null, dealSection ? { deal_type: dealSection } : {}));
     bindCurToggle();
     $$('[data-export]').forEach(b => b.addEventListener('click', () => exportDeals(deals, b.dataset.export, b, 'all')));
 
@@ -290,9 +297,9 @@
           <label class="field"><span class="field-label">კონტაქტის ტიპი</span>
             <select name="contact_type" id="deal-contact-type">
               <option value="buyer" ${(v.contact_type || 'buyer') === 'buyer' ? 'selected' : ''}>მყიდველი</option>
-              <option value="renter" ${(v.contact_type) === 'renter' ? 'selected' : ''}>დამქირავებელი</option>
+              <option value="renter" ${(v.contact_type) === 'renter' ? 'selected' : ''}>მდგმური</option>
               <option value="seller" ${(v.contact_type) === 'seller' ? 'selected' : ''}>გამყიდველი</option>
-              <option value="owner" ${(v.contact_type) === 'owner' ? 'selected' : ''}>მესაკუთრე</option>
+              <option value="owner" ${(v.contact_type) === 'owner' ? 'selected' : ''}>მეპატრონე</option>
               <option value="other" ${(v.contact_type) === 'other' ? 'selected' : ''}>სხვა</option>
             </select>
           </label>
@@ -479,7 +486,7 @@
   const commFilter = { month: R.monthKey(), agent: '' };
 
   function commissionRows() {
-    const deals = S.data.deals || [];
+    const deals = (S.data.deals || []).filter(inSection);
     const inMonth = (v) => !commFilter.month || (v && R.monthKey(R.toDate(v)) === commFilter.month);
     return deals.filter(d => {
       if (commFilter.agent && d.created_by !== commFilter.agent) return false;
