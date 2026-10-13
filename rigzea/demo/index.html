@@ -55,6 +55,14 @@
         <button type="submit" class="btn btn-primary btn-block">ბმულის გაგზავნა</button>
         <p class="auth-foot"><button type="button" class="link-btn" data-auth="signin">შესვლაზე დაბრუნება</button></p>
       </form>
+
+      <form id="form-newpass" class="form-stack" novalidate hidden>
+        <div><h1>ახალი პაროლი</h1><p class="page-sub">ჩაწერე ახალი პაროლი. შენახვის შემდეგ პირდაპირ შეხვალ ანგარიშში.</p></div>
+        <div class="form-error" role="alert" hidden></div>
+        <label class="field"><span class="field-label">ახალი პაროლი</span><input type="password" name="password" required minlength="8" autocomplete="new-password" data-error="პაროლი მინიმუმ 8 სიმბოლოს უნდა შეიცავდეს." /><span class="field-hint">მინიმუმ 8 სიმბოლო</span></label>
+        <label class="field"><span class="field-label">გაიმეორე პაროლი</span><input type="password" name="password2" required minlength="8" autocomplete="new-password" data-error="გაიმეორე ახალი პაროლი." /></label>
+        <button type="submit" class="btn btn-primary btn-block">პაროლის შენახვა</button>
+      </form>
     </div>
   </main>
 

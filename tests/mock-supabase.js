@@ -362,6 +362,7 @@
       },
       async signOut() { localStorage.removeItem('rigzea_mock_session'); return { error: null }; },
       async resetPasswordForEmail() { return { data: {}, error: null }; },
+      async updateUser(a) { const u = db.users.find(x => x.id === uid()); if (!u) return { data: null, error: { message: 'Auth session missing' } }; if (a.password) u.password = a.password; save(db); return { data: { user: u }, error: null }; },
       onAuthStateChange() { return { data: { subscription: { unsubscribe() {} } } }; },
     },
     storage: {

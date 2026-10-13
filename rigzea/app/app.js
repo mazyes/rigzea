@@ -42,11 +42,24 @@
     $('#btn-boot-retry').onclick = () => { $('#boot').textContent = 'იტვირთება…'; boot(); };
   }
 
+  // A password-reset link signs the user in and must then ask for the new password.
+  // The link type is read before the auth client clears it from the address.
+  let recovery = /[#&?]type=recovery\b/.test(location.hash + location.search);
+  sb.auth.onAuthStateChange((event) => {
+    if (event !== 'PASSWORD_RECOVERY') return;
+    recovery = true;
+    showAuth('newpass');
+  });
+
   async function boot() {
     try {
       const { data: { session } } = await sb.auth.getSession();
       S.user = session?.user || null;
-      if (!S.user) return showAuth('signin');
+      if (!S.user) {
+        if (recovery) { recovery = false; showAuth('reset'); toast('აღდგენის ბმული ვადაგასულია ან უკვე გამოყენებულია. მოითხოვე ახალი.', { type: 'error', timeout: 9000 }); return; }
+        return showAuth('signin');
+      }
+      if (recovery) return showAuth('newpass');
       // Joins any organizations this email was invited to (no-op otherwise).
       await sb.rpc('accept_my_invitations').then(() => {}, () => {});
       await loadOrgs();
@@ -77,7 +90,7 @@
   // ---------------------------------------------------------------------------
   function showAuth(view) {
     showScreen('auth');
-    ['signin', 'signup', 'reset'].forEach(v => { $('#form-' + v).hidden = v !== view; });
+    ['signin', 'signup', 'reset', 'newpass'].forEach(v => { $('#form-' + v).hidden = v !== view; });
     $('#form-' + view).querySelector('input')?.focus();
   }
 
@@ -102,6 +115,8 @@
     if (/Invalid login/i.test(m)) return 'ელფოსტა ან პაროლი არასწორია.';
     if (/already registered/i.test(m)) return 'ეს ელფოსტა უკვე რეგისტრირებულია. სცადე შესვლა.';
     if (/Email not confirmed/i.test(m)) return 'ელფოსტა ჯერ არ არის დადასტურებული. შეამოწმე შემოსული წერილები.';
+    if (/different from the old/i.test(m)) return 'ახალი პაროლი ძველისგან უნდა განსხვავდებოდეს.';
+    if (/weak|at least \d+ characters/i.test(m)) return 'პაროლი ძალიან სუსტია. გამოიყენე მინიმუმ 8 სიმბოლო.';
     return R.friendlyError(err);
   }
 
@@ -128,6 +143,16 @@
     if (error) throw error;
     showAuth('signin');
     toast('აღდგენის ბმული გაიგზავნა ელფოსტაზე.', { type: 'success' });
+  });
+
+  bindForm($('#form-newpass'), async (v) => {
+    if (v.password !== v.password2) throw new Error('პაროლები ერთმანეთს არ ემთხვევა.');
+    const { error } = await sb.auth.updateUser({ password: v.password });
+    if (error) throw error;
+    recovery = false;
+    history.replaceState(null, '', '/app/');
+    toast('პაროლი შეიცვალა.', { type: 'success' });
+    await boot();
   });
 
   $$('[data-auth]').forEach(b => b.addEventListener('click', () => showAuth(b.dataset.auth)));

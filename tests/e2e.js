@@ -978,6 +978,25 @@ test('22. team: commission split, payout marks, leaderboard and the agent role',
   return agent;
 });
 
+test('23. password reset link asks for a new password before opening the workspace', async (browser) => {
+  const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
+  await page.goto(BASE + '/app/#access_token=x&type=recovery');
+  await page.locator('#form-newpass h1', { hasText: 'ახალი პაროლი' }).waitFor();
+  assert.strictEqual(await page.locator('.layout').isVisible().catch(() => false), false, 'workspace stays closed until the password is set');
+  await page.fill('#form-newpass input[name=password]', 'newpass123');
+  await page.fill('#form-newpass input[name=password2]', 'different1');
+  await page.click('#form-newpass [type=submit]');
+  await page.locator('#form-newpass .form-error', { hasText: 'არ ემთხვევა' }).waitFor();
+  await page.fill('#form-newpass input[name=password2]', 'newpass123');
+  await page.click('#form-newpass [type=submit]');
+  await page.locator('.toast', { hasText: 'პაროლი შეიცვალა' }).waitFor();
+  await page.locator('.layout').waitFor();
+  assert.strictEqual((await db(page)).users.find(u => u.email === USERS.manager.email).password, 'newpass123');
+  assert(!page.url().includes('type=recovery'), 'the recovery marker is removed from the address');
+  for (let i = page.errors.length - 1; i >= 0; i--) if (page.errors[i].includes('არ ემთხვევა')) page.errors.splice(i, 1); // the mismatch above is expected
+  return page;
+});
+
 (async () => {
   const server = await serve();
   const browser = await launch();
