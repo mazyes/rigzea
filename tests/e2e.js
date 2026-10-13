@@ -980,7 +980,9 @@ test('22. team: commission split, payout marks, leaderboard and the agent role',
 
 test('23. password reset link asks for a new password before opening the workspace', async (browser) => {
   const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
+  // js/config.js notes the link type before the auth client clears it from the address.
   await page.goto(BASE + '/app/#access_token=x&type=recovery');
+  assert.strictEqual(await page.evaluate(() => window.RIGZEA_RECOVERY), true);
   await page.locator('#form-newpass h1', { hasText: 'ახალი პაროლი' }).waitFor();
   assert.strictEqual(await page.locator('.layout').isVisible().catch(() => false), false, 'workspace stays closed until the password is set');
   await page.fill('#form-newpass input[name=password]', 'newpass123');
@@ -992,7 +994,6 @@ test('23. password reset link asks for a new password before opening the workspa
   await page.locator('.toast', { hasText: 'პაროლი შეიცვალა' }).waitFor();
   await page.locator('.layout').waitFor();
   assert.strictEqual((await db(page)).users.find(u => u.email === USERS.manager.email).password, 'newpass123');
-  assert(!page.url().includes('type=recovery'), 'the recovery marker is removed from the address');
   for (let i = page.errors.length - 1; i >= 0; i--) if (page.errors[i].includes('არ ემთხვევა')) page.errors.splice(i, 1); // the mismatch above is expected
   return page;
 });

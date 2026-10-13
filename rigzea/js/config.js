@@ -5,6 +5,10 @@ window.RIGZEA_CONFIG = {
   APP_URL: window.location.origin
 };
 
+// A password-reset link carries its type in the address. The auth client removes it while it starts,
+// which is before the app script runs, so it is remembered here first.
+window.RIGZEA_RECOVERY = /[#&?]type=recovery/.test(window.location.hash + window.location.search);
+
 // Initialize Supabase client
 window.supabaseClient = supabase.createClient(
   window.RIGZEA_CONFIG.SUPABASE_URL,
@@ -17,3 +21,6 @@ window.supabaseClient = supabase.createClient(
     }
   }
 );
+window.supabaseClient.auth.onAuthStateChange(function (event) {
+  if (event === 'PASSWORD_RECOVERY') window.RIGZEA_RECOVERY = true;
+});

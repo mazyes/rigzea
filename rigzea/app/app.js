@@ -43,8 +43,8 @@
   }
 
   // A password-reset link signs the user in and must then ask for the new password.
-  // The link type is read before the auth client clears it from the address.
-  let recovery = /[#&?]type=recovery\b/.test(location.hash + location.search);
+  // js/config.js notes the link type before the auth client clears it from the address.
+  let recovery = !!window.RIGZEA_RECOVERY || /[#&?]type=recovery\b/.test(location.hash + location.search);
   sb.auth.onAuthStateChange((event) => {
     if (event !== 'PASSWORD_RECOVERY') return;
     recovery = true;
@@ -55,8 +55,9 @@
     try {
       const { data: { session } } = await sb.auth.getSession();
       S.user = session?.user || null;
+      recovery = recovery || !!window.RIGZEA_RECOVERY;
       if (!S.user) {
-        if (recovery) { recovery = false; showAuth('reset'); toast('აღდგენის ბმული ვადაგასულია ან უკვე გამოყენებულია. მოითხოვე ახალი.', { type: 'error', timeout: 9000 }); return; }
+        if (recovery) { recovery = false; window.RIGZEA_RECOVERY = false; showAuth('reset'); toast('აღდგენის ბმული ვადაგასულია ან უკვე გამოყენებულია. მოითხოვე ახალი.', { type: 'error', timeout: 9000 }); return; }
         return showAuth('signin');
       }
       if (recovery) return showAuth('newpass');
@@ -149,7 +150,7 @@
     if (v.password !== v.password2) throw new Error('პაროლები ერთმანეთს არ ემთხვევა.');
     const { error } = await sb.auth.updateUser({ password: v.password });
     if (error) throw error;
-    recovery = false;
+    recovery = false; window.RIGZEA_RECOVERY = false;
     history.replaceState(null, '', '/app/');
     toast('პაროლი შეიცვალა.', { type: 'success' });
     await boot();
