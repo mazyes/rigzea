@@ -95,7 +95,7 @@
   const inSection = (d) => !dealSection || (dealSection === 'sale') === (d.deal_type === 'sale');
 
   App.views.deals = (r = {}) => {
-    const tab = ['commissions', 'selections'].includes(r.id) ? r.id : 'pipeline';
+    const tab = ['commissions', 'selections', 'documents'].includes(r.id) ? r.id : 'pipeline';
     const type = r.params?.get('type');
     dealSection = ['rental', 'sale'].includes(type) ? type : null;
     const qs = dealSection ? `?type=${dealSection}` : '';
@@ -118,6 +118,7 @@
         <a class="tab" role="tab" href="#/deals${qs}" aria-selected="${tab === 'pipeline'}">ეტაპები</a>
         <a class="tab" role="tab" href="#/deals/commissions${qs}" aria-selected="${tab === 'commissions'}">საკომისიოები</a>
         <a class="tab" role="tab" href="#/deals/selections${qs}" aria-selected="${tab === 'selections'}">შერჩევები</a>
+        <a class="tab" role="tab" href="#/deals/documents${qs}" aria-selected="${tab === 'documents'}">ხელშეკრულებები და რეესტრი</a>
       </div>
       <div id="deals-body"></div>`;
 
@@ -126,6 +127,7 @@
 
     if (tab === 'commissions') renderCommissions();
     else if (tab === 'selections') renderSelections();
+    else if (tab === 'documents') App.renderDocuments($('#deals-body'));
     else renderPipeline();
   };
 
@@ -200,6 +202,7 @@
       if (deal) App.openTaskForm({ type: 'viewing', apartmentId: deal.apartment_id, dealId: deal.id, prefill: { title: `ნახვა: ${deal.client_name}` } });
     }));
     $$('[data-deal-post]').forEach(b => b.addEventListener('click', () => { const apt = H.apt(b.dataset.dealPost); if (apt) App.openPostGenerator(apt); }));
+    $$('[data-deal-docs]').forEach(b => b.addEventListener('click', () => { const deal = H.deal(b.dataset.dealDocs); if (deal) App.openDocChooser({ deal }); }));
     $$('[data-deal-lease]').forEach(b => b.addEventListener('click', () => {
       const deal = H.deal(b.dataset.dealLease);
       const apt = H.apt(deal?.apartment_id);
@@ -252,6 +255,7 @@
             <button type="button" class="btn btn-ghost btn-sm" data-deal-match="${d.id}" title="შერჩევა" aria-label="შერჩევა">${icon('sparkle', 14)}</button>
             ${apt ? `<button type="button" class="btn btn-ghost btn-sm" data-deal-post="${apt.id}" title="პოსტის გენერატორი" aria-label="პოსტის გენერატორი">${icon('whatsapp', 14)}</button>` : ''}
             ${apt && !isSale ? `<button type="button" class="btn btn-ghost btn-sm" data-deal-lease="${d.id}" title="ხელშეკრულება" aria-label="ხელშეკრულება">${icon('file', 14)}</button>` : ''}
+            ${isSale ? `<button type="button" class="btn btn-ghost btn-sm" data-deal-docs="${d.id}" title="ხელშეკრულებები" aria-label="ხელშეკრულებები">${icon('file', 14)}</button>` : ''}
           </div>
           ${next ? `<button type="button" class="btn ${next[2]} btn-sm" data-deal-advance="${d.id}" data-next-stage="${next[0]}">${icon(next[3], 14)} ${next[1]}</button>` : ''}
         </div>
@@ -1228,6 +1232,10 @@
     </div>`;
   }
   App.leaseHtml = leaseHtml;
+  // Shared with views-docs.js (presentation and sale contract templates).
+  App.dealsUtil = { fmtMoney, convert, listingUrl, LEASE_CSS };
+  App.amenityLabel = (k) => AMENITIES[k]?.[0] || k;
+  App.openLeasePreview = (d, a) => openLeasePreview(d, a);
 
   function printLease(d, mode, title) {
     const w = window.open('', '_blank');

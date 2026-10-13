@@ -331,10 +331,12 @@
     $('#view').innerHTML = `
       <div class="page-head">
         <div><div class="crumbs"><a href="#/apartments?type=${App.aptSection(a)}">${isSale ? 'გასაყიდი ბინები' : 'გასაქირავებელი ბინები'}</a> ›</div>
-          <h1>${esc(a.name)}</h1><p class="page-sub">${esc([a.address, a.unit_number && 'ბინა ' + a.unit_number, a.city].filter(Boolean).join(', '))}${a.cadastral_code ? ' · საკადასტრო ' + esc(a.cadastral_code) : ''} · ${R.transactionBadge(a.transaction_type || (a.rental_type === 'long_term' ? 'long_term' : 'daily'))} ${R.badge(L.aptStatus[a.status] || a.status, L.aptStatusTone[a.status])}</p></div>
+          <h1>${esc(a.name)}</h1><p class="page-sub">${esc([a.address, a.unit_number && 'ბინა ' + a.unit_number, a.city].filter(Boolean).join(', '))}${a.cadastral_code ? ` · საკადასტრო ${esc(a.cadastral_code)} <button type="button" class="link-btn small" data-napr="${esc(a.cadastral_code)}">NAPR რეესტრში გადამოწმება</button>` : ''} · ${R.transactionBadge(a.transaction_type || (a.rental_type === 'long_term' ? 'long_term' : 'daily'))} ${R.badge(L.aptStatus[a.status] || a.status, L.aptStatusTone[a.status])}</p></div>
         <div class="page-actions">
           <a class="btn btn-secondary" href="/guide/?apt=${encodeURIComponent(a.id)}" target="_blank" title="სტუმრის ციფრული გზამკვლევი და A5 ბარათი">${icon('sparkle', 16)} სტუმრის QR</a>
+          <button type="button" class="btn btn-secondary" id="a-pdf">${icon('file', 16)} PDF პრეზენტაცია</button>
           <button type="button" class="btn btn-secondary" id="a-share">${icon('whatsapp', 16)} კოლეგასთან გაზიარება</button>
+          <button type="button" class="btn btn-secondary" id="a-docs">${icon('file', 16)} ხელშეკრულებები</button>
           <button type="button" class="btn btn-secondary" id="a-viewing">${icon('clock', 16)} დათვალიერება</button>
           <button type="button" class="btn btn-primary" id="a-task">${icon('plus', 16)} საქმე</button>
           <button type="button" class="btn btn-secondary" id="a-exp">+ ხარჯი</button>
@@ -502,6 +504,9 @@
     loadLinkStats(id);
     $('#btn-open-post')?.addEventListener('click', () => App.openPostGenerator(a));
     $('#a-share')?.addEventListener('click', () => App.openCoBrokerShare(a));
+    $('#a-pdf')?.addEventListener('click', () => App.openPresentation(a));
+    $('#a-docs')?.addEventListener('click', () => App.openDocChooser({ apartment: a }));
+    App.bindNapr($('#view'));
     const openViewing = () => App.openTaskForm({ apartmentId: id, type: 'viewing', prefill: { title: `დათვალიერება: ${a.name}` } });
     $('#btn-apt-viewing')?.addEventListener('click', openViewing);
     $('#a-viewing')?.addEventListener('click', openViewing);
@@ -973,6 +978,7 @@
           <dt>ტიპი</dt><dd>${R.contactBadge(ct)}</dd>
           <dt>ტელეფონი</dt><dd>${o.phone ? `<a href="tel:${esc(o.phone)}">${esc(o.phone)}</a>` : '—'}</dd>
           <dt>ელფოსტა</dt><dd>${o.email ? `<a href="mailto:${esc(o.email)}">${esc(o.email)}</a>` : '—'}</dd>
+          ${o.personal_id ? `<dt>პირადი ნომერი</dt><dd>${esc(o.personal_id)}</dd>` : ''}
           ${o.budget_max ? `<dt>ბიუჯეტი</dt><dd class="strong t-ok">${o.budget_min ? o.budget_min + '–' : ''}${o.budget_max} ${o.budget_currency || 'USD'}</dd>` : ''}
           ${o.preferred_city || o.preferred_district ? `<dt>სასურველი ლოკაცია</dt><dd>${esc([o.preferred_city, o.preferred_district].filter(Boolean).join(', '))}</dd>` : ''}
           ${o.lead_source ? `<dt>წყარო</dt><dd>${esc(L.leadSource[o.lead_source] || o.lead_source)}</dd>` : ''}
@@ -1007,6 +1013,7 @@
         <label class="field"><span class="field-label">სახელი და გვარი</span><input name="name" required value="${esc(o?.name || '')}" data-error="ჩაწერე სახელი." placeholder="მაგ.: დავით მამულაშვილი" /></label>
         <label class="field"><span class="field-label">ტელეფონი</span><input name="phone" type="tel" value="${esc(o?.phone || '')}" placeholder="+995 5XX XX XX XX" /></label>
         <div class="span-2" id="ow-dup" hidden></div>
+        <label class="field"><span class="field-label">პირადი ნომერი</span><input name="personal_id" value="${esc(o?.personal_id || '')}" inputmode="numeric" maxlength="20" autocomplete="off" /><span class="field-hint">ავტომატურად ჩაჯდება ხელშეკრულებებში</span></label>
         <label class="field"><span class="field-label">ელფოსტა</span><input name="email" type="email" value="${esc(o?.email || '')}" data-error="ელფოსტის ფორმატი არასწორია." /></label>
         
         <div class="form-section span-2" id="ow-pref-section" style="background:var(--surface-2);padding:12px;border-radius:var(--r);border:1px solid var(--line)">
@@ -1059,6 +1066,7 @@
           contact_type: v.contact_type || 'owner',
           phone: v.phone.trim() || null,
           email: v.email.trim() || null,
+          personal_id: v.personal_id?.trim() || null,
           budget_min: v.budget_min ? Number(v.budget_min) : null,
           budget_max: v.budget_max ? Number(v.budget_max) : null,
           budget_currency: v.budget_currency || 'USD',

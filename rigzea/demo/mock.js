@@ -6,7 +6,7 @@
   'use strict';
   const KEY = 'rigzea_demo_db';
   const SESSION_KEY = 'rigzea_demo_session';
-  const VERSION = 5;
+  const VERSION = 6;
   const MAX_AGE = 12 * 3600e3; // reseed so relative dates (renewals, trial) stay fresh
 
   const notify = (message) => { try { window.dispatchEvent(new CustomEvent('rigzea-demo', { detail: message })); } catch { /* old browser */ } };

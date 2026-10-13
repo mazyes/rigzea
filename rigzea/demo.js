@@ -111,6 +111,8 @@
     { id: 'listing', icon: 'camera', title: 'ბინა ფოტოებით და ჭკვიანი ბმულით', sub: 'გალერეა, კეთილმოწყობა, ბეჯი, ნახვები და WhatsApp-ის დაწკაპუნებები', run: () => go(`#/apartments/${IDS.vake}`, '.listing-card') },
     { id: 'client', icon: 'external', title: 'რას ხედავს კლიენტი', sub: 'საჯარო გვერდი /p/ ფოტოგალერეით', run: () => window.open(demoHref(`/p/${IDS.vakeSlug}/`), '_blank', 'noopener') },
     { id: 'cobroker', icon: 'whatsapp', title: 'კოლეგასთან გაზიარება', sub: 'მეპატრონის ნომერი დამალულია, პირობა და ტექსტი WhatsApp-ისთვის მზადაა', run: () => go(`#/apartments/${IDS.vake}`, null, () => App.openCoBrokerShare(App.H.apt(IDS.vake))) },
+    { id: 'pdf', icon: 'printer', title: 'PDF პრეზენტაცია 1 კლიკით', sub: 'VIP კატალოგი ან ერთგვერდიანი ფლაერი, QR კოდით', run: () => go(`#/apartments/${IDS.vake}`, null, () => App.openPresentation(App.H.apt(IDS.vake))) },
+    { id: 'legal', icon: 'file', title: 'ხელშეკრულებები და რეესტრი', sub: 'ექსკლუზივი, საბროკერო, ბე, მიღება-ჩაბარება და NAPR შემოწმება', run: () => go('#/deals/documents?type=sale') },
     { id: 'match', icon: 'sparkle', title: 'ბინების შერჩევა კლიენტისთვის', sub: 'უბანი, ბიუჯეტი, საძინებლები და დამთხვევის %', run: () => go('#/deals?type=rental', null, () => App.openMatchmakerModal(App.H.deal(IDS.dealElene))) },
     { id: 'selection', icon: 'link', title: 'შერჩევის ერთი ბმული', sub: 'რამდენიმე ბინა ერთ გვერდზე, შედარებით', run: () => window.open(demoHref(`/p/s/?id=${IDS.selection}`), '_blank', 'noopener') },
     { id: 'post', icon: 'whatsapp', title: 'პოსტის გენერატორი', sub: 'ქართული, English, WhatsApp და Co-Brokering 50/50', run: () => go(`#/apartments/${IDS.vake}`, null, () => App.openPostGenerator(App.H.apt(IDS.vake))) },

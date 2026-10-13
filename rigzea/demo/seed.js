@@ -186,7 +186,7 @@
           { id: O(5), ...base, name: 'ნათია ბაქრაძე', phone: '+995 571 65 43 21', email: 'natia@example.ge', created_at: at(-30 * D) },
           { id: O(6), ...base, name: 'დავით ცქიტიშვილი', phone: '+995 555 24 68 10', email: null, created_at: at(-20 * D) },
           // Sellers
-          { id: O(7), ...base, contact_type: 'seller', name: 'ვახტანგ ერისთავი', phone: '+995 599 62 73 84', email: 'vakho@example.ge', lead_source: 'referral', created_at: at(-18 * D) },
+          { id: O(7), ...base, contact_type: 'seller', personal_id: '01008012345', name: 'ვახტანგ ერისთავი', phone: '+995 599 62 73 84', email: 'vakho@example.ge', lead_source: 'referral', created_at: at(-18 * D) },
           { id: O(8), ...base, contact_type: 'seller', name: 'ეკა ნიჟარაძე', phone: '+995 571 48 59 60', email: null, lead_source: 'myhome', created_at: at(-12 * D) },
           // Renters
           { id: C(1), ...base, contact_type: 'renter', name: 'ელენე ხარაიშვილი', phone: '+995 555 98 76 54', email: null, budget_max: 1300, budget_currency: 'USD', preferred_city: 'თბილისი', preferred_district: 'ვაკე', requirements: '1 საძინებელი, შინაური ცხოველი დასაშვები', lead_source: 'instagram', created_at: at(-2 * D) },
@@ -194,7 +194,7 @@
           { id: C(3), ...base, contact_type: 'renter', name: 'Daniel Kowalski', phone: '+49 151 2345 6789', email: 'daniel.k@example.com', budget_max: 1000, budget_currency: 'USD', preferred_city: 'თბილისი', preferred_district: 'მთაწმინდა', requirements: 'ავეჯით, სწრაფი ინტერნეტი', lead_source: 'referral', created_at: at(-5 * D) },
           { id: C(7), ...base, contact_type: 'renter', name: 'ზაზა ქობალია', phone: '+995 598 40 41 42', email: null, budget_max: 900, budget_currency: 'USD', preferred_city: 'თბილისი', lead_source: 'facebook', is_flagged: true, flag_note: 'ჩვენების შემდეგ სცადა მეპატრონესთან პირდაპირ დაკავშირება.', flagged_at: at(-6 * D), flagged_by_name: 'ანა ლომიძე', created_at: at(-9 * D) },
           // Buyers
-          { id: C(4), ...base, contact_type: 'buyer', name: 'ნინო ასათიანი', phone: '+995 599 71 82 93', email: 'nino.a@example.ge', budget_min: 200000, budget_max: 250000, budget_currency: 'USD', preferred_city: 'თბილისი', preferred_district: 'ვაკე', requirements: '3 ოთახი, პარკინგი', lead_source: 'myhome', created_at: at(-8 * D) },
+          { id: C(4), ...base, contact_type: 'buyer', personal_id: '01024067890', name: 'ნინო ასათიანი', phone: '+995 599 71 82 93', email: 'nino.a@example.ge', budget_min: 200000, budget_max: 250000, budget_currency: 'USD', preferred_city: 'თბილისი', preferred_district: 'ვაკე', requirements: '3 ოთახი, პარკინგი', lead_source: 'myhome', created_at: at(-8 * D) },
           { id: C(5), ...base, contact_type: 'buyer', name: 'Michael Brandt', phone: '+49 170 555 0142', email: 'm.brandt@example.com', budget_max: 130000, budget_currency: 'USD', preferred_city: 'თბილისი', preferred_district: 'საბურთალო', requirements: 'საინვესტიციო, გასაქირავებლად', lead_source: 'referral', created_at: at(-12 * D) },
           { id: C(6), ...base, contact_type: 'buyer', name: 'სალომე ჯიქია', phone: '+995 593 15 26 37', email: null, budget_max: 150000, budget_currency: 'USD', preferred_city: 'თბილისი', preferred_district: 'საბურთალო', requirements: '2 ოთახი, ახალი რემონტი', lead_source: 'facebook', created_at: at(-1 * D) },
         ].map(o => ({ contact_type: 'owner', ...o })),

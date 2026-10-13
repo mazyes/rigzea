@@ -810,6 +810,47 @@ test('19. trust: cadastral duplicate banner, unreliable client flag warns in con
   return page;
 });
 
+test('20. documents: PDF presentation templates, auto-filled sale contract, registry check', async (browser) => {
+  const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
+  await page.goto(BASE + '/app/#/apartments/dddddddd-0000-4000-8000-000000000001');
+  await page.locator('#a-pdf').click();
+  const pz = page.locator('dialog[open] #pz-preview');
+  await pz.locator('.pz-page').first().waitFor();
+  assert.strictEqual(await pz.locator('.pz-page').count(), 2, 'catalog has two pages');
+  assert((await pz.innerText()).includes('Orbi City · 1204'), 'presentation shows the property');
+  await page.locator('dialog[open] input[name="pz-template"][value="flyer"]').check({ force: true });
+  assert.strictEqual(await pz.locator('.pz-page').count(), 1, 'flyer is one page');
+  assert((await page.locator('dialog[open] #pz-wa').getAttribute('href')).startsWith('https://wa.me/?text='));
+  await page.keyboard.press('Escape');
+
+  // Deposit agreement filled from the property and its owner
+  await page.goto(BASE + '/app/#/deals/documents?type=sale');
+  await page.locator('[data-doc="deposit"]').click();
+  const dlg = page.locator('dialog[open]');
+  await dlg.locator('#doc-apt').selectOption('dddddddd-0000-4000-8000-000000000001');
+  assert.strictEqual(await dlg.locator('input[name=owner_name]').inputValue(), 'დავით მამულაშვილი');
+  assert((await dlg.locator('input[name=property_address]').inputValue()).includes('შერიფ ხიმშიაშვილის 7'));
+  await dlg.locator('input[name=buyer_name]').fill('ნიკა ბერიძე');
+  await dlg.locator('input[name=price]').fill('120000');
+  await dlg.locator('input[name=deposit_amount]').fill('5000');
+  await dlg.locator('[data-submit]').click();
+  const paper = page.locator('dialog[open] #doc-paper');
+  await paper.waitFor();
+  const doc = await paper.innerText();
+  assert(/ბეს \/ წინარე ნასყიდობის ხელშეკრულება/i.test(doc) && doc.includes('ორმაგი ოდენობით'), 'deposit agreement text');
+  assert(doc.includes('დავით მამულაშვილი') && doc.includes('ნიკა ბერიძე') && doc.includes('5 000 აშშ დოლარი'), 'parties and amounts are injected');
+  assert.strictEqual((await db(page)).tables.contracts.at(-1).data.doc_type, 'deposit');
+  await page.keyboard.press('Escape');
+  await page.locator('[data-saved]', { hasText: 'ბეს / წინარე ნასყიდობის' }).waitFor();
+
+  // Registry check opens the public registry search
+  await page.evaluate(() => { window.__opened = []; window.open = (u) => { window.__opened.push(u); return null; }; });
+  await page.locator('#napr-code').fill('01101400901' + '1');
+  await page.locator('#napr-go').click();
+  assert((await page.evaluate(() => window.__opened)).some(u => u.includes('naprweb.reestri.gov.ge')), 'registry page opened');
+  return page;
+});
+
 (async () => {
   const server = await serve();
   const browser = await launch();
