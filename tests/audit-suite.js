@@ -141,41 +141,6 @@ async function runAudit() {
       await page.close();
     });
 
-    await step('6. ROI Calculator: sliders and dropdown update commission and time metrics live', async () => {
-      const page = await newPage(browser);
-      await page.goto(testBase + '/#calculator');
-
-      const rentSlider = page.locator('#calc-rent');
-      const dealsSlider = page.locator('#calc-deals');
-      const splitSelect = page.locator('#calc-split');
-
-      const monthlyUsd = page.locator('#calc-result-monthly-usd');
-      const hoursSaved = page.locator('#calc-result-hours');
-
-      // Initial defaults: Rent 800, Deals 4, Split 50% -> 800 * 4 * 0.5 = 1600 USD, 32 hours
-      await page.locator('#calc-result-monthly-usd', { hasText: '$1,600' }).waitFor();
-      await page.locator('#calc-result-hours', { hasText: '32 საათი' }).waitFor();
-
-      // Adjust Rent slider to 1200
-      await rentSlider.fill('1200');
-      await rentSlider.dispatchEvent('input');
-      // 1200 * 4 * 0.5 = 2400 USD
-      await page.locator('#calc-result-monthly-usd', { hasText: '$2,400' }).waitFor();
-
-      // Adjust Deals slider to 6
-      await dealsSlider.fill('6');
-      await dealsSlider.dispatchEvent('input');
-      // 1200 * 6 * 0.5 = 3600 USD, 6 * 8 = 48 hours
-      await page.locator('#calc-result-monthly-usd', { hasText: '$3,600' }).waitFor();
-      await page.locator('#calc-result-hours', { hasText: '48 საათი' }).waitFor();
-
-      // Adjust Split select to 25% (0.25)
-      await splitSelect.selectOption('0.25');
-      // 1200 * 6 * 0.25 = 1800 USD
-      await page.locator('#calc-result-monthly-usd', { hasText: '$1,800' }).waitFor();
-
-      await page.close();
-    });
 
     await step('7. Pricing 4-Tier: monthly/yearly billing interval switch updates prices', async () => {
       const page = await newPage(browser);

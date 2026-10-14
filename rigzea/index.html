@@ -56,7 +56,6 @@
           <a class="lx-nav-link" href="#how-it-works">როგორ მუშაობს</a>
           <a class="lx-nav-link" href="#features">ფუნქციები</a>
           <a class="lx-nav-link" href="#comparison">შედარება</a>
-          <a class="lx-nav-link" href="#calculator">კალკულატორი</a>
           <a class="lx-nav-link" href="#pricing">ტარიფები</a>
           <a class="lx-nav-link" href="#faq">FAQ</a>
           <a class="lx-nav-link" href="/demo/">დემო</a>
@@ -558,98 +557,6 @@
         </div>
       </section>
 
-      <!-- 5. Interactive Commission & Deal ROI Calculator -->
-      <section class="lx-calc-section" id="calculator">
-        <div class="lx-container">
-          <div class="lx-section-header">
-            <span class="lx-badge">შემოსავლის კალკულატორი</span>
-            <h2>გამოთვალე დაზოგილი დრო და შემოსავალი</h2>
-            <p>აირჩიე რეჟიმი და ნახე, რამდენი საკომისიო გროვდება თვეში გაყიდვასა და გაქირავებაზე.</p>
-          </div>
-
-          <div class="lx-calc-box lx-spotlight-card">
-            
-            <!-- Mode Switcher: Rent vs Sale -->
-            <div class="lx-calc-mode-switch-wrap">
-              <div class="lx-calc-mode-pill-box">
-                <button type="button" class="lx-calc-mode-btn active" data-calc-mode="rent">🏢 გაქირავება</button>
-                <button type="button" class="lx-calc-mode-btn" data-calc-mode="sale">🏠 გაყიდვა</button>
-              </div>
-            </div>
-
-            <!-- Sliders Column -->
-            <div class="lx-calc-inputs">
-              
-              <!-- Slider 1: Rent / Property Price -->
-              <div class="lx-slider-group">
-                <div class="lx-slider-label-row">
-                  <span id="calc-price-label">საშუალო ქირა ($)</span>
-                  <span class="lx-slider-val lx-tabular" id="calc-rent-val">$800</span>
-                </div>
-                <input type="range" class="lx-range-slider" id="calc-rent" aria-label="თანხა დოლარში" min="300" max="3000" step="50" value="800" />
-                <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--lx-text-muted)">
-                  <span id="calc-bound-min">$300</span>
-                  <span id="calc-bound-mid">$1,500</span>
-                  <span id="calc-bound-max">$3,000</span>
-                </div>
-              </div>
-
-              <!-- Slider 2: Deals -->
-              <div class="lx-slider-group">
-                <div class="lx-slider-label-row">
-                  <span id="calc-deals-label">დახურული გარიგებები თვეში</span>
-                  <span class="lx-slider-val lx-tabular" id="calc-deals-val">4 გარიგება</span>
-                </div>
-                <input type="range" class="lx-range-slider" id="calc-deals" aria-label="დახურული გარიგებები თვეში" min="1" max="15" step="1" value="4" />
-                <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--lx-text-muted)">
-                  <span id="calc-deals-min">1</span>
-                  <span id="calc-deals-mid">5</span>
-                  <span id="calc-deals-max">15</span>
-                </div>
-              </div>
-
-              <!-- Split rate select -->
-              <div class="lx-slider-group">
-                <div class="lx-slider-label-row">
-                  <span id="calc-split-label">საკომისიოს წილი</span>
-                </div>
-                <select id="calc-split" aria-label="საკომისიოს წილი" style="background:#070d0a;color:#fff;border:1px solid var(--lx-border-subtle);border-radius:10px;padding:10px 14px;font-size:14px;outline:none;cursor:pointer;width:100%">
-                  <option value="0.50">50%: სრული საკომისიო</option>
-                  <option value="0.25">25%: გაყოფილი საკომისიო (50/50)</option>
-                </select>
-              </div>
-
-            </div>
-
-            <!-- Results Output Column -->
-            <div class="lx-calc-results">
-              <div class="lx-calc-metric-highlight">
-                <span id="calc-result-header">თვიური საკომისიო</span>
-                <strong class="lx-tabular" id="calc-result-monthly-usd">$1,600</strong>
-                <div style="font-size:14px;color:var(--lx-mint-bright);font-weight:600" id="calc-result-monthly-gel">~ ₾4,352</div>
-              </div>
-
-              <div class="lx-calc-submetrics-grid">
-                <div class="lx-calc-submetric-box">
-                  <span>წლიური შემოსავალი</span>
-                  <strong class="lx-tabular" id="calc-result-annual-usd">$19,200</strong>
-                </div>
-
-                <div class="lx-calc-submetric-box">
-                  <span>დაზოგილი დრო თვეში</span>
-                  <strong class="lx-tabular" id="calc-result-hours" style="color:var(--lx-mint-neon)">32 საათი</strong>
-                </div>
-              </div>
-
-              <div style="padding-top:12px;border-top:1px solid rgba(255,255,255,0.08);font-size:12px;color:var(--lx-text-silver);line-height:1.5;display:flex;align-items:center;gap:6px">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#00f59b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
-                <span>დაზოგილი დრო გაძლევს საშუალებას, თვეში მინიმუმ <strong>2 დამატებითი გარიგება</strong> დახურო.</span>
-              </div>
-            </div>
-
-          </div>
-        </div>
-      </section>
 
       <!-- 6. 4-Tier Transparent Pricing Grid -->
       <section class="lx-pricing-section" id="pricing">
@@ -928,7 +835,6 @@
           <a href="#how-it-works">როგორ მუშაობს</a>
           <a href="#features">ფუნქციები</a>
           <a href="#comparison">შედარება</a>
-          <a href="#calculator">კალკულატორი</a>
           <a href="#pricing">ტარიფები</a>
           <a href="#faq">FAQ</a>
           <a href="mailto:contact@rigzea.com">contact@rigzea.com</a>
