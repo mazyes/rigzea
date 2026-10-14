@@ -110,9 +110,7 @@
     if (oauthStack) {
       oauthStack.hidden = !isAuthMain;
       const gLabel = $('#oauth-google-label');
-      const fLabel = $('#oauth-facebook-label');
       if (gLabel) gLabel.textContent = view === 'signup' ? 'Google-ით რეგისტრაცია' : 'Google-ით შესვლა';
-      if (fLabel) fLabel.textContent = view === 'signup' ? 'Facebook-ით რეგისტრაცია' : 'Facebook-ით შესვლა';
     }
     if (divider) divider.hidden = !isAuthMain;
     $('#form-' + view)?.querySelector('input')?.focus();
