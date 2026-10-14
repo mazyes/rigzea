@@ -17,7 +17,12 @@
     <div class="auth-card">
       <a class="brand" href="/" aria-label="Rigzea: მთავარი გვერდი"><span class="brand-mark" data-icon="logo"></span><span class="brand-text">რიგზეა<i>.</i></span></a>
 
-      <form id="form-signin" class="form-stack" novalidate>
+      <div class="auth-tabs" id="auth-tabs" role="tablist">
+        <button type="button" class="auth-tab active" data-auth="signup" id="tab-auth-signup">⚡ რეგისტრაცია (14 დღე უფასოდ)</button>
+        <button type="button" class="auth-tab" data-auth="signin" id="tab-auth-signin">შესვლა</button>
+      </div>
+
+      <form id="form-signin" class="form-stack" novalidate hidden>
         <div><h1>შესვლა</h1><p class="page-sub">შეიყვანე სამუშაო ელფოსტა და პაროლი.</p></div>
         <div class="form-error" role="alert" hidden></div>
         <label class="field"><span class="field-label">ელფოსტა</span><input type="email" name="email" required autocomplete="email" data-error="შეიყვანე სწორი ელფოსტა." /></label>
@@ -29,14 +34,14 @@
         <p class="auth-foot"><button type="button" class="link-btn" data-auth="reset">დაგავიწყდა პაროლი?</button> · <button type="button" class="link-btn" data-auth="signup">ახალი ანგარიში (14 დღე უფასოდ)</button></p>
       </form>
 
-      <form id="form-signup" class="form-stack" novalidate hidden>
+      <form id="form-signup" class="form-stack" novalidate>
         <div>
           <h1>ანგარიშის შექმნა</h1>
           <p class="page-sub"><strong>14 დღე უფასო საცდელი პერიოდი</strong> · საბანკო ბარათი არ არის საჭირო.</p>
         </div>
         <div class="form-error" role="alert" hidden></div>
-        <label class="field"><span class="field-label">სახელი და გვარი</span><input type="text" name="name" required autocomplete="name" data-error="შეიყვანე სახელი." /></label>
-        <label class="field"><span class="field-label">ელფოსტა</span><input type="email" name="email" required autocomplete="email" data-error="შეიყვანე სწორი ელფოსტა." /></label>
+        <label class="field"><span class="field-label">სახელი და გვარი</span><input type="text" name="name" required autocomplete="name" data-error="შეიყვანე სახელი." placeholder="მაგ.: გიორგი ბერიძე" /></label>
+        <label class="field"><span class="field-label">ელფოსტა</span><input type="email" name="email" required autocomplete="email" data-error="შეიყვანე სწორი ელფოსტა." placeholder="name@example.com" /></label>
         <label class="field"><span class="field-label">პაროლი</span><input type="password" name="password" required minlength="8" autocomplete="new-password" data-error="პაროლი მინიმუმ 8 სიმბოლოს უნდა შეიცავდეს." /><span class="field-hint">მინიმუმ 8 სიმბოლო</span></label>
         <label class="auth-consent"><input type="checkbox" name="agree" required data-error="რეგისტრაციისთვის დაეთანხმე წესებს და კონფიდენციალურობის პოლიტიკას." /><span>ვეთანხმები <a href="/legal/terms/" target="_blank" rel="noopener">მომსახურების წესებს</a> და გავეცანი <a href="/legal/privacy/" target="_blank" rel="noopener">კონფიდენციალურობის პოლიტიკას</a>.</span></label>
         <button type="submit" class="btn btn-primary btn-block">რეგისტრაცია (14 დღე უფასოდ)</button>
@@ -70,20 +75,20 @@
       <a class="brand" href="/" aria-label="Rigzea: მთავარი გვერდი"><span class="brand-mark" data-icon="logo"></span><span class="brand-text">რიგზეა<i>.</i></span></a>
       <form id="form-org" class="form-stack" novalidate>
         <div>
-          <h1>შექმენი სამუშაო სივრცე</h1>
-          <p class="page-sub">ეს შენი კომპანიის ან გუნდის ანგარიშია. შემდეგ დაამატებ ბინებს, მფლობელებს და გუნდს — ყველა ნაბიჯის გამოტოვება და მოგვიანებით შევსება შეიძლება.</p>
+          <h1>შექმენი სამუშაო კაბინეტი</h1>
+          <p class="page-sub">ეს შენი პირადი ან სააგენტოს სივრცეა. თუ დამოუკიდებელი აგენტი ხარ, შეგიძლია უბრალოდ შენი სახელი ჩაწერო (მაგ.: გიორგი ბროკერი).</p>
         </div>
         <div class="form-error" role="alert" hidden></div>
-        <label class="field"><span class="field-label">კომპანიის ან გუნდის სახელი</span><input type="text" name="name" required placeholder="მაგ.: Batumi Stay" data-error="შეიყვანე სახელი." /></label>
+        <label class="field"><span class="field-label">კომპანიის ან აგენტის სახელი</span><input type="text" name="name" required placeholder="მაგ.: Apex Real Estate ან გიორგი ბროკერი" data-error="შეიყვანე სახელი." /></label>
         <div class="form-grid">
           <label class="field"><span class="field-label">ძირითადი ქალაქი</span>
-            <select name="city"><option>თბილისი</option><option selected>ბათუმი</option><option>ქუთაისი</option><option>სხვა</option></select>
+            <select name="city"><option selected>თბილისი</option><option>ბათუმი</option><option>ქუთაისი</option><option>სხვა</option></select>
           </label>
           <label class="field"><span class="field-label">ბინების რაოდენობა</span>
-            <select name="size"><option value="1-5">1–5</option><option value="6-20" selected>6–20</option><option value="21-50">21–50</option><option value="50+">50+</option></select>
+            <select name="size"><option value="1-5" selected>1–5</option><option value="6-20">6–20</option><option value="21-50">21–50</option><option value="50+">50+</option></select>
           </label>
         </div>
-        <button type="submit" class="btn btn-primary btn-block">სამუშაო სივრცის შექმნა</button>
+        <button type="submit" class="btn btn-primary btn-block">სამუშაო სივრცის შექმნა →</button>
         <p class="auth-foot"><button type="button" class="link-btn" data-action="signout">სხვა ანგარიშით შესვლა</button></p>
       </form>
     </div>

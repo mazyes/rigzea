@@ -300,10 +300,10 @@
     const d = S.data;
     return [
       { done: true, title: 'სამუშაო სივრცე შეიქმნა', desc: S.org.name },
-      { done: d.apartments.length > 0, title: 'დაამატე ბინები', desc: 'სათითაოდ ან Excel/CSV ფაილით', action: `<button class="btn btn-secondary btn-sm" data-setup="apartment">ბინის დამატება</button> <a class="btn btn-ghost btn-sm" href="#/settings/import">იმპორტი</a>` },
-      { done: d.owners.length > 0, title: 'დაამატე მფლობელები', desc: 'თანხმობებისა და ამონაწერებისთვის', action: `<button class="btn btn-secondary btn-sm" data-setup="owner">მფლობელის დამატება</button>` },
-      { done: d.members.length > 1, title: 'მოიწვიე გუნდი', desc: 'დამლაგებლები და ტექნიკოსები თავიანთ სამუშაოებს ტელეფონიდან ნახავენ', action: `<a class="btn btn-secondary btn-sm" href="#/team">მოწვევა</a>` },
-      { done: d.tasks.length > 0, title: 'შექმენი პირველი საქმე', desc: 'მაგ.: დასუფთავება შემდეგი სტუმრის წინ', action: `<button class="btn btn-secondary btn-sm" data-setup="task">საქმის შექმნა</button>` },
+      { done: d.apartments.length > 0, title: 'შემოიტანე პირველი ბინა', desc: 'MyHome / SS.ge ლინკით 1 წამში ან ხელით', action: `<button class="btn btn-primary btn-sm" data-setup="apartment">⚡ ბინის შემოტანა</button>` },
+      { done: d.apartments.some(a => a.photos && a.photos.length), title: 'ნახე პირადი VIP ბმული (/p/)', desc: 'მესაკუთრის ნომერი დაცულია, შენი WhatsApp მზადაა', action: `<a class="btn btn-secondary btn-sm" href="#/apartments">ვიტრინის ნახვა</a>` },
+      { done: (d.deals || []).length > 0, title: 'დაამატე კლიენტის მოთხოვნა', desc: 'Matchmaker 98% თანხვედრით იპოვის ბინას', action: `<a class="btn btn-secondary btn-sm" href="#/deals">+ ახალი მოთხოვნა</a>` },
+      { done: d.tasks.filter(t => t.type === 'viewing').length > 0, title: 'დაგეგმე პირველი ნახვა (ვიზიტი)', desc: 'კალენდარში მონიშნე კლიენტთან შეხვედრის დრო', action: `<button class="btn btn-secondary btn-sm" data-setup="task">ვიზიტის ჩანიშვნა</button>` },
     ];
   }
 
@@ -438,6 +438,26 @@
         <div><h1>დღეს</h1><p class="page-sub">${R.WEEKDAYS[now.getDay()]}, ${now.getDate()} ${R.MONTHS[now.getMonth()]}</p></div>
         <div class="page-actions"><button type="button" class="btn btn-secondary" id="btn-digest">${icon('telegram', 16)} დღის შეჯამება</button></div>
       </div>
+      ${activeApts.length === 0 ? `
+      <section class="card onboarding-hero-card" style="margin-bottom:16px;background:linear-gradient(135deg, rgba(0, 245, 155, 0.08) 0%, rgba(10, 92, 68, 0.12) 100%);border:1px solid rgba(0, 245, 155, 0.3);padding:24px;border-radius:var(--r)">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:16px">
+          <div style="max-width:560px">
+            <span class="badge" style="background:rgba(0, 245, 155, 0.18);color:#0a5c44;font-weight:700;padding:3px 10px;border-radius:99px;font-size:11.5px">⚡ პირველი ნაბიჯი</span>
+            <h2 style="font-size:22px;margin:8px 0 6px 0">შემოიტანე შენი პირველი ბინა 1 წამში</h2>
+            <p style="color:var(--muted);font-size:13.5px;line-height:1.5;margin:0 0 14px 0">
+              ჩასვი MyHome.ge ან SS.ge განცხადების ბმული. სისტემა გადმოიტანს HD ფოტოებს, ფართობს და ფასს, დამალავს მესაკუთრის ნომერს და შექმნის შენს პირად VIP ბმულს.
+            </p>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+              <button type="button" class="btn btn-primary" id="btn-quick-import-hero">${icon('sparkle', 16)} ⚡ ბინის შემოტანა ლინკით</button>
+              <button type="button" class="btn btn-secondary" id="btn-quick-manual-hero">+ ხელით დამატება</button>
+            </div>
+          </div>
+          <div style="background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 16px;font-size:12px;color:var(--muted);max-width:240px;line-height:1.4">
+            <strong style="color:var(--ink);display:block;margin-bottom:4px">🔒 100% დაცული</strong>
+            მესაკუთრის ნომერს ვერავინ ნახავს. საჯარო ბმულზე ჩანს მხოლოდ შენი საკონტაქტო WhatsApp.
+          </div>
+        </div>
+      </section>` : ''}
       <section class="card" style="margin-bottom:16px">
         <div class="card-head">
           <h2>${icon('building', 18)} უძრავი ქონების მიმოხილვა</h2>
@@ -517,6 +537,8 @@
     $$('[data-renew]').forEach(b => b.addEventListener('click', () => openRenew(S.data.apartments.find(a => a.id === b.dataset.renew))));
     $('#btn-tg-link')?.addEventListener('click', openTelegramLink);
     $('#btn-digest').onclick = openDailyDigest;
+    $('#btn-quick-import-hero')?.addEventListener('click', () => App.openApartmentForm());
+    $('#btn-quick-manual-hero')?.addEventListener('click', () => App.openApartmentForm());
     bindSetup($('#view'));
     bindAlertActions($('#view'), att);
     bindApprovalShare($('#view'));

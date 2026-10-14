@@ -58,7 +58,8 @@
       recovery = recovery || !!window.RIGZEA_RECOVERY;
       if (!S.user) {
         if (recovery) { recovery = false; window.RIGZEA_RECOVERY = false; showAuth('reset'); toast('აღდგენის ბმული ვადაგასულია ან უკვე გამოყენებულია. მოითხოვე ახალი.', { type: 'error', timeout: 9000 }); return; }
-        return showAuth('signin');
+        const wantsSignin = /[#&?]signin\b/i.test(location.hash + location.search);
+        return showAuth(wantsSignin ? 'signin' : 'signup');
       }
       if (recovery) return showAuth('newpass');
       // Joins any organizations this email was invited to (no-op otherwise).
@@ -91,8 +92,19 @@
   // ---------------------------------------------------------------------------
   function showAuth(view) {
     showScreen('auth');
-    ['signin', 'signup', 'reset', 'newpass'].forEach(v => { $('#form-' + v).hidden = v !== view; });
-    $('#form-' + view).querySelector('input')?.focus();
+    ['signin', 'signup', 'reset', 'newpass'].forEach(v => {
+      const f = $('#form-' + v);
+      if (f) f.hidden = v !== view;
+    });
+    const tabs = $('#auth-tabs');
+    if (tabs) {
+      tabs.hidden = !['signin', 'signup'].includes(view);
+      const tabSignup = $('#tab-auth-signup');
+      const tabSignin = $('#tab-auth-signin');
+      if (tabSignup) tabSignup.classList.toggle('active', view === 'signup');
+      if (tabSignin) tabSignin.classList.toggle('active', view === 'signin');
+    }
+    $('#form-' + view)?.querySelector('input')?.focus();
   }
 
   function bindForm(form, handler) {
