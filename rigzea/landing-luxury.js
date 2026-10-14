@@ -286,8 +286,8 @@
     const phoneContainer = document.querySelector('#hero-phone-container') || phone;
 
     if (phone) {
-      const restRotX = 4.0;
-      const restRotY = -5.0;
+      const restRotX = 0.0;
+      const restRotY = 0.0;
       const restTransY = 0;
 
       let targetRotX = restRotX;
@@ -484,6 +484,255 @@
 
 
   // =========================================================================
+  // 9. LANDO-STYLE 3D SCROLL EXPERIENCE
+  //    9A hero 3D stage · 9B scroll-drawn track · 9C velocity tilt
+  //    9D kinetic ribbons · 9E sticky 3D card stack
+  //    Only transform/opacity are animated. Skipped for prefers-reduced-motion.
+  // =========================================================================
+  const hasScrollFx = typeof window.gsap !== 'undefined' && typeof window.ScrollTrigger !== 'undefined';
+  const clampNum = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+
+  // 9B. Track line: build the path from the real page size (used by static + animated modes)
+  const trackLayout = document.querySelector('.luxury-layout');
+  const trackSvg = document.querySelector('.lx-track-svg');
+  const trackPaths = trackSvg ? Array.from(trackSvg.querySelectorAll('path')) : [];
+  let trackTween = null;
+
+  function buildTrackLine() {
+    if (!trackLayout || !trackSvg || !trackPaths.length) return;
+    const W = trackLayout.clientWidth;
+    const H = trackLayout.scrollHeight;
+    if (W < 700 || H < 600) { trackSvg.style.display = 'none'; return; }
+    trackSvg.style.display = '';
+    trackSvg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+
+    const xLeft = W * 0.04;
+    const xRight = W * 0.96;
+    const segs = Math.max(4, Math.round(H / 950));
+    const step = (H - 140) / segs;
+    let x = xRight;
+    let d = `M ${x.toFixed(1)} 70`;
+    for (let i = 0; i < segs; i++) {
+      const y0 = 70 + i * step;
+      const y1 = y0 + step;
+      const nx = x === xRight ? xLeft : xRight;
+      d += ` C ${x.toFixed(1)} ${(y0 + step * 0.5).toFixed(1)}, ${nx.toFixed(1)} ${(y0 + step * 0.5).toFixed(1)}, ${nx.toFixed(1)} ${y1.toFixed(1)}`;
+      x = nx;
+    }
+    trackPaths.forEach(p => p.setAttribute('d', d));
+
+    if (trackTween) {
+      if (trackTween.scrollTrigger) trackTween.scrollTrigger.kill();
+      trackTween.kill();
+      trackTween = null;
+    }
+
+    if (prefersReducedMotion || !hasScrollFx) {
+      // Static: whole line visible, no animation
+      trackPaths.forEach(p => { p.style.strokeDasharray = 'none'; p.style.strokeDashoffset = '0'; });
+      return;
+    }
+
+    const len = Math.ceil(trackPaths[0].getTotalLength());
+    trackPaths.forEach(p => { p.style.strokeDasharray = `${len}`; p.style.strokeDashoffset = `${len}`; });
+    trackTween = window.gsap.to(trackPaths, {
+      strokeDashoffset: 0,
+      ease: 'none',
+      scrollTrigger: { trigger: trackLayout, start: 'top top', end: 'bottom bottom', scrub: 0.5 }
+    });
+  }
+
+  let trackResizeTimer = null;
+  function scheduleTrackRebuild() {
+    clearTimeout(trackResizeTimer);
+    trackResizeTimer = setTimeout(buildTrackLine, 220);
+  }
+  buildTrackLine();
+  window.addEventListener('resize', scheduleTrackRebuild);
+  window.addEventListener('load', () => {
+    buildTrackLine();
+    if (hasScrollFx) window.ScrollTrigger.refresh();
+  });
+  if (typeof ResizeObserver !== 'undefined' && trackLayout) {
+    new ResizeObserver(scheduleTrackRebuild).observe(trackLayout);
+  }
+
+  if (hasScrollFx && !prefersReducedMotion) {
+    const gs = window.gsap;
+    const mm = gs.matchMedia();
+
+    // 9A. Hero 3D stage: phone straightens on scroll, badges/ghost move at different depths
+    const heroSection = document.querySelector('.lx-hero');
+    const stagePhone = document.querySelector('.lx-stage-phone');
+    const stageGhost = document.querySelector('.lx-stage-ghost');
+    const stageBadges = Array.from(document.querySelectorAll('.lx-float-badge'));
+    const badgeDepth = [1.0, 1.5, 2.1];
+
+    if (heroSection && stagePhone) {
+      mm.add('(min-width: 901px)', () => {
+        const st = { mx: 0, my: 0, cx: 0, cy: 0, prog: 0, visible: true };
+
+        gs.fromTo(stagePhone,
+          { rotateX: 14, rotateY: -16, rotateZ: 3, scale: 1 },
+          {
+            rotateX: 0, rotateY: 0, rotateZ: 0, scale: 1.06, ease: 'none',
+            scrollTrigger: {
+              trigger: heroSection, start: 'top top', end: 'bottom 35%', scrub: 0.6,
+              onUpdate: (self) => { st.prog = self.progress; }
+            }
+          }
+        );
+
+        const io = new IntersectionObserver((entries) => { st.visible = entries[0].isIntersecting; });
+        io.observe(heroSection);
+
+        const onMove = (e) => {
+          const r = heroSection.getBoundingClientRect();
+          st.mx = ((e.clientX - r.left) / r.width - 0.5) * 2;
+          st.my = ((e.clientY - r.top) / r.height - 0.5) * 2;
+        };
+        const onLeave = () => { st.mx = 0; st.my = 0; };
+        if (!isCoarse) {
+          heroSection.addEventListener('pointermove', onMove, { passive: true });
+          heroSection.addEventListener('pointerleave', onLeave);
+        }
+
+        const layerTick = () => {
+          if (!st.visible) return;
+          st.cx += (st.mx - st.cx) * 0.08;
+          st.cy += (st.my - st.cy) * 0.08;
+          if (stageGhost) {
+            stageGhost.style.transform = `translate3d(${(-st.cx * 18).toFixed(1)}px, ${(-st.cy * 12 - st.prog * 70).toFixed(1)}px, -150px)`;
+          }
+          stageBadges.forEach((b, i) => {
+            const dp = badgeDepth[i] || 1;
+            b.style.transform = `translate3d(${(st.cx * 26 * dp).toFixed(1)}px, ${(st.cy * 20 * dp - st.prog * 90 * dp).toFixed(1)}px, 80px)`;
+          });
+        };
+        gs.ticker.add(layerTick);
+
+        return () => {
+          gs.ticker.remove(layerTick);
+          io.disconnect();
+          heroSection.removeEventListener('pointermove', onMove);
+          heroSection.removeEventListener('pointerleave', onLeave);
+          if (stageGhost) stageGhost.style.transform = '';
+          stageBadges.forEach(b => { b.style.transform = ''; });
+        };
+      });
+    }
+
+    // 9C + 9D share one smoothed, signed scroll velocity (px per 60fps frame)
+    let lastScrollY = window.scrollY;
+    let scrollVel = 0;
+
+    // 9C. Velocity tilt on headings / grids (max ±4deg, springs back via LERP)
+    const tiltEls = isCoarse ? [] : Array.from(document.querySelectorAll('.lx-section-header, .lx-steps-grid-3, .lx-pricing-grid-4'));
+    tiltEls.forEach(el => el.classList.add('lx-fx-tilt'));
+    let tiltCur = 0;
+    let tiltActive = false;
+
+    // 9D. Kinetic ribbons: clone the text group until the loop is seamless
+    const ribbonState = Array.from(document.querySelectorAll('.lx-ribbon')).map(r => {
+      const track = r.querySelector('.lx-ribbon-track');
+      const group = track && track.querySelector('.lx-ribbon-group');
+      return { r, track, group, dir: r.dataset.dir === 'right' ? 1 : -1, base: parseFloat(r.dataset.speed) || 60, x: 0, w: 0, visible: true };
+    }).filter(o => o.track && o.group);
+
+    function measureRibbons() {
+      ribbonState.forEach(o => {
+        o.track.querySelectorAll('.lx-ribbon-group[data-clone]').forEach(c => c.remove());
+        o.w = o.group.offsetWidth;
+        if (!o.w) return;
+        const need = Math.ceil((o.r.offsetWidth + o.w) / o.w);
+        for (let i = 0; i < need; i++) {
+          const c = o.group.cloneNode(true);
+          c.setAttribute('data-clone', '');
+          c.setAttribute('aria-hidden', 'true');
+          o.track.appendChild(c);
+        }
+        if (o.x <= -o.w || o.x > 0) o.x = -o.w / 2;
+      });
+    }
+    measureRibbons();
+    window.addEventListener('resize', measureRibbons);
+    window.addEventListener('load', measureRibbons);
+    const ribbonIO = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        const o = ribbonState.find(s => s.r === e.target);
+        if (o) o.visible = e.isIntersecting;
+      });
+    });
+    ribbonState.forEach(o => ribbonIO.observe(o.r));
+
+    gs.ticker.add((time, deltaMs) => {
+      const dtMs = Math.max(deltaMs || 16.667, 1);
+      const y = window.scrollY;
+      const raw = (y - lastScrollY) * (16.667 / dtMs);
+      lastScrollY = y;
+      scrollVel += (raw - scrollVel) * 0.2;
+
+      // 9C
+      if (tiltEls.length) {
+        const target = clampNum(scrollVel * 0.1, -4, 4);
+        tiltCur += (target - tiltCur) * 0.12;
+        if (Math.abs(tiltCur) < 0.01) {
+          if (tiltActive) { tiltEls.forEach(el => { el.style.transform = ''; }); tiltActive = false; }
+        } else {
+          tiltActive = true;
+          const t = `perspective(1000px) rotateX(${tiltCur.toFixed(2)}deg) skewY(${(tiltCur * 0.6).toFixed(2)}deg)`;
+          tiltEls.forEach(el => { el.style.transform = t; });
+        }
+      }
+
+      // 9D
+      const boost = 1 + Math.min(Math.abs(scrollVel) * 0.12, 5);
+      ribbonState.forEach(o => {
+        if (!o.visible || !o.w) return;
+        o.x += o.dir * o.base * boost * (dtMs / 1000);
+        if (o.x <= -o.w) o.x += o.w;
+        else if (o.x > 0) o.x -= o.w;
+        o.track.style.transform = `translate3d(${o.x.toFixed(1)}px, 0, 0)`;
+      });
+    });
+
+    // 9E. Sticky 3D card stack (desktop): the previous card sinks back as the next one slides over it
+    const stackEl = document.querySelector('#features-stack');
+    if (stackEl) {
+      mm.add('(min-width: 901px)', () => {
+        const items = Array.from(stackEl.querySelectorAll('.lx-stack-item'));
+        const docTop = () => stackEl.getBoundingClientRect().top + window.scrollY;
+        const stickTop = (it) => parseFloat(getComputedStyle(it).top) || 0;
+        const gapOf = (it) => parseFloat(getComputedStyle(it).marginBottom) || 0;
+        // Natural (un-stuck) top of item j, relative to the stack container
+        const naturalTop = (j) => {
+          let t = 0;
+          for (let k = 0; k < j; k++) t += items[k].offsetHeight + gapOf(items[k]);
+          return t;
+        };
+
+        items.forEach((item, i) => {
+          const next = items[i + 1];
+          if (!next) return;
+          const shade = item.querySelector('.lx-stack-shade');
+          const tl = gs.timeline({
+            scrollTrigger: {
+              // next card top touches the bottom of the stuck card -> reaches its own stuck position
+              start: () => docTop() + naturalTop(i + 1) - (stickTop(item) + item.offsetHeight + gapOf(item)),
+              end: () => docTop() + naturalTop(i + 1) - stickTop(next),
+              scrub: true,
+              invalidateOnRefresh: true
+            }
+          });
+          tl.to(item, { scale: 0.93, y: -20, rotateX: 4, transformPerspective: 1200, transformOrigin: '50% 0%', ease: 'none' }, 0);
+          if (shade) tl.to(shade, { opacity: 0.5, ease: 'none' }, 0);
+        });
+      });
+    }
+  }
+
+
+  // =========================================================================
   // 10. SCROLL EVENT LISTENER (Header & Parallax)
   // =========================================================================
   function handleScrollUpdate(scrollY) {
@@ -541,50 +790,18 @@
   // 12. BENTO FEATURE 1: SOCIAL POST GENERATOR TABS
   // =========================================================================
   const postTemplates = {
-    facebook: `🔥 ქირავდება პრემიუმ ბინა ვაკეში, ჭავჭავაძის გამზირზე!
-
-📍 ლოკაცია: ვაკე, ჭავჭავაძე (ვაკის პარკთან)
-🏢 კორპუსი: ახალაშენებული, 8/14 სართული
-📐 ფართობი: 85 მ² | 2 ოთახი (1 საძინებელი)
-
-✨ ბინის უპირატესობები:
-• ახალი პრემიუმ ევრორემონტი, უცხოვრებელი
-• ცენტრალური გათბობა, კონდიციონერი, ჭურჭლის სარეცხი მანქანა
-• აივანი ვაკის პარკის ხედით
-
-💳 ფასი: $950 თვეში
-📌 პირობები: პირველი და ბოლო თვის გადახდით + დეპოზიტი $950
-🐾 შინაური ცხოველები: შეთანხმებით
-
-📸 სრული HD ფოტოები და დეტალები იხილეთ ჭკვიან ბმულზე:
-👉 rigzea.com/p/vake-loft-42
-
-📞 WhatsApp: +995 599 12 34 56 (გიორგი)`,
+    facebook: `🔥 ქირავდება ბინა ვაკეში, ჭავჭავაძის გამზ.
+📐 85 მ² | 2 ოთახი | $950/თვე
+📸 ფოტოები: rigzea.com/p/vake-loft-42
+📞 WhatsApp: +995 599 12 34 56`,
 
     whatsapp: `მოგესალმებით, მარიამ! 🌿
+📍 ვაკე · 85 მ² · $950/თვე
+👉 ფოტოები და პირობები: rigzea.com/p/vake-loft-42`,
 
-თქვენი მოთხოვნის შესაბამისად, შეგირჩიეთ იდეალური ვარიანტი:
-
-📍 ვაკე, ჭავჭავაძის გამზ.
-📐 85 მ², 2 ოთახი
-💵 ფასი: $950/თვე (პირველი და ბოლო თვის გადახდით)
-
-ბინის ყველა HD ფოტო, ვიდეოტური, ზუსტი ლოკაცია და დეტალური პირობები შეგიძლიათ ნახოთ ამ ბმულზე:
-👉 rigzea.com/p/vake-loft-42
-
-თუ მოგეწონებათ, მომწერეთ და დღესვე შეგვიძლია ადგილზე ნახვა! 🤝`,
-
-    cobroker: `სალამი, კოლეგა! 🤝 მაქვს აქტუალური ობიექტი და მზად ვარ თანამშრომლობისთვის (საკომისიოს გაყოფა 50/50):
-
-📍 ლოკაცია: ვაკე, ჭავჭავაძე (ვაკის პარკი)
-🏠 ტიპი: 2 ოთახი, 85 მ²
-💵 ფასი: $950/თვე (მეპატრონე ადეკვატურია)
-🔑 გასაღები: მაქვს ადგილზე
-
-თუ გყავს რეალური კლიენტი, გადაუგზავნე ეს ჭკვიანი ბმული (მონაცემები სრულადაა):
-👉 rigzea.com/p/vake-loft-42
-
-დეტალებზე დამიკავშირდი: +995 599 12 34 56.`
+    cobroker: `სალამი, კოლეგა! 🤝 საკომისიო 50/50:
+📍 ვაკე · 2 ოთახი · $950/თვე
+👉 rigzea.com/p/vake-loft-42`
   };
 
   const postTabBtns = document.querySelectorAll('.lx-post-tab-btn');

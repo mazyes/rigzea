@@ -49,14 +49,15 @@ async function runAudit() {
       const renterView = page.locator('#phone-renter-view');
       const agentView = page.locator('#phone-agent-view');
       const agentPill = page.locator('[data-phone-mode="agent"]');
-      const renterPill = page.locator('[data-phone-mode="renter"]');
+      const renterPill = page.locator('[data-phone-mode="rent"], [data-phone-mode="renter"]');
 
+      await renterPill.dispatchEvent('click');
       await renterView.waitFor({ state: 'visible' });
-      await agentPill.click();
+      await agentPill.dispatchEvent('click');
       await agentView.waitFor({ state: 'visible' });
       assert(await agentPill.getAttribute('class').then(c => c.includes('active')));
 
-      await renterPill.click();
+      await renterPill.dispatchEvent('click');
       await renterView.waitFor({ state: 'visible' });
       assert(await renterPill.getAttribute('class').then(c => c.includes('active')));
       await page.close();

@@ -559,7 +559,7 @@ body.luxury-theme::before {
     0 30px 80px -15px rgba(0, 0, 0, 0.9),
     0 0 0 1px rgba(255, 255, 255, 0.08),
     inset 0 0 24px rgba(0, 0, 0, 0.6);
-  transform: perspective(1000px) rotateX(4deg) rotateY(-5deg);
+  transform: perspective(1000px) rotateX(0deg) rotateY(0deg);
   transform-style: preserve-3d;
   will-change: transform;
   transition: box-shadow 0.45s ease, border-color 0.4s ease;
@@ -2096,7 +2096,12 @@ body.luxury-theme::before {
   .lx-btn-ripple,
   .lx-glass-shine::before,
   .lx-ambient-orb,
-
+  .lx-ambient-grid,
+  .lx-stage-phone,
+  .lx-stage-ghost,
+  .lx-float-badge,
+  .lx-ribbon-track,
+  .lx-fx-tilt {
     transition: none !important;
     animation: none !important;
     transform: none !important;
@@ -3504,4 +3509,301 @@ p, li { text-wrap: pretty; }
     min-height: auto;
     padding: 28px 22px;
   }
+}
+
+/* ==========================================================================
+   LANDO-STYLE 3D SCROLL EXPERIENCE
+   Hero 3D stage · neon track line · kinetic ribbons · sticky 3D card stack
+   Only transform/opacity are animated (60fps). Reduced-motion handled below.
+   ========================================================================== */
+
+/* --- Content sits above the track line --- */
+.luxury-layout > main,
+.luxury-layout > footer { position: relative; z-index: 1; }
+
+/* --- 2. Scroll-drawn neon track line --- */
+.lx-track-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  overflow: visible;
+}
+.lx-track-line,
+.lx-track-glow {
+  fill: none;
+  stroke: #00f59b;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.lx-track-line { stroke-width: 2.5; opacity: 0.85; }
+.lx-track-glow { stroke-width: 9; opacity: 0.12; } /* cheap glow: wider faint stroke, no filter */
+
+/* --- 1. Layered 3D hero stage --- */
+.lx-phone-wrapper { perspective: none; }
+.lx-stage {
+  position: relative;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  perspective: 1200px;
+  transform-style: preserve-3d;
+}
+.lx-stage-ghost {
+  position: absolute;
+  inset: -4% -32%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  line-height: 0.95;
+  pointer-events: none;
+  user-select: none;
+  transform: translateZ(-150px);
+  will-change: transform;
+}
+.lx-stage-ghost b,
+.lx-stage-ghost span {
+  color: transparent;
+  -webkit-text-stroke: 1.5px rgba(0, 245, 155, 0.4);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+.lx-stage-ghost b { font-size: clamp(110px, 16vw, 250px); }
+.lx-stage-ghost span { font-size: clamp(30px, 4.2vw, 64px); margin-top: 6px; -webkit-text-stroke-color: rgba(0, 245, 155, 0.26); }
+.lx-hero-copy { position: relative; z-index: 2; }
+.lx-hero { overflow-x: clip; } /* ghost wordmark may extend past the column; never past the viewport */
+
+.lx-stage-phone {
+  position: relative;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  transform: rotateX(14deg) rotateY(-16deg) rotateZ(3deg);
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.lx-float-badge {
+  position: absolute;
+  z-index: 3;
+  transform: translateZ(80px);
+  will-change: transform;
+  pointer-events: none;
+}
+.lx-fb-card {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: rgba(10, 24, 18, 0.55);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  backdrop-filter: blur(14px) saturate(160%);
+  border: 1px solid rgba(0, 245, 155, 0.3);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+  box-shadow: 0 16px 36px -12px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  animation: lx-bob 5.5s ease-in-out infinite;
+}
+.lx-fb-1 { top: 8%; left: -4%; }
+.lx-fb-2 { top: 47%; right: -2%; }
+.lx-fb-2 .lx-fb-card { animation-delay: -1.8s; }
+.lx-fb-3 { bottom: 8%; left: -1%; }
+.lx-fb-3 .lx-fb-card { animation-delay: -3.4s; color: var(--lx-mint-neon); }
+@keyframes lx-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+/* --- 4. Kinetic diagonal ribbons --- */
+.lx-ribbons {
+  position: relative;
+  z-index: 2;
+  height: clamp(130px, 17vw, 220px);
+  overflow: hidden;
+  margin: -6px 0 6px;
+}
+.lx-ribbon {
+  position: absolute;
+  left: -8%;
+  width: 116%;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.lx-ribbon-track { display: inline-flex; will-change: transform; }
+.lx-ribbon-group { display: inline-flex; flex: none; align-items: center; }
+.lx-ribbon-group span {
+  font-size: clamp(16px, 2.1vw, 26px);
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  padding: 0 26px;
+}
+.lx-ribbon-a {
+  top: 24%;
+  transform: rotate(-2deg);
+  background: #00f59b;
+  color: #04170f;
+  padding: 14px 0;
+  box-shadow: 0 0 60px -12px rgba(0, 245, 155, 0.6);
+  z-index: 2;
+}
+.lx-ribbon-b {
+  top: 46%;
+  transform: rotate(2deg);
+  background: rgba(8, 18, 14, 0.88);
+  border-top: 1px solid rgba(0, 245, 155, 0.35);
+  border-bottom: 1px solid rgba(0, 245, 155, 0.35);
+  padding: 12px 0;
+  z-index: 1;
+}
+.lx-ribbon-b .lx-ribbon-group span {
+  color: transparent;
+  -webkit-text-stroke: 1.2px #00f59b;
+}
+
+/* --- 3. Velocity-tilt targets (transform written by JS only while scrolling fast) --- */
+.lx-fx-tilt { transform-origin: 50% 50%; }
+
+/* --- Bento Matchmaker demo --- */
+.lx-match-pill {
+  padding: 4px 12px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--lx-text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.lx-match-pill.active {
+  background: rgba(0, 245, 155, 0.15);
+  border-color: var(--lx-mint-neon);
+  color: #fff;
+}
+.lx-match-req-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 8px 12px;
+  margin-bottom: 10px;
+}
+.lx-match-req-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--lx-text-muted);
+  margin-bottom: 3px;
+}
+.lx-match-req-text {
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+}
+.lx-match-results {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.lx-match-listing-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(0, 245, 155, 0.2);
+  border-radius: 10px;
+  padding: 8px 12px;
+}
+.lx-match-score-chip {
+  padding: 3px 8px;
+  background: rgba(0, 245, 155, 0.14);
+  border: 1px solid var(--lx-mint-neon);
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--lx-mint-neon);
+  white-space: nowrap;
+}
+
+/* --- 5. Sticky 3D card stack (desktop) --- */
+.lx-stack-shade {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--lx-r-xl);
+  background: #030806;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 5;
+}
+.lx-stack-item { position: relative; }
+
+@media (min-width: 901px) {
+  .lx-features-2x2-grid.lx-features-stack {
+    display: block;
+    perspective: 1400px;
+    padding-bottom: 6vh;
+  }
+  .lx-stack-item {
+    position: sticky;
+    top: calc(92px + var(--i, 0) * 16px);
+    margin-bottom: 28px;
+    transform-origin: 50% 0%;
+    will-change: transform;
+  }
+  .lx-stack-item:last-child { margin-bottom: 0; }
+  .lx-features-2x2-grid.lx-features-stack .lx-bento-card {
+    display: grid;
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+    gap: 44px;
+    align-items: center;
+    min-width: 0;
+    width: 100%;
+    min-height: min(500px, calc(100vh - 160px));
+    padding: 44px;
+  }
+  .lx-features-stack .lx-bento-card-header h3 {
+    font-size: clamp(26px, 3vw, 40px);
+    line-height: 1.12;
+    letter-spacing: -0.02em;
+  }
+  .lx-features-stack .lx-bento-card-header p { font-size: 16px; }
+}
+
+/* --- Mobile: keep it simple and clean --- */
+@media (max-width: 900px) {
+  .lx-stage { perspective: none; }
+  .lx-stage-ghost { display: none; }
+  .lx-stage-phone { transform: none !important; }
+  .lx-phone-wrapper { overflow-x: clip; }
+  .lx-float-badge { transform: none !important; }
+  .lx-fb-card { font-size: 12px; padding: 8px 12px; }
+  .lx-fb-1 { top: 2%; left: 0; }
+  .lx-fb-2 { top: 44%; right: 0; }
+  .lx-fb-3 { display: none; }
+  .lx-features-2x2-grid.lx-features-stack .lx-bento-card { display: flex; }
+  .lx-ribbons { height: 120px; }
+}
+@media (max-width: 700px) {
+  .lx-track-svg { display: none; }
+}
+
+/* --- Reduced motion: static, flat, no looping --- */
+@media (prefers-reduced-motion: reduce) {
+  .lx-stage-phone,
+  .lx-stage-ghost,
+  .lx-float-badge,
+  .lx-ribbon-track,
+  .lx-fx-tilt { transform: none !important; }
+  .lx-fb-card { animation: none !important; }
+  .lx-stack-item { position: static !important; transform: none !important; margin-bottom: 24px; }
+  .lx-stack-shade { display: none; }
+  .lx-stage { perspective: none; }
 }
