@@ -200,6 +200,7 @@
     eye: '<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>',
     whatsapp: '<path d="M17.6 6.3a9 9 0 0 0-14.7 10L2 22l5.8-1.5a9 9 0 0 0 4.2 1.1h.1a9 9 0 0 0 9-9 9 9 0 0 0-3.5-6.3zM12 19.9a7.5 7.5 0 0 1-3.8-1l-.3-.2-3.4.9.9-3.3-.2-.4a7.5 7.5 0 1 1 13.9-3.9 7.5 7.5 0 0 1-7.1 7.9z"/>',
     telegram: '<path d="m22 2-20 8 7 3 2 7 4-5 5 4 2-17zM9 13l9-7-7.5 8.5L9 18v-5z"/>',
+    shield: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
   };
   const icon = (name, size = 18) => `<svg class="icon" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${name === 'logo' ? '2.4' : '1.8'}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name] || ''}</svg>`;
 

@@ -145,6 +145,281 @@
   }
   App.openListingPhotos = openPhotosDialog;
 
+  // ===========================================================================
+  // WATERMARK TOOL (1-Click Anti-Theft Branding)
+  // ===========================================================================
+  function openWatermarkDialog(a) {
+    const photos = listingPhotos(a);
+    if (!photos.length) {
+      toast('ამ ბინას ფოტოები არ აქვს. ჯერ ატვირთე ფოტოები.', { type: 'error' });
+      return;
+    }
+    let currentIdx = 0;
+    let wmText = `${S.org.name || 'Rigzea Real Estate'} · ${a.agent_phone || S.org.contact_phone || ''}`.trim();
+    let wmPos = 'br';
+    let wmOpacity = 0.70;
+    let activeImageObj = null;
+
+    return R.dialog({
+      title: '🛡️ ფოტოების დაცვა — Watermark & ლოგო',
+      subtitle: `${a.name} · ${photos.length} ფოტო`,
+      wide: true,
+      body: `
+        <div class="wm-modal-wrap">
+          <div class="wm-canvas-preview">
+            <canvas id="wm-canvas" width="800" height="500"></canvas>
+          </div>
+          ${photos.length > 1 ? `
+          <div class="wm-thumbs" id="wm-thumbs">
+            ${photos.map((p, i) => `
+              <div class="wm-thumb ${i === 0 ? 'active' : ''}" data-wm-idx="${i}">
+                <img src="${esc(p.thumb || p.url)}" alt="ფოტო ${i + 1}" />
+              </div>`).join('')}
+          </div>` : ''}
+
+          <div class="wm-controls-grid">
+            <label class="field">
+              <span class="field-label">Watermark-ის ტექსტი</span>
+              <input type="text" id="wm-input-text" class="input" value="${esc(wmText)}" placeholder="მაგ.: Apex Real Estate · 599 00 00 00" />
+            </label>
+            <label class="field">
+              <span class="field-label">პოზიცია</span>
+              <select id="wm-select-pos" class="input">
+                <option value="br" selected>ქვედა მარჯვენა (კლასიკური ბეჯი)</option>
+                <option value="bl">ქვედა მარცხენა</option>
+                <option value="diag">ცენტრში დიაგონალურად (Anti-Theft დაცვა)</option>
+                <option value="repeat">განმეორებადი ბადე (მაქსიმალური დაცვა)</option>
+              </select>
+            </label>
+            <label class="field">
+              <span class="field-label">გამჭვირვალობა: <strong id="wm-op-label">70%</strong></span>
+              <input type="range" id="wm-range-op" min="20" max="100" value="70" class="input" />
+            </label>
+          </div>
+
+          <div class="wm-actions-bar">
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-wm-dl-current">
+              ${icon('upload', 14)} ამ ფოტოს ჩამოტვირთვა
+            </button>
+            <button type="button" class="btn btn-primary" id="btn-wm-save-apt">
+              ${icon('check', 14)} ყველა ფოტოს დაცვა & განახლება ბინაზე
+            </button>
+          </div>
+        </div>`,
+      submitLabel: 'დახურვა',
+      onOpen: (dialogEl) => {
+        const canvas = $('#wm-canvas', dialogEl);
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+
+        const drawWatermark = (img, text, pos, opacity) => {
+          canvas.width = img.naturalWidth || img.width || 800;
+          canvas.height = img.naturalHeight || img.height || 500;
+          const w = canvas.width;
+          const h = canvas.height;
+
+          ctx.clearRect(0, 0, w, h);
+          ctx.drawImage(img, 0, 0, w, h);
+
+          if (!text) return;
+
+          ctx.save();
+          const baseFontSize = Math.max(16, Math.round(w / 30));
+          ctx.font = `bold ${baseFontSize}px 'FiraGO', -apple-system, sans-serif`;
+
+          if (pos === 'br' || pos === 'bl') {
+            const metrics = ctx.measureText(text);
+            const padX = baseFontSize * 0.8;
+            const padY = baseFontSize * 0.5;
+            const boxW = metrics.width + padX * 2;
+            const boxH = baseFontSize * 1.7;
+            const x = pos === 'br' ? w - boxW - (w * 0.03) : (w * 0.03);
+            const y = h - boxH - (h * 0.03);
+
+            ctx.fillStyle = `rgba(15, 23, 42, ${opacity * 0.85})`;
+            ctx.beginPath();
+            if (ctx.roundRect) ctx.roundRect(x, y, boxW, boxH, 8);
+            else ctx.rect(x, y, boxW, boxH);
+            ctx.fill();
+
+            ctx.fillStyle = '#ffffff';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(text, x + padX, y + boxH / 2);
+          } else if (pos === 'diag') {
+            ctx.translate(w / 2, h / 2);
+            ctx.rotate(-28 * Math.PI / 180);
+            const diagSize = Math.max(22, Math.round(w / 18));
+            ctx.font = `800 ${diagSize}px 'FiraGO', -apple-system, sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            ctx.strokeStyle = `rgba(0, 0, 0, ${opacity * 0.6})`;
+            ctx.lineWidth = Math.max(2, Math.round(diagSize / 8));
+            ctx.strokeText(text, 0, 0);
+
+            ctx.fillStyle = `rgba(255, 255, 255, ${opacity * 0.9})`;
+            ctx.fillText(text, 0, 0);
+          } else if (pos === 'repeat') {
+            ctx.rotate(-25 * Math.PI / 180);
+            const repSize = Math.max(14, Math.round(w / 38));
+            ctx.font = `700 ${repSize}px 'FiraGO', -apple-system, sans-serif`;
+            ctx.fillStyle = `rgba(255, 255, 255, ${opacity * 0.45})`;
+            ctx.strokeStyle = `rgba(0, 0, 0, ${opacity * 0.3})`;
+            ctx.lineWidth = 1;
+            const stepX = w * 0.35;
+            const stepY = h * 0.25;
+            for (let y = -h; y < h * 2; y += stepY) {
+              for (let x = -w; x < w * 2; x += stepX) {
+                ctx.strokeText(text, x, y);
+                ctx.fillText(text, x, y);
+              }
+            }
+          }
+          ctx.restore();
+        };
+
+        const loadActiveImage = () => {
+          const p = photos[currentIdx];
+          if (!p) return;
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+          img.onload = () => {
+            activeImageObj = img;
+            drawWatermark(img, wmText, wmPos, wmOpacity);
+          };
+          img.src = p.url;
+        };
+
+        loadActiveImage();
+
+        $('#wm-input-text', dialogEl)?.addEventListener('input', (e) => {
+          wmText = e.target.value.trim();
+          if (activeImageObj) drawWatermark(activeImageObj, wmText, wmPos, wmOpacity);
+        });
+        $('#wm-select-pos', dialogEl)?.addEventListener('change', (e) => {
+          wmPos = e.target.value;
+          if (activeImageObj) drawWatermark(activeImageObj, wmText, wmPos, wmOpacity);
+        });
+        $('#wm-range-op', dialogEl)?.addEventListener('input', (e) => {
+          wmOpacity = Number(e.target.value) / 100;
+          const lbl = $('#wm-op-label', dialogEl);
+          if (lbl) lbl.textContent = `${e.target.value}%`;
+          if (activeImageObj) drawWatermark(activeImageObj, wmText, wmPos, wmOpacity);
+        });
+
+        $('#wm-thumbs', dialogEl)?.addEventListener('click', (e) => {
+          const thumb = e.target.closest('[data-wm-idx]');
+          if (thumb) {
+            $$('.wm-thumb', dialogEl).forEach(t => t.classList.remove('active'));
+            thumb.classList.add('active');
+            currentIdx = Number(thumb.dataset.wmIdx);
+            loadActiveImage();
+          }
+        });
+
+        $('#btn-wm-dl-current', dialogEl)?.addEventListener('click', () => {
+          canvas.toBlob((blob) => {
+            if (!blob) return;
+            const u = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.download = `${slugify(a.name)}-watermarked-${currentIdx + 1}.jpg`;
+            link.href = u;
+            link.click();
+            URL.revokeObjectURL(u);
+            toast('ფოტო ჩამოიტვირთა', { type: 'success' });
+          }, 'image/jpeg', 0.92);
+        });
+
+        $('#btn-wm-save-apt', dialogEl)?.addEventListener('click', (e) => run(e.currentTarget, async () => {
+          const btn = e.currentTarget;
+          btn.disabled = true;
+          btn.textContent = `მუშავდება 1/${photos.length}…`;
+
+          const newPhotos = [];
+          for (let i = 0; i < photos.length; i++) {
+            btn.textContent = `მუშავდება ${i + 1}/${photos.length}…`;
+            const p = photos[i];
+            const img = await new Promise((res, rej) => {
+              const im = new Image();
+              im.crossOrigin = 'anonymous';
+              im.onload = () => res(im);
+              im.onerror = () => rej(new Error('ფოტოს ჩატვირთვა ვერ მოხერხდა'));
+              im.src = p.url;
+            });
+
+            const off = document.createElement('canvas');
+            off.width = img.naturalWidth || 1600;
+            off.height = img.naturalHeight || 1000;
+            const oCtx = off.getContext('2d');
+            oCtx.drawImage(img, 0, 0, off.width, off.height);
+
+            if (wmText) {
+              oCtx.save();
+              const baseFontSize = Math.max(16, Math.round(off.width / 30));
+              oCtx.font = `bold ${baseFontSize}px 'FiraGO', -apple-system, sans-serif`;
+
+              if (wmPos === 'br' || wmPos === 'bl') {
+                const metrics = oCtx.measureText(wmText);
+                const padX = baseFontSize * 0.8;
+                const boxW = metrics.width + padX * 2;
+                const boxH = baseFontSize * 1.7;
+                const x = wmPos === 'br' ? off.width - boxW - (off.width * 0.03) : (off.width * 0.03);
+                const y = off.height - boxH - (off.height * 0.03);
+                oCtx.fillStyle = `rgba(15, 23, 42, ${wmOpacity * 0.85})`;
+                oCtx.beginPath();
+                if (oCtx.roundRect) oCtx.roundRect(x, y, boxW, boxH, 8);
+                else oCtx.rect(x, y, boxW, boxH);
+                oCtx.fill();
+                oCtx.fillStyle = '#ffffff';
+                oCtx.textBaseline = 'middle';
+                oCtx.fillText(wmText, x + padX, y + boxH / 2);
+              } else if (wmPos === 'diag') {
+                oCtx.translate(off.width / 2, off.height / 2);
+                oCtx.rotate(-28 * Math.PI / 180);
+                const diagSize = Math.max(24, Math.round(off.width / 18));
+                oCtx.font = `800 ${diagSize}px 'FiraGO', -apple-system, sans-serif`;
+                oCtx.textAlign = 'center';
+                oCtx.textBaseline = 'middle';
+                oCtx.strokeStyle = `rgba(0, 0, 0, ${wmOpacity * 0.6})`;
+                oCtx.lineWidth = Math.max(2, Math.round(diagSize / 8));
+                oCtx.strokeText(wmText, 0, 0);
+                oCtx.fillStyle = `rgba(255, 255, 255, ${wmOpacity * 0.9})`;
+                oCtx.fillText(wmText, 0, 0);
+              } else if (wmPos === 'repeat') {
+                oCtx.rotate(-25 * Math.PI / 180);
+                const repSize = Math.max(14, Math.round(off.width / 38));
+                oCtx.font = `700 ${repSize}px 'FiraGO', -apple-system, sans-serif`;
+                oCtx.fillStyle = `rgba(255, 255, 255, ${wmOpacity * 0.45})`;
+                oCtx.strokeStyle = `rgba(0, 0, 0, ${wmOpacity * 0.3})`;
+                oCtx.lineWidth = 1;
+                const stepX = off.width * 0.35;
+                const stepY = off.height * 0.25;
+                for (let y = -off.height; y < off.height * 2; y += stepY) {
+                  for (let x = -off.width; x < off.width * 2; x += stepX) {
+                    oCtx.strokeText(wmText, x, y);
+                    oCtx.fillText(wmText, x, y);
+                  }
+                }
+              }
+              oCtx.restore();
+            }
+
+            const blob = await new Promise(r => off.toBlob(r, 'image/jpeg', 0.86));
+            const file = new File([blob], `photo-${i + 1}.jpg`, { type: 'image/jpeg' });
+            const uploaded = await uploadListingPhoto(a.id, file);
+            newPhotos.push({ url: uploaded.url, thumb: uploaded.thumb, order: i });
+          }
+
+          const row = await q(sb.from('apartments').update({ photos: newPhotos }).eq('id', a.id).select().single());
+          App.upsertLocal('apartments', row);
+          App.render();
+          toast('ყველა ფოტო წარმატებით განახლდა Watermark-ით!', { type: 'success' });
+        }));
+      }
+    });
+  }
+  App.openWatermarkModal = openWatermarkDialog;
+
   // Link analytics (views / WhatsApp / calls), cached for a minute per apartment.
   const linkStats = new Map();
   function fillLinkStats(id) {
@@ -184,6 +459,7 @@
           <button type="button" class="btn btn-primary btn-sm" id="btn-share-renter">${icon('copy', 14)} ბმულის კოპირება</button>
           <button type="button" class="btn btn-secondary btn-sm" id="btn-share-wl" title="ბმული რიგზეას ლოგოს გარეშე — პარტნიორი აგენტებისთვის">${icon('copy', 14)} White-label ბმული</button>
           <button type="button" class="btn btn-secondary btn-sm" id="btn-photos">${icon('camera', 14)} ფოტოები (${photos.length})</button>
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-watermark" title="ფოტოებზე საავტორო Watermark-ის დატანა">${icon('shield', 14)} Watermark / დაცვა</button>
           <button type="button" class="btn btn-secondary btn-sm" id="btn-open-post">${icon('whatsapp', 14)} პოსტი WhatsApp-ისა და Facebook-ისთვის</button>
           ${isSale ? '' : `<button type="button" class="btn btn-secondary btn-sm" id="btn-open-lease">${icon('file', 14)} იჯარის ხელშეკრულება</button>`}
           <button type="button" class="btn btn-secondary btn-sm" id="btn-apt-viewing">${icon('clock', 14)} + დათვალიერება</button>
@@ -200,6 +476,132 @@
       <p class="muted small listing-note" data-link-stats-note><span data-ls="note"></span></p>
     </section>`;
   }
+
+  // ===========================================================================
+  // MULTI-LISTING COLLECTION CREATOR (Client Showcase Links)
+  // ===========================================================================
+  let colMode = false;
+  const colPicked = new Set();
+
+  function openCollectionModal({ apartmentIds = [], clientName = '', dealId = null } = {}) {
+    let pickedIds = apartmentIds.slice();
+    if (!pickedIds.length) {
+      toast('მონიშნე მინიმუმ 1 ბინა კოლექციისთვის', { type: 'error' });
+      return;
+    }
+    return R.dialog({
+      title: '✨ მრავალბინიანი კოლექციის შექმნა',
+      subtitle: 'კლიენტისთვის გაგზავნილი პირადი პრემიუმ კატალოგი',
+      wide: true,
+      body: `
+        <div class="col-modal-form">
+          <div class="form-grid" style="margin-bottom:14px">
+            <label class="field"><span class="field-label">კლიენტის სახელი (გამოჩნდება სათაურში)</span>
+              <input type="text" id="col-client-name" class="input" placeholder="მაგ.: მარიამი ან გიორგი" value="${esc(clientName || '')}" maxlength="60" />
+            </label>
+            <label class="field"><span class="field-label">კოლექციის სათაური</span>
+              <input type="text" id="col-title" class="input" placeholder="მაგ.: შერჩეული ბინები ვაკეში" value="თქვენთვის შერჩეული ბინები" maxlength="80" />
+            </label>
+          </div>
+          <div class="col-modal-apts">
+            <div class="field-label" style="margin-bottom:8px">შერჩეული ბინები (<span id="col-apts-count">${pickedIds.length}</span>):</div>
+            <div class="rows" id="col-apts-list" style="--cols:minmax(0,2fr) 120px 80px">
+              ${pickedIds.map(id => {
+                const a = H.apt(id);
+                if (!a) return '';
+                const isSale = a.transaction_type === 'sale';
+                const p = isSale ? a.sale_price : a.monthly_rent;
+                return `<div class="row" data-col-item="${a.id}">
+                  <span class="cell-main"><strong>${esc(a.name)}</strong><span>${esc([a.address, a.city].filter(Boolean).join(', '))}</span></span>
+                  <span class="cell-meta">${p ? money(p, a.currency || 'USD') : '—'}</span>
+                  <span class="cell-actions"><button type="button" class="btn btn-ghost btn-sm t-danger" data-col-rm="${a.id}" title="ამოშლა">×</button></span>
+                </div>`;
+              }).join('')}
+            </div>
+          </div>
+          <div class="notice notice-ok" style="margin-top:14px">
+            ${icon('check', 16)} <span>კლიენტი ნახავს მხოლოდ შენს საკონტაქტო ნომერს და WhatsApp-ის ღილაკს. მეპატრონის მონაცემები 100%-ით დაცულია.</span>
+          </div>
+        </div>`,
+      submitLabel: '⚡ კოლექციის ბმულის შექმნა',
+      onOpen: (dialogEl) => {
+        const updateRows = () => {
+          const list = $('#col-apts-list', dialogEl);
+          const count = $('#col-apts-count', dialogEl);
+          if (count) count.textContent = pickedIds.length;
+          if (list) {
+            list.innerHTML = pickedIds.map(id => {
+              const a = H.apt(id);
+              if (!a) return '';
+              const isSale = a.transaction_type === 'sale';
+              const p = isSale ? a.sale_price : a.monthly_rent;
+              return `<div class="row" data-col-item="${a.id}">
+                <span class="cell-main"><strong>${esc(a.name)}</strong><span>${esc([a.address, a.city].filter(Boolean).join(', '))}</span></span>
+                <span class="cell-meta">${p ? money(p, a.currency || 'USD') : '—'}</span>
+                <span class="cell-actions"><button type="button" class="btn btn-ghost btn-sm t-danger" data-col-rm="${a.id}" title="ამოშლა">×</button></span>
+              </div>`;
+            }).join('');
+          }
+        };
+        dialogEl.addEventListener('click', (e) => {
+          const rm = e.target.closest('[data-col-rm]');
+          if (rm) {
+            pickedIds = pickedIds.filter(x => x !== rm.dataset.colRm);
+            if (pickedIds.length === 0) {
+              toast('კოლექციაში მინიმუმ 1 ბინა უნდა დარჩეს', { type: 'error' });
+            }
+            updateRows();
+          }
+        });
+      },
+      onSubmit: async (dialogEl) => {
+        if (!pickedIds.length) throw new Error('კოლექციაში მინიმუმ 1 ბინა უნდა იყოს.');
+        const client = ($('#col-client-name', dialogEl)?.value || '').trim();
+        const a = 'abcdefghijkmnpqrstuvwxyz23456789';
+        const b = crypto.getRandomValues(new Uint8Array(12));
+        const slug = Array.from(b, x => a[x % a.length]).join('');
+        const row = {
+          id: R.uuid(),
+          slug,
+          organization_id: S.org.id,
+          client_name: client || null,
+          apartment_ids: pickedIds,
+          criteria: {},
+          deal_id: dealId || null,
+          created_by: S.user.id
+        };
+        const sel = await App.insertOnce('selections', row);
+        colMode = false;
+        colPicked.clear();
+        App.render();
+
+        const url = `${location.origin}/p/s/?id=${encodeURIComponent(sel.slug)}`;
+        const waText = `გამარჯობა! თქვენთვის შევარჩიე ${sel.apartment_ids.length} ბინა. ფოტოები, ფასები და შედარების ცხრილი ერთ გვერდზეა:\n${url}`;
+
+        R.dialog({
+          title: '🎉 კოლექციის ბმული მზადაა!',
+          subtitle: `${sel.apartment_ids.length} ბინა მზადაა კლიენტთან გასაგზავნად`,
+          body: `
+            <div class="share-dialog-content">
+              <div class="listing-url"><input class="input" readonly value="${esc(url)}" id="col-done-url" /></div>
+              <div class="share-preview-box"><strong>გასაგზავნი ტექსტი:</strong>\n${esc(waText)}</div>
+              <div class="share-actions-grid">
+                <a class="btn btn-wa" href="${R.whatsappUrl(waText)}" target="_blank" rel="noopener">${icon('whatsapp', 16)} WhatsApp-ით გაგზავნა</a>
+                <button type="button" class="btn btn-secondary" id="btn-col-copy-url">${icon('copy', 16)} ბმულის კოპირება</button>
+              </div>
+              <a class="btn btn-ghost btn-block" href="${esc(url)}" target="_blank" rel="noopener">${icon('external', 16)} გვერდის გახსნა და შემოწმება</a>
+            </div>`,
+          submitLabel: 'დახურვა',
+          onOpen: (d) => {
+            $('#btn-col-copy-url', d)?.addEventListener('click', () => R.copyText(url, 'კოლექციის ბმული დაკოპირდა'));
+            $('#col-done-url', d)?.addEventListener('focus', e => e.target.select());
+          }
+        });
+        return false;
+      }
+    });
+  }
+  App.openCollectionModal = openCollectionModal;
 
   // ===========================================================================
   // APARTMENTS LIST
@@ -233,11 +635,17 @@
     const STATUS = [['current', 'ყველა მიმდინარე'], ['active', 'აქტიური'], ['reserved', 'დაჯავშნილი'], ['rented', 'გაქირავებული'], ['sold', 'გაყიდული'], ['maintenance', 'რემონტზე'], ['vacant', 'არააქტიური'], ['archived', 'დაარქივებული']]
       .filter(([id]) => !(sec === 'sale' && id === 'rented') && !(sec === 'rent' && id === 'sold'));
     if (!STATUS.some(([id]) => id === af.status)) af.status = 'current';
-    const cols = 'minmax(0,2fr) minmax(0,1.2fr) 120px 110px 140px 120px 190px';
+    const cols = colMode
+      ? '36px minmax(0,2fr) minmax(0,1.2fr) 120px 110px 140px 120px 190px'
+      : 'minmax(0,2fr) minmax(0,1.2fr) 120px 110px 140px 120px 190px';
 
     $('#view').innerHTML = `
       <div class="page-head"><div><h1>${title}</h1><p class="page-sub">${inScope} ობიექტი ${sec ? 'ამ სექციაში' : 'პორტფოლიოში'}</p></div>
-        <div class="page-actions"><a class="btn btn-secondary" href="#/settings/import">${icon('upload', 16)} იმპორტი</a><button type="button" class="btn btn-primary" id="btn-apt-new">${icon('plus', 16)} ობიექტის დამატება</button></div></div>
+        <div class="page-actions">
+          <button type="button" class="btn ${colMode ? 'btn-primary' : 'btn-secondary'}" id="btn-col-toggle">${icon('link', 16)} ${colMode ? '✓ მონიშვნა' : 'კოლექციის შექმნა'}</button>
+          <a class="btn btn-secondary" href="#/settings/import">${icon('upload', 16)} იმპორტი</a>
+          <button type="button" class="btn btn-primary" id="btn-apt-new">${icon('plus', 16)} ობიექტის დამატება</button>
+        </div></div>
       ${TYPES.length ? `<div class="chips" role="group" aria-label="ტრანზაქციის ტიპი" style="margin-bottom:8px">${TYPES.map(([id, label]) => `<button type="button" class="chip" data-tp="${id}" aria-pressed="${af.type === id}">${label} <span class="count">${apts.filter(a => inType(a, id) && a.status !== 'archived').length}</span></button>`).join('')}</div>` : ''}
       <div class="chips" role="group" aria-label="სტატუსი">${STATUS.map(([id, label]) => `<button type="button" class="chip" data-st="${id}" aria-pressed="${af.status === id}">${label} <span class="count">${base.filter(a => inStatus(a, id)).length}</span></button>`).join('')}</div>
       <div class="toolbar">
@@ -245,7 +653,10 @@
         ${cities.length > 1 ? `<select class="input" id="af-city" aria-label="ქალაქი"><option value="">ყველა ქალაქი</option>${cities.map(c => `<option ${af.city === c ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select>` : ''}
       </div>
       <section class="card">${list.length ? `<div class="rows">
-        <div class="rows-head" style="--cols:${cols}"><span>ობიექტი</span><span>მფლობელი</span><span>ფასი</span><span>აქტიური საქმე</span><span>შემდეგი ჯავშანი / ნახვა</span><span>სტატუსი</span><span></span></div>
+        <div class="rows-head" style="--cols:${cols}">
+          ${colMode ? `<span class="apt-select-cell"><input type="checkbox" id="col-cb-all" title="ყველას მონიშვნა" ${list.length && list.every(a => colPicked.has(a.id)) ? 'checked' : ''} /></span>` : ''}
+          <span>ობიექტი</span><span>მფლობელი</span><span>ფასი</span><span>აქტიური საქმე</span><span>შემდეგი ჯავშანი / ნახვა</span><span>სტატუსი</span><span></span>
+        </div>
         ${list.map(a => {
           const open = S.data.tasks.filter(t => t.apartment_id === a.id && H.isOpen(t));
           const overdue = open.filter(H.isOverdue).length;
@@ -258,7 +669,8 @@
             ? (a.sale_price ? `<strong>${money(a.sale_price, a.currency || 'USD')}</strong>${a.price_sqm ? `<div class="small muted">${money(a.price_sqm, a.currency || 'USD')}/მ²</div>` : ''}` : '—')
             : (a.monthly_rent ? `<strong>${money(a.monthly_rent, a.currency || 'USD')}</strong><div class="small muted">${a.rental_type === 'short_term' ? '/ დღე' : '/ თვე'}</div>` : '—');
           const tt = a.transaction_type || (a.rental_type === 'long_term' ? 'long_term' : 'daily');
-          return `<a class="row" href="#/apartments/${a.id}" style="--cols:${cols}">
+          return `<a class="row ${colPicked.has(a.id) ? 'is-col-picked' : ''}" href="#/apartments/${a.id}" data-apt-row="${a.id}" style="--cols:${cols}">
+            ${colMode ? `<span class="apt-select-cell"><input type="checkbox" class="apt-col-cb" data-col-id="${a.id}" ${colPicked.has(a.id) ? 'checked' : ''} aria-label="მონიშვნა: ${esc(a.name)}" /></span>` : ''}
             <span class="cell-main"><strong>${esc(a.name)}</strong><span>${esc([a.address, a.city].filter(Boolean).join(', '))} · ${R.transactionBadge(tt)}${App.pausedApartmentIds().has(a.id) ? ' · <span class="t-warn">ბმული შეჩერებულია</span>' : ''}</span></span>
             <span class="cell-meta" data-label="მფლობელი">${esc(H.owner(a.owner_id)?.name || '—')}</span>
             <span class="cell-meta" data-label="ფასი">${priceHtml}</span>
@@ -269,7 +681,15 @@
           </a>`;
         }).join('')}</div>` : `<div class="empty">${icon('building', 28)}<h3>${apts.length ? (inScope ? 'ობიექტი ვერ მოიძებნა' : (sec === 'sale' ? 'გასაყიდი ბინა ჯერ არ არის' : 'გასაქირავებელი ბინა ჯერ არ არის')) : 'ობიექტი ჯერ არ არის დამატებული'}</h3>
           <p>${apts.length ? (inScope ? 'შეცვალე ძებნა ან ფილტრი.' : 'დაამატე ობიექტი ზედა ღილაკით.') : 'დაამატე ბინა ან კომერციული ფართი სახელით და მისამართით, მაგ.: „Orbi City · 1204“. ბევრი ობიექტი გაქვს? გამოიყენე Excel/CSV იმპორტი.'}</p>
-          ${apts.length ? '' : '<button class="btn btn-primary" type="button" id="btn-apt-empty">ობიექტის დამატება</button>'}</div>`}</section>`;
+          ${apts.length ? '' : '<button class="btn btn-primary" type="button" id="btn-apt-empty">ობიექტის დამატება</button>'}</div>`}
+      </section>
+      ${colMode ? `
+        <div class="col-floating-bar" id="col-floating-bar">
+          <span class="col-bar-count">${icon('link', 16)} მონიშნულია <strong>${colPicked.size}</strong> ბინა</span>
+          <button type="button" class="btn btn-primary btn-sm" id="btn-col-build" ${colPicked.size ? '' : 'disabled'}>⚡ კოლექციის ბმული</button>
+          ${colPicked.size ? '<button type="button" class="btn btn-ghost btn-sm" id="btn-col-clear" style="color:#cbd5e1">გასუფთავება</button>' : ''}
+          <button type="button" class="btn btn-ghost btn-sm" id="btn-col-cancel" style="color:#cbd5e1">დახურვა</button>
+        </div>` : ''}`;
 
     let timer;
     $('#af-q').addEventListener('input', (e) => { clearTimeout(timer); timer = setTimeout(() => { af.q = e.target.value; App.render(); const i = $('#af-q'); i.focus(); i.setSelectionRange(af.q.length, af.q.length); }, 200); });
@@ -282,6 +702,43 @@
     $$('[data-new-task]').forEach(b => b.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); App.openTaskForm({ apartmentId: b.dataset.newTask }); }));
     $$('[data-new-exp]').forEach(b => b.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); App.openExpenseForm({ apartmentId: b.dataset.newExp }); }));
     $$('[data-share-apt]').forEach(b => b.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); App.openCoBrokerShare(H.apt(b.dataset.shareApt)); }));
+
+    // Collection mode bindings
+    $('#btn-col-toggle')?.addEventListener('click', () => {
+      colMode = !colMode;
+      if (!colMode) colPicked.clear();
+      App.render();
+    });
+    $('#btn-col-cancel')?.addEventListener('click', () => {
+      colMode = false;
+      colPicked.clear();
+      App.render();
+    });
+    $('#btn-col-clear')?.addEventListener('click', () => {
+      colPicked.clear();
+      App.render();
+    });
+    $('#btn-col-build')?.addEventListener('click', () => {
+      if (!colPicked.size) return;
+      openCollectionModal({ apartmentIds: Array.from(colPicked) });
+    });
+    $('#col-cb-all')?.addEventListener('change', (e) => {
+      if (e.target.checked) list.forEach(a => colPicked.add(a.id));
+      else list.forEach(a => colPicked.delete(a.id));
+      App.render();
+    });
+    if (colMode) {
+      $$('[data-apt-row]').forEach(row => {
+        row.addEventListener('click', (e) => {
+          if (e.target.closest('.cell-actions') || e.target.closest('button')) return;
+          e.preventDefault();
+          const id = row.dataset.aptRow;
+          if (colPicked.has(id)) colPicked.delete(id);
+          else colPicked.add(id);
+          App.render();
+        });
+      });
+    }
   };
 
   // ===========================================================================
@@ -504,6 +961,7 @@
     $('#btn-share-renter')?.addEventListener('click', () => R.copyText(listingUrl(a), 'ბმული დაკოპირდა'));
     $('#btn-share-wl')?.addEventListener('click', () => R.copyText(listingUrl(a, true), 'White-label ბმული დაკოპირდა'));
     $('#btn-photos')?.addEventListener('click', () => openPhotosDialog(a));
+    $('#btn-watermark')?.addEventListener('click', () => openWatermarkDialog(a));
     $('#listing-url')?.addEventListener('focus', (e) => e.target.select());
     loadLinkStats(id);
     $('#btn-open-post')?.addEventListener('click', () => App.openPostGenerator(a));
