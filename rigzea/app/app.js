@@ -310,6 +310,8 @@
   ];
   const navGroups = () => (isAgent() ? NAV.filter(g => g.id !== 'manage') : NAV);
   const sectionOf = (itemId) => NAV.find(g => g.items.some(i => i.id === itemId));
+  const aptSection = (a) => (a?.transaction_type === 'sale' ? 'sale' : 'rent');
+  const contactSection = (o) => o?.contact_type || 'owner';
 
   // The nav item the current route belongs to.
   function navKey(r = route()) {
