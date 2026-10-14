@@ -382,9 +382,11 @@
         { href: '#/owners?type=seller', label: 'გამყიდველები', active: curType === 'seller' },
       ];
     }
-    bar.hidden = !subLinks;
-    if (subLinks) {
-      bar.innerHTML = subLinks.map(l => `<a class="section-tab" href="${l.href}" ${l.active ? 'aria-current="page"' : ''}>${l.label}</a>`).join('');
+    if (bar) {
+      bar.hidden = !subLinks;
+      if (subLinks) {
+        bar.innerHTML = subLinks.map(l => `<a class="section-tab" href="${l.href}" ${l.active ? 'aria-current="page"' : ''}>${l.label}</a>`).join('');
+      }
     }
 
     // Organization switcher
@@ -559,7 +561,7 @@
       },
     });
   }
-  $('#btn-search').addEventListener('click', openSearch);
+  $('#btn-search')?.addEventListener('click', openSearch);
   document.addEventListener('keydown', (e) => {
     if (e.key === '/' && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName) && !$('#shell').hidden) { e.preventDefault(); openSearch(); }
   });
