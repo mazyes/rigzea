@@ -1372,108 +1372,145 @@
   const amountEN = (n, cur) => (n === '' || n === null || n === undefined || isNaN(n) ? BLANK : `${cur} ${Number(n).toLocaleString('en-US')}`);
 
   // Clause set: each article has a KA and EN heading and parallel clauses, so numbering always matches.
+  // Strictly formulated according to the Civil Code of Georgia (საქართველოს სამოქალაქო კოდექსი, მუხლები 531–575).
   function leaseArticles(d) {
     const cur = d.currency || 'USD';
     const area = d.area_sqm ? { ka: `, ფართობი: ${esc(d.area_sqm)} მ²`, en: `, area: ${esc(d.area_sqm)} m²` } : { ka: '', en: '' };
     const deposit = Number(d.deposit) > 0;
     const iban = d.landlord_bank ? { ka: `: ${esc(d.landlord_bank)}`, en: `: ${esc(d.landlord_bank)}` } : { ka: '', en: '' };
-    const notice = val(d.notice_days, '____');
+    const notice = val(d.notice_days, '30');
+    const penaltyPct = val(d.penalty_pct, '0.1');
+    const payDay = val(d.pay_day, '1');
     const utilities = {
-      tenant: ['ხელშეკრულების მოქმედების პერიოდში მოხმარებულ კომუნალურ მომსახურებას (ელექტროენერგია, ბუნებრივი აირი, წყალი, დასუფთავება, ინტერნეტი) იხდის დამქირავებელი, მრიცხველების ჩვენებისა და ქვითრების მიხედვით.',
-        'Utilities consumed during the term (electricity, gas, water, waste collection, internet) are paid by the Tenant according to meter readings and bills.'],
-      landlord: ['კომუნალური მომსახურების (ელექტროენერგია, ბუნებრივი აირი, წყალი, დასუფთავება, ინტერნეტი) ღირებულება შედის ქირაში და მას იხდის გამქირავებელი.',
-        'Utilities (electricity, gas, water, waste collection, internet) are included in the rent and paid by the Landlord.'],
-      custom: [`კომუნალური გადასახადები იფარება შემდეგი წესით: ${val(d.utilities_note)}`, `Utilities are paid as follows: ${val(d.utilities_note)}`],
+      tenant: ['ხელშეკრულების მოქმედების პერიოდში მოხმარებულ კომუნალურ მომსახურებას (ელექტროენერგია, ბუნებრივი აირი, წყალი, დასუფთავება, ლიფტი, ინტერნეტი) სრულად იხდის დამქირავებელი, მრიცხველების ფაქტობრივი ჩვენებებისა და წარმოდგენილი ქვითრების მიხედვით.',
+        'All utilities consumed during the lease term (electricity, natural gas, water, waste disposal, elevator, internet) shall be paid in full by the Tenant according to actual meter readings and official utility bills.'],
+      landlord: ['კომუნალური მომსახურების (ელექტროენერგია, ბუნებრივი აირი, წყალი, დასუფთავება, ლიფტი, ინტერნეტი) ღირებულება შედის ქირაში და მას სრულად ფარავს გამქირავებელი.',
+        'The cost of utilities (electricity, natural gas, water, waste disposal, elevator, internet) is included in the rent and shall be paid in full by the Landlord.'],
+      custom: [`კომუნალური გადასახადები იფარება მხარეთა შემდეგი შეთანხმებით: ${val(d.utilities_note)}`, `Utility expenses are paid according to the following agreed terms: ${val(d.utilities_note)}`],
     }[d.utilities || 'tenant'];
 
     const arts = [
-      { ka: 'ხელშეკრულების საგანი', en: 'Subject of the Agreement', c: [
-        [`გამქირავებელი დამქირავებელს დროებით სარგებლობაში გადასცემს საცხოვრებელ ბინას, რომელიც მდებარეობს მისამართზე: ${val(d.property_address)} (საკადასტრო კოდი: ${val(d.cadastral_code)}${area.ka}) (შემდგომში — „ბინა“), ხოლო დამქირავებელი კისრულობს ქირის გადახდას ამ ხელშეკრულებით დადგენილი პირობებით.`,
-          `The Landlord grants the Tenant temporary use of the residential apartment located at: ${val(d.property_address)} (cadastral code: ${val(d.cadastral_code)}${area.en}) (hereinafter the "Apartment"), and the Tenant undertakes to pay rent under the terms of this Agreement.`],
-        ['გამქირავებელი ადასტურებს, რომ არის ბინის მესაკუთრე ან უფლებამოსილია, გააქირაოს იგი, და ბინა არ არის დატვირთული ისეთი უფლებით, რომელიც დამქირავებელს ბინით სარგებლობაში ხელს შეუშლის.',
-          'The Landlord confirms that they own the Apartment or are authorised to let it, and that the Apartment is not encumbered by any right that would prevent the Tenant from using it.'],
+      { ka: 'ხელშეკრულების საგანი და გარანტიები', en: 'Subject of Agreement and Warranties', c: [
+        [`გამქირავებელი დამქირავებელს დროებით სასყიდლიან სარგებლობაში (ექსკლუზიურად საცხოვრებელი მიზნებისთვის) გადასცემს საცხოვრებელ ბინას, რომელიც მდებარეობს მისამართზე: ${val(d.property_address)} (საკადასტრო კოდი: ${val(d.cadastral_code)}${area.ka}) (შემდგომში — „ბინა“), ხოლო დამქირავებელი კისრულობს ვალდებულებას, გადაიხადოს ქირა ამ ხელშეკრულებით დადგენილი წესითა და ოდენობით (საქართველოს სამოქალაქო კოდექსის 531-ე მუხლი).`,
+          `The Landlord grants the Tenant temporary use of the residential apartment for exclusive residential purposes, located at: ${val(d.property_address)} (cadastral code: ${val(d.cadastral_code)}${area.en}) (hereinafter the "Apartment"), and the Tenant undertakes to pay rent in accordance with this Agreement (Article 531 of the Civil Code of Georgia).`],
+        ['გამქირავებელი გარანტიას იძლევა, რომ არის ბინის კანონიერი მესაკუთრე ან უფლებამოსილი წარმომადგენელი, და ბინა თავისუფალია ყოველგვარი ნივთობრივი და უფლებრივი ნაკლისგან (სსკ 532-ე და 533-ე მუხლები), არ არის დაყადაღებული, გასხვისებული ან დატვირთული მესამე პირთა ისეთი უფლებებით, რაც ხელს შეუშლის დამქირავებლის მიერ მის შეუფერხებელ სარგებლობას.',
+          'The Landlord warrants that they are the lawful owner or authorised representative of the Apartment, and that the Apartment is free from any material or legal defects (Articles 532 and 533 of the Civil Code of Georgia), is not seized, alienated, or encumbered with third-party claims that would impede unhindered use by the Tenant.'],
       ] },
-      { ka: 'ქირა და გადახდის წესი', en: 'Rent and Payment', c: [
-        [`ბინის ყოველთვიური ქირის ოდენობაა ${amountKA(d.rent, cur)}.`, `The monthly rent for the Apartment is ${amountEN(d.rent, cur)}.`],
-        [`ქირა გადაიხდება წინასწარ, ყოველი თვის ${val(d.pay_day, '____')} რიცხვამდე (ჩათვლით).`, `Rent is payable in advance, on or before day ${val(d.pay_day, '____')} of each month.`],
-        [`გადახდა ხორციელდება მხარეთა შეთანხმებით — ნაღდი ფორმით ან გამქირავებლის საბანკო ანგარიშზე ჩარიცხვით${iban.ka}.`, `Payment is made as agreed by the Parties, in cash or by transfer to the Landlord's bank account${iban.en}.`],
-        ['ქირის ოდენობის შეცვლა ხელშეკრულების მოქმედების პერიოდში დასაშვებია მხოლოდ მხარეთა წერილობითი შეთანხმებით.', 'The rent may be changed during the term only by written agreement of the Parties.'],
+      { ka: 'ქირა და ანგარიშსწორების წესი', en: 'Rent and Payment Terms', c: [
+        [`ბინის ყოველთვიური ქირის ოდენობა შეადგენს ${amountKA(d.rent, cur)} (საქართველოს სამოქალაქო კოდექსის 536-ე მუხლი).`, `The monthly rent for the Apartment is ${amountEN(d.rent, cur)} (Article 536 of the Civil Code of Georgia).`],
+        [`ქირა გადაიხდება წინასწარ, ყოველი საანგარიშო თვის ${payDay} რიცხვამდე (ჩათვლით).`, `Rent is payable monthly in advance, on or before day ${payDay} of each billing period.`],
+        [`ანგარიშსწორება ხორციელდება უნაღდო ფორმით გამქირავებლის საბანკო ანგარიშზე ჩარიცხვით${iban.ka} ან მხარეთა ურთიერთშეთანხმებით ნაღდი ანგარიშსწორების გზით შესაბამისი წერილობითი დადასტურებით.`,
+          `Payment is made by bank transfer to the Landlord's bank account${iban.en} or, by mutual consent, in cash with written receipt confirmation.`],
+        ['ქირის ოდენობის ცალმხრივი შეცვლა ხელშეკრულების მოქმედების პერიოდში დაუშვებელია; ნებისმიერი ცვლილება დასაშვებია მხოლოდ მხარეთა ორმხრივი წერილობითი შეთანხმებით.',
+          'Unilateral modification of the rent during the term of this Agreement is prohibited; any adjustment is valid only upon mutual written agreement of both Parties.'],
       ] },
-      { ka: 'უზრუნველყოფის დეპოზიტი', en: 'Security Deposit', c: deposit ? [
-        [`ხელშეკრულების ხელმოწერისას დამქირავებელი გამქირავებელს უხდის უზრუნველყოფის დეპოზიტს, რომლის ოდენობაა ${amountKA(d.deposit, cur)}.`, `Upon signing this Agreement, the Tenant pays the Landlord a security deposit of ${amountEN(d.deposit, cur)}.`],
-        ['დეპოზიტი დამქირავებელს უბრუნდება ბინის დაბრუნებიდან 14 დღის ვადაში, თუ ბინა ჩვეულებრივ ცვეთაზე მეტად არ არის დაზიანებული და დამქირავებელს არ აქვს ქირის ან კომუნალური გადასახადების დავალიანება.',
-          'The deposit is returned to the Tenant within 14 days after the Apartment is handed back, provided the Apartment has no damage beyond normal wear and tear and the Tenant has no outstanding rent or utility debts.'],
-        ['წინააღმდეგ შემთხვევაში, გამქირავებელს უფლება აქვს, დეპოზიტიდან დაფაროს დავალიანება ან ზიანის აღმოფხვრის დოკუმენტურად დადასტურებული ხარჯი და დარჩენილი თანხა დაუბრუნოს დამქირავებელს.',
-          'Otherwise, the Landlord may deduct the outstanding debt or the documented cost of repairing the damage from the deposit and return the balance to the Tenant.'],
-        ['დეპოზიტი ბოლო თვის ქირად არ ჩაითვლება, თუ მხარეები წერილობით სხვა რამეზე არ შეთანხმდებიან.', 'The deposit shall not be applied as the last month\'s rent unless the Parties agree otherwise in writing.'],
+      { ka: 'საგარანტიო დეპოზიტი', en: 'Security Deposit', c: deposit ? [
+        [`ხელშეკრულების ხელმოწერისას დამქირავებელი გამქირავებელს უხდის საგარანტიო დეპოზიტს ${amountKA(d.deposit, cur)} ოდენობით, რომელიც ემსახურება დამქირავებლის მიერ ნაკისრი ვალდებულებების შესრულების, ქონებრივი ზიანისა და კომუნალური დავალიანების უზრუნველყოფას.`,
+          `Upon signing this Agreement, the Tenant pays the Landlord a security deposit of ${amountEN(d.deposit, cur)} to secure the performance of obligations, property damage compensation, and utility payments.`],
+        ['საგარანტიო დეპოზიტი სრულად უბრუნდება დამქირავებელს ბინის დაბრუნებისა და საბოლოო მიღება-ჩაბარების აქტის გაფორმებიდან არაუგვიანეს 14 (თოთხმეტი) კალენდარული დღის ვადაში, იმ პირობით, რომ დამქირავებელს არ ერიცხება ქირის ან კომუნალური მომსახურების დავალიანება და ბინა ბრუნდება დაუზიანებელ მდგომარეობაში (ჩვეულებრივი ცვეთის გათვალისწინებით).',
+          'The security deposit shall be refunded in full to the Tenant within 14 (fourteen) calendar days after the Apartment is returned and the final handover report signed, provided there are no rental or utility debts and the Apartment is returned undamaged (allowing for normal wear and tear).'],
+        ['დავალიანების ან ქონების დაზიანების შემთხვევაში, გამქირავებელი უფლებამოსილია, დეპოზიტიდან გამოქვითოს შესაბამისი დოკუმენტურად დადასტურებული ხარჯი/დავალიანება, ხოლო დარჩენილი თანხა დაუბრუნოს დამქირავებელს დასაბუთებულ გაანგარიშებასთან ერთად.',
+          'In case of arrears or property damage, the Landlord is entitled to deduct the documented debt or repair costs from the deposit and refund the remaining balance with an itemised statement.'],
+        ['საგარანტიო დეპოზიტი არ წარმოადგენს ბოლო თვის (ან ნებისმიერი სხვა თვის) ქირას და დაუშვებელია მისი თვითნებურად ქირის გადასახადად ჩათვლა გამქირავებლის წინასწარი წერილობითი თანხმობის გარეშე.',
+          'The security deposit does not constitute the last month\'s (or any other month\'s) rent and cannot be unilaterally applied toward rent without the Landlord\'s prior written consent.'],
       ] : [
-        ['მხარეები შეთანხმდნენ, რომ უზრუნველყოფის დეპოზიტი არ გადაიხდება.', 'The Parties have agreed that no security deposit is payable.'],
+        ['მხარეები შეთანხმდნენ, რომ საგარანტიო დეპოზიტის გადახდა გათვალისწინებული არ არის.', 'The Parties have agreed that no security deposit is payable.'],
       ] },
-      { ka: 'ხელშეკრულების ვადა', en: 'Term', c: [
-        [`ხელშეკრულების მოქმედების ვადაა: ${val(dmy(d.start_date))} – ${val(dmy(d.end_date))} (ორივე თარიღის ჩათვლით).`, `This Agreement is valid from ${val(dmy(d.start_date))} to ${val(dmy(d.end_date))} inclusive.`],
-        ['ვადის გაგრძელება შესაძლებელია მხარეთა წერილობითი შეთანხმებით.', 'The term may be extended by written agreement of the Parties.'],
+      { ka: 'ხელშეკრულების ვადა და გაგრძელება', en: 'Term and Renewal', c: [
+        [`ხელშეკრულება ძალაში შედის მხარეთა ხელმოწერისთანავე და მოქმედებს: ${val(dmy(d.start_date))} – ${val(dmy(d.end_date))} (ორივე თარიღის ჩათვლით) (საქართველოს სამოქალაქო კოდექსის 558-ე მუხლი).`,
+          `This Agreement enters into force upon signature and shall be valid from ${val(dmy(d.start_date))} to ${val(dmy(d.end_date))} inclusive (Article 558 of the Civil Code of Georgia).`],
+        ['ხელშეკრულების ვადის გაგრძელება ან განახლება დასაშვებია მხოლოდ მხარეთა ორმხრივი წერილობითი შეთანხმებით, ვადის გასვლამდე არანაკლებ 30 კალენდარული დღით ადრე.',
+          'Renewal or extension of this Agreement is permitted only by mutual written agreement of both Parties, at least 30 calendar days before the expiration date.'],
       ] },
-      { ka: 'ბინით სარგებლობა', en: 'Use of the Apartment', c: [
-        ['დამქირავებელი ბინას იყენებს მხოლოდ საცხოვრებლად და ვალდებულია, გაუფრთხილდეს მას, დაიცვას მეზობლების უფლებები და შენობის შინაგანაწესი.', 'The Tenant shall use the Apartment for residential purposes only, take good care of it and respect the rights of neighbours and the building rules.'],
-        ['ბინის ქვექირავნობით ან მესამე პირისთვის სარგებლობაში გადაცემა დასაშვებია მხოლოდ გამქირავებლის წინასწარი წერილობითი თანხმობით.', 'Subletting the Apartment or handing it over to a third party is allowed only with the Landlord\'s prior written consent.'],
-        ['ბინის გადაკეთება ან რეკონსტრუქცია დასაშვებია მხოლოდ გამქირავებლის წერილობითი თანხმობით.', 'Any alteration or reconstruction of the Apartment requires the Landlord\'s written consent.'],
-        d.pets === 'yes'
-          ? ['შინაური ცხოველის ყოლა ნებადართულია. ცხოველის მიერ მიყენებულ ზიანზე პასუხს აგებს დამქირავებელი.', 'Pets are allowed. The Tenant is liable for any damage caused by the pet.']
-          : ['შინაური ცხოველის ყოლა დაუშვებელია გამქირავებლის წერილობითი თანხმობის გარეშე.', 'Pets are not allowed without the Landlord\'s written consent.'],
-        ['გამქირავებელს უფლება აქვს, დამქირავებელთან წინასწარი შეთანხმებით, გონივრულ დროს დაათვალიეროს ბინა.', 'The Landlord may inspect the Apartment at a reasonable time agreed in advance with the Tenant.'],
-      ] },
-      { ka: 'კომუნალური გადასახადები', en: 'Utilities', c: [
+      { ka: 'კომუნალური გადასახადები', en: 'Utilities and Operating Costs', c: [
         utilities,
-        ['ბინის გადაცემისას მხარეები მრიცხველების ჩვენებას აფიქსირებენ მიღება-ჩაბარების აქტში.', 'On handover, the Parties record the meter readings in the handover report.'],
-        ['ბინის გადაცემამდე წარმოშობილ კომუნალურ დავალიანებას ფარავს გამქირავებელი.', 'Any utility debts incurred before handover are paid by the Landlord.'],
+        ['ბინის გადაცემამდე წარმოშობილ ნებისმიერ კომუნალურ თუ სხვაგვარ დავალიანებაზე სრულად პასუხისმგებელია გამქირავებელი, ხოლო გადაცემის შემდგომ პერიოდზე — დამქირავებელი, მიღება-ჩაბარების აქტში დაფიქსირებული მრიცხველების საწყისი ჩვენებების შესაბამისად.',
+          'Any utility or municipal debts incurred prior to handover are the sole responsibility of the Landlord; all charges incurred after handover are paid by the Tenant based on the initial meter readings recorded in the handover report.'],
       ] },
-      { ka: 'ბინის გადაცემა და მდგომარეობა', en: 'Handover and Condition', c: [
-        ['გამქირავებელი ბინას დამქირავებელს გადასცემს ხელშეკრულების მოქმედების დაწყების დღეს, საცხოვრებლად ვარგის მდგომარეობაში, მიღება-ჩაბარების აქტში აღწერილ ინვენტართან ერთად.', 'The Landlord hands over the Apartment to the Tenant on the start date of the term, in a habitable condition, together with the inventory listed in the handover report.'],
-        ['მიღება-ჩაბარების აქტი (ფოტოებით) ხელშეკრულების განუყოფელი ნაწილია.', 'The handover report (with photos) forms an integral part of this Agreement.'],
-        ['ბინის ძირითად ხარვეზებს (მზიდი კონსტრუქციები, სახურავი, შიდა კომუნიკაციები) საკუთარი ხარჯით აღმოფხვრის გამქირავებელი, ხოლო მიმდინარე წვრილმან შეკეთებას უზრუნველყოფს დამქირავებელი.', 'The Landlord remedies major defects (structural elements, roof, internal utility systems) at their own expense; the Tenant takes care of minor day-to-day repairs.'],
-        ['ხელშეკრულების დასრულებისას დამქირავებელი ბინას აბრუნებს იმავე მდგომარეობაში, რომელშიც მიიღო, ჩვეულებრივი ცვეთის გათვალისწინებით.', 'At the end of the Agreement, the Tenant returns the Apartment in the same condition in which it was received, allowing for normal wear and tear.'],
+      { ka: 'ბინით სარგებლობა, რემონტი და შემოწმება', en: 'Use, Maintenance, and Inspection', c: [
+        ['დამქირავებელი ბინას იყენებს ექსკლუზიურად საცხოვრებლად, ვალდებულია გაუფრთხილდეს მას, დაიცვას სანიტარული, ხანძარსაწინააღმდეგო და სამეზობლო წესრიგის ნორმები.',
+          'The Tenant shall use the Apartment exclusively for residential purposes, maintain good care, and comply with sanitary, fire safety, and neighbourhood conduct regulations.'],
+        ['კაპიტალური შეკეთება (სსკ 532-ე მუხლი): გამქირავებელი ვალდებულია საკუთარი ხარჯით უზრუნველყოს ბინის კაპიტალური შეკეთება, მზიდი კონსტრუქციების, სახურავისა და ცენტრალური საინჟინრო კომუნიკაციების (გათბობა, წყალი, ელექტროობა) გაუმართაობის აღმოფხვრა, თუ ის არ არის გამოწვეული დამქირავებლის ბრალეული მოქმედებით.',
+          'Capital Repairs (Article 532 Civil Code): The Landlord shall at their own expense carry out capital repairs and eliminate defects in load-bearing structures, roof, and central engineering systems (heating, water, electricity), unless caused by Tenant fault.'],
+        ['მიმდინარე მოვლა და წვრილმანი შეკეთება (სსკ 542-ე მუხლი): დამქირავებელი ვალდებულია საკუთარი ხარჯით აღმოფხვრას ბინისა და ინვენტარის ის წვრილმანი გაუმართაობა, რაც გამოწვეულია ჩვეულებრივი ყოველდღიური ექსპლუატაციით.',
+          'Day-to-day Maintenance (Article 542 Civil Code): The Tenant shall remedy minor routine faults in the Apartment and inventory at their own expense where resulting from ordinary day-to-day use.'],
+        ['ქვექირავნობის აკრძალვა (სსკ 544-ე მუხლი): დამქირავებელს ეკრძალება ბინის ან მისი ნაწილის ქვექირავნობით გაცემა, მესამე პირებისთვის სარგებლობაში გადაცემა ან ბინის იურიდიულ მისამართად რეგისტრაცია გამქირავებლის წინასწარი წერილობითი თანხმობის გარეშე.',
+          'Prohibition of Subletting (Article 544 Civil Code): The Tenant is strictly forbidden to sublet the Apartment, transfer occupancy to third parties, or register legal entities at the address without prior written consent of the Landlord.'],
+        d.pets === 'yes'
+          ? ['შინაური ცხოველის ყოლა ნებადართულია. ცხოველის მიერ ბინისთვის ან ინვენტარისთვის მიყენებულ ნებისმიერ ზიანზე სრულ მატერიალურ პასუხისმგებლობას იღებს დამქირავებელი.',
+            'Pets are permitted. The Tenant assumes full financial liability for any damage caused to the premises or inventory by pets.']
+          : ['შინაური ცხოველის ყოლა დაუშვებელია გამქირავებლის წინასწარი წერილობითი თანხმობის გარეშე.',
+            'Pets are strictly prohibited without the Landlord\'s prior written consent.'],
+        ['ბინის დათვალიერება: გამქირავებელს უფლება აქვს, დამქირავებელთან არანაკლებ 24 საათით ადრე შეთანხმებით, გონივრულ დღის საათებში დაათვალიეროს ბინა მისი მოვლის მდგომარეობის შესამოწმებლად.',
+          'Inspection: The Landlord is entitled to inspect the Apartment upon giving at least 24 hours\' advance notice to the Tenant, at a reasonable time during daytime hours.'],
       ] },
-      { ka: 'ხელშეკრულების შეწყვეტა', en: 'Termination', c: [
-        ['ხელშეკრულება შეიძლება ვადამდე შეწყდეს მხარეთა წერილობითი შეთანხმებით.', 'The Agreement may be terminated early by written agreement of the Parties.'],
-        [`თითოეულ მხარეს შეუძლია, ვადამდე შეწყვიტოს ხელშეკრულება, თუ მეორე მხარეს ამის შესახებ წერილობით აცნობებს არანაკლებ ${notice} დღით ადრე.`, `Either Party may terminate the Agreement early by giving the other Party at least ${notice} days' written notice.`],
-        ['გამქირავებელს უფლება აქვს, შეწყვიტოს ხელშეკრულება, თუ დამქირავებელი ქირის გადახდას 10 დღეზე მეტით აგვიანებს ან არსებითად არღვევს ამ ხელშეკრულების პირობებს.', 'The Landlord may terminate the Agreement if the Tenant is more than 10 days late with rent or materially breaches this Agreement.'],
-        ['დამქირავებელს უფლება აქვს, შეწყვიტოს ხელშეკრულება, თუ ბინა საცხოვრებლად უვარგისი გახდა არა დამქირავებლის ბრალით.', 'The Tenant may terminate the Agreement if the Apartment becomes uninhabitable through no fault of the Tenant.'],
+      { ka: 'მხარეთა პასუხისმგებლობა და პირგასამტეხლო', en: 'Liability and Delay Penalty', c: [
+        ['ვალდებულებების შეუსრულებლობის ან არაჯეროვნად შესრულებისთვის მხარეები პასუხს აგებენ საქართველოს მოქმედი კანონმდებლობის შესაბამისად (საქართველოს სამოქალაქო კოდექსის 394-ე და 417–420-ე მუხლები).',
+          'The Parties are liable for non-performance or improper performance of their obligations pursuant to Georgian law (Articles 394 and 417–420 of the Civil Code of Georgia).'],
+        [`პირგასამტეხლო ქირის გადაცილებაზე: ქირის გადახდის ვადის გადაცილების შემთხვევაში დამქირავებელი უხდის გამქირავებელს პირგასამტეხლოს ყოველ ვადაგადაცილებულ დღეზე გადაუხდელი თანხის ${penaltyPct}%-ის ოდენობით, სრულ დაფარვამდე.`,
+          `Delay Penalty: In the event of late rent payment, the Tenant shall pay the Landlord a contractual penalty of ${penaltyPct}% of the overdue amount for each day of delay until full settlement.`],
+        ['ბინის დროულად დაუბრუნებლობა (სსკ 564-ე მუხლი): ხელშეკრულების შეწყვეტისას ბინის დაბრუნების დაყოვნების შემთხვევაში, დამქირავებელი ვალდებულია გადაიხადოს ქირა დაყოვნების მთელი დროისთვის და აუნაზღაუროს გამქირავებელს მიყენებული ზიანი.',
+          'Delay in Handback (Article 564 Civil Code): If the Tenant fails to hand back the Apartment upon termination, they shall pay rent for the entire overdue duration and indemnify the Landlord for all incurred damages.'],
+        ['მატერიალური ზიანი: დამქირავებელი სრულად აგებს პასუხს ბინის, ავეჯისა და საყოფაცხოვრებო ტექნიკის დაზიანებაზე, რომელიც გამოწვეულია მისი, მასთან მცხოვრები პირების ან მისი სტუმრების ბრალეული ქმედებით ან უხეში გაუფრთხილებლობით.',
+          'Property Indemnity: The Tenant is fully liable for damage to the premises, furniture, or appliances caused by the fault or gross negligence of the Tenant, family members, or guests.'],
       ] },
-      { ka: 'პასუხისმგებლობა', en: 'Liability', c: [
-        ['ხელშეკრულების დარღვევისთვის მხარეები პასუხს აგებენ საქართველოს კანონმდებლობის შესაბამისად.', 'The Parties are liable for breach of this Agreement in accordance with the legislation of Georgia.'],
-        ['დამქირავებელი პასუხს აგებს ბინისთვის მიყენებულ ზიანზე, რომელიც გამოწვეულია მისი, მასთან მცხოვრები პირების ან მისი სტუმრების ბრალით.', 'The Tenant is liable for damage to the Apartment caused by the Tenant, persons living with the Tenant or the Tenant\'s guests.'],
-        ['მხარეები თავისუფლდებიან პასუხისმგებლობისგან, თუ ვალდებულების შეუსრულებლობა გამოწვეულია დაუძლეველი ძალით (ფორს-მაჟორი).', 'The Parties are released from liability if non-performance is caused by force majeure.'],
+      { ka: 'ხელშეკრულების შეწყვეტა და მოშლა', en: 'Termination and Cancellation', c: [
+        ['ხელშეკრულება შეიძლება ვადამდე შეწყდეს მხარეთა ორმხრივი წერილობითი შეთანხმებით.',
+          'The Agreement may be terminated early by mutual written agreement of both Parties.'],
+        [`ცალმხრივი შეწყვეტა: თითოეულ მხარეს უფლება აქვს, ვადამდე შეწყვიტოს ხელშეკრულება მეორე მხარისთვის არანაკლებ ${notice} კალენდარული დღით ადრე გაგზავნილი წერილობითი შეტყობინების საფუძველზე.`,
+          `Unilateral Termination: Either Party may terminate early by serving at least ${notice} calendar days' prior written notice to the other Party.`],
+        ['გამქირავებლის მიერ ხელშეკრულების დაუყოვნებლივი მოშლა (სსკ 558-ე და 559-ე მუხლები): გამქირავებელს უფლება აქვს დაუყოვნებლივ, ცალმხრივად მოშალოს ხელშეკრულება და მოითხოვოს ბინის გათავისუფლება, თუ: (ა) დამქირავებელი ქირის გადახდას აგვიანებს 10 (ათი) კალენდარულ დღეზე მეტი ვადით; (ბ) დამქირავებელი უხეშად ან სისტემატურად აზიანებს ბინას ან არღვევს მეზობლების სიმშვიდეს; (გ) დამქირავებელმა ბინა უკანონოდ გადასცა მესამე პირს (ქვექირავნობა) ან გამოიყენა არასაცხოვრებელი მიზნებისთვის.',
+          'Immediate Cancellation by Landlord (Articles 558, 559 Civil Code): The Landlord may immediately cancel this Agreement and demand immediate eviction if: (a) the Tenant is more than 10 calendar days late with rent; (b) the Tenant materially or systematically damages the premises or disturbs neighbours; (c) the Tenant unauthorisedly sublets the apartment or uses it for non-residential purposes.'],
+        ['დამქირავებლის მიერ ხელშეკრულების მოშლა: დამქირავებელს უფლება აქვს მოშალოს ხელშეკრულება, თუ ბინა გამქირავებლის ბრალით გახდა საცხოვრებლად გამოუსადეგარი და გამქირავებელმა ნაკლი არ აღმოფხვრა გონივრულ ვადაში.',
+          'Cancellation by Tenant: The Tenant may cancel if the Apartment becomes uninhabitable due to Landlord fault and the defect is not remedied within a reasonable cure period.'],
       ] },
-      { ka: 'დავების გადაწყვეტა', en: 'Disputes', c: [
-        ['ხელშეკრულებიდან გამომდინარე დავებს მხარეები წყვეტენ მოლაპარაკებით.', 'The Parties shall resolve disputes arising from this Agreement through negotiation.'],
-        ['შეთანხმების მიუღწევლობის შემთხვევაში, დავას განიხილავს საქართველოს საერთო სასამართლო, საქართველოს კანონმდებლობის შესაბამისად.', 'If no agreement is reached, the dispute shall be heard by the common courts of Georgia in accordance with the legislation of Georgia.'],
+      { ka: 'ფორს-მაჟორი (დაუძლეველი ძალა)', en: 'Force Majeure', c: [
+        ['მხარეები თავისუფლდებიან პასუხისმგებლობისგან ნაკისრი ვალდებულებების შეუსრულებლობისთვის, თუ ეს გამოწვეულია დაუძლეველი ძალით (სტიქიური უბედურება, საომარი მოქმედებები, სახელმწიფო შეზღუდვები), რომელთა განჭვრეტა ან თავიდან აცილება ობიექტურად შეუძლებელი იყო.',
+          'The Parties are relieved from liability for failure to perform if caused by force majeure events (natural disasters, war, hostilities, statutory bans) that were objectively unforeseeable and insurmountable.'],
+      ] },
+      { ka: 'დავების გადაწყვეტა და განსჯადობა', en: 'Disputes and Jurisdiction', c: [
+        ['ხელშეკრულებიდან გამომდინარე ყველა დავას მხარეები წყვეტენ ურთიერთმოლაპარაკების გზით.',
+          'The Parties shall resolve all disputes arising under this Agreement through friendly negotiations.'],
+        ['შეთანხმების მიუღწევლობის შემთხვევაში, დავა გადაეცემა განსახილველად საქართველოს საერთო სასამართლოებს საქართველოს მატერიალური და საპროცესო კანონმდებლობის შესაბამისად.',
+          'If no amicable agreement is reached, the dispute shall be resolved by the common courts of Georgia in accordance with the substantive and procedural laws of Georgia.'],
       ] },
     ];
     if (String(d.extra_terms || '').trim()) {
       arts.push({ ka: 'დამატებითი პირობები', en: 'Additional Terms', c: [[esc(d.extra_terms.trim()).replace(/\n/g, '<br>'), esc(d.extra_terms.trim()).replace(/\n/g, '<br>')]] });
     }
     arts.push({ ka: 'დასკვნითი დებულებები', en: 'Final Provisions', c: [
-      ['ხელშეკრულება ძალაში შედის მხარეთა მიერ ხელმოწერისთანავე.', 'This Agreement enters into force upon signature by the Parties.'],
-      ['ხელშეკრულებაში ნებისმიერი ცვლილება ან დამატება ძალაშია მხოლოდ წერილობითი ფორმით, ორივე მხარის ხელმოწერით.', 'Any amendment or addition to this Agreement is valid only in writing and signed by both Parties.'],
-      ['ხელშეკრულება შედგენილია ორ იდენტურ ეგზემპლარად, თითო — თითოეული მხარისთვის.', 'This Agreement is made in two identical copies, one for each Party.'],
+      ['ხელშეკრულება ძალაში შედის მხარეთა ხელმოწერის მომენტიდან.', 'This Agreement enters into legal force upon signature by both Parties.'],
+      ['წინამდებარე ხელშეკრულების ნებისმიერი ცვლილება და დამატება იურიდიულ ძალას იძენს მხოლოდ წერილობითი ფორმით შედგენისა და ორივე მხარის ხელმოწერის შემთხვევაში.',
+        'Any amendment or addition to this Agreement is legally binding only if executed in writing and signed by both Parties.'],
+      ['წინამდებარე ხელშეკრულებას თან ერთვის და მის განუყოფელ ნაწილს წარმოადგენს: დანართი N1 — ბინის მიღება-ჩაბარების აქტი.',
+        'Attached hereto and forming an integral part of this Agreement is: Annex No. 1 — Apartment Handover and Acceptance Act.'],
+      ['ხელშეკრულება შედგენილია ქართულ და ინგლისურ ენებზე თანაბარი იურიდიული ძალის მქონე ორ იდენტურ ეგზემპლარად, თითო-თითო თითოეული მხარისთვის. ტექსტებს შორის რაიმე შეუსაბამობის შემთხვევაში, უპირატესობა ენიჭება ქართულ ტექსტს.',
+        'This Agreement is executed in Georgian and English in two identical copies having equal legal force, one for each Party. In case of any discrepancy, the Georgian text prevails.'],
     ] });
     return arts;
   }
 
   const LEASE_CSS = `
-    .lease-doc { font-family: 'FiraGO', system-ui, sans-serif; color: #111; background: #fff; font-size: 12.5px; line-height: 1.55; }
-    .lease-doc h2 { font-size: 16px; text-align: center; margin: 0 0 2px; text-transform: uppercase; letter-spacing: .3px; }
-    .lease-doc .ld-sub { text-align: center; color: #444; font-size: 12px; margin: 0 0 14px; }
-    .lease-doc .ld-place { display: flex; justify-content: space-between; margin: 0 0 14px; font-size: 12px; }
-    .lease-doc .ld-parties { margin: 0 0 12px; }
-    .lease-doc h3 { font-size: 13px; margin: 14px 0 6px; padding-bottom: 3px; border-bottom: 1px solid #bbb; break-after: avoid; }
-    .lease-doc p { margin: 0 0 6px; }
-    .lease-doc .ld-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; break-inside: avoid; }
-    .lease-doc .ld-pair > :last-child { color: #333; }
-    .lease-doc .ld-sign { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-top: 28px; break-inside: avoid; }
-    .lease-doc .ld-sign div { font-size: 12px; }
-    .lease-doc .ld-line { border-bottom: 1px solid #111; height: 34px; margin-bottom: 4px; }
-    @media (max-width: 600px) { .lease-doc .ld-pair { grid-template-columns: 1fr; gap: 2px; } .lease-doc .ld-sign { grid-template-columns: 1fr; } }`;
+    .lease-doc { font-family: 'FiraGO', system-ui, sans-serif; color: #111; background: #fff; font-size: 12px; line-height: 1.52; }
+    .lease-doc h2 { font-size: 15px; text-align: center; margin: 0 0 2px; text-transform: uppercase; letter-spacing: .3px; font-weight: 700; }
+    .lease-doc .ld-law-ref { text-align: center; font-size: 11px; color: #475569; margin: 0 0 10px; font-style: italic; }
+    .lease-doc .ld-sub { text-align: center; color: #334155; font-size: 12px; margin: 0 0 2px; font-weight: 600; }
+    .lease-doc .ld-place { display: flex; justify-content: space-between; margin: 0 0 12px; font-size: 11.5px; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px; }
+    .lease-doc .ld-parties { margin: 0 0 10px; font-size: 11.5px; }
+    .lease-doc h3 { font-size: 12.5px; margin: 12px 0 5px; padding-bottom: 2px; border-bottom: 1px solid #cbd5e1; break-after: avoid; font-weight: 700; color: #0f172a; }
+    .lease-doc p { margin: 0 0 5px; }
+    .lease-doc .ld-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; break-inside: avoid; }
+    .lease-doc .ld-pair > :last-child { color: #334155; }
+    .lease-doc .ld-sign { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; margin-top: 22px; break-inside: avoid; }
+    .lease-doc .ld-sign div { font-size: 11.5px; }
+    .lease-doc .ld-line { border-bottom: 1px solid #0f172a; height: 32px; margin-bottom: 4px; }
+    .lease-doc .ld-annex-wrap { margin-top: 32px; padding-top: 20px; border-top: 2px dashed #94a3b8; break-before: page; page-break-before: always; }
+    .lease-doc .ld-annex-title { font-size: 14px; text-align: center; font-weight: 700; margin: 0 0 2px; text-transform: uppercase; color: #0f172a; }
+    .lease-doc .ld-annex-sub { text-align: center; font-size: 11px; color: #475569; margin: 0 0 12px; }
+    .lease-doc .ld-table { width: 100%; border-collapse: collapse; margin: 10px 0 12px; font-size: 11.5px; }
+    .lease-doc .ld-table th, .lease-doc .ld-table td { border: 1px solid #cbd5e1; padding: 6px 10px; text-align: left; vertical-align: top; }
+    .lease-doc .ld-table th { background: #f8fafc; font-weight: 600; width: 34%; color: #1e293b; }
+    @media (max-width: 600px) { .lease-doc .ld-pair { grid-template-columns: 1fr; gap: 4px; } .lease-doc .ld-sign { grid-template-columns: 1fr; } }`;
 
   function leaseHtml(d, mode = 'dual') {
     const showKa = mode !== 'en', showEn = mode !== 'ka', dual = mode === 'dual';
@@ -1488,9 +1525,93 @@
         <div>${showKa ? 'პ/ნ' : 'ID'}: ${val(pid)}${phone ? ` · ${showKa ? 'ტელ.' : 'Tel.'}: ${esc(phone)}` : ''}</div>
         <div class="ld-line"></div><small>${showKa ? 'ხელმოწერა' : ''}${dual ? ' / ' : ''}${showEn ? 'Signature' : ''}</small>
       </div>`;
+
+    // Annex 1: Handover & Acceptance Act (მიღება-ჩაბარების აქტი)
+    const keys = val(d.keys_count, '2');
+    const el = val(d.meter_electricity, '_______');
+    const gas = val(d.meter_gas, '_______');
+    const water = val(d.meter_water, '_______');
+    const inv = val(d.inventory_notes, showKa ? 'ბინა გადაცემულია სუფთა, საცხოვრებლად ვარგის მდგომარეობაში, მუშა კომუნიკაციებითა და ტექნიკით.' : 'Handed over in clean, habitable condition with functioning utilities and appliances.');
+    const rem = val(d.acceptance_notes, showKa ? 'მხარეებს ბინისა და ინვენტარის მდგომარეობაზე პრეტენზია არ გააჩნიათ.' : 'The Parties have no claims regarding the condition of the premises or inventory.');
+
+    const annexKA = `<div class="ld-annex-wrap">
+      <div class="ld-annex-title">დანართი N1: საცხოვრებელი ბინის მიღება-ჩაბარების აქტი</div>
+      <div class="ld-annex-sub">(წარმოადგენს ${val(dmy(d.contract_date))} ქირავნობის ხელშეკრულების განუყოფელ ნაწილს)</div>
+      <p>წინამდებარე აქტით გამქირავებელმა გადასცა, ხოლო დამქირავებელმა ჩაიბარა საცხოვრებელი ბინა მდებარე მისამართზე: <strong>${val(d.property_address)}</strong> შემდეგი პირობებით:</p>
+      <table class="ld-table">
+        <tr><th>1. გასაღებები</th><td>გადაცემულია გასაღებების <strong>${keys}</strong> კომპლექტი.</td></tr>
+        <tr><th>2. მრიცხველების საწყისი ჩვენებები</th><td>
+          <div>• ელექტროენერგია: <strong>${el}</strong> კვტ/სთ (kWh)</div>
+          <div>• ბუნებრივი აირი (გაზი): <strong>${gas}</strong> მ³ (m³)</div>
+          <div>• წყალი: <strong>${water}</strong> მ³ (m³)</div>
+        </td></tr>
+        <tr><th>3. ავეჯი, ტექნიკა და მდგომარეობა</th><td>${inv}</td></tr>
+        <tr><th>4. შენიშვნები / ხარვეზები</th><td>${rem}</td></tr>
+      </table>
+      <div class="ld-sign">
+        ${sign('ჩააბარა (გამქირავებელი)', 'Handed over by (Landlord)', d.landlord_name, d.landlord_id, d.landlord_phone)}
+        ${sign('ჩაიბარა (დამქირავებელი)', 'Accepted by (Tenant)', d.tenant_name, d.tenant_id, d.tenant_phone)}
+      </div>
+    </div>`;
+
+    const annexEN = `<div class="ld-annex-wrap">
+      <div class="ld-annex-title">Annex No. 1: Apartment Handover and Acceptance Act</div>
+      <div class="ld-annex-sub">(Integral part of the Residential Lease Agreement dated ${val(dmy(d.contract_date))})</div>
+      <p>By this Act, the Landlord has handed over and the Tenant has accepted the residential apartment located at: <strong>${val(d.property_address)}</strong> on the following terms:</p>
+      <table class="ld-table">
+        <tr><th>1. Keys Handover</th><td>Handed over <strong>${keys}</strong> set(s) of keys.</td></tr>
+        <tr><th>2. Initial Meter Readings</th><td>
+          <div>• Electricity: <strong>${el}</strong> kWh</div>
+          <div>• Natural Gas: <strong>${gas}</strong> m³</div>
+          <div>• Water: <strong>${water}</strong> m³</div>
+        </td></tr>
+        <tr><th>3. Furniture, Appliances & Condition</th><td>${inv}</td></tr>
+        <tr><th>4. Remarks / Existing Defects</th><td>${rem}</td></tr>
+      </table>
+      <div class="ld-sign">
+        ${sign('Handed over by (Landlord)', 'Landlord', d.landlord_name, d.landlord_id, d.landlord_phone)}
+        ${sign('Accepted by (Tenant)', 'Tenant', d.tenant_name, d.tenant_id, d.tenant_phone)}
+      </div>
+    </div>`;
+
+    const annexDual = `<div class="ld-annex-wrap">
+      <div class="ld-annex-title">დანართი N1: საცხოვრებელი ბინის მიღება-ჩაბარების აქტი / Annex No. 1: Handover & Acceptance Act</div>
+      <div class="ld-annex-sub">(${val(dmy(d.contract_date))} ქირავნობის ხელშეკრულების განუყოფელი ნაწილი / Integral part of the Lease Agreement)</div>
+      <div class="ld-pair">
+        <p>წინამდებარე აქტით გამქირავებელმა გადასცა, ხოლო დამქირავებელმა ჩაიბარა საცხოვრებელი ბინა მდებარე მისამართზე: <strong>${val(d.property_address)}</strong> შემდეგი პირობებით:</p>
+        <p>By this Act, the Landlord has handed over and the Tenant has accepted the residential apartment located at: <strong>${val(d.property_address)}</strong> on the following terms:</p>
+      </div>
+      <table class="ld-table">
+        <tr>
+          <th>1. გასაღებები / Keys</th>
+          <td>გადაცემულია გასაღებების <strong>${keys}</strong> კომპლექტი / Handed over <strong>${keys}</strong> set(s) of keys.</td>
+        </tr>
+        <tr>
+          <th>2. მრიცხველების საწყისი ჩვენებები / Initial Meter Readings</th>
+          <td>
+            <div>• ელექტროენერგია / Electricity: <strong>${el}</strong> კვტ/სთ (kWh)</div>
+            <div>• ბუნებრივი აირი / Natural Gas: <strong>${gas}</strong> მ³ (m³)</div>
+            <div>• წყალი / Water: <strong>${water}</strong> მ³ (m³)</div>
+          </td>
+        </tr>
+        <tr>
+          <th>3. ავეჯი და ტექნიკა / Furniture & Inventory</th>
+          <td>${inv}</td>
+        </tr>
+        <tr>
+          <th>4. შენიშვნები / Remarks</th>
+          <td>${rem}</td>
+        </tr>
+      </table>
+      <div class="ld-sign">
+        ${sign('ჩააბარა (გამქირავებელი)', 'Handed over by (Landlord)', d.landlord_name, d.landlord_id, d.landlord_phone)}
+        ${sign('ჩაიბარა (დამქირავებელი)', 'Accepted by (Tenant)', d.tenant_name, d.tenant_id, d.tenant_phone)}
+      </div>
+    </div>`;
+
     return `<div class="lease-doc">
-      ${showKa ? '<h2>საცხოვრებელი ბინის ქირავნობის ხელშეკრულება</h2>' : ''}
-      ${showEn ? `<${showKa ? 'p class="ld-sub"' : 'h2'}>Residential Lease Agreement</${showKa ? 'p' : 'h2'}>` : ''}
+      ${showKa ? '<h2>საცხოვრებელი ბინის ქირავნობის ხელშეკრულება</h2><div class="ld-law-ref">(საქართველოს სამოქალაქო კოდექსის 531–575 მუხლების შესაბამისად)</div>' : ''}
+      ${showEn ? `<${showKa ? 'p class="ld-sub"' : 'h2'}>Residential Lease Agreement</${showKa ? 'p' : 'h2'}><div class="ld-law-ref">(In accordance with Articles 531–575 of the Civil Code of Georgia)</div>` : ''}
       <div class="ld-place"><span>${showKa ? 'ქ.' : 'City:'} ${val(d.city)}</span><span>${val(dmy(d.contract_date))}</span></div>
       <div class="ld-parties">${block(partyKA, partyEN)}</div>
       ${arts.map((art, i) => {
@@ -1503,6 +1624,7 @@
         ${sign('გამქირავებელი', 'Landlord', d.landlord_name, d.landlord_id, d.landlord_phone)}
         ${sign('დამქირავებელი', 'Tenant', d.tenant_name, d.tenant_id, d.tenant_phone)}
       </div>
+      ${mode === 'ka' ? annexKA : (mode === 'en' ? annexEN : annexDual)}
     </div>`;
   }
   App.leaseHtml = leaseHtml;
@@ -1517,7 +1639,7 @@
     const font = (wt, f) => `@font-face{font-family:'FiraGO';src:url('${location.origin}/fonts/${f}.woff2') format('woff2');font-weight:${wt};}`;
     w.document.write(`<!doctype html><html lang="${mode === 'en' ? 'en' : 'ka'}"><head><meta charset="utf-8"><title>${esc(title)}</title>
       <style>${font(400, 'FiraGO-Regular')}${font(600, 'FiraGO-SemiBold')}${font(700, 'FiraGO-Bold')}
-      @page { size: A4; margin: 16mm 15mm; } body { margin: 0; padding: 24px; background: #fff; } @media print { body { padding: 0; } }
+      @page { size: A4; margin: 15mm 14mm; } body { margin: 0; padding: 20px; background: #fff; } @media print { body { padding: 0; } }
       ${LEASE_CSS}</style></head><body>${leaseHtml(d, mode)}
       <script>document.fonts.ready.then(function(){ setTimeout(function(){ window.print(); }, 150); }); window.onafterprint = function(){ window.close(); };<\/script></body></html>`);
     w.document.close();
@@ -1527,7 +1649,7 @@
     if (!App.guardFeature('contracts')) return;
     const a = apartment;
     const owner = H.owner(a.owner_id);
-    // Reopen the last saved contract for this deal/apartment, if any (the table may not exist yet).
+    // Reopen the last saved contract for this deal/apartment, if any.
     let last = null;
     try {
       let query = sb.from('contracts').select('*').eq('organization_id', S.org.id);
@@ -1536,29 +1658,36 @@
       last = data?.[0]?.data || null;
     } catch { last = null; }
 
-    const d = last || {
-      landlord_name: owner?.name || '', landlord_phone: owner?.phone || '', landlord_id: '', landlord_address: '', landlord_bank: owner?.payout_account || '',
-      tenant_name: deal?.client_name || '', tenant_phone: deal?.client_phone || '', tenant_id: '', tenant_address: '',
-      property_address: [a.city, a.district, a.address, a.unit_number && `ბინა ${a.unit_number}`].filter(Boolean).join(', '),
-      cadastral_code: '', area_sqm: a.area_sqm || '', city: a.city || '', contract_date: R.isoDate(),
-      start_date: deal?.target_move_in || '', end_date: '', rent: deal?.deal_amount || a.monthly_rent || '', currency: deal?.currency || a.currency || 'USD',
-      pay_day: a.rent_due_day || '', deposit: a.deposit_amount || '', notice_days: '', pets: a.pets_allowed ? 'yes' : 'no', utilities: 'tenant', utilities_note: '', extra_terms: '',
+    const d = {
+      notice_days: '30',
+      penalty_pct: '0.1',
+      keys_count: '2',
+      city: a.city || 'თბილისი',
+      ...(last || {
+        landlord_name: owner?.name || '', landlord_phone: owner?.phone || '', landlord_id: '', landlord_address: '', landlord_bank: owner?.payout_account || '',
+        tenant_name: deal?.client_name || '', tenant_phone: deal?.client_phone || '', tenant_id: '', tenant_address: '',
+        property_address: [a.city, a.district, a.address, a.unit_number && `ბინა ${a.unit_number}`].filter(Boolean).join(', '),
+        cadastral_code: '', area_sqm: a.area_sqm || '', city: a.city || 'თბილისი', contract_date: R.isoDate(),
+        start_date: deal?.target_move_in || '', end_date: '', rent: deal?.deal_amount || a.monthly_rent || '', currency: deal?.currency || a.currency || 'USD',
+        pay_day: a.rent_due_day || '1', deposit: a.deposit_amount || '', notice_days: '30', penalty_pct: '0.1', pets: a.pets_allowed ? 'yes' : 'no', utilities: 'tenant', utilities_note: '', extra_terms: '',
+        keys_count: '2', meter_electricity: '', meter_gas: '', meter_water: '', inventory_notes: '', acceptance_notes: '',
+      }),
     };
     const f = (name, label, opts = {}) => `<label class="field ${opts.span ? 'span-2' : ''}"><span class="field-label">${label}</span>${opts.textarea
       ? `<textarea name="${name}" rows="${opts.rows || 2}" ${opts.required ? 'required' : ''} placeholder="${esc(opts.ph || '')}">${esc(d[name] || '')}</textarea>`
       : `<input name="${name}" type="${opts.type || 'text'}" ${opts.required ? `required data-error="${esc(opts.err || 'შეავსე სავალდებულო ველები.')}"` : ''} ${opts.attrs || ''} value="${esc(d[name] ?? '')}" placeholder="${esc(opts.ph || '')}" />`}${opts.hint ? `<span class="field-hint">${opts.hint}</span>` : ''}</label>`;
 
     return R.dialog({
-      title: 'ქირავნობის ხელშეკრულება',
+      title: 'ქირავნობის ხელშეკრულება (სამოქალაქო კოდექსი)',
       subtitle: a.name,
       wide: true,
       submitLabel: 'ხელშეკრულების შედგენა',
       body: `
-        <div class="notice small">${icon('alert', 14)} ეს ზოგადი შაბლონია. ხელმოწერამდე სასურველია, ტექსტს იურისტმა გადახედოს და კონკრეტულ გარიგებას მოარგოს. ცარიელი ველები დოკუმენტში ხაზად დარჩება ხელით შესავსებად.</div>
+        <div class="notice small">${icon('shield', 14)} ხელშეკრულების ტექსტი მკაცრად შეესაბამება საქართველოს სამოქალაქო კოდექსს (მუხლები 531–575). მოიცავს საგარანტიო დეპოზიტის დაცვას, ვადაგადაცილების პირგასამტეხლოს და მიღება-ჩაბარების აქტს მრიცხველების ჩვენებებით.</div>
         <div class="form-section"><div class="form-section-title">გამქირავებელი</div><div class="form-grid">
           ${f('landlord_name', 'სახელი, გვარი', { required: true, err: 'მიუთითე გამქირავებლის სახელი და გვარი.' })}${f('landlord_id', 'პირადი ნომერი', { attrs: 'inputmode="numeric" maxlength="20"' })}
           ${f('landlord_address', 'მისამართი')}${f('landlord_phone', 'ტელეფონი', { type: 'tel' })}
-          ${f('landlord_bank', 'საბანკო ანგარიში (IBAN)', { span: true, hint: 'არასავალდებულო' })}
+          ${f('landlord_bank', 'საბანკო ანგარიში (IBAN)', { span: true, hint: 'საქართველოს ბანკი, თიბისი და ა.შ.' })}
         </div></div>
         <div class="form-section"><div class="form-section-title">დამქირავებელი</div><div class="form-grid">
           ${f('tenant_name', 'სახელი, გვარი', { required: true, err: 'მიუთითე დამქირავებლის სახელი და გვარი.' })}${f('tenant_id', 'პირადი ნომერი / პასპორტი', { attrs: 'maxlength="20"' })}
@@ -1569,19 +1698,28 @@
           ${f('cadastral_code', 'საკადასტრო კოდი', { ph: '00.00.00.000.000.00.000' })}${f('area_sqm', 'ფართობი (მ²)', { type: 'number', attrs: 'min="1" step="0.1"' })}
           ${f('city', 'ხელშეკრულების დადების ქალაქი')}${f('contract_date', 'ხელშეკრულების თარიღი', { type: 'date' })}
         </div></div>
-        <div class="form-section"><div class="form-section-title">ვადა და გადახდა</div><div class="form-grid">
+        <div class="form-section"><div class="form-section-title">ვადა, ქირა და პირგასამტეხლო</div><div class="form-grid">
           ${f('start_date', 'დაწყების თარიღი', { type: 'date', required: true, err: 'მიუთითე ხელშეკრულების დაწყების თარიღი.' })}${f('end_date', 'დასრულების თარიღი', { type: 'date', required: true, err: 'მიუთითე ხელშეკრულების დასრულების თარიღი.' })}
           <label class="field"><span class="field-label">ყოველთვიური ქირა</span><div class="input-pair"><input name="rent" type="number" min="0" step="10" required data-error="მიუთითე ქირის ოდენობა." value="${esc(d.rent ?? '')}" />
             <select name="currency" aria-label="ვალუტა"><option value="USD" ${d.currency !== 'GEL' ? 'selected' : ''}>USD</option><option value="GEL" ${d.currency === 'GEL' ? 'selected' : ''}>GEL</option></select></div></label>
-          ${f('pay_day', 'გადახდის ბოლო რიცხვი', { type: 'number', attrs: 'min="1" max="31"', hint: 'თვის რომელ რიცხვამდე' })}
-          ${f('deposit', 'დეპოზიტი', { type: 'number', attrs: 'min="0" step="10"', hint: 'ცარიელი ან 0 — დეპოზიტის გარეშე' })}
-          ${f('notice_days', 'შეწყვეტის წინასწარი შეტყობინება (დღე)', { type: 'number', attrs: 'min="0" max="365"' })}
+          ${f('pay_day', 'გადახდის ბოლო რიცხვი', { type: 'number', attrs: 'min="1" max="31"', hint: 'თვის რომელ რიცხვამდე (მაგ. 1 ან 5)' })}
+          ${f('deposit', 'საგარანტიო დეპოზიტი', { type: 'number', attrs: 'min="0" step="10"', hint: 'ცარიელი ან 0 — დეპოზიტის გარეშე' })}
+          ${f('penalty_pct', 'პირგასამტეხლო დღეზე (%)', { type: 'number', attrs: 'min="0" step="0.01" max="5"', hint: 'ნაგულისხმევი: 0.1% დღეში (სსკ 417-420)' })}
+          ${f('notice_days', 'შეწყვეტის შეტყობინება (დღე)', { type: 'number', attrs: 'min="0" max="365"', hint: 'ნაგულისხმევი: 30 დღე' })}
         </div></div>
-        <div class="form-section"><div class="form-section-title">პირობები</div><div class="form-grid">
+        <div class="form-section"><div class="form-section-title">სარგებლობის პირობები</div><div class="form-grid">
           <label class="field"><span class="field-label">შინაური ცხოველი</span><select name="pets"><option value="no" ${d.pets !== 'yes' ? 'selected' : ''}>დაუშვებელია (თანხმობის გარეშე)</option><option value="yes" ${d.pets === 'yes' ? 'selected' : ''}>დასაშვებია</option></select></label>
           <label class="field"><span class="field-label">კომუნალური გადასახადები</span><select name="utilities" id="lease-util"><option value="tenant" ${d.utilities === 'tenant' ? 'selected' : ''}>იხდის დამქირავებელი</option><option value="landlord" ${d.utilities === 'landlord' ? 'selected' : ''}>შედის ქირაში (იხდის გამქირავებელი)</option><option value="custom" ${d.utilities === 'custom' ? 'selected' : ''}>სხვა პირობა</option></select></label>
           <div class="span-2" id="lease-util-note" ${d.utilities === 'custom' ? '' : 'hidden'}>${f('utilities_note', 'კომუნალურის პირობა', { textarea: true, ph: 'მაგ.: ელექტროენერგიას და გაზს იხდის დამქირავებელი, ინტერნეტს — გამქირავებელი' })}</div>
-          ${f('extra_terms', 'დამატებითი პირობები', { textarea: true, span: true, rows: 3, hint: 'არასავალდებულო. ცალკე მუხლად დაემატება.' })}
+          ${f('extra_terms', 'დამატებითი პირობები', { textarea: true, span: true, rows: 2, hint: 'არასავალდებულო. ცალკე მუხლად დაემატება.' })}
+        </div></div>
+        <div class="form-section"><div class="form-section-title">დანართი N1: მიღება-ჩაბარების აქტი</div><div class="form-grid">
+          ${f('keys_count', 'გასაღებების რაოდენობა (კომპლექტი)', { type: 'number', attrs: 'min="1" max="10"', hint: 'ნაგულისხმევი: 2' })}
+          ${f('meter_electricity', 'ელექტროენერგიის მრიცხველი (საწყისი)', { ph: 'მაგ.: 12450 კვტ/სთ' })}
+          ${f('meter_gas', 'ბუნებრივი აირის მრიცხველი (საწყისი)', { ph: 'მაგ.: 3120 მ³' })}
+          ${f('meter_water', 'წყლის მრიცხველი (საწყისი)', { ph: 'მაგ.: 450 მ³' })}
+          ${f('inventory_notes', 'ავეჯი, ტექნიკა და მდგომარეობა', { textarea: true, span: true, rows: 2, ph: 'ტელევიზორი, მაცივარი, სარეცხი მანქანა, კონდიციონერი... (დატოვე ცარიელი ზოგადი ტექსტისთვის)' })}
+          ${f('acceptance_notes', 'შენიშვნები მიღებისას / ხარვეზები', { textarea: true, span: true, rows: 2, ph: 'არსებული ხარვეზები (თუ არის), ან დატოვე ცარიელი' })}
         </div></div>`,
       onOpen: (form) => {
         const start = $('[name=start_date]', form), end = $('[name=end_date]', form);
