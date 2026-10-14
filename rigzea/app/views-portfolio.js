@@ -651,7 +651,7 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
             </div>
           </div>
           <div class="notice notice-ok" style="margin-top:14px">
-            ${icon('check', 16)} <span>კლიენტი ნახავს მხოლოდ შენს საკონტაქტო ნომერს და WhatsApp-ის ღილაკს. მეპატრონის მონაცემები 100%-ით დაცულია.</span>
+            ${icon('check', 16)} <span>კოლექციის ბმულზე განთავსებულია შენი საკონტაქტო მონაცემები, ბრენდინგი და WhatsApp-ის ღილაკი.</span>
           </div>
         </div>`,
       submitLabel: '⚡ კოლექციის ბმულის შექმნა',

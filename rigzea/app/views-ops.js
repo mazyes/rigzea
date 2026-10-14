@@ -449,7 +449,7 @@
             <span class="badge" style="background:rgba(0, 245, 155, 0.18);color:#0a5c44;font-weight:700;padding:3px 10px;border-radius:99px;font-size:11.5px">⚡ პირველი ნაბიჯი</span>
             <h2 style="font-size:22px;margin:8px 0 6px 0">შემოიტანე შენი პირველი ბინა 1 წამში</h2>
             <p style="color:var(--muted);font-size:13.5px;line-height:1.5;margin:0 0 14px 0">
-              ჩასვი MyHome.ge ან SS.ge განცხადების ბმული. სისტემა გადმოიტანს HD ფოტოებს, ფართობს და ფასს, დამალავს მესაკუთრის ნომერს და შექმნის შენს პირად VIP ბმულს.
+              ჩასვი MyHome.ge ან SS.ge განცხადების ბმული. სისტემა წამებში გადმოიტანს HD ფოტოებს, ფართობს, ფასს და შექმნის შენს პირად VIP ბმულს.
             </p>
             <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
               <button type="button" class="btn btn-primary" id="btn-quick-import-hero">${icon('sparkle', 16)} ⚡ ბინის შემოტანა ლინკით</button>
@@ -457,8 +457,8 @@
             </div>
           </div>
           <div style="background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 16px;font-size:12px;color:var(--muted);max-width:240px;line-height:1.4">
-            <strong style="color:var(--ink);display:block;margin-bottom:4px">🔒 100% დაცული</strong>
-            მესაკუთრის ნომერს ვერავინ ნახავს. საჯარო ბმულზე ჩანს მხოლოდ შენი საკონტაქტო WhatsApp.
+            <strong style="color:var(--ink);display:block;margin-bottom:4px">✨ შენი პირადი ვიტრინა</strong>
+            საჯარო ბმულზე ჩანს მხოლოდ შენი სახელი, ლოგო და საკონტაქტო WhatsApp.
           </div>
         </div>
       </section>` : ''}
