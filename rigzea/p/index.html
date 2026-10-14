@@ -200,7 +200,7 @@
         notFoundTitle: 'განცხადება ვერ მოიძებნა',
         notFoundText: 'უძრავი ქონება შესაძლოა უკვე გაიყიდა/გაქირავდა ან ბმული არასწორად არის აკრეფილი. დაუკავშირდით აგენტს, რომელმაც ბმული გამოგიგზავნათ.',
         errorTitle: 'განცხადება ვერ ჩაიტვირთა', errorText: 'შეამოწმეთ ინტერნეტთან კავშირი და სცადეთ ხელახლა.', retry: 'ხელახლა ცდა',
-        demo: 'სადემონსტრაციო განცხადება — ასე გამოიყურება ბმული, რომელსაც აგენტი კლიენტს უგზავნის.',
+        demo: 'სადემონსტრაციო განცხადება: ასე გამოიყურება ბმული, რომელსაც აგენტი კლიენტს უგზავნის.',
         powered: 'შექმნილია რიგზეაში', brand: 'რიგზეა',
         badges: { new: 'ახალი', hot: 'ცხელი შეთავაზება', price_drop: 'ფასი შემცირდა', exclusive: 'ექსკლუზივი', available: 'თავისუფალია', reserved: 'დაჯავშნილია' },
       },
@@ -223,7 +223,7 @@
         notFoundTitle: 'Listing not found',
         notFoundText: 'The property may already be sold/rented, or the link was mistyped. Please contact the agent who sent you this link.',
         errorTitle: 'Could not load the listing', errorText: 'Check your internet connection and try again.', retry: 'Try again',
-        demo: 'Demo listing — this is what a link from an agent looks like.',
+        demo: 'Demo listing: this is what a link from an agent looks like.',
         powered: 'Made with Rigzea', brand: 'Rigzea',
         badges: { new: 'New', hot: 'Hot deal', price_drop: 'Price reduced', exclusive: 'Exclusive', available: 'Available now', reserved: 'Reserved' },
       },
@@ -448,7 +448,7 @@
         a.utilities_estimate && [ICON.bolt, L.utilities, L.utilitiesVal.replace('{v}', Math.round(Number(a.utilities_estimate)))],
         a.prepayment_terms && [ICON.key, L.prepayment, a.prepayment_terms],
         Number(a.deposit_amount) > 0 && [ICON.shield, L.deposit, money(a.deposit_amount, a.currency)],
-        rt !== 'long_term' && a.checkin_time && [ICON.clock, L.checkTimes, `${hhmm(a.checkin_time)} / ${hhmm(a.checkout_time) || '—'}`],
+        rt !== 'long_term' && a.checkin_time && [ICON.clock, L.checkTimes, `${hhmm(a.checkin_time)} / ${hhmm(a.checkout_time) || '–'}`],
       ].filter(Boolean);
 
       const amenities = (Array.isArray(a.amenities) ? a.amenities : []).filter(x => typeof x === 'string' && x.trim());
@@ -465,7 +465,7 @@
         ${photos.length ? `
           <div class="p-gallery" id="gallery">
             ${badge ? `<span class="p-gallery-badge">${esc(badge)}</span>` : ''}
-            <div class="p-slides" id="slides">${photos.map((p, i) => `<div class="p-slide" data-i="${i}"><img src="${esc(p.url)}" alt="${esc(title)} — ${esc(L.photo)} ${i + 1}" onerror="this.style.visibility='hidden'" ${i === 0 ? 'fetchpriority="high"' : 'loading="lazy"'} /></div>`).join('')}</div>
+            <div class="p-slides" id="slides">${photos.map((p, i) => `<div class="p-slide" data-i="${i}"><img src="${esc(p.url)}" alt="${esc(title)}, ${esc(L.photo)} ${i + 1}" onerror="this.style.visibility='hidden'" ${i === 0 ? 'fetchpriority="high"' : 'loading="lazy"'} /></div>`).join('')}</div>
             ${photos.length > 1 ? `<button type="button" class="p-gallery-btn prev" data-step="-1" aria-label="${esc(L.prev)}">${svg('<path d="m15 18-6-6 6-6"/>', 20)}</button>
             <button type="button" class="p-gallery-btn next" data-step="1" aria-label="${esc(L.next)}">${svg('<path d="m9 18 6-6-6-6"/>', 20)}</button>
             <div class="p-gallery-counter" id="counter"></div>` : ''}

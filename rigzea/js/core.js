@@ -20,7 +20,7 @@
 
   const numberFmt = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 });
   const money = (n, currency = 'GEL') => {
-    if (n === null || n === undefined || n === '' || isNaN(n)) return '—';
+    if (n === null || n === undefined || n === '' || isNaN(n)) return '–';
     const v = Number(n);
     const sign = v < 0 ? '−' : '';
     const formatted = numberFmt.format(Math.abs(v)).replace(/,/g, ' ');
@@ -50,18 +50,18 @@
   };
   const isoDate = (d = new Date()) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
   const monthKey = (d = new Date()) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
-  const time = (v) => { const d = toDate(v); return d ? `${pad(d.getHours())}:${pad(d.getMinutes())}` : '—'; };
+  const time = (v) => { const d = toDate(v); return d ? `${pad(d.getHours())}:${pad(d.getMinutes())}` : '–'; };
   const sameDay = (a, b) => a && b && a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 
   function date(v, { withYear = false } = {}) {
     const d = toDate(v);
-    if (!d) return '—';
+    if (!d) return '–';
     return `${d.getDate()} ${MONTHS_SHORT[d.getMonth()]}${withYear || d.getFullYear() !== new Date().getFullYear() ? ' ' + d.getFullYear() : ''}`;
   }
 
   function dayLabel(v) {
     const d = toDate(v);
-    if (!d) return '—';
+    if (!d) return '–';
     const today = new Date();
     const tomorrow = new Date(); tomorrow.setDate(today.getDate() + 1);
     const yesterday = new Date(); yesterday.setDate(today.getDate() - 1);
@@ -72,7 +72,7 @@
   }
 
   // "დღეს, 14:00" — for timestamps where time matters
-  const dateTime = (v) => { const d = toDate(v); return d ? `${dayLabel(d)}, ${time(d)}` : '—'; };
+  const dateTime = (v) => { const d = toDate(v); return d ? `${dayLabel(d)}, ${time(d)}` : '–'; };
 
   function duration(ms) {
     const m = Math.round(Math.abs(ms) / 60000);
@@ -85,7 +85,7 @@
   // "3 საათის წინ" / "2 საათში"
   function relative(v) {
     const d = toDate(v);
-    if (!d) return '—';
+    if (!d) return '–';
     const diff = d - Date.now();
     const { n, unit } = duration(diff);
     const forms = { 'წუთ': ['წუთის', 'წუთში'], 'საათ': ['საათის', 'საათში'], 'დღ': ['დღის', 'დღეში'] }[unit];
@@ -385,6 +385,41 @@
     try { await navigator.clipboard.writeText(text); toast(okMsg, { type: 'success' }); }
     catch { window.prompt('დააკოპირე ბმული:', text); }
   }
+
+  // ---------------------------------------------------------------------------
+  // Private files (receipts, task and approval photos) are stored as signed links that expire after a
+  // year. Signed-in members get a fresh link automatically: a link is re-signed on click when it has
+  // expired or is about to, and an image is re-signed once if it fails to load. Old data keeps working.
+  // ---------------------------------------------------------------------------
+  const PRIVATE_RE = /\/storage\/v1\/object\/sign\/rigzea-private\/([^?#]+)\?token=([^&#]+)/;
+  function signedExpiry(url) {
+    try {
+      const payload = PRIVATE_RE.exec(url)[2].split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+      return JSON.parse(atob(payload)).exp * 1000;
+    } catch { return 0; }
+  }
+  async function freshPrivateUrl(url) {
+    const m = PRIVATE_RE.exec(url || '');
+    if (!m || !sb) return null;
+    const { data } = await sb.storage.from('rigzea-private').createSignedUrl(decodeURIComponent(m[1]), 60 * 60);
+    return data?.signedUrl || null;
+  }
+  document.addEventListener('click', (e) => {
+    const a = e.target.closest?.('a[href]');
+    if (!a || !PRIVATE_RE.test(a.href) || signedExpiry(a.href) > Date.now() + 5 * 60e3) return;
+    e.preventDefault();
+    const win = window.open('', '_blank'); // opened now, so the popup blocker allows it
+    freshPrivateUrl(a.href).then(u => {
+      if (u && win) win.location.href = u;
+      else { win?.close(); toast('ფაილის ბმული ვეღარ განახლდა. შედი ანგარიშში და სცადე თავიდან.', { type: 'error' }); }
+    });
+  });
+  document.addEventListener('error', (e) => {
+    const img = e.target;
+    if (img?.tagName !== 'IMG' || img.dataset.resigned || !PRIVATE_RE.test(img.src)) return;
+    img.dataset.resigned = '1';
+    freshPrivateUrl(img.src).then(u => { if (u) img.src = u; });
+  }, true);
 
   // ---------------------------------------------------------------------------
   // Theme

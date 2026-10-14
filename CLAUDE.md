@@ -10,8 +10,9 @@ Live at https://rigzea.com (Vercel project `rigzea-website`); database is Supaba
   - `js/core.js` shared helpers exposed as `window.R` (`esc`, `safeUrl`, `money`, `dialog`, `toast`, labels `L`)
   - `p/` public listing page, `p/s/` multi-listing selection, `guide/` guest guide, `approve/` owner approval, `staff/` cleaner app
   - `index.html`, `site.js`, `landing-luxury.*` landing page; `demo/` offline demo with mock data
-- `api/` Vercel functions (ES modules). Files starting with `_` are helpers, not routes. Supabase config for
-  every function comes from `publicConfig()` in `api/_lib.js`.
+- `api/` Vercel functions, ES modules (`api/package.json` sets `"type": "module"` for this folder only, so
+  CommonJS tests and `.claude` hook scripts keep working). Files starting with `_` are helpers, not routes.
+  Supabase config for every function comes from `publicConfig()` in `api/_lib.js`.
 - `supabase/patches/NN_*.sql` database changes. **Which ones are live: `supabase/APPLIED.md`.**
   `schema.sql` is an old snapshot, not the live schema.
 - `tests/` Playwright tests against a mocked Supabase (`mock-supabase.js` + `seed.js`).
@@ -34,12 +35,15 @@ Failed e2e tests save a screenshot to the OS temp dir (`rigzea-fail-<n>.png`).
 - Escape everything put into `innerHTML` with `esc()`. Stored URLs in `href` go through `R.safeUrl()`.
 - Forms keep rarely used fields in `<details class="form-more">`; tests must open it (`openMore()` in `tests/e2e.js`).
 - New contacts and deals default to lead source `direct`; money is shown with `R.money(amount, currency)`.
+- Private files (receipts, task/approval photos) are saved as 1-year signed links; `core.js` re-signs an
+  expired one on click (links) or on load error (images) for signed-in members. Keep using `R.uploadFile`.
 - Tests mock the database, so they cannot catch RLS, grant or SQL mistakes. Check those against the live
   database with a rolled-back transaction (see `supabase/APPLIED.md`).
 
 ## Database changes
 
-1. Write a new `supabase/patches/NN_name.sql` (re-runnable; new tables need GRANTs and RLS).
+1. Write a new `supabase/patches/NN_name.sql` (re-runnable; new tables need GRANTs and RLS). Agents must ask
+   the user before running SQL on production; it is no longer auto-approved.
 2. Dry run on live inside `do $$ ... raise exception 'DRYRUN %', result; $$` so it always rolls back.
 3. Apply with the Supabase MCP `apply_migration`, run `get_advisors` (security), update `APPLIED.md`.
 

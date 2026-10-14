@@ -62,7 +62,7 @@
         owner_id: O(4), status: 'active', monthly_rent: 1450, currency: 'USD', rooms: 4, bedrooms: 3, area_sqm: 120, floor: '2', total_floors: 4, pets_allowed: false,
         utilities_estimate: 150, prepayment_terms: 'პირველი და ბოლო თვე წინასწარ', deposit_amount: 1450, badge: 'price_drop', lat: 41.7050, lng: 44.7790,
         amenities: ['wifi', 'heating', 'balcony', 'washing_machine', 'oven', 'tv'],
-        description: '4-ოთახიანი ბინა ისტორიულ შენობაში — მაღალი ჭერი, ხის იატაკი და ორი აივანი. ფასი შემცირებულია.',
+        description: '4-ოთახიანი ბინა ისტორიულ შენობაში: მაღალი ჭერი, ხის იატაკი და ორი აივანი. ფასი შემცირებულია.',
         description_en: '4-room apartment in a historic building with high ceilings, wooden floors and two balconies. Price reduced.',
         photos: photos('interior', 'living', 'room', 'kitchen') },
       { id: A(5), name: 'მთაწმინდა · ლერმონტოვის ქ., 2-ოთახიანი', slug: 'mtatsminda-lermontovi', city: 'თბილისი', district: 'მთაწმინდა', address: 'ლერმონტოვის ქ. 9', unit_number: '3',

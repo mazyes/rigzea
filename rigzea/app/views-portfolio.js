@@ -86,14 +86,14 @@
           <img src="${esc(p.thumb || p.url)}" alt="ფოტო ${i + 1}" loading="lazy" />
           ${i === 0 ? '<span class="pm-cover">მთავარი</span>' : ''}
           <div class="pm-actions">
-            <button type="button" class="pm-btn" data-pm-move="${i}" data-dir="-1" ${i === 0 ? 'disabled' : ''} aria-label="ფოტო ${i + 1} — წინ გადატანა" title="წინ გადატანა">‹</button>
-            <button type="button" class="pm-btn" data-pm-move="${i}" data-dir="1" ${i === items.length - 1 ? 'disabled' : ''} aria-label="ფოტო ${i + 1} — უკან გადატანა" title="უკან გადატანა">›</button>
-            <button type="button" class="pm-btn pm-del" data-pm-del="${i}" aria-label="ფოტო ${i + 1} — წაშლა" title="წაშლა">${icon('close', 14)}</button>
+            <button type="button" class="pm-btn" data-pm-move="${i}" data-dir="-1" ${i === 0 ? 'disabled' : ''} aria-label="ფოტო ${i + 1}: წინ გადატანა" title="წინ გადატანა">‹</button>
+            <button type="button" class="pm-btn" data-pm-move="${i}" data-dir="1" ${i === items.length - 1 ? 'disabled' : ''} aria-label="ფოტო ${i + 1}: უკან გადატანა" title="უკან გადატანა">›</button>
+            <button type="button" class="pm-btn pm-del" data-pm-del="${i}" aria-label="ფოტო ${i + 1}: წაშლა" title="წაშლა">${icon('close', 14)}</button>
           </div></figure>`).join('')
         + Array.from({ length: pending }, () => '<div class="pm-item pm-loading"><span>იტვირთება…</span></div>').join('')
         + (items.length + pending < MAX_PHOTOS ? `<label class="pm-add">${icon('camera', 20)}<span>ფოტოების დამატება</span><input type="file" accept="image/*" multiple data-pm-input /></label>` : '');
       hint.textContent = items.length
-        ? `${items.length} ფოტო. პირველი ფოტო მთავარია — ის ჩანს ბმულის გაზიარებისას. რიგის შესაცვლელად გამოიყენე ისრები.`
+        ? `${items.length} ფოტო. პირველი ფოტო მთავარია: ის ჩანს ბმულის გაზიარებისას. რიგის შესაცვლელად გამოიყენე ისრები.`
         : 'ატვირთე ბინის ფოტოები. ფოტოები ავტომატურად შემცირდება სწრაფი ჩატვირთვისთვის.';
     };
     grid.addEventListener('click', (e) => {
@@ -161,7 +161,7 @@
     let activeImageObj = null;
 
     return R.dialog({
-      title: '🛡️ ფოტოების დაცვა — Watermark & ლოგო',
+      title: '🛡️ ფოტოების დაცვა: Watermark & ლოგო',
       subtitle: `${a.name} · ${photos.length} ფოტო`,
       wide: true,
       body: `
@@ -450,7 +450,7 @@
     const s = linkStats.get(apt.id)?.data;
     const weekAgo = Date.now() - 7 * 864e5;
     const inWeek = (v) => v && new Date(v).getTime() >= weekAgo;
-    const views = s ? (s.views_7d ?? 0) : '—';
+    const views = s ? (s.views_7d ?? 0) : '–';
     const inquiries = (S.data.deals || []).filter(d => d.apartment_id === apt.id && inWeek(d.created_at)).length;
     const viewings = (S.data.tasks || []).filter(t => t.apartment_id === apt.id && t.type === 'viewing' && inWeek(t.due_date || t.created_at)).length;
     const publicUrl = listingUrl(apt);
@@ -575,7 +575,7 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
     const s = linkStats.get(id)?.data;
     const scope = box.closest('section') || box;
     const set = (k, v) => { const el = $(`[data-ls="${k}"]`, scope); if (el) el.textContent = v; };
-    if (!s) { ['views', 'whatsapp', 'calls'].forEach(k => set(k, '—')); set('note', 'სტატისტიკა ჯერ არ არის ხელმისაწვდომი.'); return; }
+    if (!s) { ['views', 'whatsapp', 'calls'].forEach(k => set(k, '–')); set('note', 'სტატისტიკა ჯერ არ არის ხელმისაწვდომი.'); return; }
     set('views', s.views ?? 0); set('whatsapp', s.whatsapp ?? 0); set('calls', s.calls ?? 0);
     set('visitors', s.visitors ? `${s.visitors} უნიკალური ვიზიტორი` : '');
     set('note', s.last_view_at ? `ბოლო ნახვა: ${R.relative(s.last_view_at)} · ბოლო 7 დღეში ${s.views_7d ?? 0}` : 'ბმული ჯერ არავის გაუხსნია. გაუზიარე კლიენტს.');
@@ -604,7 +604,7 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
         <div class="listing-url"><input class="input" readonly value="${esc(url)}" aria-label="განცხადების ბმული" id="listing-url" /></div>
         <div class="listing-actions">
           <button type="button" class="btn btn-primary btn-sm" id="btn-share-renter">${icon('copy', 14)} ბმულის კოპირება</button>
-          <button type="button" class="btn btn-secondary btn-sm" id="btn-share-wl" title="ბმული რიგზეას ლოგოს გარეშე — პარტნიორი აგენტებისთვის">${icon('copy', 14)} White-label ბმული</button>
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-share-wl" title="ბმული რიგზეას ლოგოს გარეშე: პარტნიორი აგენტებისთვის">${icon('copy', 14)} White-label ბმული</button>
           <button type="button" class="btn btn-secondary btn-sm" id="btn-photos">${icon('camera', 14)} ფოტოები (${photos.length})</button>
           <button type="button" class="btn btn-secondary btn-sm" id="btn-watermark" title="ფოტოებზე საავტორო Watermark-ის დატანა">${icon('shield', 14)} Watermark / დაცვა</button>
           <button type="button" class="btn btn-secondary btn-sm" id="btn-owner-report" title="მესაკუთრის 1-კლიკიანი WhatsApp რეპორტი">${icon('whatsapp', 14)} მესაკუთრის რეპორტი</button>
@@ -615,7 +615,7 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
           <button type="button" class="btn btn-ghost btn-sm" id="btn-apt-deal">+ გარიგება</button>
         </div>
         ${photos.length ? `<div class="listing-strip">${photos.slice(0, 6).map(p => `<img src="${esc(p.thumb || p.url)}" alt="" loading="lazy" />`).join('')}${photos.length > 6 ? `<span>+${photos.length - 6}</span>` : ''}</div>` : ''}
-        ${missing.length ? `<p class="field-hint listing-missing">${icon('alert', 14)}<span>განცხადებას აკლია: ${esc(missing.join(', '))}. შეავსე „რედაქტირებიდან“ — სრული განცხადება კლიენტს მეტ ინფორმაციას აძლევს.</span></p>` : ''}
+        ${missing.length ? `<p class="field-hint listing-missing">${icon('alert', 14)}<span>განცხადებას აკლია: ${esc(missing.join(', '))}. შეავსე „რედაქტირებიდან“. სრული განცხადება კლიენტს მეტ ინფორმაციას აძლევს.</span></p>` : ''}
       </div>
       <div class="stats" data-link-stats data-apt="${esc(a.id)}">
         <div class="stat"><span class="stat-label">ნახვები</span><span class="stat-value" data-ls="views">…</span><span class="stat-note" data-ls="visitors"></span></div>
@@ -664,7 +664,7 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
                 const p = isSale ? a.sale_price : a.monthly_rent;
                 return `<div class="row" data-col-item="${a.id}">
                   <span class="cell-main"><strong>${esc(a.name)}</strong><span>${esc([a.address, a.city].filter(Boolean).join(', '))}</span></span>
-                  <span class="cell-meta">${p ? money(p, a.currency || 'USD') : '—'}</span>
+                  <span class="cell-meta">${p ? money(p, a.currency || 'USD') : '–'}</span>
                   <span class="cell-actions"><button type="button" class="btn btn-ghost btn-sm t-danger" data-col-rm="${a.id}" title="ამოშლა">×</button></span>
                 </div>`;
               }).join('')}
@@ -688,7 +688,7 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
               const p = isSale ? a.sale_price : a.monthly_rent;
               return `<div class="row" data-col-item="${a.id}">
                 <span class="cell-main"><strong>${esc(a.name)}</strong><span>${esc([a.address, a.city].filter(Boolean).join(', '))}</span></span>
-                <span class="cell-meta">${p ? money(p, a.currency || 'USD') : '—'}</span>
+                <span class="cell-meta">${p ? money(p, a.currency || 'USD') : '–'}</span>
                 <span class="cell-actions"><button type="button" class="btn btn-ghost btn-sm t-danger" data-col-rm="${a.id}" title="ამოშლა">×</button></span>
               </div>`;
             }).join('');
@@ -823,16 +823,16 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
           const flags = [overdue && `<span class="t-danger">${overdue} ვადაგადაც.</span>`, pend && `<span class="t-warn">${pend} თანხმობა</span>`, viewings && `<span class="t-ok">${viewings} ნახვა</span>`].filter(Boolean).join(' · ');
           const isSale = a.transaction_type === 'sale';
           const priceHtml = isSale
-            ? (a.sale_price ? `<strong>${money(a.sale_price, a.currency || 'USD')}</strong>${a.price_sqm ? `<div class="small muted">${money(a.price_sqm, a.currency || 'USD')}/მ²</div>` : ''}` : '—')
-            : (a.monthly_rent ? `<strong>${money(a.monthly_rent, a.currency || 'USD')}</strong><div class="small muted">${R.isDaily(a) ? '/ დღე' : '/ თვე'}</div>` : '—');
+            ? (a.sale_price ? `<strong>${money(a.sale_price, a.currency || 'USD')}</strong>${a.price_sqm ? `<div class="small muted">${money(a.price_sqm, a.currency || 'USD')}/მ²</div>` : ''}` : '–')
+            : (a.monthly_rent ? `<strong>${money(a.monthly_rent, a.currency || 'USD')}</strong><div class="small muted">${R.isDaily(a) ? '/ დღე' : '/ თვე'}</div>` : '–');
           const tt = a.transaction_type || (a.rental_type === 'long_term' ? 'long_term' : 'daily');
           return `<a class="row ${colPicked.has(a.id) ? 'is-col-picked' : ''}" href="#/apartments/${a.id}" data-apt-row="${a.id}" style="--cols:${cols}">
             ${colMode ? `<span class="apt-select-cell"><input type="checkbox" class="apt-col-cb" data-col-id="${a.id}" ${colPicked.has(a.id) ? 'checked' : ''} aria-label="მონიშვნა: ${esc(a.name)}" /></span>` : ''}
             <span class="cell-main"><strong>${esc(a.name)}</strong><span>${esc([a.address, a.city].filter(Boolean).join(', '))} · ${R.transactionBadge(tt)}${App.pausedApartmentIds().has(a.id) ? ' · <span class="t-warn">ბმული შეჩერებულია</span>' : ''}</span></span>
-            <span class="cell-meta" data-label="მფლობელი">${esc(H.owner(a.owner_id)?.name || '—')}</span>
+            <span class="cell-meta" data-label="მფლობელი">${esc(H.owner(a.owner_id)?.name || '–')}</span>
             <span class="cell-meta" data-label="ფასი">${priceHtml}</span>
             <span class="cell-meta" data-label="საქმე">${open.length}</span>
-            <span class="cell-meta" data-label="ჯავშანი">${next ? (next.check_in <= R.isoDate() ? `გასვლა ${esc(R.dayLabel(next.check_out))}` : `შესვლა ${esc(R.dayLabel(next.check_in))}`) : (isSale ? (viewings ? `${viewings} ნახვა` : '—') : '—')}</span>
+            <span class="cell-meta" data-label="ჯავშანი">${next ? (next.check_in <= R.isoDate() ? `გასვლა ${esc(R.dayLabel(next.check_out))}` : `შესვლა ${esc(R.dayLabel(next.check_in))}`) : (isSale ? (viewings ? `${viewings} ნახვა` : '–') : '–')}</span>
             <span class="cell-status">${R.badge(L.aptStatus[a.status] || a.status, L.aptStatusTone[a.status])}</span>
             <span class="cell-actions"><button type="button" class="btn btn-ghost btn-sm" data-new-task="${a.id}">+ საქმე</button><button type="button" class="btn btn-ghost btn-sm" data-new-exp="${a.id}">+ ხარჯი</button><button type="button" class="btn btn-ghost btn-sm" data-share-apt="${a.id}" title="კოლეგასთან გაზიარება" aria-label="კოლეგასთან გაზიარება: ${esc(a.name)}">${icon('whatsapp', 14)}</button></span>
           </a>`;
@@ -977,9 +977,9 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
         </div>
         <div class="stats">
           <div class="stat"><span class="stat-label">გასაყიდი ფასი</span><span class="stat-value" style="font-size:22px;color:var(--brand)">${money(a.sale_price || a.monthly_rent || 0, a.currency || 'USD')}</span></div>
-          <div class="stat"><span class="stat-label">ფასი მ²-ზე</span><span class="stat-value">${a.price_sqm ? money(a.price_sqm, a.currency || 'USD') + ' / მ²' : (a.sale_price && a.area_sqm ? Math.round(Number(a.sale_price) / Number(a.area_sqm)) + ' / მ²' : '—')}</span></div>
-          <div class="stat"><span class="stat-label">ფართობი</span><span class="stat-value">${a.area_sqm ? `${a.area_sqm} მ²` : '—'}</span><span class="stat-note">${a.rooms ? `${a.rooms} ოთახი` : ''}${a.bedrooms ? ` · ${a.bedrooms} საძინებელი` : ''}</span></div>
-          <div class="stat"><span class="stat-label">სართული</span><span class="stat-value">${a.floor ? `${a.floor}${a.total_floors ? `/${a.total_floors}` : ''}` : '—'}</span><span class="stat-note">${a.bathrooms ? `${a.bathrooms} სველი წერტილი` : ''}</span></div>
+          <div class="stat"><span class="stat-label">ფასი მ²-ზე</span><span class="stat-value">${a.price_sqm ? money(a.price_sqm, a.currency || 'USD') + ' / მ²' : (a.sale_price && a.area_sqm ? Math.round(Number(a.sale_price) / Number(a.area_sqm)) + ' / მ²' : '–')}</span></div>
+          <div class="stat"><span class="stat-label">ფართობი</span><span class="stat-value">${a.area_sqm ? `${a.area_sqm} მ²` : '–'}</span><span class="stat-note">${a.rooms ? `${a.rooms} ოთახი` : ''}${a.bedrooms ? ` · ${a.bedrooms} საძინებელი` : ''}</span></div>
+          <div class="stat"><span class="stat-label">სართული</span><span class="stat-value">${a.floor ? `${a.floor}${a.total_floors ? `/${a.total_floors}` : ''}` : '–'}</span><span class="stat-note">${a.bathrooms ? `${a.bathrooms} სველი წერტილი` : ''}</span></div>
           <div class="stat"><span class="stat-label">სტატუსი</span><span class="stat-value" style="font-size:16px">${L.aptStatus[a.status] || a.status}</span><span class="stat-note">${a.is_archived ? 'დაარქივებული' : 'აქტიური შეთავაზება'}</span></div>
         </div>
       </section>` : ''}
@@ -1038,8 +1038,8 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
           </section>` : `
           <section class="card"><div class="stats">
             <div class="stat"><span class="stat-label">ახლა</span><span class="stat-value" style="font-size:15px">${current ? esc(current.guest_name) : 'თავისუფალია'}</span><span class="stat-note">${current ? `გასვლა ${esc(R.dayLabel(current.check_out))}, ${esc(String(current.check_out_time || '').slice(0, 5))}` : ''}</span></div>
-            <div class="stat"><span class="stat-label">შემდეგი შესვლა</span><span class="stat-value" style="font-size:15px">${nextIn ? esc(R.dayLabel(nextIn.check_in)) + ', ' + esc(String(nextIn.check_in_time || '').slice(0, 5)) : '—'}</span><span class="stat-note">${nextIn ? esc(nextIn.guest_name) : ''}</span></div>
-            <div class="stat"><span class="stat-label">შემდეგი საქმე</span><span class="stat-value" style="font-size:15px">${nextTask ? esc(R.dateTime(H.taskTime(nextTask))) : '—'}</span><span class="stat-note">${nextTask ? esc(nextTask.title) : ''}</span></div>
+            <div class="stat"><span class="stat-label">შემდეგი შესვლა</span><span class="stat-value" style="font-size:15px">${nextIn ? esc(R.dayLabel(nextIn.check_in)) + ', ' + esc(String(nextIn.check_in_time || '').slice(0, 5)) : '–'}</span><span class="stat-note">${nextIn ? esc(nextIn.guest_name) : ''}</span></div>
+            <div class="stat"><span class="stat-label">შემდეგი საქმე</span><span class="stat-value" style="font-size:15px">${nextTask ? esc(R.dateTime(H.taskTime(nextTask))) : '–'}</span><span class="stat-note">${nextTask ? esc(nextTask.title) : ''}</span></div>
           </div></section>`}
 
           <section class="card"><div class="card-head"><h2>აქტიური საქმეები <span class="count">${open.length}</span></h2><a class="link-btn small" href="#/tasks" id="a-all-tasks">ყველა საქმე (${tasks.length})</a></div>
@@ -1066,8 +1066,8 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
           <section class="card"><div class="card-head"><h2>მესაკუთრე / პარტნიორი</h2>${owner ? `<a class="link-btn small" href="#/owners/${owner.id}">პროფილი</a>` : ''}</div>
             <div class="card-body">${a.owner_id && !owner ? `<div class="notice" id="a-owner-masked">${icon('key', 16)}<div><strong>მეპატრონის კონტაქტი დამალულია</strong><br>დანიშნე დათვალიერება და სახელი და ნომერი გამოჩნდება.</div></div>` : owner ? `<dl class="kv"><dt>სახელი</dt><dd>${esc(owner.name)}</dd>
               <dt>სტატუსი</dt><dd>${R.contactBadge(owner.contact_type || 'owner')}</dd>
-              <dt>ტელეფონი</dt><dd>${owner.phone ? `<a href="tel:${esc(owner.phone)}">${esc(owner.phone)}</a>` : '—'}</dd>
-              <dt>ელფოსტა</dt><dd>${owner.email ? `<a href="mailto:${esc(owner.email)}">${esc(owner.email)}</a>` : '—'}</dd>
+              <dt>ტელეფონი</dt><dd>${owner.phone ? `<a href="tel:${esc(owner.phone)}">${esc(owner.phone)}</a>` : '–'}</dd>
+              <dt>ელფოსტა</dt><dd>${owner.email ? `<a href="mailto:${esc(owner.email)}">${esc(owner.email)}</a>` : '–'}</dd>
               <dt>საკომისიო</dt><dd>${Number(a.commission_pct || 0)}%</dd></dl>`
               : '<p class="muted">მესაკუთრე არ არის მითითებული. თანხმობებისა და ამონაწერებისთვის მიუთითე მესაკუთრე.</p><button class="btn btn-secondary btn-sm" style="margin-top:8px" id="a-set-owner">მესაკუთრის მითითება</button>'}</div></section>
 
@@ -1084,7 +1084,7 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
                 <span>${esc(R.date(rv.check_in))} → ${esc(R.date(rv.check_out))}${Number(rv.expected_income) ? ' · ' + money(rv.expected_income) : ''}</span>
                 ${conflict ? '<span class="t-danger small">კონფლიქტი: თარიღები სხვა ჯავშანს ემთხვევა</span>' : ''}</span>
                 <span>${hasClean ? R.badge('დასუფთავება დაგეგმილია', 'ok') : `<button type="button" class="btn btn-secondary btn-sm" data-clean="${rv.id}">დასუფთავების დაგეგმვა</button>`}</span></div>`;
-            }).join('')}</div>` : App.emptyInline('მომავალი ჯავშანი არ არის. დაამატე ჯავშანი — სისტემა შემოგთავაზებს დასუფთავებას გასვლის შემდეგ.')}</section>` : ''}
+            }).join('')}</div>` : App.emptyInline('მომავალი ჯავშანი არ არის. დაამატე ჯავშანი. სისტემა შემოგთავაზებს დასუფთავებას გასვლის შემდეგ.')}</section>` : ''}
 
           <section class="card"><div class="card-head"><h2>${icon('key', 16)} დაშვება</h2>${hasAccess(a) ? '<button type="button" class="btn btn-ghost btn-sm" id="a-reveal" aria-expanded="false">ჩვენება</button>' : ''}</div>
             <div class="card-body">${hasAccess(a) ? `<div id="a-access" hidden><dl class="kv">
@@ -1094,7 +1094,7 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
                 ${a.parking_info ? `<dt>პარკინგი</dt><dd>${esc(a.parking_info)}</dd>` : ''}
                 ${a.access_instructions ? `<dt>ინსტრუქცია</dt><dd style="white-space:pre-wrap">${esc(a.access_instructions)}</dd>` : ''}</dl></div>
                 <p class="muted small" id="a-access-note">დაშვების მონაცემები დამალულია. ჩანს მენეჯერებისთვის და იმ თანამშრომლისთვის, ვისაც ამ ბინაში აქტიური საქმე აქვს.</p>`
-              : '<p class="muted small">კარის კოდი, Wi-Fi და ინსტრუქცია არ არის შევსებული. დაამატე „რედაქტირებიდან“ — დამლაგებელი ან აგენტი მათ საქმესთან ერთად ნახავს.</p>'}</div></section>
+              : '<p class="muted small">კარის კოდი, Wi-Fi და ინსტრუქცია არ არის შევსებული. დაამატე „რედაქტირებიდან“. დამლაგებელი ან აგენტი მათ საქმესთან ერთად ნახავს.</p>'}</div></section>
           ${!archived && App.isAdmin() ? `<button type="button" class="btn btn-danger-outline" id="a-archive">ობიექტის დაარქივება</button>` : ''}
         </div>
       </div>`;
@@ -1302,7 +1302,7 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
             </div>
 
             <div class="form-grid span-2" id="apt-daily-section" style="gap:8px"><label class="field"><span class="field-label">Check-in</span><input type="time" name="checkin_time" value="${esc(String(v.checkin_time || '14:00').slice(0, 5))}" /></label><label class="field"><span class="field-label">Check-out</span><input type="time" name="checkout_time" value="${esc(String(v.checkout_time || '12:00').slice(0, 5))}" /></label></div>
-            <div class="form-section span-2"><div class="form-section-title">დაშვება <span class="muted small">— ჩანს მხოლოდ მენეჯერებისთვის</span></div>
+            <div class="form-section span-2"><div class="form-section-title">დაშვება <span class="muted small">– ჩანს მხოლოდ მენეჯერებისთვის</span></div>
               <div class="form-grid">
                 <label class="field"><span class="field-label">კარის კოდი</span><input name="door_code" value="${esc(v.door_code || '')}" autocomplete="off" /></label>
                 <label class="field"><span class="field-label">პარკინგი</span><input name="parking_info" value="${esc(v.parking_info || '')}" /></label>
@@ -1577,21 +1577,21 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
         else if (st === 'approved' && exp && exp.status === 'approved') action = `<a class="btn btn-ghost btn-sm" href="#/finance?status=approved">ხარჯის აღრიცხვა</a>`;
         return `<div class="row ${a.task_id ? 'clickable' : ''}" style="--cols:${cols}" ${a.task_id ? `data-go="${App.taskHref(a.task_id)}"` : ''}>
           <span class="cell-main"><strong>${esc(a.title || a.description || 'ხარჯი')}</strong><span>${esc(a.description && a.title ? a.description : '')}</span></span>
-          <span class="cell-meta">${esc(H.aptName(a.apartment_id))} · ${esc(H.owner(a.owner_id)?.name || '—')}</span>
+          <span class="cell-meta">${esc(H.aptName(a.apartment_id))} · ${esc(H.owner(a.owner_id)?.name || '–')}</span>
           <span class="cell-meta num strong">${money(a.amount)}</span>
           <span class="cell-meta" data-label="მოთხოვნილია">${esc(R.date(a.created_at))}</span>
           <span class="cell-meta">${st === 'pending' ? `<span class="${Date.now() - new Date(a.created_at) > 24 * 3600e3 ? 't-danger' : 't-warn'}">${esc(R.elapsed(a.created_at))} ელოდება</span>` : a.responded_at ? `პასუხი ${esc(R.date(a.responded_at))}` : ''}</span>
           <span class="cell-status">${R.approvalBadge(a)}${exp && st === 'approved' ? `<div class="small muted">${exp.status === 'approved' ? 'ჯერ არ არის გაწეული' : L.expense[exp.status]}</div>` : ''}</span>
           <span class="cell-actions">${action}${st === 'pending' ? `<button type="button" class="btn btn-ghost btn-sm" data-cancel-appr="${a.id}">გაუქმება</button>` : ''}</span>
         </div>`;
-      }).join('')}</div>` : `<div class="empty">${icon('owner', 28)}<h3>${apprFilter === 'pending' ? 'პასუხის მომლოდინე მოთხოვნა არ არის' : 'ჩანაწერი არ არის'}</h3><p>თანხმობის მოთხოვნით მფლობელი ტელეფონიდან ერთი ბმულით დაადასტურებს ან უარყოფს ხარჯს — მაგ.: „ონკანის გამოცვლა, ₾180“.</p><button class="btn btn-primary" type="button" id="o-appr-empty">თანხმობის მოთხოვნა</button></div>`}</section>`;
+      }).join('')}</div>` : `<div class="empty">${icon('owner', 28)}<h3>${apprFilter === 'pending' ? 'პასუხის მომლოდინე მოთხოვნა არ არის' : 'ჩანაწერი არ არის'}</h3><p>თანხმობის მოთხოვნით მფლობელი ტელეფონიდან ერთი ბმულით დაადასტურებს ან უარყოფს ხარჯს, მაგ.: „ონკანის გამოცვლა, ₾180“.</p><button class="btn btn-primary" type="button" id="o-appr-empty">თანხმობის მოთხოვნა</button></div>`}</section>`;
     $$('[data-af]', root).forEach(b => b.addEventListener('click', () => { apprFilter = b.dataset.af; App.render(); }));
     $$('[data-go]', root).forEach(rw => rw.addEventListener('click', (e) => { if (!e.target.closest('button,a')) App.go(rw.dataset.go); }));
     $('#o-appr-empty')?.addEventListener('click', () => App.openApprovalForm({}));
     App.bindApprovalShare(root);
     $$('[data-cancel-appr]', root).forEach(b => b.addEventListener('click', async () => {
       const a = S.data.approvals.find(x => x.id === b.dataset.cancelAppr);
-      const ok = await R.confirm({ title: 'მოთხოვნის გაუქმება', message: `„${a.title || a.description}“ (${money(a.amount)}) — მფლობელის ბმული აღარ იმუშავებს.`, confirmLabel: 'გაუქმება', danger: true });
+      const ok = await R.confirm({ title: 'მოთხოვნის გაუქმება', message: `„${a.title || a.description}“ (${money(a.amount)}). მფლობელის ბმული აღარ იმუშავებს.`, confirmLabel: 'გაუქმება', danger: true });
       if (!ok) return;
       run(b, async () => {
         const row = await q(sb.from('approvals').update({ status: 'cancelled' }).eq('id', a.id).select().single());
@@ -1629,8 +1629,8 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
         const prefStr = [o.preferred_city, o.preferred_district].filter(Boolean).join(', ');
         return `<a class="row" href="#/owners/${o.id}" style="--cols:${cols}"><span class="cell-main"><strong>${esc(o.name)} ${H.flagTag(o)}</strong><span>${o.user_id ? 'პორტალთან დაკავშირებული' : (o.lead_source ? 'წყარო: ' + esc(L.leadSource[o.lead_source] || o.lead_source) : '')}</span></span>
           <span class="cell-meta">${R.contactBadge(ct)}</span>
-          <span class="cell-meta">${esc([o.phone, o.email].filter(Boolean).join(' · ') || '—')}${budgetStr ? `<div class="small t-ok" style="font-weight:600">${esc(budgetStr)}</div>` : ''}</span>
-          <span class="cell-meta" data-label="დეტალები">${apts.length ? esc(apts.map(a => a.name).join(', ')) : (prefStr ? esc(prefStr) : (typeof o.requirements === 'string' && o.requirements ? esc(o.requirements.slice(0, 40)) : '—'))}</span>
+          <span class="cell-meta">${esc([o.phone, o.email].filter(Boolean).join(' · ') || '–')}${budgetStr ? `<div class="small t-ok" style="font-weight:600">${esc(budgetStr)}</div>` : ''}</span>
+          <span class="cell-meta" data-label="დეტალები">${apts.length ? esc(apts.map(a => a.name).join(', ')) : (prefStr ? esc(prefStr) : (typeof o.requirements === 'string' && o.requirements ? esc(o.requirements.slice(0, 40)) : '–'))}</span>
           <span class="cell-status">${pend ? R.badge(`${pend} ელოდება`, 'warn') : ''}</span></a>`;
       }).join('')}</div>` : `<div class="empty">${icon('owner', 28)}<h3>${page ? `${page.one} ჯერ არ არის დამატებული` : 'კონტაქტი ვერ მოიძებნა'}</h3><p>${page ? 'დაამატე სახელი და ტელეფონი. დანარჩენის შევსება მოგვიანებითაც შეიძლება.' : 'დაამატე მეპატრონე, გამყიდველი, მყიდველი ან მდგმური.'}</p><button class="btn btn-primary" type="button" id="o-new-empty">${page ? page.add : 'კონტაქტის დამატება'}</button></div>`}</section>`;
 
@@ -1658,8 +1658,8 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
       </div><div class="stack">
         <section class="card"><div class="card-head"><h2>პროფილი და მოთხოვნები</h2></div><div class="card-body"><dl class="kv">
           <dt>ტიპი</dt><dd>${R.contactBadge(ct)}</dd>
-          <dt>ტელეფონი</dt><dd>${o.phone ? `<a href="tel:${esc(o.phone)}">${esc(o.phone)}</a>` : '—'}</dd>
-          <dt>ელფოსტა</dt><dd>${o.email ? `<a href="mailto:${esc(o.email)}">${esc(o.email)}</a>` : '—'}</dd>
+          <dt>ტელეფონი</dt><dd>${o.phone ? `<a href="tel:${esc(o.phone)}">${esc(o.phone)}</a>` : '–'}</dd>
+          <dt>ელფოსტა</dt><dd>${o.email ? `<a href="mailto:${esc(o.email)}">${esc(o.email)}</a>` : '–'}</dd>
           ${o.personal_id ? `<dt>პირადი ნომერი</dt><dd>${esc(o.personal_id)}</dd>` : ''}
           ${o.budget_max ? `<dt>ბიუჯეტი</dt><dd class="strong t-ok">${esc(budgetText(o))}</dd>` : ''}
           ${o.preferred_city || o.preferred_district ? `<dt>სასურველი ლოკაცია</dt><dd>${esc([o.preferred_city, o.preferred_district].filter(Boolean).join(', '))}</dd>` : ''}

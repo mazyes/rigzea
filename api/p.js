@@ -69,7 +69,7 @@ function buildMeta(listing, pageUrl, whiteLabel) {
     [a.district, a.city].filter(Boolean).join(', '),
   ].filter(Boolean).join(' · ');
   const desc = String(a.description || '').replace(/\s+/g, ' ').trim();
-  const description = [facts, desc].filter(Boolean).join(' — ').slice(0, 280);
+  const description = [facts, desc].filter(Boolean).join(' · ').slice(0, 280);
   const site = ag.name || (whiteLabel ? '' : 'Rigzea');
   const title = a.name || 'ბინა';
   const shareImg = photos[0]?.url || 'https://rigzea.com/img/og-preview.jpg';

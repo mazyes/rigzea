@@ -265,10 +265,10 @@
             <thead><tr><th scope="col">${esc(t.colApt)}</th><th scope="col">${esc(t.colPrice)}</th><th scope="col">${esc(t.colArea)}</th><th scope="col">${esc(t.colRooms)}</th><th scope="col">${esc(t.colSqm)}</th></tr></thead>
             <tbody>${apartments.map((a, i) => `<tr>
               <td><a href="${detailsUrl(a)}"><span class="s-idx">${i + 1}</span><span>${esc(a.title)}</span></a></td>
-              <td>${a.price ? fmt(a.price, a.currency === 'GEL' ? 'GEL' : 'USD') : '—'}${bestPrice !== null && prices[i] === bestPrice ? bestTag : ''}</td>
-              <td>${Number(a.area_sqm) > 0 ? `${a.area_sqm} მ²` : '—'}${bestArea !== null && Number(a.area_sqm) === bestArea ? bestTag : ''}</td>
-              <td>${a.rooms || '—'}${a.bedrooms ? ` <span style="color:var(--s-muted)">(${esc(t.beds(a.bedrooms))})</span>` : ''}</td>
-              <td>${sqm[i] !== null ? fmt(sqm[i], baseCur) : '—'}${bestSqm !== null && sqm[i] === bestSqm ? bestTag : ''}</td>
+              <td>${a.price ? fmt(a.price, a.currency === 'GEL' ? 'GEL' : 'USD') : '–'}${bestPrice !== null && prices[i] === bestPrice ? bestTag : ''}</td>
+              <td>${Number(a.area_sqm) > 0 ? `${a.area_sqm} მ²` : '–'}${bestArea !== null && Number(a.area_sqm) === bestArea ? bestTag : ''}</td>
+              <td>${a.rooms || '–'}${a.bedrooms ? ` <span style="color:var(--s-muted)">(${esc(t.beds(a.bedrooms))})</span>` : ''}</td>
+              <td>${sqm[i] !== null ? fmt(sqm[i], baseCur) : '–'}${bestSqm !== null && sqm[i] === bestSqm ? bestTag : ''}</td>
             </tr>`).join('')}</tbody>
           </table></div>
         </section>` : ''}

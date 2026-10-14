@@ -1857,7 +1857,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 }
 
 .plan-features-list li::before {
-  content: "—";
+  content: "–";
   color: var(--green);
   font-weight: 700;
 }

@@ -146,5 +146,4 @@ function parseListing(site, html) {
   return out;
 }
 
-module.exports = { ALLOWED_HOSTS, hostOf, parseListing, debrand };
-module.exports.default = module.exports;
+export { ALLOWED_HOSTS, hostOf, parseListing, debrand };

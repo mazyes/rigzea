@@ -41,7 +41,7 @@
           const self = m.user_id === S.user.id;
           return `<div class="row" style="--cols:${cols}"><span class="cell-main"><strong>${esc(m.display_name || 'უსახელო')}${self ? ' <span class="muted">(შენ)</span>' : ''}</strong><span>წევრია ${esc(R.date(m.created_at))}-დან</span></span>
             <span class="cell-meta">${App.isAdmin() && !self && m.role !== 'owner' ? `<select class="input" data-role="${m.id}" aria-label="როლი" style="min-height:32px">${['admin', 'manager', 'agent', 'staff'].filter(r => r !== 'agent' || agentRole || m.role === 'agent').map(r => `<option value="${r}" ${m.role === r ? 'selected' : ''}>${L.role[r]}</option>`).join('')}</select>` : esc(L.role[m.role])}</span>
-            <span class="cell-meta">${m.phone ? `<a href="tel:${esc(m.phone)}">${esc(m.phone)}</a>` : '—'}</span>
+            <span class="cell-meta">${m.phone ? `<a href="tel:${esc(m.phone)}">${esc(m.phone)}</a>` : '–'}</span>
             <span class="cell-meta" data-label="საქმე"><a href="#/tasks" data-filter-assignee="${m.id}">${open.length}</a>${overdue ? ` <span class="t-danger">(${overdue} ვადაგადაც.)</span>` : ''}</span>
             <span class="cell-actions">${App.isAdmin() && !self && m.role !== 'owner' ? `<button type="button" class="btn btn-ghost btn-sm" data-remove="${m.id}">გუნდიდან ამოშლა</button>` : ''}</span></div>`;
         }).join('')}</div></section>
@@ -49,7 +49,7 @@
         ${invitations === null ? '<div class="skeleton"><i></i><i></i></div>' : invitationsError ? `<div class="error-state"><p>მოწვევები ვერ ჩაიტვირთა. ${esc(R.friendlyError(invitationsError))}</p><button class="btn btn-secondary btn-sm" id="t-inv-retry">ხელახლა ცდა</button></div>`
           : pendingInv.length ? `<div class="rows">${pendingInv.map(i => `<div class="row" style="--cols:minmax(0,1fr) 150px auto"><span class="cell-main"><strong>${esc(i.email)}</strong><span>გაიგზავნა ${esc(R.date(i.created_at))}</span></span><span class="cell-meta">${esc(L.role[i.role])}</span><span class="cell-actions">${App.isAdmin() ? `<button type="button" class="btn btn-ghost btn-sm" data-cancel-inv="${i.id}">გაუქმება</button>` : ''}</span></div>`).join('')}</div>`
           : App.emptyInline('ღია მოწვევა არ არის.')}
-        <div class="card-foot">მოწვეული ადამიანი რეგისტრირდება მისამართზე <strong>${esc(location.origin)}/app/</strong> იმავე ელფოსტით — სამუშაო სივრცე ავტომატურად დაემატება. ელფოსტით ავტომატური გაგზავნა ჯერ არ არის ჩართული, ამიტომ ბმული თავად გაუგზავნე. <button type="button" class="link-btn" id="t-copy">ბმულის კოპირება</button></div>
+        <div class="card-foot">მოწვეული ადამიანი რეგისტრირდება მისამართზე <strong>${esc(location.origin)}/app/</strong> იმავე ელფოსტით. სამუშაო სივრცე ავტომატურად დაემატება. ელფოსტით ავტომატური გაგზავნა ჯერ არ არის ჩართული, ამიტომ ბმული თავად გაუგზავნე. <button type="button" class="link-btn" id="t-copy">ბმულის კოპირება</button></div>
       </section>`;
 
     $('#t-invite')?.addEventListener('click', () => openInvite());
@@ -270,9 +270,9 @@
       <div class="rows"><div class="rows-head" style="--cols:${cols}"><span>კომპანია</span><span>მფლობელი</span><span>პაკეტი</span><span>დღე</span><span>სტატუსი</span><span></span></div>
       ${platformOrgs.map(o => `<div class="row" style="--cols:${cols}" data-org="${o.id}">
         <span class="cell-main"><strong>${esc(o.name)}</strong><span>${o.apartments_count} ობიექტი · ${o.members_count} წევრი</span></span>
-        <span class="cell-meta">${esc(o.owner_email || '—')}</span>
+        <span class="cell-meta">${esc(o.owner_email || '–')}</span>
         <span><select class="input" data-plan aria-label="პაკეტი" style="min-height:32px">${['trial', 'starter', 'pro', 'top', 'agency'].map(p => `<option value="${p}" ${o.plan === p ? 'selected' : ''}>${p === 'trial' ? 'საცდელი' : esc(App.PLANS[p].name)}</option>`).join('')}</select></span>
-        <span><input class="input" type="number" min="1" max="3650" data-days value="${o.plan === 'trial' || o.plan === 'starter' ? '' : 30}" placeholder="${o.plan === 'trial' ? '14' : '—'}" aria-label="დღეების რაოდენობა" style="min-height:32px" ${o.plan === 'starter' ? 'disabled' : ''} /></span>
+        <span><input class="input" type="number" min="1" max="3650" data-days value="${o.plan === 'trial' || o.plan === 'starter' ? '' : 30}" placeholder="${o.plan === 'trial' ? '14' : '–'}" aria-label="დღეების რაოდენობა" style="min-height:32px" ${o.plan === 'starter' ? 'disabled' : ''} /></span>
         <span class="cell-meta">${statusText(o)}</span>
         <span class="cell-actions"><button type="button" class="btn btn-primary btn-sm" data-save>გააქტიურება</button></span></div>`).join('')}</div></section>
       ${platformAdmins ? `<section class="card" style="margin-top:16px" id="p-admins"><div class="card-head"><h2>პლატფორმის ადმინები <span class="count">${platformAdmins.length}</span></h2></div>
@@ -303,7 +303,7 @@
     });
     $$('[data-org]', root).forEach(row => {
       const sel = $('[data-plan]', row), days = $('[data-days]', row);
-      sel.onchange = () => { days.disabled = sel.value === 'starter'; days.value = sel.value === 'trial' || sel.value === 'starter' ? '' : '30'; days.placeholder = sel.value === 'trial' ? '14' : '—'; };
+      sel.onchange = () => { days.disabled = sel.value === 'starter'; days.value = sel.value === 'trial' || sel.value === 'starter' ? '' : '30'; days.placeholder = sel.value === 'trial' ? '14' : '–'; };
       $('[data-save]', row).onclick = (e) => run(e.currentTarget, async () => {
         const res = await q(sb.rpc('admin_set_org_plan', { p_org: row.dataset.org, p_plan: sel.value, p_days: days.value === '' ? null : Number(days.value) }));
         if (row.dataset.org === S.org.id) { Object.assign(S.org, { plan: res.plan, trial_ends_at: res.trial_ends_at, plan_expires_at: res.plan_expires_at }); App.renderShell(); }
@@ -415,7 +415,7 @@
       example: [['Orbi City · 1204', 'შერიფ ხიმშიაშვილის 7', '1204', 'ბათუმი', 'ნინო ქავთარაძე', '4821#', 'Orbi1204', 'sea-view-24', '20', '2', 'ძველი ბათუმი', '12', '64', '650', 'USD', 'არა', '2027-06-30', '+995 555 12 34 56']],
       toRow: (r, ctx) => {
         const owner = r.owner ? ctx.ownerByName(r.owner) : null;
-        if (r.owner && !owner) return { error: `მფლობელი „${r.owner}“ ვერ მოიძებნა — ჯერ მფლობელები შემოიტანე` };
+        if (r.owner && !owner) return { error: `მფლობელი „${r.owner}“ ვერ მოიძებნა. ჯერ მფლობელები შემოიტანე` };
         const pct = r.commission_pct === '' || r.commission_pct == null ? 20 : Number(String(r.commission_pct).replace('%', ''));
         if (isNaN(pct)) return { error: 'საკომისიო რიცხვი უნდა იყოს' };
         const rooms = r.rooms === '' ? null : Number(r.rooms);
@@ -471,7 +471,7 @@
       dupKey: (r) => norm(`${r.client_name}|${r.apartment}|${r.deal_amount}`),
       toRow: (r, ctx) => {
         const apt = r.apartment ? ctx.apartmentByName(r.apartment) : null;
-        if (r.apartment && !apt) return { error: `ბინა „${r.apartment}“ ვერ მოიძებნა — ჯერ ბინები შემოიტანე` };
+        if (r.apartment && !apt) return { error: `ბინა „${r.apartment}“ ვერ მოიძებნა. ჯერ ბინები შემოიტანე` };
         const stage = r.stage ? matchLabel(r.stage, L.dealStage) : 'active';
         if (!stage) return { error: `ეტაპი „${r.stage}“ უცნობია (${Object.values(L.dealStage).join(', ')})` };
         const amount = r.deal_amount === '' ? 0 : parseNum(r.deal_amount);
@@ -575,11 +575,11 @@
     const ok = rows ? rows.filter(r => r.row) : [];
     const bad = rows ? rows.filter(r => r.error) : [];
     root.innerHTML = `<section class="card"><div class="card-body form-stack">
-      <p class="muted">შემოიტანე არსებული სია Excel-დან (.xlsx) ან CSV-დან. ჯერ შემოიტანე მფლობელები, შემდეგ ბინები, შემდეგ გარიგებები და ხარჯები — ბინები მფლობელს სახელით უკავშირდება, გარიგებები და ხარჯები ბინას. შემოტანამდე ნახავ შედეგს და შეცდომებს.</p>
+      <p class="muted">შემოიტანე არსებული სია Excel-დან (.xlsx) ან CSV-დან. ჯერ შემოიტანე მფლობელები, შემდეგ ბინები, შემდეგ გარიგებები და ხარჯები: ბინები მფლობელს სახელით უკავშირდება, გარიგებები და ხარჯები ბინას. შემოტანამდე ნახავ შედეგს და შეცდომებს.</p>
       <div class="seg" role="radiogroup" aria-label="რას შემოიტან">${Object.entries(IMPORTS).map(([k, d]) => `<label><input type="radio" name="kind" value="${k}" ${importState.kind === k ? 'checked' : ''}><span>${d.label}</span></label>`).join('')}</div>
       <div class="toolbar" style="margin:0"><label class="btn btn-primary" style="cursor:pointer">${icon('upload', 16)} ფაილის არჩევა<input type="file" id="imp-file" accept=".csv,.xlsx,.xls" hidden /></label>
         <button type="button" class="btn btn-secondary" id="imp-template">${icon('file', 16)} შაბლონის ჩამოტვირთვა (CSV)</button>
-        <span class="small muted">სვეტები: ${def.columns.map(([, l, r]) => r ? `<strong>${esc(l)}</strong>` : esc(l)).join(', ')} (მუქი — სავალდებულო)</span></div>
+        <span class="small muted">სვეტები: ${def.columns.map(([, l, r]) => r ? `<strong>${esc(l)}</strong>` : esc(l)).join(', ')} (მუქი: სავალდებულო)</span></div>
     </div>
     ${rows ? `<div class="card-head"><h2>${esc(importState.fileName)} · ${ok.length} მზადაა${bad.length ? `, <span class="t-danger">${bad.length} შეცდომით</span>` : ''}</h2>
         <div style="display:flex;gap:8px"><button type="button" class="btn btn-ghost btn-sm" id="imp-clear">გასუფთავება</button><button type="button" class="btn btn-primary btn-sm" id="imp-go" ${ok.length ? '' : 'disabled'}>${ok.length} ჩანაწერის შემოტანა</button></div></div>

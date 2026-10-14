@@ -2,9 +2,7 @@
 // Reads one public listing page from MyHome.ge, SS.ge or Place.ge on behalf of a signed-in user.
 // No paid services: a single fetch and local parsing (api/_import-parse.js).
 import { publicConfig as config } from './_lib.js';
-import importParse from './_import-parse.js';
-const hostOf = importParse.hostOf || importParse.default?.hostOf;
-const parseListing = importParse.parseListing || importParse.default?.parseListing;
+import { hostOf, parseListing } from './_import-parse.js';
 
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36';
 const MAX_BYTES = 3 * 1024 * 1024;

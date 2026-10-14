@@ -81,7 +81,7 @@
     if (alt === null) return fmtMoney(amount, cur);
     return `${fmtMoney(cur === 'USD' ? amount : alt, 'USD')} · ${fmtMoney(cur === 'GEL' ? amount : alt, 'GEL')}`;
   }
-  const memberName = (id) => S.data.members.find(m => m.id === id)?.display_name || '—';
+  const memberName = (id) => S.data.members.find(m => m.id === id)?.display_name || '–';
   const deskMembers = () => S.data.members.filter(m => m.role !== 'staff');
 
   // Sums a per-deal value in one currency. missing = deals that could not be converted (no FX rate).
@@ -94,13 +94,13 @@
   const displayCur = () => { try { return localStorage.getItem('rigzea_deals_cur') === 'GEL' ? 'GEL' : 'USD'; } catch { return 'USD'; } };
   const setDisplayCur = (c) => { try { localStorage.setItem('rigzea_deals_cur', c); } catch { /* per-viewer convenience only */ } };
 
-  const agentName = (userId) => S.data.members.find(m => m.user_id === userId)?.display_name || '—';
+  const agentName = (userId) => S.data.members.find(m => m.user_id === userId)?.display_name || '–';
   const dmy = (v) => { const d = R.toDate(v); return d ? `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.${d.getFullYear()}` : ''; };
   const randomSlug = () => { const a = 'abcdefghijkmnpqrstuvwxyz23456789'; const b = crypto.getRandomValues(new Uint8Array(12)); return Array.from(b, x => a[x % a.length]).join(''); };
   const selectionUrl = (slug) => `${location.origin}/p/s/?id=${encodeURIComponent(slug)}`;
   const listingUrl = (a, wl = false) => R.listingUrl(a, wl);
   const aptPriceLabel = (a) => {
-    if (!a) return '—';
+    if (!a) return '–';
     if (a.transaction_type === 'sale') return a.sale_price ? `${fmtMoney(a.sale_price, a.currency || 'USD')} (გაყიდვა)` : 'ფასი მითითებული არაა';
     return a.monthly_rent ? `${fmtMoney(a.monthly_rent, a.currency || 'USD')} / თვე` : 'ქირა მითითებული არაა';
   };
@@ -176,7 +176,7 @@
           <div class="stat"><span class="stat-label">მოსალოდნელი საკომისიო (სუფთა)</span><span class="stat-value">${fmtMoney(expected.value, cur)}</span><span class="stat-note">პარტნიორის წილის გარეშე</span></div>
           <div class="stat"><span class="stat-label">გამომუშავებული საკომისიო</span><span class="stat-value t-ok">${fmtMoney(earned.value, cur)}</span><span class="stat-note">${closed.length} დახურული გარიგება</span></div>
         </div>
-        ${missing ? `<div class="calc">${icon('alert', 14)} ${missing} გარიგება სხვა ვალუტაშია და ჯამში არ შევიდა — მიუთითე ვალუტის კურსი „საკომისიოების“ ჩანართში.</div>` : ''}
+        ${missing ? `<div class="calc">${icon('alert', 14)} ${missing} გარიგება სხვა ვალუტაშია და ჯამში არ შევიდა. მიუთითე ვალუტის კურსი „საკომისიოების“ ჩანართში.</div>` : ''}
       </section>
       <div class="toolbar" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
         ${curToggle(cur)}
@@ -212,9 +212,9 @@
                 return `<tr>
                   <td>
                     <strong>${esc(d.client_name)} ${H.flagTag(H.contactByPhone(d.client_phone))}</strong>
-                    <div class="small muted">${d.contact_type ? R.contactBadge(d.contact_type) + ' · ' : ''}${d.client_phone ? `<a href="tel:${esc(d.client_phone)}">${esc(d.client_phone)}</a>` : '—'}</div>
+                    <div class="small muted">${d.contact_type ? R.contactBadge(d.contact_type) + ' · ' : ''}${d.client_phone ? `<a href="tel:${esc(d.client_phone)}">${esc(d.client_phone)}</a>` : '–'}</div>
                   </td>
-                  <td>${apt ? `<a href="#/apartments/${apt.id}">${esc(apt.name)}</a>` : '<span class="muted">—</span>'}</td>
+                  <td>${apt ? `<a href="#/apartments/${apt.id}">${esc(apt.name)}</a>` : '<span class="muted">–</span>'}</td>
                   <td>${isSale ? 'გაყიდვა' : 'ქირა'}</td>
                   <td class="num strong">${fmtMoney(d.deal_amount, cur)}</td>
                   <td class="num strong t-ok">${fmtMoney(comm.net, cur)}</td>
@@ -434,7 +434,7 @@
           <div class="span-2" id="deal-flag" hidden></div>
           <label class="field span-2"><span class="field-label">ობიექტი პორტფოლიოდან</span>
             <select name="apartment_id" id="deal-apt-select">
-              <option value="">— აირჩიე ობიექტი —</option>
+              <option value="">აირჩიე ობიექტი</option>
               ${S.data.apartments.filter(a => a.status !== 'archived').map(a => `<option value="${a.id}" data-type="${a.transaction_type || 'rental'}" data-rent="${a.transaction_type === 'sale' ? (a.sale_price || '') : (a.monthly_rent || '')}" data-cur="${a.currency || 'USD'}" ${a.id === v.apartment_id ? 'selected' : ''}>${esc(a.name)}${a.city ? ' · ' + esc(a.city) : ''} (${esc(aptPriceLabel(a))})</option>`).join('')}
             </select>
           </label>
@@ -466,7 +466,7 @@
               <label class="field" id="deal-comm-fixed-field" hidden><span class="field-label">ფიქსირებული საკომისიო</span><input type="number" id="deal-comm-fixed" name="commission_amount" min="0" step="50" value="${esc(v.commission_amount || '')}" placeholder="3000" /></label>
             </div>
             <div class="deal-calc-box">
-              <div><small class="muted">შენი სუფთა საკომისიო</small><strong id="deal-calc-net">—</strong></div>
+              <div><small class="muted">შენი სუფთა საკომისიო</small><strong id="deal-calc-net">–</strong></div>
               <div id="deal-calc-breakdown" class="small muted"></div>
             </div>
           </div>
@@ -746,7 +746,7 @@
           ${icon('refresh', 13)} კურსი: ${rate ? `<b>1 USD = ${rate} ₾</b>` : '<b class="t-danger">მითითებული არ არის</b>'}
           ${App.isAdmin() ? ' · <button type="button" class="link-btn small" id="cm-fx">შეცვლა</button>' : ''}
           ${missing ? `<br>${icon('alert', 13)} ${missing} გარიგება სხვა ვალუტაშია და კურსის გარეშე ჯამში ვერ შევიდა.` : ''}
-          <br>დახურული — დახურვის თარიღით; მოსალოდნელი — გადაბარგების სამიზნე თარიღით (თუ არ არის, შექმნის თარიღით).
+          <br>დახურული: დახურვის თარიღით; მოსალოდნელი: გადაბარგების სამიზნე თარიღით (თუ არ არის, შექმნის თარიღით).
         </div>
       </section>
 
@@ -764,7 +764,7 @@
                 <span class="comm-d">${R.dealBadge(d.stage)}</span>
                 <span class="comm-d">${esc(R.date(dateOf(d)))}</span>
                 <span class="cell-right comm-d">${fmtMoney(c.gross, dc)}</span>
-                <span class="cell-right comm-d">${c.hasPartner ? '−' + fmtMoney(c.partnerShare, dc) : '—'}</span>
+                <span class="cell-right comm-d">${c.hasPartner ? '−' + fmtMoney(c.partnerShare, dc) : '–'}</span>
                 <span class="cell-right comm-net"><strong>${fmtMoney(c.net, dc)}</strong><span class="comm-m">${R.dealBadge(d.stage)}</span></span>
               </div>`;
             }).join('')}
@@ -852,7 +852,7 @@
           <span class="cell-meta">${m.won}</span>
           <span class="cell-right">${fmtMoney(m.vol, cur)}</span>
           <span class="cell-right"><strong class="t-ok">${fmtMoney(m.comm, cur)}</strong></span>
-          <span class="cell-right">${m.rate === null ? '—' : `${m.rate}% <span class="small muted">(${m.offered}/${m.viewed})</span>`}</span></div>`).join('')}
+          <span class="cell-right">${m.rate === null ? '–' : `${m.rate}% <span class="small muted">(${m.offered}/${m.viewed})</span>`}</span></div>`).join('')}
       </div></section>`;
   }
 
@@ -1007,7 +1007,7 @@
       const s = rows.find(x => x.id === b.dataset.selToggle);
       const row = await q(sb.from('selections').update({ is_active: s.is_active === false }).eq('id', s.id).select().single());
       Object.assign(s, row);
-      toast(row.is_active === false ? 'ბმული გაითიშა — კლიენტი მას ვეღარ გახსნის' : 'ბმული ისევ აქტიურია', { type: 'success' });
+      toast(row.is_active === false ? 'ბმული გაითიშა. კლიენტი მას ვეღარ გახსნის' : 'ბმული ისევ აქტიურია', { type: 'success' });
       renderSelections();
     })));
   }
@@ -1062,15 +1062,15 @@
         <div class="mm-filters">
           <div class="form-grid">
             <label class="field"><span class="field-label">გარიგება (არასავალდებულო)</span>
-              <select id="mm-deal"><option value="">— გარიგების გარეშე —</option>${openDeals.map(d => `<option value="${d.id}" ${deal?.id === d.id ? 'selected' : ''}>${esc(d.client_name)}</option>`).join('')}</select></label>
+              <select id="mm-deal"><option value="">გარიგების გარეშე</option>${openDeals.map(d => `<option value="${d.id}" ${deal?.id === d.id ? 'selected' : ''}>${esc(d.client_name)}</option>`).join('')}</select></label>
             <label class="field"><span class="field-label">კლიენტის სახელი (ბმულზე გამოჩნდება)</span><input id="mm-client" maxlength="60" value="${esc(deal?.client_name || '')}" placeholder="მაგ.: მარიამი" /></label>
           </div>
           <div class="mm-grid">
             <label class="field"><span class="field-label">ტიპი</span><select id="mm-type" data-c="transaction_type"><option value="">ნებისმიერი</option><option value="rent">ქირა</option><option value="sale">ყიდვა / გაყიდვა</option></select></label>
             <label class="field"><span class="field-label">ქალაქი</span><select id="mm-city" data-c="city"><option value="">ნებისმიერი</option>${cities.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('')}</select></label>
             <label class="field"><span class="field-label">უბანი</span><input id="mm-district" data-c="district" list="mm-district-list" placeholder="მაგ.: ვაკე" /><datalist id="mm-district-list">${districts.map(d => `<option value="${esc(d)}"></option>`).join('')}</datalist></label>
-            <label class="field"><span class="field-label">ბიუჯეტი — მინ.</span><input type="number" min="0" step="50" id="mm-min" data-c="budget_min" /></label>
-            <label class="field"><span class="field-label">ბიუჯეტი — მაქს.</span><input type="number" min="0" step="50" id="mm-max" data-c="budget_max" /></label>
+            <label class="field"><span class="field-label">ბიუჯეტი: მინ.</span><input type="number" min="0" step="50" id="mm-min" data-c="budget_min" /></label>
+            <label class="field"><span class="field-label">ბიუჯეტი: მაქს.</span><input type="number" min="0" step="50" id="mm-max" data-c="budget_max" /></label>
             <label class="field"><span class="field-label">ვალუტა</span><select id="mm-cur" data-c="currency"><option value="USD">USD ($)</option><option value="GEL">GEL (₾)</option></select></label>
             <label class="field"><span class="field-label">ოთახები (მინ.)</span><select id="mm-rooms" data-c="rooms"><option value="">ნებისმიერი</option>${[1, 2, 3, 4, 5].map(n => `<option value="${n}">${n}+</option>`).join('')}</select></label>
             <label class="field"><span class="field-label">საძინებლები (მინ.)</span><select id="mm-beds" data-c="bedrooms"><option value="">ნებისმიერი</option>${[1, 2, 3, 4].map(n => `<option value="${n}">${n}+</option>`).join('')}</select></label>
@@ -1105,8 +1105,8 @@
             const tone = s === null ? '' : s >= 80 ? 'hi' : s >= 50 ? 'mid' : 'lo';
             const isSaleApt = a.transaction_type === 'sale';
             const priceLabel = isSaleApt
-              ? (a.sale_price ? `${fmtMoney(a.sale_price, a.currency || 'USD')}${a.price_sqm ? ` (${fmtMoney(a.price_sqm, a.currency || 'USD')}/მ²)` : ''}` : '—')
-              : (a.monthly_rent ? `${fmtMoney(a.monthly_rent, a.currency || 'USD')} / თვე` : '—');
+              ? (a.sale_price ? `${fmtMoney(a.sale_price, a.currency || 'USD')}${a.price_sqm ? ` (${fmtMoney(a.price_sqm, a.currency || 'USD')}/მ²)` : ''}` : '–')
+              : (a.monthly_rent ? `${fmtMoney(a.monthly_rent, a.currency || 'USD')} / თვე` : '–');
             const facts = [[a.city, a.district].filter(Boolean).join(', '), isSaleApt ? 'იყიდება' : 'ქირავდება', a.rooms ? `${a.rooms} ოთახი` : '', a.bedrooms ? `${a.bedrooms} საძინებელი` : '', a.area_sqm ? `${a.area_sqm} მ²` : '', a.pets_allowed ? 'ცხოველი დასაშვებია' : ''].filter(Boolean).join(' · ');
             return `<label class="mm-item ${s !== null && s < 50 ? 'is-weak' : ''}">
               <input type="checkbox" value="${a.id}" ${picked.has(a.id) ? 'checked' : ''} />
@@ -1215,7 +1215,7 @@
 
     return R.dialog({
       title: '🎯 კლიენტების მოძიება (Reverse Matchmaker)',
-      subtitle: `ვინ ეძებს ამ ტიპის ბინას? — ${apt.name}`,
+      subtitle: `${apt.name}: ვინ ეძებს ამ ტიპის ბინას?`,
       wide: true,
       body: `
         <div class="reverse-mm">
@@ -1226,7 +1226,7 @@
                 <span class="muted small">${esc([apt.city, apt.district, apt.address].filter(Boolean).join(', '))} · ${apt.rooms ? `${apt.rooms} ოთახი · ` : ''}${apt.area_sqm ? `${apt.area_sqm} მ²` : ''}</span>
               </div>
               <div style="text-align:right">
-                <strong class="t-ok" style="font-size:16px">${aptPrice ? fmtMoney(aptPrice, cur) : '—'}${isSaleApt ? '' : ' / თვე'}</strong>
+                <strong class="t-ok" style="font-size:16px">${aptPrice ? fmtMoney(aptPrice, cur) : '–'}${isSaleApt ? '' : ' / თვე'}</strong>
                 <span class="badge badge-neutral" style="display:block;margin-top:2px">${isSaleApt ? 'გაყიდვა' : 'ქირავდება'}</span>
               </div>
             </div>
@@ -1375,7 +1375,7 @@
 
     const postWA = lines(
       'გამარჯობა! გიგზავნით ბინის ვარიანტს:',
-      `🏠 ${a.name}${place ? ' — ' + place : ''}`,
+      `🏠 ${a.name}${place ? ' · ' + place : ''}`,
       `💰 ${priceKA}`,
       [specsKA, !isSale && a.pets_allowed ? '🐾 ცხოველი დასაშვებია' : ''].filter(Boolean).join(' · '),
       '',
@@ -1405,9 +1405,9 @@
     const posts = { ka: postKA, en: postEN, wa: postWA, cb: postCB };
     const tabs = [['ka', 'ქართული პოსტი'], ['en', 'English post'], ['wa', 'WhatsApp კლიენტს'], ['cb', 'Co-Brokering 50/50']];
     const warnings = [
-      !phone && 'საკონტაქტო ტელეფონი არ არის მითითებული — დაამატე ბინის ან კომპანიის პარამეტრებში.',
+      !phone && 'საკონტაქტო ტელეფონი არ არის მითითებული. დაამატე ბინის ან კომპანიის პარამეტრებში.',
       isSale ? (!priceAmount && 'ბინას გასაყიდი ფასი არ აქვს მითითებული.') : (!priceAmount && 'ბინას ქირა არ აქვს მითითებული.'),
-      !a.description_en && 'ინგლისური აღწერა (description_en) არ არის — English პოსტი აღწერის გარეშე იქნება.'
+      !a.description_en && 'ინგლისური აღწერა (description_en) არ არის. English პოსტი აღწერის გარეშე იქნება.'
     ].filter(Boolean);
 
     return R.dialog({
@@ -1550,7 +1550,7 @@
 
     const arts = [
       { ka: 'ხელშეკრულების საგანი და გარანტიები', en: 'Subject of Agreement and Warranties', c: [
-        [`გამქირავებელი დამქირავებელს დროებით სასყიდლიან სარგებლობაში (ექსკლუზიურად საცხოვრებელი მიზნებისთვის) გადასცემს საცხოვრებელ ბინას, რომელიც მდებარეობს მისამართზე: ${val(d.property_address)} (საკადასტრო კოდი: ${val(d.cadastral_code)}${area.ka}) (შემდგომში — „ბინა“), ხოლო დამქირავებელი კისრულობს ვალდებულებას, გადაიხადოს ქირა ამ ხელშეკრულებით დადგენილი წესითა და ოდენობით (საქართველოს სამოქალაქო კოდექსის 531-ე მუხლი).`,
+        [`გამქირავებელი დამქირავებელს დროებით სასყიდლიან სარგებლობაში (ექსკლუზიურად საცხოვრებელი მიზნებისთვის) გადასცემს საცხოვრებელ ბინას, რომელიც მდებარეობს მისამართზე: ${val(d.property_address)} (საკადასტრო კოდი: ${val(d.cadastral_code)}${area.ka}) (შემდგომში „ბინა“), ხოლო დამქირავებელი კისრულობს ვალდებულებას, გადაიხადოს ქირა ამ ხელშეკრულებით დადგენილი წესითა და ოდენობით (საქართველოს სამოქალაქო კოდექსის 531-ე მუხლი).`,
           `The Landlord grants the Tenant temporary use of the residential apartment for exclusive residential purposes, located at: ${val(d.property_address)} (cadastral code: ${val(d.cadastral_code)}${area.en}) (hereinafter the "Apartment"), and the Tenant undertakes to pay rent in accordance with this Agreement (Article 531 of the Civil Code of Georgia).`],
         ['გამქირავებელი გარანტიას იძლევა, რომ არის ბინის კანონიერი მესაკუთრე ან უფლებამოსილი წარმომადგენელი, და ბინა თავისუფალია ყოველგვარი ნივთობრივი და უფლებრივი ნაკლისგან (სსკ 532-ე და 533-ე მუხლები), არ არის დაყადაღებული, გასხვისებული ან დატვირთული მესამე პირთა ისეთი უფლებებით, რაც ხელს შეუშლის დამქირავებლის მიერ მის შეუფერხებელ სარგებლობას.',
           'The Landlord warrants that they are the lawful owner or authorised representative of the Apartment, and that the Apartment is free from any material or legal defects (Articles 532 and 533 of the Civil Code of Georgia), is not seized, alienated, or encumbered with third-party claims that would impede unhindered use by the Tenant.'],
@@ -1583,7 +1583,7 @@
       ] },
       { ka: 'კომუნალური გადასახადები', en: 'Utilities and Operating Costs', c: [
         utilities,
-        ['ბინის გადაცემამდე წარმოშობილ ნებისმიერ კომუნალურ თუ სხვაგვარ დავალიანებაზე სრულად პასუხისმგებელია გამქირავებელი, ხოლო გადაცემის შემდგომ პერიოდზე — დამქირავებელი, მიღება-ჩაბარების აქტში დაფიქსირებული მრიცხველების საწყისი ჩვენებების შესაბამისად.',
+        ['ბინის გადაცემამდე წარმოშობილ ნებისმიერ კომუნალურ თუ სხვაგვარ დავალიანებაზე სრულად პასუხისმგებელია გამქირავებელი, ხოლო გადაცემის შემდგომ პერიოდზე, დამქირავებელი, მიღება-ჩაბარების აქტში დაფიქსირებული მრიცხველების საწყისი ჩვენებების შესაბამისად.',
           'Any utility or municipal debts incurred prior to handover are the sole responsibility of the Landlord; all charges incurred after handover are paid by the Tenant based on the initial meter readings recorded in the handover report.'],
       ] },
       { ka: 'ბინით სარგებლობა, რემონტი და შემოწმება', en: 'Use, Maintenance, and Inspection', c: [
@@ -1641,8 +1641,8 @@
       ['ხელშეკრულება ძალაში შედის მხარეთა ხელმოწერის მომენტიდან.', 'This Agreement enters into legal force upon signature by both Parties.'],
       ['წინამდებარე ხელშეკრულების ნებისმიერი ცვლილება და დამატება იურიდიულ ძალას იძენს მხოლოდ წერილობითი ფორმით შედგენისა და ორივე მხარის ხელმოწერის შემთხვევაში.',
         'Any amendment or addition to this Agreement is legally binding only if executed in writing and signed by both Parties.'],
-      ['წინამდებარე ხელშეკრულებას თან ერთვის და მის განუყოფელ ნაწილს წარმოადგენს: დანართი N1 — ბინის მიღება-ჩაბარების აქტი.',
-        'Attached hereto and forming an integral part of this Agreement is: Annex No. 1 — Apartment Handover and Acceptance Act.'],
+      ['წინამდებარე ხელშეკრულებას თან ერთვის და მის განუყოფელ ნაწილს წარმოადგენს: დანართი N1 (ბინის მიღება-ჩაბარების აქტი).',
+        'Attached hereto and forming an integral part of this Agreement is: Annex No. 1 (Apartment Handover and Acceptance Act).'],
       ['ხელშეკრულება შედგენილია ქართულ და ინგლისურ ენებზე თანაბარი იურიდიული ძალის მქონე ორ იდენტურ ეგზემპლარად, თითო-თითო თითოეული მხარისთვის. ტექსტებს შორის რაიმე შეუსაბამობის შემთხვევაში, უპირატესობა ენიჭება ქართულ ტექსტს.',
         'This Agreement is executed in Georgian and English in two identical copies having equal legal force, one for each Party. In case of any discrepancy, the Georgian text prevails.'],
     ] });
@@ -1674,7 +1674,7 @@
   function leaseHtml(d, mode = 'dual') {
     const showKa = mode !== 'en', showEn = mode !== 'ka', dual = mode === 'dual';
     const arts = leaseArticles(d);
-    const partyKA = `${val(d.landlord_name)}, პირადი ნომერი: ${val(d.landlord_id)}, მისამართი: ${val(d.landlord_address)} (შემდგომში — „გამქირავებელი“), ერთი მხრივ, და ${val(d.tenant_name)}, პირადი ნომერი: ${val(d.tenant_id)}, მისამართი: ${val(d.tenant_address)} (შემდგომში — „დამქირავებელი“), მეორე მხრივ (ერთად — „მხარეები“), ვდებთ წინამდებარე ხელშეკრულებას შემდეგზე:`;
+    const partyKA = `${val(d.landlord_name)}, პირადი ნომერი: ${val(d.landlord_id)}, მისამართი: ${val(d.landlord_address)} (შემდგომში „გამქირავებელი“), ერთი მხრივ, და ${val(d.tenant_name)}, პირადი ნომერი: ${val(d.tenant_id)}, მისამართი: ${val(d.tenant_address)} (შემდგომში „დამქირავებელი“), მეორე მხრივ (ერთად „მხარეები“), ვდებთ წინამდებარე ხელშეკრულებას შემდეგზე:`;
     const partyEN = `${val(d.landlord_name)}, personal ID: ${val(d.landlord_id)}, address: ${val(d.landlord_address)} (hereinafter the "Landlord"), on the one hand, and ${val(d.tenant_name)}, personal ID: ${val(d.tenant_id)}, address: ${val(d.tenant_address)} (hereinafter the "Tenant"), on the other hand (together the "Parties"), have concluded this Agreement as follows:`;
     const block = (ka, en) => (dual ? `<div class="ld-pair"><p>${ka}</p><p>${en}</p></div>` : `<p>${showKa ? ka : en}</p>`);
     const finalLang = dual ? [['ხელშეკრულება შედგენილია ქართულ და ინგლისურ ენებზე. ტექსტებს შორის შეუსაბამობის შემთხვევაში, უპირატესობა ენიჭება ქართულ ტექსტს.', 'This Agreement is made in Georgian and English. In case of any discrepancy, the Georgian text prevails.']] : [];
@@ -1882,14 +1882,14 @@
           <label class="field"><span class="field-label">ყოველთვიური ქირა</span><div class="input-pair"><input name="rent" type="number" min="0" step="10" required data-error="მიუთითე ქირის ოდენობა." value="${esc(d.rent ?? '')}" />
             <select name="currency" aria-label="ვალუტა"><option value="USD" ${d.currency !== 'GEL' ? 'selected' : ''}>USD</option><option value="GEL" ${d.currency === 'GEL' ? 'selected' : ''}>GEL</option></select></div></label>
           ${f('pay_day', 'გადახდის ბოლო რიცხვი', { type: 'number', attrs: 'min="1" max="31"', hint: 'თვის რომელ რიცხვამდე (მაგ. 1 ან 5)' })}
-          ${f('deposit', 'საგარანტიო დეპოზიტი', { type: 'number', attrs: 'min="0" step="10"', hint: 'ცარიელი ან 0 — დეპოზიტის გარეშე' })}
+          ${f('deposit', 'საგარანტიო დეპოზიტი', { type: 'number', attrs: 'min="0" step="10"', hint: 'ცარიელი ან 0: დეპოზიტის გარეშე' })}
           ${f('penalty_pct', 'პირგასამტეხლო დღეზე (%)', { type: 'number', attrs: 'min="0" step="0.01" max="5"', hint: 'ნაგულისხმევი: 0.1% დღეში (სსკ 417-420)' })}
           ${f('notice_days', 'შეწყვეტის შეტყობინება (დღე)', { type: 'number', attrs: 'min="0" max="365"', hint: 'ნაგულისხმევი: 30 დღე' })}
         </div></div>
         <div class="form-section"><div class="form-section-title">სარგებლობის პირობები</div><div class="form-grid">
           <label class="field"><span class="field-label">შინაური ცხოველი</span><select name="pets"><option value="no" ${d.pets !== 'yes' ? 'selected' : ''}>დაუშვებელია (თანხმობის გარეშე)</option><option value="yes" ${d.pets === 'yes' ? 'selected' : ''}>დასაშვებია</option></select></label>
           <label class="field"><span class="field-label">კომუნალური გადასახადები</span><select name="utilities" id="lease-util"><option value="tenant" ${d.utilities === 'tenant' ? 'selected' : ''}>იხდის დამქირავებელი</option><option value="landlord" ${d.utilities === 'landlord' ? 'selected' : ''}>შედის ქირაში (იხდის გამქირავებელი)</option><option value="custom" ${d.utilities === 'custom' ? 'selected' : ''}>სხვა პირობა</option></select></label>
-          <div class="span-2" id="lease-util-note" ${d.utilities === 'custom' ? '' : 'hidden'}>${f('utilities_note', 'კომუნალურის პირობა', { textarea: true, ph: 'მაგ.: ელექტროენერგიას და გაზს იხდის დამქირავებელი, ინტერნეტს — გამქირავებელი' })}</div>
+          <div class="span-2" id="lease-util-note" ${d.utilities === 'custom' ? '' : 'hidden'}>${f('utilities_note', 'კომუნალურის პირობა', { textarea: true, ph: 'მაგ.: ელექტროენერგიას და გაზს იხდის დამქირავებელი, ინტერნეტს, გამქირავებელი' })}</div>
           ${f('extra_terms', 'დამატებითი პირობები', { textarea: true, span: true, rows: 2, hint: 'არასავალდებულო. ცალკე მუხლად დაემატება.' })}
         </div></div>
         <div class="form-section"><div class="form-section-title">დანართი N1: მიღება-ჩაბარების აქტი</div><div class="form-grid">
@@ -1953,7 +1953,7 @@
           </div>
           <button type="button" class="btn btn-primary" id="btn-print-lease">${icon('printer', 16)} ბეჭდვა / PDF</button>
         </div>
-        <p class="small muted lease-hint">${icon('alert', 13)} შაბლონი არ ცვლის იურიდიულ კონსულტაციას — ხელმოწერამდე ტექსტი იურისტს აჩვენე.</p>
+        <p class="small muted lease-hint">${icon('alert', 13)} შაბლონი არ ცვლის იურიდიულ კონსულტაციას. ხელმოწერამდე ტექსტი იურისტს აჩვენე.</p>
         <div class="lease-paper" id="lease-paper">${leaseHtml(d, mode)}</div>`,
       onOpen: (form) => {
         $$('input[name="lease-mode"]', form).forEach(i => i.addEventListener('change', () => { mode = i.value; $('#lease-paper', form).innerHTML = leaseHtml(d, mode); }));

@@ -79,7 +79,7 @@ async function handleUpdate(update) {
   if (codeMatch) {
     const linkRes = await callRpc('consume_telegram_link_code', { p_code: codeMatch[1], p_chat_id: chatId, p_user_name: userName });
     if (linkRes && linkRes.success) {
-      await sendMessage(chatId, `🇬🇪 <b>მოგესალმებით რიგზეას ასისტენტში, ${safeName}!</b>\n\nთქვენი Telegram წარმატებით დაუკავშირდა:\n🏢 <b>${esc(linkRes.org_name)}</b> (${esc(linkRes.city || 'საქართველო')})\n\nხელშეკრულებების ვადისა და ვადაგადაცილებული საქმეების შეხსენებებს აქ მიიღებთ. ასევე შეგიძლიათ პირდაპირ მომწეროთ ქართულად ნებისმიერი საქმე ან ხარჯი, მაგალითად:\n• <i>1204-ში კონდიციონერი გაფუჭდა, 170 ლარია</i>\n• <i>ბინა 7-ში ონკანი ჟონავს, 85 ლარი</i>\n• <i>ვაკე 18-ში დასუფთავება ხვალ 14:00-ზე</i>\n\n📌 <b>ბრძანებები:</b>\n/today — დღის საოპერაციო მდგომარეობა\n/apartments — ბინების სია\n/renewals — იწურება ხელშეკრულებები\n/help — დახმარება`);
+      await sendMessage(chatId, `🇬🇪 <b>მოგესალმებით რიგზეას ასისტენტში, ${safeName}!</b>\n\nთქვენი Telegram წარმატებით დაუკავშირდა:\n🏢 <b>${esc(linkRes.org_name)}</b> (${esc(linkRes.city || 'საქართველო')})\n\nხელშეკრულებების ვადისა და ვადაგადაცილებული საქმეების შეხსენებებს აქ მიიღებთ. ასევე შეგიძლიათ პირდაპირ მომწეროთ ქართულად ნებისმიერი საქმე ან ხარჯი, მაგალითად:\n• <i>1204-ში კონდიციონერი გაფუჭდა, 170 ლარია</i>\n• <i>ბინა 7-ში ონკანი ჟონავს, 85 ლარი</i>\n• <i>ვაკე 18-ში დასუფთავება ხვალ 14:00-ზე</i>\n\n📌 <b>ბრძანებები:</b>\n/today: დღის საოპერაციო მდგომარეობა\n/apartments: ბინების სია\n/renewals: იწურება ხელშეკრულებები\n/help: დახმარება`);
     } else {
       await sendMessage(chatId, `❌ კოდი არასწორია ან მისი ვადა გაუვიდა.\nკოდი მოქმედებს 15 წუთის განმავლობაში და მხოლოდ ერთხელ. რიგზეაში შექმენით ახალი კოდი და გამომიგზავნეთ ხელახლა.`);
     }
@@ -125,7 +125,7 @@ async function handleUpdate(update) {
 
     let response = `🏢 <b>აქტიური ბინების სია (${apts.length}):</b>\n\n`;
     apts.forEach((a, idx) => {
-      response += `${idx + 1}. <b>${esc(a.name || a.title || '')}</b>\n   📍 ${esc(a.address || 'მისამართი')} (№${esc(a.unit_number || '—')})\n`;
+      response += `${idx + 1}. <b>${esc(a.name || a.title || '')}</b>\n   📍 ${esc(a.address || 'მისამართი')} (№${esc(a.unit_number || '–')})\n`;
     });
     const sampleUnit = apts[0]?.unit_number || apts[0]?.name || '';
     response += `\n<i>საქმის დასამატებლად უბრალოდ მომწერეთ, მაგ: „${esc(sampleUnit)}-ში კონდიციონერი გაფუჭდა, 150 ლარია“</i>`;
@@ -182,7 +182,7 @@ async function handleUpdate(update) {
 
   if (!parsed.matchedApt) {
     const sampleUnit = apts[0]?.unit_number || apts[0]?.name || '';
-    let helpMsg = `⚠️ <b>ბინა ვერ ამოვიცანი ტექსტში.</b>\n\nგთხოვთ მიუთითოთ ბინის ნომერი ან სახელი, მაგალითად:\n• <i>${esc(sampleUnit)}-ში ${esc(parsed.issueTitle)}, ${parsed.amount > 0 ? parsed.amount + ' ლარი' : '150 ლარი'}</i>\n\n🏢 <b>თქვენი ბინები:</b>\n` + apts.slice(0, 5).map(a => `• ${esc(a.name || a.title || '')} (№${esc(a.unit_number || '—')})`).join('\n');
+    let helpMsg = `⚠️ <b>ბინა ვერ ამოვიცანი ტექსტში.</b>\n\nგთხოვთ მიუთითოთ ბინის ნომერი ან სახელი, მაგალითად:\n• <i>${esc(sampleUnit)}-ში ${esc(parsed.issueTitle)}, ${parsed.amount > 0 ? parsed.amount + ' ლარი' : '150 ლარი'}</i>\n\n🏢 <b>თქვენი ბინები:</b>\n` + apts.slice(0, 5).map(a => `• ${esc(a.name || a.title || '')} (№${esc(a.unit_number || '–')})`).join('\n');
     await sendMessage(chatId, helpMsg);
     return;
   }

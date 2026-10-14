@@ -17,7 +17,7 @@
     const PAGES = { p: '/p/index.html', 'p/s': '/p/s/index.html', approve: '/approve/index.html', guide: '/guide/index.html' };
     const params = new URLSearchParams(location.search);
     const src = PAGES[params.get('page')] || PAGES.p;
-    const BACK = { ka: 'დემოში დაბრუნება', note: 'სადემონსტრაციო გვერდი — ასე ხედავს ბმულს კლიენტი' };
+    const BACK = { ka: 'დემოში დაბრუნება', note: 'სადემონსტრაციო გვერდი: ასე ხედავს ბმულს კლიენტი' };
     try {
       const res = await fetch(src, { cache: 'no-cache' });
       if (!res.ok) throw new Error(String(res.status));

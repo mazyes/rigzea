@@ -1034,6 +1034,19 @@ test('24. honest owner report, direct lead source, guest guide keeps codes behin
   return page;
 });
 
+test('25. an expired private receipt link is re-signed when clicked', async (browser) => {
+  const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
+  await page.goto(BASE + '/app/#/finance');
+  await page.locator('#view h1').waitFor();
+  // A one-year link that expired in 2020 (JWT payload {"exp":1600000000})
+  const expired = 'https://x.supabase.co/storage/v1/object/sign/rigzea-private/org/receipts/a.jpg?token=h.' + Buffer.from('{"exp":1600000000}').toString('base64url') + '.s';
+  await page.evaluate((u) => { const a = document.createElement('a'); a.id = 'old-receipt'; a.href = u; a.target = '_blank'; a.textContent = 'ქვითარი'; document.body.append(a); }, expired);
+  const [popup] = await Promise.all([page.context().waitForEvent('page'), page.locator('#old-receipt').click()]);
+  await popup.waitForURL(/mock\.storage\.local\/signed\/org\/receipts\/a\.jpg/);
+  await popup.close();
+  return page;
+});
+
 (async () => {
   const server = await serve();
   const browser = await launch();
