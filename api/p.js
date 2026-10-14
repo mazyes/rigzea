@@ -92,6 +92,7 @@ function buildMeta(listing, pageUrl, whiteLabel) {
   const description = [facts, desc].filter(Boolean).join(' — ').slice(0, 280);
   const site = ag.name || (whiteLabel ? '' : 'Rigzea');
   const title = a.name || 'ბინა';
+  const shareImg = photos[0]?.url || 'https://rigzea.com/img/og-preview.jpg';
   const tags = [
     `<meta property="og:type" content="website" />`,
     `<meta property="og:title" content="${esc(title)}" />`,
@@ -101,9 +102,15 @@ function buildMeta(listing, pageUrl, whiteLabel) {
     `<link rel="canonical" href="${esc(pageUrl.split('?')[0])}" />`,
     site && `<meta property="og:site_name" content="${esc(site)}" />`,
     `<meta property="og:locale" content="ka_GE" />`,
-    photos[0] && `<meta property="og:image" content="${esc(photos[0].url)}" />`,
-    photos[0] && `<meta property="og:image:alt" content="${esc(title)}" />`,
-    `<meta name="twitter:card" content="${photos[0] ? 'summary_large_image' : 'summary'}" />`,
+    `<meta property="og:image" content="${esc(shareImg)}" />`,
+    `<meta property="og:image:secure_url" content="${esc(shareImg)}" />`,
+    `<meta property="og:image:width" content="1200" />`,
+    `<meta property="og:image:height" content="630" />`,
+    `<meta property="og:image:alt" content="${esc(title)}" />`,
+    `<meta name="twitter:card" content="summary_large_image" />`,
+    `<meta name="twitter:title" content="${esc(title)}" />`,
+    `<meta name="twitter:description" content="${esc(description)}" />`,
+    `<meta name="twitter:image" content="${esc(shareImg)}" />`,
   ].filter(Boolean).join('\n  ');
   return { tags, title: site ? `${title} · ${site}` : title };
 }
