@@ -3418,3 +3418,330 @@ p, li { text-wrap: pretty; }
 .lx-footer-legal a:hover { color: var(--lx-mint-neon); }
 .lx-footer-legal p { margin: 0; }
 .lx-footer-legal p:empty { display: none; }
+
+/* ==========================================================================
+   HOW IT WORKS 3-STEP FLOW SECTION
+   ========================================================================== */
+.lx-how-it-works-section {
+  padding: 90px 0 60px;
+  position: relative;
+  border-bottom: 1px solid var(--lx-border-subtle);
+}
+
+.lx-how-it-works-header {
+  margin-bottom: 48px;
+}
+
+.lx-steps-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+
+.lx-step-card {
+  background: linear-gradient(160deg, rgba(16, 32, 24, 0.7) 0%, rgba(9, 17, 13, 0.85) 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--lx-border-subtle);
+  border-radius: var(--lx-r-lg);
+  padding: 34px 28px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.lx-step-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(0, 245, 155, 0.35);
+  box-shadow: 0 16px 36px -12px rgba(0, 0, 0, 0.7), 0 0 24px -6px rgba(0, 245, 155, 0.12);
+}
+
+.lx-step-num-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--lx-mint-neon);
+  background: rgba(0, 245, 155, 0.08);
+  border: 1px solid rgba(0, 245, 155, 0.28);
+  margin-bottom: 20px;
+  box-shadow: 0 0 12px rgba(0, 245, 155, 0.1);
+}
+
+.lx-step-card h3 {
+  font-size: 19px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 10px;
+  line-height: 1.35;
+}
+
+.lx-step-card p {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--lx-text-silver);
+  margin: 0;
+}
+
+/* ==========================================================================
+   2x2 BENTO FEATURES SECTION
+   ========================================================================== */
+.lx-features-bento-section {
+  padding: 80px 0 100px;
+  position: relative;
+}
+
+.lx-features-2x2-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 28px;
+  margin-top: 48px;
+}
+
+.lx-features-2x2-grid .lx-bento-card {
+  background: linear-gradient(160deg, rgba(16, 32, 24, 0.8) 0%, rgba(9, 17, 13, 0.92) 100%);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--lx-border-subtle);
+  border-radius: var(--lx-r-xl);
+  padding: 36px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 480px;
+  box-shadow: 0 20px 48px -12px rgba(0, 0, 0, 0.7);
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease, box-shadow 0.35s ease;
+}
+
+.lx-features-2x2-grid .lx-bento-card:hover {
+  border-color: rgba(0, 245, 155, 0.35);
+  box-shadow: 0 24px 60px -12px rgba(0, 0, 0, 0.85), 0 0 32px -8px rgba(0, 245, 155, 0.15);
+}
+
+.lx-import-preview-box {
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid var(--lx-border-subtle);
+  border-radius: var(--lx-r-md);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.lx-import-input-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: var(--lx-mint-neon);
+}
+
+.lx-import-url-text {
+  flex: 1;
+  font-family: var(--lx-font-mono, monospace);
+  font-size: 12.5px;
+  color: var(--lx-text-silver);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lx-import-status-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0 4px;
+}
+
+.lx-import-action-row {
+  margin-top: 4px;
+}
+
+/* ==========================================================================
+   CALCULATOR MODE SWITCHER
+   ========================================================================== */
+.lx-calc-mode-switch-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 28px;
+}
+
+.lx-calc-mode-pill-box {
+  display: inline-flex;
+  background: rgba(0, 0, 0, 0.55);
+  border: 1px solid var(--lx-border-subtle);
+  border-radius: var(--lx-r-pill);
+  padding: 4px;
+  gap: 4px;
+}
+
+.lx-calc-mode-btn {
+  background: transparent;
+  border: 0;
+  color: var(--lx-text-silver);
+  font-size: 13.5px;
+  font-weight: 600;
+  padding: 8px 20px;
+  border-radius: var(--lx-r-pill);
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.lx-calc-mode-btn:hover:not(.active) {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.lx-calc-mode-btn.active {
+  background: var(--lx-emerald-primary);
+  color: #fff;
+  box-shadow: 0 0 16px rgba(0, 245, 155, 0.25);
+}
+
+/* ==========================================================================
+   PLANS COMPARISON ACCORDION
+   ========================================================================== */
+.lx-cmp-details {
+  border: 1px solid var(--lx-border-subtle);
+  border-radius: var(--lx-r-lg);
+  overflow: hidden;
+  background: rgba(10, 18, 14, 0.5);
+  margin-top: 36px;
+  transition: border-color 0.2s ease;
+}
+
+.lx-cmp-details:hover {
+  border-color: rgba(0, 245, 155, 0.3);
+}
+
+.lx-cmp-summary {
+  padding: 18px 24px;
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 700;
+  color: #fff;
+  font-size: 15.5px;
+  user-select: none;
+  transition: background 0.2s ease;
+}
+
+.lx-cmp-summary:hover {
+  background: rgba(0, 245, 155, 0.04);
+}
+
+.lx-cmp-summary::-webkit-details-marker {
+  display: none;
+}
+
+.lx-cmp-chevron {
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  color: var(--lx-mint-neon);
+}
+
+.lx-cmp-details[open] .lx-cmp-chevron {
+  transform: rotate(180deg);
+}
+
+.lx-cmp-details[open] .lx-cmp-summary {
+  border-bottom: 1px solid var(--lx-border-subtle);
+}
+
+/* ==========================================================================
+   FAQ SECTION
+   ========================================================================== */
+.lx-faq-section {
+  padding: 80px 0 100px;
+  position: relative;
+  border-top: 1px solid var(--lx-border-subtle);
+}
+
+.lx-faq-accordion {
+  max-width: 820px;
+  margin: 40px auto 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.lx-faq-item {
+  border: 1px solid var(--lx-border-subtle);
+  border-radius: var(--lx-r-lg);
+  background: rgba(12, 22, 17, 0.6);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  overflow: hidden;
+  transition: border-color 0.25s ease, background 0.25s ease;
+}
+
+.lx-faq-item:hover {
+  border-color: rgba(0, 245, 155, 0.3);
+  background: rgba(14, 26, 20, 0.7);
+}
+
+.lx-faq-question {
+  padding: 20px 26px;
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  font-weight: 600;
+  font-size: 16px;
+  color: #fff;
+  user-select: none;
+}
+
+.lx-faq-question::-webkit-details-marker {
+  display: none;
+}
+
+.lx-faq-chevron {
+  flex-shrink: 0;
+  color: var(--lx-mint-neon);
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.lx-faq-item[open] .lx-faq-chevron {
+  transform: rotate(180deg);
+}
+
+.lx-faq-answer {
+  padding: 0 26px 22px;
+  font-size: 14.5px;
+  line-height: 1.65;
+  color: var(--lx-text-silver);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  padding-top: 16px;
+}
+
+.lx-faq-answer p {
+  margin: 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 900px) {
+  .lx-steps-grid-3 {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .lx-features-2x2-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .lx-features-2x2-grid .lx-bento-card {
+    min-height: auto;
+    padding: 28px 22px;
+  }
+}

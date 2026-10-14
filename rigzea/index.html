@@ -53,12 +53,13 @@
         </a>
 
         <nav class="lx-nav-links" aria-label="მთავარი მენიუ">
-          <a class="lx-nav-link" href="#features">5 ფუნქცია</a>
-          <a class="lx-nav-link" href="#showcase">ვიტრინა</a>
+          <a class="lx-nav-link" href="#how-it-works">როგორ მუშაობს</a>
+          <a class="lx-nav-link" href="#features">ფუნქციები</a>
           <a class="lx-nav-link" href="#comparison">შედარება</a>
           <a class="lx-nav-link" href="#calculator">კალკულატორი</a>
           <a class="lx-nav-link" href="#pricing">ტარიფები</a>
-          <a class="lx-nav-link" href="/demo/">დემო ვერსია</a>
+          <a class="lx-nav-link" href="#faq">FAQ</a>
+          <a class="lx-nav-link" href="/demo/">დემო</a>
         </nav>
 
         <div class="lx-header-actions">
@@ -70,7 +71,7 @@
     </header>
 
     <main>
-      <!-- 2. Hero Section with Interactive Phone Preview -->
+      <!-- 2. Hero Section with High-Converting Copy & Interactive Phone Preview -->
       <section class="lx-hero">
         <div class="lx-container lx-hero-grid">
           
@@ -85,19 +86,19 @@
 
             <!-- Headline -->
             <h1 class="lx-hero-title">
-              ერთი ბმული. ყველა ბინა.<br/>
-              <span style="color: #fbfdfc;">მეტი კონტროლი კლიენტთან.</span>
+              გადმოიტანე ბინა MyHome‑დან წამებში.<br/>
+              <span style="color: #fbfdfc;">გაუგზავნე კლიენტს შენი სახელით.</span>
             </h1>
 
             <!-- Subheadline -->
             <p class="lx-hero-desc">
-              გაუგზავნე კლიენტს 40 ფოტოს ნაცვლად ერთი სუფთა ბმული ყველა დეტალით. ნახე, რამდენჯერ გაიხსნა ბმული, და აკონტროლე საკომისიოები ერთ სივრცეში.
+              40 არეული ფოტოს ნაცვლად — ერთი VIP ბმული მესაკუთრის ნომრის გარეშე, მზა ხელშეკრულებები და საკომისიოების სრული კონტროლი გაყიდვასა და გაქირავებაზე.
             </p>
 
             <!-- CTA Actions -->
             <div class="lx-hero-actions">
-              <a class="lx-btn lx-btn-primary" href="/app/">დაიწყე უფასოდ</a>
-              <a class="lx-btn lx-btn-secondary" href="#features">როგორ მუშაობს</a>
+              <a class="lx-btn lx-btn-primary" href="/app/">დაიწყე უფასოდ (30 წამში)</a>
+              <a class="lx-btn lx-btn-secondary" href="/demo/">👁 ნახე ცოცხალი დემო</a>
             </div>
 
             <!-- Social Proof -->
@@ -108,7 +109,7 @@
             </div>
           </div>
 
-          <!-- Hero Interactive Mobile Phone Frame (/p/ Renter Link) -->
+          <!-- Hero Interactive Mobile Phone Frame (/p/ VIP Link) -->
           <div class="lx-phone-wrapper" id="hero-phone-container">
             <div class="lx-phone-mockup">
               <div class="lx-phone-screen">
@@ -123,13 +124,55 @@
                 <!-- Browser URL pill -->
                 <div class="lx-phone-browser-bar">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                  <span>rigzea.com/p/vake-loft-42</span>
+                  <span id="phone-url-display">rigzea.com/p/vake-loft-42</span>
                 </div>
 
-                <!-- Phone Content: Renter View -->
-                <div class="lx-phone-content" id="phone-renter-view">
+                <!-- Phone Content: Sale View (Default Active) -->
+                <div class="lx-phone-content" id="phone-sale-view">
                   <div class="lx-phone-hero-img">
-                    <img class="lx-phone-hero-photo" fetchpriority="high" decoding="async" src="/img/1600585154340-be6161a56a0c.jpg" alt="ვაკე · ჭავჭავაძის გამზ. #42 პრემიუმ აპარტამენტი" loading="eager" />
+                    <img class="lx-phone-hero-photo" fetchpriority="high" decoding="async" src="/img/1600607687939-ce8a6c25118c.jpg" alt="ვაკე · ირაკლი აბაშიძის #34 პრემიუმ აპარტამენტი" loading="eager" />
+                    <div class="lx-phone-price-badge">$145,000</div>
+                  </div>
+
+                  <div class="lx-phone-details">
+                    <div class="lx-phone-title-row">
+                      <span class="lx-phone-title">ვაკე · ირაკლი აბაშიძის #34</span>
+                      <span class="lx-mint-text" style="font-size:12px;font-weight:700;display:inline-flex;align-items:center;gap:4px"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>ექსკლუზივი</span>
+                    </div>
+                    <div class="lx-broker-pill">
+                      <span class="lx-broker-avatar lx-broker-initials" aria-hidden="true">ნქ</span>
+                      <span class="lx-broker-name">ნინო ქავთარაძე</span>
+                      <span class="lx-broker-badge">✓ დადასტურებული</span>
+                    </div>
+                    <div class="lx-phone-loc">თბილისი · ვაკე · ახალაშენებული კორპუსი</div>
+
+                    <div class="lx-phone-chips">
+                      <span class="lx-phone-chip">85 მ²</span>
+                      <span class="lx-phone-chip">3 ოთახი</span>
+                      <span class="lx-phone-chip">2 საძინებელი</span>
+                      <span class="lx-phone-chip">სართული 7/12</span>
+                      <span class="lx-phone-chip">საკადასტრო: დამოწმებული</span>
+                    </div>
+
+                    <div class="lx-phone-cta-bar">
+                      <button type="button" class="lx-quick-tour-btn">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                        <span>ვიზიტის დაჯავშნა</span>
+                      </button>
+                      <a class="lx-phone-action-btn lx-btn-wa" href="https://wa.me/995599548575?text=%E1%83%92%E1%83%90%E1%83%9B%E1%83%90%E1%83%A0%E1%83%AF%E1%83%9D%E1%83%91%E1%83%90,%20%E1%83%9B%E1%83%90%E1%83%98%E1%83%9C%E1%83%A2%E1%83%94%E1%83%A0%E1%83%94%E1%83%A1%E1%83%94%E1%83%91%E1%83%A1%20%E1%83%91%E1%83%98%E1%83%9C%E1%83%90%20%E1%83%95%E1%83%90%E1%83%99%E1%83%94%E1%83%A8%E1%83%98%20$145,000" target="_blank" rel="noopener">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px;margin-right:2px"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg><span>WhatsApp</span>
+                      </a>
+                      <a class="lx-phone-action-btn lx-btn-call" href="tel:+995599548575">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px;margin-right:2px"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg><span>დარეკვა</span>
+                      </a>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Phone Content: Rent View -->
+                <div class="lx-phone-content" id="phone-renter-view" style="display:none">
+                  <div class="lx-phone-hero-img">
+                    <img class="lx-phone-hero-photo" fetchpriority="high" decoding="async" src="/img/1600585154340-be6161a56a0c.jpg" alt="ვაკე · ჭავჭავაძის გამზ. #42 პრემიუმ აპარტამენტი" loading="lazy" />
                     <div class="lx-phone-price-badge">$950 / თვე</div>
                   </div>
 
@@ -150,47 +193,53 @@
                       <span class="lx-phone-chip">2 ოთახი</span>
                       <span class="lx-phone-chip">1 საძინებელი</span>
                       <span class="lx-phone-chip">ცენტრ. გათბობა</span>
-                      <span class="lx-phone-chip">ცხოველები: კი <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px;margin-left:3px"><path d="M12 5c.67 0 1.2.53 1.2 1.2v.6a1.2 1.2 0 1 1-2.4 0v-.6C10.8 5.53 11.33 5 12 5zm-4 3c.67 0 1.2.53 1.2 1.2v.6a1.2 1.2 0 1 1-2.4 0v-.6C6.8 8.53 7.33 8 8 8zm8 0c.67 0 1.2.53 1.2 1.2v.6a1.2 1.2 0 1 1-2.4 0v-.6c0-.67.53-1.2 1.2-1.2zm-4 5.5c2.2 0 4 1.8 4 4 0 1.1-.9 2-2 2h-4c-1.1 0-2-.9-2-2 0-2.2 1.8-4 4-4z"/></svg></span>
+                      <span class="lx-phone-chip">ცხოველები: კი</span>
                     </div>
 
                     <div class="lx-phone-cta-bar">
-                      <button type="button" class="lx-quick-tour-btn lx-particle-btn">
+                      <button type="button" class="lx-quick-tour-btn">
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
                         <span>ვიზიტის დაჯავშნა</span>
                       </button>
-                      <a class="lx-phone-action-btn lx-btn-wa" href="https://wa.me/" target="_blank" rel="noopener">
+                      <a class="lx-phone-action-btn lx-btn-wa" href="https://wa.me/995599548575?text=%E1%83%92%E1%83%90%E1%83%9B%E1%83%90%E1%83%A0%E1%83%AF%E1%83%9D%E1%83%91%E1%83%90,%20%E1%83%9B%E1%83%90%E1%83%98%E1%83%9C%E1%83%A2%E1%83%94%E1%83%A0%E1%83%94%E1%83%A1%E1%83%94%E1%83%91%E1%83%A1%20%E1%83%A5%E1%83%98%E1%83%A0%E1%83%90%E1%83%9D%E1%83%91%E1%83%90%20$950" target="_blank" rel="noopener">
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px;margin-right:2px"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg><span>WhatsApp</span>
                       </a>
-                      <a class="lx-phone-action-btn lx-btn-call" href="tel:+995599000000">
+                      <a class="lx-phone-action-btn lx-btn-call" href="tel:+995599548575">
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px;margin-right:2px"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg><span>დარეკვა</span>
                       </a>
                     </div>
                   </div>
                 </div>
 
-                <!-- Phone Content: Agent View (Hidden by default, toggled via pills) -->
-                <div class="lx-phone-content" id="phone-agent-view" style="display:none;padding:14px 10px">
-                  <div style="font-size:12px;color:var(--lx-mint-neon);font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:6px"><span class="lx-badge-dot" style="position:static"></span>ანალიტიკა რეალურ დროში</div>
+                <!-- Phone Content: Agent View -->
+                <div class="lx-phone-content" id="phone-agent-view" style="display:none;padding:16px 12px">
+                  <div style="font-size:12px;color:var(--lx-mint-neon);font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:6px"><span class="lx-badge-dot" style="position:static"></span>ანალიტიკა რეალურ დროში</div>
                   <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,0.08);margin-bottom:14px">
                     <div>
-                      <div style="font-size:12px;color:var(--lx-text-muted)">ბმულის ნახვები</div>
-                      <div style="font-size:20px;font-weight:800;color:#fff">142</div>
+                      <div style="font-size:11.5px;color:var(--lx-text-muted)">ბმულის ნახვები</div>
+                      <div style="font-size:22px;font-weight:800;color:#fff">142</div>
                     </div>
                     <div>
-                      <div style="font-size:12px;color:var(--lx-text-muted)">დაკავშირება WhatsApp‑ით</div>
-                      <div style="font-size:20px;font-weight:800;color:var(--lx-mint-neon)">18</div>
+                      <div style="font-size:11.5px;color:var(--lx-text-muted)">WhatsApp კონტაქტი</div>
+                      <div style="font-size:22px;font-weight:800;color:var(--lx-mint-neon)">18</div>
                     </div>
                   </div>
-                  <div>
-                    <div style="font-size:12px;color:var(--lx-text-muted);margin-bottom:4px">მოსალოდნელი საკომისიო (50%):</div>
-                    <div style="font-size:18px;font-weight:800;color:#fff">$475 <span style="font-size:12px;color:var(--lx-mint-neon)">(₾1,292)</span></div>
+                  <div style="display:flex;flex-direction:column;gap:8px">
+                    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:rgba(255,255,255,0.04);border-radius:8px">
+                      <span style="font-size:11.5px;color:var(--lx-text-silver)">გაყიდვის საკომისიო (3%):</span>
+                      <strong style="font-size:14px;color:var(--lx-mint-bright)">$4,350</strong>
+                    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:rgba(255,255,255,0.04);border-radius:8px">
+                      <span style="font-size:11.5px;color:var(--lx-text-silver)">ქირავნობის საკომისიო (50%):</span>
+                      <strong style="font-size:14px;color:#fff">$475</strong>
+                    </div>
                   </div>
                 </div>
 
-                <!-- Mode Switcher -->
+                <!-- Mode Switcher (3 modes) -->
                 <div class="lx-phone-mode-switch">
-                  <button class="lx-mode-pill active" data-phone-mode="renter">მდგმურის ხედი</button>
-                  <button class="lx-mode-pill" data-phone-mode="agent">აგენტის ანალიტიკა</button>
+                  <button type="button" class="lx-mode-pill active" data-phone-mode="sale">იყიდება ($145k)</button>
+                  <button type="button" class="lx-mode-pill" data-phone-mode="rent">ქირავდება ($950)</button>
+                  <button type="button" class="lx-mode-pill" data-phone-mode="agent">ანალიტიკა</button>
                 </div>
 
               </div>
@@ -200,440 +249,238 @@
         </div>
       </section>
 
-      <!-- 3. Horizontal Pin-Scroll Section: Bento Motion Showcase (5 Killer Features) -->
-      <section class="lx-pin-scroll-wrap" id="features">
-        <div class="lx-pin-sticky-container">
-          
-          <!-- Sticky Header -->
-          <div class="lx-pin-top-header">
-            <div class="lx-pin-top-title-group">
-              <h2>5 ხელსაწყო უძრავი ქონების აგენტისთვის</h2>
-              <p>ჩამოყევი და ნახე, როგორ გიმარტივებს Rigzea მუშაობას ყოველ ეტაპზე</p>
+      <!-- 2.5 Quick How It Works in Seconds (1 -> 2 -> 3) -->
+      <section class="lx-how-it-works-section" id="how-it-works">
+        <div class="lx-container">
+          <div class="lx-section-header lx-how-it-works-header">
+            <span class="lx-badge">მარტივი 3 ნაბიჯი</span>
+            <h2>როგორ მუშაობს Rigzea</h2>
+            <p>სამი მარტივი მოქმედება განცხადების ლინკიდან დახურულ გარიგებამდე</p>
+          </div>
+          <div class="lx-steps-grid-3">
+            <div class="lx-step-card lx-spotlight-card">
+              <div class="lx-step-num-badge">01</div>
+              <h3>ჩასვი MyHome / SS.ge ბმული</h3>
+              <p>ფოტოები, ფართობი და პარამეტრები წამებში გადმოდის. მესაკუთრის ნომერი ავტომატურად იშლება.</p>
             </div>
-
-            <div class="lx-pin-progress-box">
-              <div class="lx-pin-progress-meta">
-                <span class="lx-pin-step-counter">01 / 05</span>
-                <div class="lx-pin-nav-dots" aria-label="ფუნქციების ნავიგაცია">
-                  <button class="lx-pin-dot active" data-step="0" aria-label="ფუნქცია 01: პოსტის მომზადება" title="01. პოსტის მომზადება"></button>
-                  <button class="lx-pin-dot" data-step="1" aria-label="ფუნქცია 02: ქირავნობის ხელშეკრულება" title="02. ქირავნობის ხელშეკრულება"></button>
-                  <button class="lx-pin-dot" data-step="2" aria-label="ფუნქცია 03: ბინის შერჩევა" title="03. ბინის შერჩევა"></button>
-                  <button class="lx-pin-dot" data-step="3" aria-label="ფუნქცია 04: ერთი ბმული რამდენიმე ბინისთვის" title="04. ერთი ბმული რამდენიმე ბინისთვის"></button>
-                  <button class="lx-pin-dot" data-step="4" aria-label="ფუნქცია 05: ვადის შეხსენება" title="05. ვადის შეხსენება"></button>
-                </div>
-              </div>
-              <div class="lx-pin-progress-bar-track">
-                <div class="lx-pin-progress-bar-fill"></div>
-              </div>
+            <div class="lx-step-card lx-spotlight-card">
+              <div class="lx-step-num-badge">02</div>
+              <h3>გაუგზავნე 1 VIP ბმული ან PDF</h3>
+              <p>კლიენტი ხსნის სუფთა გვერდს შენი სახელით, ლოგოთი და პირდაპირი WhatsApp ღილაკით.</p>
+            </div>
+            <div class="lx-step-card lx-spotlight-card">
+              <div class="lx-step-num-badge">03</div>
+              <h3>აკონტროლე ნახვები და საკომისიო</h3>
+              <p>მიიღე შეტყობინება, როცა კლიენტი ბმულს გახსნის, და დაბეჭდე KA/EN ხელშეკრულება 1 კლიკით.</p>
             </div>
           </div>
-
-          <!-- Horizontal Viewport & Track -->
-          <div class="lx-horizontal-viewport">
-            <div class="lx-horizontal-track">
-
-              <!-- BENTO CARD 1: AI Social Post Generator -->
-              <div class="lx-bento-card lx-spotlight-card">
-                <div class="lx-bento-card-header">
-                  <div class="lx-bento-badge-row">
-                    <span class="lx-badge">სოციალური ქსელები</span>
-                    <span style="font-size:12px;color:var(--lx-text-muted);font-weight:600">01</span>
-                  </div>
-                  <h3>პოსტის მომზადება წამებში</h3>
-                  <p>ტექსტის ყოველდღე ხელით აკრეფა აღარ დაგჭირდება. აირჩიე ბინა და სისტემა თავად მოგიმზადებს პოსტს Facebook‑ისა და WhatsApp‑ისთვის.</p>
-                </div>
-
-                <div class="lx-bento-preview-stage">
-                  <div class="lx-post-tabs">
-                    <button class="lx-post-tab-btn active" data-post-type="facebook">Facebook ჯგუფი</button>
-                    <button class="lx-post-tab-btn" data-post-type="whatsapp">WhatsApp შეტყობინება</button>
-                    <button class="lx-post-tab-btn" data-post-type="cobroker">გაყოფა 50/50</button>
-                  </div>
-
-                  <pre class="lx-post-box" id="post-preview-box" tabindex="0" role="region" aria-label="პოსტის ტექსტის ნიმუში">🔥 ქირავდება პრემიუმ ბინა ვაკეში, ჭავჭავაძის გამზირზე!
-
-📍 ლოკაცია: ვაკე, ჭავჭავაძე (ვაკის პარკთან)
-🏢 კორპუსი: ახალაშენებული, 8/14 სართული
-📐 ფართობი: 85 მ² | 2 ოთახი (1 საძინებელი)
-
-✨ ბინის უპირატესობები:
-• ახალი პრემიუმ ევრორემონტი, უცხოვრებელი
-• ცენტრალური გათბობა, კონდიციონერი, ჭურჭლის სარეცხი მანქანა
-• აივანი ვაკის პარკის ხედით
-
-💳 ფასი: $950 / თვეში
-📌 პირობები: პირველი და ბოლო თვის გადახდით + დეპოზიტი $950
-🐾 შინაური ცხოველები: შეთანხმებით
-
-📸 სრული HD ფოტოები და დეტალები იხილეთ ჭკვიან ბმულზე:
-👉 rigzea.com/p/vake-loft-42
-
-📞 WhatsApp: +995 599 12 34 56 (გიორგი)</pre>
-
-                  <div class="lx-copy-bar">
-                    <button class="lx-copy-btn" id="copy-post-btn">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-                      <span>დააკოპირე პოსტი</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <!-- BENTO CARD 2: 1-Click Bilingual Lease Agreement -->
-              <div class="lx-bento-card lx-spotlight-card">
-                <div class="lx-bento-card-header">
-                  <div class="lx-bento-badge-row">
-                    <span class="lx-badge">იურიდიული ხელშეკრულება</span>
-                    <span style="font-size:12px;color:var(--lx-text-muted);font-weight:600">02</span>
-                  </div>
-                  <h3>ქირავნობის ხელშეკრულება (KA/EN)</h3>
-                  <p>სამოქალაქო კოდექსის 531-ე მუხლზე მორგებული ორენოვანი დოკუმენტი. შეიყვანე მხარეების მონაცემები და მაშინვე მიიღებ დასაბეჭდად მზა ხელშეკრულებას.</p>
-                </div>
-
-                <div class="lx-bento-preview-stage">
-                  <div class="lx-lease-toggle-bar">
-                    <div style="font-size:11.5px;color:var(--lx-text-muted)">სამოქალაქო კოდექსის მ. 531</div>
-                    <div class="lx-lease-lang-switch">
-                      <button class="lx-lang-btn active" data-lease-lang="ka">ქართული</button>
-                      <button class="lx-lang-btn" data-lease-lang="en">English</button>
-                      <button class="lx-lang-btn" data-lease-lang="dual">ორენოვანი</button>
-                    </div>
-                  </div>
-
-                  <div class="lx-lease-clauses-scroll" tabindex="0" role="region" aria-label="ხელშეკრულების ნიმუში">
-                    <!-- Clause 1 -->
-                    <div class="lx-clause-item">
-                      <div class="lx-clause-title">
-                        <span>§ 1.</span>
-                        <span>ქირავნობის თანხა და გადახდის წესი (Rent & Terms)</span>
-                      </div>
-                      <div class="clause-text-ka" style="color:var(--lx-text-silver);margin-bottom:4px">
-                        1.1. უძრავი ქონების ყოველთვიური ქირა შეადგენს 950 აშშ დოლარს. ქირა გადაიხდება ყოველი თვის 5 რიცხვამდე.
-                      </div>
-                      <div class="clause-text-en" style="color:var(--lx-text-muted);font-size:11px;display:none">
-                        1.1. The monthly rent for the property is USD 950. Payment shall be made on or before the 5th day of each month.
-                      </div>
-                    </div>
-
-                    <!-- Clause 2 -->
-                    <div class="lx-clause-item">
-                      <div class="lx-clause-title">
-                        <span>§ 2.</span>
-                        <span>საგარანტიო თანხა (Security Deposit)</span>
-                      </div>
-                      <div class="clause-text-ka" style="color:var(--lx-text-silver);margin-bottom:4px">
-                        2.1. ხელმოწერისას დამქირავებელი იხდის საგარანტიო თანხას 950 აშშ დოლარის ოდენობით, რომელიც სრულად უბრუნდება ვადის ამოწურვისას.
-                      </div>
-                      <div class="clause-text-en" style="color:var(--lx-text-muted);font-size:11px;display:none">
-                        2.1. Tenant pays a security deposit of USD 950, fully refundable upon handover if no damages occur.
-                      </div>
-                    </div>
-
-                    <!-- Clause 3 -->
-                    <div class="lx-clause-item">
-                      <div class="lx-clause-title">
-                        <span>§ 3.</span>
-                        <span>შინაური ცხოველები და მოვლის წესი (Pets Policy)</span>
-                      </div>
-                      <div class="clause-text-ka" style="color:var(--lx-text-silver)">
-                        3.1. შინაური ცხოველების ყოლა დაშვებულია გამქირავებლის წერილობითი თანხმობით.
-                      </div>
-                      <div class="clause-text-en" style="color:var(--lx-text-muted);font-size:11px;display:none">
-                        3.1. Keeping pets is permitted with prior written consent of the Landlord.
-                      </div>
-                    </div>
-                  </div>
-
-                  <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px">
-                    <span style="font-size:11.5px;color:var(--lx-mint-neon);display:inline-flex;align-items:center;gap:5px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg> მზადაა დასაბეჭდად და PDF‑ად შესანახად</span>
-                    <a class="lx-btn lx-btn-secondary lx-btn-sm" href="/app/">ხელშეკრულების შექმნა</a>
-                  </div>
-                </div>
-              </div>
-
-              <!-- BENTO CARD 3: Intelligent Client Matchmaker -->
-              <div class="lx-bento-card lx-spotlight-card">
-                <div class="lx-bento-card-header">
-                  <div class="lx-bento-badge-row">
-                    <span class="lx-badge">ჭკვიანი ძიება</span>
-                    <span style="font-size:12px;color:var(--lx-text-muted);font-weight:600">03</span>
-                  </div>
-                  <h3>შესაფერისი ბინის შერჩევა</h3>
-                  <p>ჩაწერე კლიენტის მოთხოვნა (უბანი, ბიუჯეტი, ცხოველები) და სისტემა შენი ბაზიდან მაშინვე შეარჩევს შესაფერის ვარიანტებს.</p>
-                </div>
-
-                <div class="lx-bento-preview-stage">
-                  <div style="display:flex;gap:6px;margin-bottom:10px">
-                    <button class="lx-match-pill active" data-match-key="vake" style="padding:4px 10px;border-radius:99px;font-size:11px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#fff;cursor:pointer">მოთხოვნა: ვაკე</button>
-                    <button class="lx-match-pill" data-match-key="saburtalo" style="padding:4px 10px;border-radius:99px;font-size:11px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#fff;cursor:pointer">მოთხოვნა: საბურთალო</button>
-                    <button class="lx-match-pill" data-match-key="batumi" style="padding:4px 10px;border-radius:99px;font-size:11px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#fff;cursor:pointer">მოთხოვნა: ბათუმი</button>
-                  </div>
-
-                  <div class="lx-match-req-card">
-                    <div class="lx-match-req-header">
-                      <span>კლიენტის კრიტერიუმები:</span>
-                      <span style="color:var(--lx-mint-neon)">აქტიური ძიება</span>
-                    </div>
-                    <div class="lx-match-req-text" id="match-req-text">ვაკე, ჭავჭავაძე · $950-მდე · 2 ოთახი · ძაღლით</div>
-                  </div>
-
-                  <div class="lx-match-results" id="match-results-container">
-                    <div class="lx-match-listing-row">
-                      <div>
-                        <strong id="match-listing-title" style="color:#fff;font-size:13.5px">ვაკე, ჭავჭავაძის გამზ. #42</strong>
-                        <div id="match-listing-desc" style="font-size:11.5px;color:var(--lx-text-muted);margin-top:2px">85 მ² · $950/თვე · ცხოველები დაშვებულია</div>
-                      </div>
-                      <span class="lx-match-score-chip" id="match-score-display">98% თანხვედრა</span>
-                    </div>
-
-                    <div class="lx-match-listing-row" style="opacity:0.85">
-                      <div>
-                        <strong style="color:#fff;font-size:13.5px">ვაკე, აბაშიძის #34</strong>
-                        <div style="font-size:11.5px;color:var(--lx-text-muted);margin-top:2px">75 მ² · $900/თვე · აივნით</div>
-                      </div>
-                      <span class="lx-match-score-chip" style="background:rgba(255,255,255,0.06);border-color:rgba(255,255,255,0.15);color:#fff">92% თანხვედრა</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- BENTO CARD 4: Multi-Property Pitch -->
-              <div class="lx-bento-card lx-spotlight-card">
-                <div class="lx-bento-card-header">
-                  <div class="lx-bento-badge-row">
-                    <span class="lx-badge">ბინების ვიტრინა</span>
-                    <span style="font-size:12px;color:var(--lx-text-muted);font-weight:600">04</span>
-                  </div>
-                  <h3>ერთი ბმული რამდენიმე ბინისთვის</h3>
-                  <p>თუ კლიენტს რამდენიმე ვარიანტი აინტერესებს, მონიშნე 3-5 ბინა და გაუგზავნე ერთიანი პერსონალური გვერდი, სადაც თავად შეადარებს ფასებსა და ფოტოებს.</p>
-                </div>
-
-                <div class="lx-bento-preview-stage">
-                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-                    <span class="lx-badge" style="font-size:11px;padding:3px 10px">rigzea.com/p/selection-mariam</span>
-                    <span style="font-size:11px;color:var(--lx-text-muted)">შერჩეულია 3 ბინა</span>
-                  </div>
-
-                  <div class="lx-pitch-compare-grid">
-                    <!-- Option 1 -->
-                    <div class="lx-pitch-card-mini">
-                      <div>
-                        <div class="lx-pitch-mini-img">
-                          <img src="/img/1600585154340-be6161a56a0c.jpg" alt="ვაკე Loft #42" loading="lazy" decoding="async" />
-                        </div>
-                        <div class="lx-pitch-mini-title">ვაკე Loft #42</div>
-                        <div style="font-size:12px;color:var(--lx-text-muted)">85 მ² · 2 ოთახი</div>
-                      </div>
-                      <div class="lx-pitch-mini-price">$950/თვე</div>
-                    </div>
-
-                    <!-- Option 2 -->
-                    <div class="lx-pitch-card-mini">
-                      <div>
-                        <div class="lx-pitch-mini-img">
-                          <img src="/img/1600607687939-ce8a6c25118c.jpg" alt="ვერა Residence" loading="lazy" decoding="async" />
-                        </div>
-                        <div class="lx-pitch-mini-title">ვერა Residence</div>
-                        <div style="font-size:12px;color:var(--lx-text-muted)">70 მ² · 2 ოთახი</div>
-                      </div>
-                      <div class="lx-pitch-mini-price">$850/თვე</div>
-                    </div>
-
-                    <!-- Option 3 -->
-                    <div class="lx-pitch-card-mini">
-                      <div>
-                        <div class="lx-pitch-mini-img">
-                          <img src="/img/1545324418-cc1a3fa10c00.jpg" alt="საბურთალო Tower" loading="lazy" decoding="async" />
-                        </div>
-                        <div class="lx-pitch-mini-title">საბურთალო Tower</div>
-                        <div style="font-size:12px;color:var(--lx-text-muted)">65 მ² · 2 ოთახი</div>
-                      </div>
-                      <div class="lx-pitch-mini-price">$750/თვე</div>
-                    </div>
-                  </div>
-
-                  <div style="margin-top:10px;display:flex;align-items:center;justify-content:space-between">
-                    <span style="font-size:11.5px;color:var(--lx-text-silver)">მოსახერხებელი დათვალიერება მობილურზე</span>
-                    <span class="lx-badge" style="font-size:11px;padding:3px 10px">მობილური ვიტრინა</span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- BENTO CARD 5: Lease Expiry Reminder & Pipeline -->
-              <div class="lx-bento-card lx-spotlight-card">
-                <div class="lx-bento-card-header">
-                  <div class="lx-bento-badge-row">
-                    <span class="lx-badge">ვადის კონტროლი</span>
-                    <span style="font-size:12px;color:var(--lx-text-muted);font-weight:600">05</span>
-                  </div>
-                  <h3>ქირავნობის ვადის შეხსენება</h3>
-                  <p>ვადის გასვლამდე 30 დღით ადრე სისტემა შეგახსენებს, რომ ხელშეკრულება იწურება, რათა დროულად დაუკავშირდე მეპატრონეს და გააგრძელო.</p>
-                </div>
-
-                <div class="lx-bento-preview-stage">
-                  <div class="lx-pipeline-steps">
-                    <div class="lx-pipeline-row">
-                      <div class="lx-pipeline-row-icon">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
-                      </div>
-                      <div style="flex:1">
-                        <div style="font-size:12px;font-weight:700;color:#fff">ხელშეკრულება გაფორმდა</div>
-                        <div style="font-size:12px;color:var(--lx-text-muted)">ვადა: 12 თვე · მეპატრონე: ნინო ქ.</div>
-                      </div>
-                      <span style="font-size:12px;color:var(--lx-text-muted)">10 ოქტ</span>
-                    </div>
-
-                    <div class="lx-pipeline-row alert">
-                      <div class="lx-pipeline-row-icon" style="color:var(--lx-mint-neon)">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00f59b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
-                      </div>
-                      <div style="flex:1">
-                        <div style="font-size:12px;font-weight:700;color:var(--lx-mint-neon)">შეხსენება 30 დღით ადრე</div>
-                        <div style="font-size:12px;color:var(--lx-text-silver)">ჩანს მთავარ გვერდზე</div>
-                      </div>
-                      <span class="lx-badge" style="font-size:11.5px;padding:3px 9px">აქტიური</span>
-                    </div>
-
-                    <div class="lx-pipeline-row">
-                      <div class="lx-pipeline-row-icon">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00f59b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="12" x="2" y="6" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg>
-                      </div>
-                      <div style="flex:1">
-                        <div style="font-size:12px;font-weight:700;color:#fff">ხელშეკრულების გაგრძელება</div>
-                        <div style="font-size:12px;color:var(--lx-text-muted)">განმეორებითი საკომისიო</div>
-                      </div>
-                      <span style="font-size:12px;font-weight:700;color:var(--lx-mint-neon)">+$475</span>
-                    </div>
-                  </div>
-
-                  <div style="margin-top:auto;padding-top:12px;display:flex;align-items:center;justify-content:space-between">
-                    <span style="font-size:12px;font-weight:700;color:#fff">შემოსავლის შენარჩუნება</span>
-                    <span style="font-size:11.5px;color:var(--lx-text-muted)">დროული კომუნიკაცია მეპატრონესთან</span>
-                  </div>
-                </div>
-              </div>
-
-            </div>
-          </div>
-
         </div>
       </section>
 
-      <!-- 4. Interactive Live Property Showcase: Luxury Apartments in Tbilisi & Batumi -->
-      <section class="lx-showcase-section" id="showcase">
+      <!-- 3. Clean 2x2 Bento Grid Features (4 Core Tools) -->
+      <section class="lx-features-bento-section" id="features">
         <div class="lx-container">
           <div class="lx-section-header">
-            <span class="lx-badge" style="margin-bottom:14px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-right:4px"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg> ჭკვიანი ბმული</span>
-            <h2>როგორ ხედავს ბინას კლიენტი</h2>
-            <p>ჩატში გაგზავნილი 40 ფოტოს ნაცვლად ერთი სუფთა გვერდი: HD გალერეა, ზუსტი პირობები და პირდაპირი კონტაქტი.</p>
+            <span class="lx-badge">ყველაფერი ერთ სისტემაში</span>
+            <h2>4 მთავარი ხელსაწყო ბროკერისთვის</h2>
+            <p>ნაკლები რუტინა, მეტი დაცულობა და გაზრდილი საკომისიოები გაყიდვასა და გაქირავებაზე</p>
           </div>
 
-          <div class="lx-properties-grid">
-            <!-- Property 1: Vake Luxury Loft -->
-            <article class="lx-property-card lx-spotlight-card">
-              <div class="lx-prop-media">
-                <img src="/img/1600585154340-be6161a56a0c.jpg" alt="ვაკე · ჭავჭავაძის გამზ. #42 პრემიუმ ლოფტი" loading="lazy" decoding="async" />
-                <div class="lx-prop-tags">
-                  <span class="lx-prop-badge-status">ექსკლუზივი</span>
-                  <span class="lx-prop-badge-city">თბილისი · ვაკე</span>
-                </div>
-                <div class="lx-prop-price-floating">$950 <span style="font-size:12px;font-weight:600;color:var(--lx-text-silver)">/ თვე</span></div>
-              </div>
-              <div class="lx-prop-body">
-                <div class="lx-prop-header-row">
-                  <h3 class="lx-prop-title">ჭავჭავაძის გამზ. #42 (ვაკის პარკთან)</h3>
-                </div>
-                <p class="lx-prop-sub">ახალაშენებული კორპუსი, თანამედროვე რემონტი, პანორამული აივანი</p>
-                <div class="lx-prop-specs">
-                  <span>85 მ²</span>
-                  <span>2 ოთახი</span>
-                  <span>1 საძინებელი</span>
-                  <span>სართული 8/14</span>
-                  <span>ცხოველები დაშვებულია</span>
-                </div>
-                <div class="lx-prop-footer">
-                  <a class="lx-btn lx-btn-secondary lx-btn-sm" href="/p/?demo=1" target="_blank" rel="noopener">
-                    <span>გახსენი ჭკვიანი ბმული</span>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
-                  </a>
-                  <span class="lx-prop-link-label">rigzea.com/p/vake-loft-42</span>
-                </div>
-              </div>
-            </article>
+          <div class="lx-features-2x2-grid">
 
-            <!-- Property 2: Vera Minimalist Residence -->
-            <article class="lx-property-card lx-spotlight-card">
-              <div class="lx-prop-media">
-                <img src="/img/1600607687939-ce8a6c25118c.jpg" alt="ვერა · ბარნოვის ქუჩა თანამედროვე რეზიდენცია" loading="lazy" decoding="async" />
-                <div class="lx-prop-tags">
-                  <span class="lx-prop-badge-status" style="border-color:rgba(255,255,255,0.2);color:#fff">ახალი განცხადება</span>
-                  <span class="lx-prop-badge-city">თბილისი · ვერა</span>
+            <!-- Card 1: Import in Seconds & PDF Presentation -->
+            <div class="lx-bento-card lx-spotlight-card">
+              <div class="lx-bento-card-header">
+                <div class="lx-bento-badge-row">
+                  <span class="lx-badge">მყისიერი იმპორტი</span>
+                  <span style="font-size:12px;color:var(--lx-text-muted);font-weight:600">01</span>
                 </div>
-                <div class="lx-prop-price-floating">$1,200 <span style="font-size:12px;font-weight:600;color:var(--lx-text-silver)">/ თვე</span></div>
+                <h3>იმპორტი წამებში და PDF კატალოგი</h3>
+                <p>ჩასვი MyHome.ge, SS.ge ან Place.ge ბმული — ფოტოები და პარამეტრები წამებში გადმოდის. 1 კლიკით იღებ QR-კოდიან PDF პრეზენტაციას.</p>
               </div>
-              <div class="lx-prop-body">
-                <div class="lx-prop-header-row">
-                  <h3 class="lx-prop-title">ბარნოვის ქ. #18 (ვერა Residence)</h3>
-                </div>
-                <p class="lx-prop-sub">მზიანი მისაღები, სრული ტექნიკა, დაცული სადარბაზო, მიწისქვეშა პარკინგი</p>
-                <div class="lx-prop-specs">
-                  <span>95 მ²</span>
-                  <span>3 ოთახი</span>
-                  <span>2 საძინებელი</span>
-                  <span>სართული 5/8</span>
-                  <span>პარკინგით</span>
-                </div>
-                <div class="lx-prop-footer">
-                  <a class="lx-btn lx-btn-secondary lx-btn-sm" href="/p/?demo=1" target="_blank" rel="noopener">
-                    <span>გახსენი ჭკვიანი ბმული</span>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
-                  </a>
-                  <span class="lx-prop-link-label">rigzea.com/p/vera-residence-18</span>
-                </div>
-              </div>
-            </article>
 
-            <!-- Property 3: Batumi Boulevard Sea-View Suite -->
-            <article class="lx-property-card lx-spotlight-card">
-              <div class="lx-prop-media">
-                <img src="/img/1512917774080-9991f1c4c750.jpg" alt="ბათუმი · რუსთაველის გამზირი ზღვის ხედით" loading="lazy" decoding="async" />
-                <div class="lx-prop-tags">
-                  <span class="lx-prop-badge-status">ზღვის პირველი ზოლი</span>
-                  <span class="lx-prop-badge-city">ბათუმი · ბულვარი</span>
-                </div>
-                <div class="lx-prop-price-floating">$1,400 <span style="font-size:12px;font-weight:600;color:var(--lx-text-silver)">/ თვე</span></div>
-              </div>
-              <div class="lx-prop-body">
-                <div class="lx-prop-header-row">
-                  <h3 class="lx-prop-title">რუსთაველის გამზ. #32 (Porta Batumi)</h3>
-                </div>
-                <p class="lx-prop-sub">ვიტრაჟული ხედი ზღვაზე, კონსიერჟი 24/7, სპა და აუზი კომპლექსში</p>
-                <div class="lx-prop-specs">
-                  <span>78 მ²</span>
-                  <span>2 ოთახი</span>
-                  <span>1 საძინებელი</span>
-                  <span>სართული 16/43</span>
-                  <span>ზღვის ხედი</span>
-                </div>
-                <div class="lx-prop-footer">
-                  <a class="lx-btn lx-btn-secondary lx-btn-sm" href="/p/?demo=1" target="_blank" rel="noopener">
-                    <span>გახსენი ჭკვიანი ბმული</span>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
-                  </a>
-                  <span class="lx-prop-link-label">rigzea.com/p/batumi-porta-32</span>
+              <div class="lx-bento-preview-stage">
+                <div class="lx-import-preview-box">
+                  <div class="lx-import-input-row">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                    <span class="lx-import-url-text">https://myhome.ge/pr/10892415</span>
+                    <span class="lx-badge" style="font-size:10.5px;padding:2px 8px;background:rgba(0,245,155,0.18)">წამებში</span>
+                  </div>
+                  <div class="lx-import-status-row">
+                    <div style="display:flex;align-items:center;gap:6px;color:var(--lx-mint-neon);font-size:12px;font-weight:600">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                      <span>გადმოტანილია: 18 HD ფოტო, 85 მ², პარამეტრები</span>
+                    </div>
+                    <div style="font-size:11px;color:var(--lx-text-muted)">მესაკუთრის ნომერი დაფარულია</div>
+                  </div>
+                  <div class="lx-import-action-row">
+                    <a class="lx-btn lx-btn-secondary lx-btn-sm" href="/app/" style="width:100%;justify-content:center;gap:6px">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+                      <span>ჩამოტვირთე PDF პრეზენტაცია QR კოდით</span>
+                    </a>
+                  </div>
                 </div>
               </div>
-            </article>
+            </div>
+
+            <!-- Card 2: Multi-Apartment Comparison Showcase -->
+            <div class="lx-bento-card lx-spotlight-card">
+              <div class="lx-bento-card-header">
+                <div class="lx-bento-badge-row">
+                  <span class="lx-badge">შედარების ვიტრინა</span>
+                  <span style="font-size:12px;color:var(--lx-text-muted);font-weight:600">02</span>
+                </div>
+                <h3>ერთი ბმული რამდენიმე ბინისთვის</h3>
+                <p>მონიშნე 3–5 ბინა და გაუგზავნე კლიენტს პერსონალური შესადარებელი ვიტრინა, სადაც თავად შეადარებს ფასებს, ლოკაციას და ფოტოებს.</p>
+              </div>
+
+              <div class="lx-bento-preview-stage">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                  <span class="lx-badge" style="font-size:11px;padding:3px 9px">rigzea.com/p/selection-mariam</span>
+                  <span style="font-size:11px;color:var(--lx-mint-neon);font-weight:600">✓ 3 ბინა ერთ ბმულზე</span>
+                </div>
+
+                <div class="lx-pitch-compare-grid">
+                  <!-- Option 1 -->
+                  <div class="lx-pitch-card-mini">
+                    <div>
+                      <div class="lx-pitch-mini-img">
+                        <img src="/img/1600585154340-be6161a56a0c.jpg" alt="ვაკე Loft #42" loading="lazy" decoding="async" />
+                      </div>
+                      <div class="lx-pitch-mini-title">ვაკე Loft #42</div>
+                      <div style="font-size:11px;color:var(--lx-text-muted)">85 მ² · 2 ოთახი</div>
+                    </div>
+                    <div class="lx-pitch-mini-price">$950/თვე</div>
+                  </div>
+
+                  <!-- Option 2 -->
+                  <div class="lx-pitch-card-mini">
+                    <div>
+                      <div class="lx-pitch-mini-img">
+                        <img src="/img/1600607687939-ce8a6c25118c.jpg" alt="ვერა Residence" loading="lazy" decoding="async" />
+                      </div>
+                      <div class="lx-pitch-mini-title">ვერა Residence</div>
+                      <div style="font-size:11px;color:var(--lx-text-muted)">70 მ² · 2 ოთახი</div>
+                    </div>
+                    <div class="lx-pitch-mini-price">$850/თვე</div>
+                  </div>
+
+                  <!-- Option 3 -->
+                  <div class="lx-pitch-card-mini">
+                    <div>
+                      <div class="lx-pitch-mini-img">
+                        <img src="/img/1545324418-cc1a3fa10c00.jpg" alt="საბურთალო Tower" loading="lazy" decoding="async" />
+                      </div>
+                      <div class="lx-pitch-mini-title">საბურთალო Tower</div>
+                      <div style="font-size:11px;color:var(--lx-text-muted)">65 მ² · 2 ოთახი</div>
+                    </div>
+                    <div class="lx-pitch-mini-price">$750/თვე</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card 3: Ready Legal Contracts (KA/EN) -->
+            <div class="lx-bento-card lx-spotlight-card">
+              <div class="lx-bento-card-header">
+                <div class="lx-bento-badge-row">
+                  <span class="lx-badge">იურიდიული დაცვა</span>
+                  <span style="font-size:12px;color:var(--lx-text-muted);font-weight:600">03</span>
+                </div>
+                <h3>მზა იურიდიული დოკუმენტები (KA/EN)</h3>
+                <p>ქირავნობა (მ. 531), ბე/დეპოზიტი, ექსკლუზივი და მიღება-ჩაბარება — ივსება ავტომატურად მხარეების რეკვიზიტებით.</p>
+              </div>
+
+              <div class="lx-bento-preview-stage">
+                <div class="lx-lease-toggle-bar">
+                  <div style="font-size:11.5px;color:var(--lx-text-muted)">მუხლი 531 · ავტომატური გენერაცია</div>
+                  <div class="lx-lease-lang-switch">
+                    <button type="button" class="lx-lang-btn active" data-lease-lang="ka">ქართული</button>
+                    <button type="button" class="lx-lang-btn" data-lease-lang="en">English</button>
+                    <button type="button" class="lx-lang-btn" data-lease-lang="dual">ორენოვანი</button>
+                  </div>
+                </div>
+
+                <div class="lx-lease-clauses-scroll" tabindex="0" role="region" aria-label="ხელშეკრულების ნიმუში" style="max-height:140px">
+                  <div class="lx-clause-item">
+                    <div class="lx-clause-title">
+                      <span>§ 1.</span>
+                      <span>ქირავნობის თანხა და გადახდის წესი</span>
+                    </div>
+                    <div class="clause-text-ka" style="color:var(--lx-text-silver);font-size:11.5px">
+                      1.1. უძრავი ქონების ყოველთვიური ქირა შეადგენს 950 აშშ დოლარს. გადახდა ყოველი თვის 5 რიცხვამდე.
+                    </div>
+                    <div class="clause-text-en" style="color:var(--lx-text-muted);font-size:11px;display:none">
+                      1.1. Monthly rent is USD 950, payable on or before the 5th day of each calendar month.
+                    </div>
+                  </div>
+                  <div class="lx-clause-item">
+                    <div class="lx-clause-title">
+                      <span>§ 2.</span>
+                      <span>დეპოზიტი და საგარანტიო თანხა</span>
+                    </div>
+                    <div class="clause-text-ka" style="color:var(--lx-text-silver);font-size:11.5px">
+                      2.1. დამქირავებელი იხდის საგარანტიო დეპოზიტს $950 ოდენობით, რომელიც სრულად უბრუნდება ვადის გასვლისას.
+                    </div>
+                    <div class="clause-text-en" style="color:var(--lx-text-muted);font-size:11px;display:none">
+                      2.1. Tenant pays a refundable security deposit of USD 950 upon signing.
+                    </div>
+                  </div>
+                </div>
+
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px">
+                  <span style="font-size:11.5px;color:var(--lx-mint-neon);display:inline-flex;align-items:center;gap:4px">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> KA/EN მზაა დასაბეჭდად
+                  </span>
+                  <a class="lx-btn lx-btn-secondary lx-btn-sm" href="/app/">შექმენი დოკუმენტი</a>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card 4: Social Post Generator & Co-Broker 50/50 -->
+            <div class="lx-bento-card lx-spotlight-card">
+              <div class="lx-bento-card-header">
+                <div class="lx-bento-badge-row">
+                  <span class="lx-badge">მარკეტინგი & პარტნიორობა</span>
+                  <span style="font-size:12px;color:var(--lx-text-muted);font-weight:600">04</span>
+                </div>
+                <h3>პოსტების გენერატორი და Co-Broker 50/50</h3>
+                <p>მზა ტექსტი Facebook ჯგუფებისთვის და WhatsApp-ისთვის წამებში, პლუს კოლეგა აგენტებთან უსაფრთხო გაზიარება მეპატრონის დამალვით.</p>
+              </div>
+
+              <div class="lx-bento-preview-stage">
+                <div class="lx-post-tabs">
+                  <button type="button" class="lx-post-tab-btn active" data-post-type="facebook">Facebook ჯგუფი</button>
+                  <button type="button" class="lx-post-tab-btn" data-post-type="whatsapp">WhatsApp</button>
+                  <button type="button" class="lx-post-tab-btn" data-post-type="cobroker">გაყოფა 50/50</button>
+                </div>
+
+                <pre class="lx-post-box" id="post-preview-box" tabindex="0" role="region" aria-label="პოსტის ტექსტის ნიმუში" style="max-height:120px;font-size:11.5px;line-height:1.45">🔥 იყიდება პრემიუმ ბინა ვაკეში, ირაკლი აბაშიძის #34!
+📐 85 მ² | 3 ოთახი (2 საძინებელი) | სართული 7/12
+💳 ფასი: $145,000 | საკადასტრო შემოწმებულია
+📸 სრული HD ფოტოები და დეტალები: rigzea.com/p/vake-loft-42
+📞 WhatsApp: +995 599 54 85 75 (ნინო)</pre>
+
+                <div class="lx-copy-bar" style="margin-top:8px">
+                  <button type="button" class="lx-copy-btn" id="copy-post-btn">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                    <span>დააკოპირე პოსტი</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
       </section>
 
-      <!-- 5. Vertical Continuation: Comparison Section (Old Way vs Rigzea Way) -->
+      <!-- 4. High-Impact Comparison Section (Old Way vs Rigzea Standard) -->
       <section class="lx-comparison-section" id="comparison">
         <div class="lx-container">
           <div class="lx-section-header">
-            <h2>დაემშვიდობე ჩატების ქაოსს</h2>
-            <p>პირველი შთაბეჭდილება გადამწყვეტია. ნახე განსხვავება:</p>
+            <span class="lx-badge">შედარება</span>
+            <h2>დაემშვიდობე ჩატების ქაოსსა და გვერდის ავლას</h2>
+            <p>პირველი შთაბეჭდილება და მესაკუთრის დაცულობა გადამწყვეტია. ნახე განსხვავება:</p>
           </div>
 
           <div class="lx-comparison-grid">
@@ -647,25 +494,25 @@
               <ul class="lx-points-list">
                 <li>
                   <span class="lx-point-icon-red"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></span>
-                  <span>ათეულობით ფოტოს გაგზავნა WhatsApp‑სა და Viber‑ში.</span>
+                  <span><strong>კლიენტი პოულობს მესაკუთრის ნომერს</strong> ან განცხადებას და შენს გვერდის ავლით დებს გარიგებას.</span>
                 </li>
                 <li>
                   <span class="lx-point-icon-red"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></span>
-                  <span>ერთსა და იმავე კითხვებზე ყოველ ჯერზე პასუხის გაცემა.</span>
+                  <span>40 არეული ფოტოს გაგზავნა WhatsApp‑სა და Viber‑ში, რაც მომხმარებელს მეხსიერებას უვსებს.</span>
                 </li>
                 <li>
                   <span class="lx-point-icon-red"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></span>
-                  <span>გადავსებული მეხსიერება და ჩატებში ჩაკარგული მისამართები.</span>
+                  <span>ერთსა და იმავე კითხვებზე (ფასი, ცხოველები, გათბობა) დღეში 20-ჯერ პასუხის გაცემა.</span>
                 </li>
                 <li>
                   <span class="lx-point-icon-red"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></span>
-                  <span>კლიენტები, რომლებიც უბრალოდ აღარ გპასუხობენ.</span>
+                  <span>არ იცი, ნახა თუ არა კლიენტმა ბინა, სანამ პასუხს საათობით ელოდები.</span>
                 </li>
               </ul>
 
               <div style="margin-top:auto;padding-top:16px;border-top:1px solid rgba(239,68,68,0.2);font-size:13px;color:var(--lx-red-text);display:flex;align-items:center;gap:6px">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-                <span>შედეგი: დაკარგული დრო და გაღიზიანებული კლიენტი.</span>
+                <span>შედეგი: დაკარგული საკომისიო და გაღიზიანებული კლიენტი.</span>
               </div>
             </div>
 
@@ -679,80 +526,34 @@
               <ul class="lx-points-list">
                 <li>
                   <span class="lx-point-icon-green"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
-                  <span>ერთი სუფთა ბმული ყველა დეტალით (მაგ.: <strong>rigzea.com/p/vake-loft-42</strong>).</span>
+                  <span><strong>მესაკუთრის კონტაქტი და ბინის ზუსტი ნომერი დაფარულია</strong> — კლიენტი უკავშირდება მხოლოდ შენ.</span>
                 </li>
                 <li>
                   <span class="lx-point-icon-green"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
-                  <span>HD ფოტოები, ლოკაცია რუკაზე და ზუსტი პირობები.</span>
+                  <span>ერთი VIP ბმული ყველა HD ფოტოთი, რუკით, ვიდეოთი და ზუსტი პირობებით.</span>
                 </li>
                 <li>
                   <span class="lx-point-icon-green"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
-                  <span>პირდაპირი კავშირი: WhatsApp ან ზარი ერთი დაჭერით.</span>
+                  <span>პირდაპირი კავშირი: WhatsApp ან ზარი ერთი დაჭერით შენს ნომერზე.</span>
                 </li>
                 <li>
                   <span class="lx-point-icon-green"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
-                  <span>რეგისტრაცია არ სჭირდება: ნებისმიერ ტელეფონზე მაშინვე იხსნება.</span>
+                  <span>ხედავ ბმულის გახსნის დროს და მზა ორენოვანი ხელშეკრულება წამებში იბეჭდება.</span>
                 </li>
               </ul>
 
-              <div style="margin-top:auto;padding-top:16px;border-top:1px solid rgba(0,245,155,0.25);font-size:13px;color:var(--lx-mint-neon);font-weight:600;display:flex;align-items:center;gap:6px">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
-                <span>შედეგი: მეტი ნდობა, დაზოგილი დრო და დახურული გარიგება.</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- 4.5 KokonutUI Bento Grid & ShadcnSpace Bento Testimonials -->
-      <section class="lx-bento-section" id="bento-showcase">
-        <div class="lx-container">
-          <div class="lx-section-header">
-            <span class="lx-bento-badge"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg> რატომ მუშაობს</span>
-            <h2>ხელსაწყოები, რომლებიც გარიგებას აჩქარებს</h2>
-            <p>რა იცვლება, როცა ჩატის ნაცვლად Rigzea‑თი მუშაობ.</p>
-          </div>
-
-          <div class="lx-bento-grid">
-
-            <!-- Result 1: deal speed (tall, left) -->
-            <div class="lx-result-card lx-result-card-lead">
-              <div class="lx-bento-glow"></div>
-              <div>
-                <span class="lx-bento-badge">⚡ ერთი ბმული</span>
-                <h3 class="lx-bento-title">ერთი დალაგებული ბმული არეული ჩატის ნაცვლად</h3>
-                <p class="lx-bento-desc">კლიენტს გადაწყვეტილების მიღება უადვილდება, როცა ბინის მონაცემებსა და ფოტოებს არეული ჩატის ნაცვლად ერთ დალაგებულ ბმულში ხედავს.</p>
-                <div class="lx-bento-stat-hero">
-                  <span class="lx-bento-stat-num">1 ბმული</span>
-                  <span class="lx-bento-stat-delta">ფოტოები, ფასი, რუკა, კონტაქტი</span>
+              <div style="margin-top:auto;padding-top:16px;border-top:1px solid rgba(0,245,155,0.25);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+                <div style="font-size:13px;color:var(--lx-mint-neon);font-weight:600;display:flex;align-items:center;gap:6px">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                  <span>შედეგი: დაცული საკომისიო და დახურული გარიგება.</span>
                 </div>
+                <a class="lx-btn lx-btn-secondary lx-btn-sm" href="/p/?demo=1" target="_blank" rel="noopener">
+                  <span>ნახე ნიმუში: rigzea.com/p/vake-loft-42</span>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                </a>
               </div>
-              <div class="lx-result-footnote">
-                <span>იხსნება ნებისმიერ ტელეფონზე</span>
-                <strong>რეგისტრაციის გარეშე</strong>
               </div>
             </div>
-
-            <!-- Result 2: link statistics -->
-            <div class="lx-result-card">
-              <div>
-                <span class="lx-bento-badge">ბმულის სტატისტიკა</span>
-                <h3 class="lx-bento-title">ხედავ, რამდენად აინტერესებს</h3>
-                <p class="lx-bento-desc">თითო ბინაზე ჩანს ნახვების, WhatsApp‑ზე დაჭერებისა და ზარების რაოდენობა.</p>
-              </div>
-              <div class="lx-result-stat">3 <span>მაჩვენებელი</span></div>
-            </div>
-
-            <!-- Result 3: protected exclusives -->
-            <div class="lx-result-card">
-              <div>
-                <span class="lx-bento-badge">🔒 დაცული ექსკლუზივი</span>
-                <h3 class="lx-bento-title">მესაკუთრის კონტაქტი დაფარულია</h3>
-                <p class="lx-bento-desc">საჯარო ბმულში მესაკუთრის ნომერი და ბინის ნომერი არ ჩანს: საკონტაქტოდ მხოლოდ შენი ნომერია მითითებული.</p>
-              </div>
-              <div class="lx-result-stat">0 <span>მესაკუთრის მონაცემი ბმულში</span></div>
-            </div>
-
           </div>
         </div>
       </section>
@@ -761,51 +562,60 @@
       <section class="lx-calc-section" id="calculator">
         <div class="lx-container">
           <div class="lx-section-header">
+            <span class="lx-badge">შემოსავლის კალკულატორი</span>
             <h2>გამოთვალე დაზოგილი დრო და შემოსავალი</h2>
-            <p>ნახე, რამდენ დროს გიზოგავს Rigzea და რამდენი საკომისიო გროვდება თვეში. გამოთვლა საორიენტაციოა: ეფუძნება შენ მიერ შეყვანილ ციფრებს და შედეგის გარანტია არ არის.</p>
+            <p>აირჩიე რეჟიმი და ნახე, რამდენი საკომისიო გროვდება თვეში გაყიდვასა და გაქირავებაზე.</p>
           </div>
 
           <div class="lx-calc-box lx-spotlight-card">
             
+            <!-- Mode Switcher: Rent vs Sale -->
+            <div class="lx-calc-mode-switch-wrap">
+              <div class="lx-calc-mode-pill-box">
+                <button type="button" class="lx-calc-mode-btn active" data-calc-mode="rent">🏢 გაქირავება</button>
+                <button type="button" class="lx-calc-mode-btn" data-calc-mode="sale">🏠 გაყიდვა</button>
+              </div>
+            </div>
+
             <!-- Sliders Column -->
             <div class="lx-calc-inputs">
               
-              <!-- Slider 1: Rent -->
+              <!-- Slider 1: Rent / Property Price -->
               <div class="lx-slider-group">
                 <div class="lx-slider-label-row">
-                  <span>საშუალო ქირა ($)</span>
+                  <span id="calc-price-label">საშუალო ქირა ($)</span>
                   <span class="lx-slider-val lx-tabular" id="calc-rent-val">$800</span>
                 </div>
-                <input type="range" class="lx-range-slider" id="calc-rent" aria-label="საშუალო ქირა დოლარში" min="300" max="3000" step="50" value="800" />
+                <input type="range" class="lx-range-slider" id="calc-rent" aria-label="თანხა დოლარში" min="300" max="3000" step="50" value="800" />
                 <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--lx-text-muted)">
-                  <span>$300</span>
-                  <span>$1,500</span>
-                  <span>$3,000</span>
+                  <span id="calc-bound-min">$300</span>
+                  <span id="calc-bound-mid">$1,500</span>
+                  <span id="calc-bound-max">$3,000</span>
                 </div>
               </div>
 
               <!-- Slider 2: Deals -->
               <div class="lx-slider-group">
                 <div class="lx-slider-label-row">
-                  <span>დახურული გარიგებები თვეში</span>
+                  <span id="calc-deals-label">დახურული გარიგებები თვეში</span>
                   <span class="lx-slider-val lx-tabular" id="calc-deals-val">4 გარიგება</span>
                 </div>
                 <input type="range" class="lx-range-slider" id="calc-deals" aria-label="დახურული გარიგებები თვეში" min="1" max="15" step="1" value="4" />
                 <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--lx-text-muted)">
-                  <span>1</span>
-                  <span>5</span>
-                  <span>15</span>
+                  <span id="calc-deals-min">1</span>
+                  <span id="calc-deals-mid">5</span>
+                  <span id="calc-deals-max">15</span>
                 </div>
               </div>
 
               <!-- Split rate select -->
               <div class="lx-slider-group">
                 <div class="lx-slider-label-row">
-                  <span>საკომისიოს წილი</span>
+                  <span id="calc-split-label">საკომისიოს წილი</span>
                 </div>
-                <select id="calc-split" aria-label="საკომისიოს წილი" style="background:#070d0a;color:#fff;border:1px solid var(--lx-border-subtle);border-radius:10px;padding:10px 14px;font-size:14px;outline:none;cursor:pointer">
+                <select id="calc-split" aria-label="საკომისიოს წილი" style="background:#070d0a;color:#fff;border:1px solid var(--lx-border-subtle);border-radius:10px;padding:10px 14px;font-size:14px;outline:none;cursor:pointer;width:100%">
                   <option value="0.50">50%: სრული საკომისიო</option>
-                  <option value="0.25">25%: გაყოფილი საკომისიო</option>
+                  <option value="0.25">25%: გაყოფილი საკომისიო (50/50)</option>
                 </select>
               </div>
 
@@ -814,7 +624,7 @@
             <!-- Results Output Column -->
             <div class="lx-calc-results">
               <div class="lx-calc-metric-highlight">
-                <span>თვიური საკომისიო</span>
+                <span id="calc-result-header">თვიური საკომისიო</span>
                 <strong class="lx-tabular" id="calc-result-monthly-usd">$1,600</strong>
                 <div style="font-size:14px;color:var(--lx-mint-bright);font-weight:600" id="calc-result-monthly-gel">~ ₾4,352</div>
               </div>
@@ -845,6 +655,7 @@
       <section class="lx-pricing-section" id="pricing">
         <div class="lx-container">
           <div class="lx-section-header">
+            <span class="lx-badge">ტარიფები</span>
             <h2>მარტივი და გამჭვირვალე ტარიფები</h2>
             <p>დაიწყე უფასოდ და გადადი უფრო დიდ პაკეტზე, როცა შენი ბრუნვა გაიზრდება.</p>
           </div>
@@ -957,70 +768,127 @@
 
           </div>
 
-          <p class="lx-cmp-link"><a href="#plans-compare">ნახე სრული შედარება</a></p>
+          <!-- Collapsible Plan Comparison Table -->
+          <details class="lx-cmp-details" id="plans-compare">
+            <summary class="lx-cmp-summary">
+              <span>📊 ნახე ყველა ფუნქციის დეტალური შედარება</span>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lx-cmp-chevron"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </summary>
+            <div class="lx-cmp-inner">
+              <div class="lx-cmp-head">
+                <h3>რას შეიცავს თითოეული პაკეტი</h3>
+                <p>სრული სია, რომ ყიდვამდე ზუსტად იცოდე, რას იღებ.</p>
+              </div>
+              <div class="lx-cmp-scroll" tabindex="0" role="region" aria-label="პაკეტების შედარება">
+                <table class="lx-cmp-table">
+                  <thead>
+                    <tr>
+                      <th scope="col">ფუნქცია</th>
+                      <th scope="col">დამწყები<small>0 ₾</small></th>
+                      <th scope="col" class="is-featured">პრო აგენტი<small>39 ₾ / თვე</small></th>
+                      <th scope="col">გუნდი<small>99 ₾ / თვე</small></th>
+                      <th scope="col">სააგენტო<small>249 ₾ / თვე</small></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                  <tr class="lx-cmp-group"><th scope="rowgroup" colspan="5">ლიმიტები</th></tr>
+                  <tr><th scope="row">აქტიური ობიექტი<span>დაარქივებული ობიექტი ლიმიტში არ ითვლება</span></th><td data-plan="დამწყები" class="lx-tabular">3</td><td data-plan="პრო" class="lx-tabular">50</td><td data-plan="გუნდი" class="lx-tabular">150</td><td data-plan="სააგენტო" class="lx-tabular">ულიმიტო</td></tr>
+                  <tr><th scope="row">მომხმარებელი (მენეჯერი ან აგენტი)</th><td data-plan="დამწყები" class="lx-tabular">1</td><td data-plan="პრო" class="lx-tabular">1</td><td data-plan="გუნდი" class="lx-tabular">3</td><td data-plan="სააგენტო" class="lx-tabular">ულიმიტო</td></tr>
+                  <tr><th scope="row">საველე თანამშრომელი<span>ხედავს მხოლოდ თავის საქმეებს ტელეფონზე</span></th><td data-plan="დამწყები" class="lx-tabular">ულიმიტო</td><td data-plan="პრო" class="lx-tabular">ულიმიტო</td><td data-plan="გუნდი" class="lx-tabular">ულიმიტო</td><td data-plan="სააგენტო" class="lx-tabular">ულიმიტო</td></tr>
+                  <tr class="lx-cmp-group"><th scope="rowgroup" colspan="5">ბინები და ბმულები</th></tr>
+                  <tr><th scope="row">ჭკვიანი ბმული თითო ბინაზე<span>ფოტოები, ფასი ორ ვალუტაში, რუკა, WhatsApp ღილაკი</span></th><td data-plan="დამწყები"><span class="lx-cmp-yes" role="img" aria-label="დამწყები: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="პრო"><span class="lx-cmp-yes" role="img" aria-label="პრო აგენტი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="გუნდი"><span class="lx-cmp-yes" role="img" aria-label="გუნდი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="სააგენტო"><span class="lx-cmp-yes" role="img" aria-label="სააგენტო: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td></tr>
+                  <tr><th scope="row">ბმულის სტატისტიკა<span>ნახვები, WhatsApp‑ზე დაჭერა, ზარები</span></th><td data-plan="დამწყები"><span class="lx-cmp-yes" role="img" aria-label="დამწყები: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="პრო"><span class="lx-cmp-yes" role="img" aria-label="პრო აგენტი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="გუნდი"><span class="lx-cmp-yes" role="img" aria-label="გუნდი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="სააგენტო"><span class="lx-cmp-yes" role="img" aria-label="სააგენტო: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td></tr>
+                  <tr><th scope="row">შევსება განცხადების ბმულით<span>MyHome.ge, SS.ge, Place.ge</span></th><td data-plan="დამწყები"><span class="lx-cmp-no" role="img" aria-label="დამწყები: არ შედის"></span></td><td data-plan="პრო"><span class="lx-cmp-yes" role="img" aria-label="პრო აგენტი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="გუნდი"><span class="lx-cmp-yes" role="img" aria-label="გუნდი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="სააგენტო"><span class="lx-cmp-yes" role="img" aria-label="სააგენტო: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td></tr>
+                  <tr><th scope="row">PDF პრეზენტაცია<span>კატალოგი ან ერთგვერდიანი ფლაერი QR კოდით</span></th><td data-plan="დამწყები"><span class="lx-cmp-no" role="img" aria-label="დამწყები: არ შედის"></span></td><td data-plan="პრო"><span class="lx-cmp-yes" role="img" aria-label="პრო აგენტი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="გუნდი"><span class="lx-cmp-yes" role="img" aria-label="გუნდი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="სააგენტო"><span class="lx-cmp-yes" role="img" aria-label="სააგენტო: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td></tr>
+                  <tr><th scope="row">პოსტის გენერატორი<span>Facebook, Instagram, WhatsApp; ქართულად და ინგლისურად</span></th><td data-plan="დამწყები"><span class="lx-cmp-yes" role="img" aria-label="დამწყები: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="პრო"><span class="lx-cmp-yes" role="img" aria-label="პრო აგენტი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="გუნდი"><span class="lx-cmp-yes" role="img" aria-label="გუნდი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="სააგენტო"><span class="lx-cmp-yes" role="img" aria-label="სააგენტო: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td></tr>
+                  <tr><th scope="row">გაზიარება კოლეგა აგენტთან<span>მეპატრონის მონაცემები ნაგულისხმევად დამალულია</span></th><td data-plan="დამწყები"><span class="lx-cmp-yes" role="img" aria-label="დამწყები: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="პრო"><span class="lx-cmp-yes" role="img" aria-label="პრო აგენტი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="გუნდი"><span class="lx-cmp-yes" role="img" aria-label="გუნდი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="სააგენტო"><span class="lx-cmp-yes" role="img" aria-label="სააგენტო: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td></tr>
+                  <tr><th scope="row">საკადასტრო კოდის დუბლიკატის შემოწმება</th><td data-plan="დამწყები"><span class="lx-cmp-yes" role="img" aria-label="დამწყები: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="პრო"><span class="lx-cmp-yes" role="img" aria-label="პრო აგენტი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="გუნდი"><span class="lx-cmp-yes" role="img" aria-label="გუნდი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="სააგენტო"><span class="lx-cmp-yes" role="img" aria-label="სააგენტო: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td></tr>
+                  <tr><th scope="row">Excel / CSV იმპორტი</th><td data-plan="დამწყები"><span class="lx-cmp-yes" role="img" aria-label="დამწყები: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="პრო"><span class="lx-cmp-yes" role="img" aria-label="პრო აგენტი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="გუნდი"><span class="lx-cmp-yes" role="img" aria-label="გუნდი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="სააგენტო"><span class="lx-cmp-yes" role="img" aria-label="სააგენტო: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td></tr>
+                  <tr class="lx-cmp-group"><th scope="rowgroup" colspan="5">კლიენტები და გარიგებები</th></tr>
+                  <tr><th scope="row">მდგმურის, მეპატრონის, მყიდველის და გამყიდველის ბაზა</th><td data-plan="დამწყები"><span class="lx-cmp-yes" role="img" aria-label="დამწყები: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="პრო"><span class="lx-cmp-yes" role="img" aria-label="პრო აგენტი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="გუნდი"><span class="lx-cmp-yes" role="img" aria-label="გუნდი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="სააგენტო"><span class="lx-cmp-yes" role="img" aria-label="სააგენტო: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td></tr>
+                  <tr><th scope="row">გარიგებების ეტაპები: ქირავნობა და გაყიდვა</th><td data-plan="დამწყები"><span class="lx-cmp-yes" role="img" aria-label="დამწყები: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="პრო"><span class="lx-cmp-yes" role="img" aria-label="პრო აგენტი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="გუნდი"><span class="lx-cmp-yes" role="img" aria-label="გუნდი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="სააგენტო"><span class="lx-cmp-yes" role="img" aria-label="სააგენტო: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td></tr>
+                  <tr><th scope="row">საკომისიოს კალკულატორი</th><td data-plan="დამწყები"><span class="lx-cmp-yes" role="img" aria-label="დამწყები: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="პრო"><span class="lx-cmp-yes" role="img" aria-label="პრო აგენტი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="გუნდი"><span class="lx-cmp-yes" role="img" aria-label="გუნდი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="სააგენტო"><span class="lx-cmp-yes" role="img" aria-label="სააგენტო: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td></tr>
+                  <tr><th scope="row">არასანდო კლიენტის ნიშანი</th><td data-plan="დამწყები"><span class="lx-cmp-yes" role="img" aria-label="დამწყები: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="პრო"><span class="lx-cmp-yes" role="img" aria-label="პრო აგენტი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="გუნდი"><span class="lx-cmp-yes" role="img" aria-label="გუნდი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="სააგენტო"><span class="lx-cmp-yes" role="img" aria-label="სააგენტო: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td></tr>
+                  <tr><th scope="row">კლიენტის მოთხოვნით ბინის შერჩევა<span>ბიუჯეტი, უბანი, ოთახები: საუკეთესო დამთხვევა ზემოთ</span></th><td data-plan="დამწყები"><span class="lx-cmp-no" role="img" aria-label="დამწყები: არ შედის"></span></td><td data-plan="პრო"><span class="lx-cmp-yes" role="img" aria-label="პრო აგენტი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="გუნდი"><span class="lx-cmp-yes" role="img" aria-label="გუნდი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="სააგენტო"><span class="lx-cmp-yes" role="img" aria-label="სააგენტო: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td></tr>
+                  <tr><th scope="row">ვადის გასვლის შეხსენებები<span>ქირავნობის ხელშეკრულებები, რომლებიც 30 დღეში იწურება</span></th><td data-plan="დამწყები"><span class="lx-cmp-no" role="img" aria-label="დამწყები: არ შედის"></span></td><td data-plan="პრო"><span class="lx-cmp-yes" role="img" aria-label="პრო აგენტი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="გუნდი"><span class="lx-cmp-yes" role="img" aria-label="გუნდი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="სააგენტო"><span class="lx-cmp-yes" role="img" aria-label="სააგენტო: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td></tr>
+                  <tr class="lx-cmp-group"><th scope="rowgroup" colspan="5">დოკუმენტები და ბრენდი</th></tr>
+                  <tr><th scope="row">ორენოვანი ქირავნობის ხელშეკრულება (KA/EN)</th><td data-plan="დამწყები"><span class="lx-cmp-no" role="img" aria-label="დამწყები: არ შედის"></span></td><td data-plan="პრო"><span class="lx-cmp-yes" role="img" aria-label="პრო აგენტი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="გუნდი"><span class="lx-cmp-yes" role="img" aria-label="გუნდი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="სააგენტო"><span class="lx-cmp-yes" role="img" aria-label="სააგენტო: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td></tr>
+                  <tr><th scope="row">ექსკლუზივი, საბროკერო, ბე, მიღება‑ჩაბარება<span>ავტომატურად ივსება ბინისა და გარიგების მონაცემებით</span></th><td data-plan="დამწყები"><span class="lx-cmp-no" role="img" aria-label="დამწყები: არ შედის"></span></td><td data-plan="პრო"><span class="lx-cmp-yes" role="img" aria-label="პრო აგენტი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="გუნდი"><span class="lx-cmp-yes" role="img" aria-label="გუნდი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="სააგენტო"><span class="lx-cmp-yes" role="img" aria-label="სააგენტო: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td></tr>
+                  <tr><th scope="row">შენი ლოგო და სახელი საჯარო გვერდებზე</th><td data-plan="დამწყები"><span class="lx-cmp-no" role="img" aria-label="დამწყები: არ შედის"></span></td><td data-plan="პრო"><span class="lx-cmp-yes" role="img" aria-label="პრო აგენტი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="გუნდი"><span class="lx-cmp-yes" role="img" aria-label="გუნდი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="სააგენტო"><span class="lx-cmp-yes" role="img" aria-label="სააგენტო: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td></tr>
+                  <tr><th scope="row">ბრენდის ფერი (White‑label)</th><td data-plan="დამწყები"><span class="lx-cmp-no" role="img" aria-label="დამწყები: არ შედის"></span></td><td data-plan="პრო"><span class="lx-cmp-no" role="img" aria-label="პრო აგენტი: არ შედის"></span></td><td data-plan="გუნდი"><span class="lx-cmp-no" role="img" aria-label="გუნდი: არ შედის"></span></td><td data-plan="სააგენტო"><span class="lx-cmp-yes" role="img" aria-label="სააგენტო: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td></tr>
+                  <tr class="lx-cmp-group"><th scope="rowgroup" colspan="5">გუნდი</th></tr>
+                  <tr><th scope="row">აგენტის როლი<span>ხედავს საერთო ბაზას, მუშაობს მხოლოდ თავის გარიგებებზე</span></th><td data-plan="დამწყები"><span class="lx-cmp-no" role="img" aria-label="დამწყები: არ შედის"></span></td><td data-plan="პრო"><span class="lx-cmp-no" role="img" aria-label="პრო აგენტი: არ შედის"></span></td><td data-plan="გუნდი"><span class="lx-cmp-yes" role="img" aria-label="გუნდი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="სააგენტო"><span class="lx-cmp-yes" role="img" aria-label="სააგენტო: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td></tr>
+                  <tr><th scope="row">შერჩეული ბინების ერთი ბმული<span>რამდენიმე ბინა ერთ გვერდზე კონკრეტული კლიენტისთვის</span></th><td data-plan="დამწყები"><span class="lx-cmp-no" role="img" aria-label="დამწყები: არ შედის"></span></td><td data-plan="პრო"><span class="lx-cmp-no" role="img" aria-label="პრო აგენტი: არ შედის"></span></td><td data-plan="გუნდი"><span class="lx-cmp-yes" role="img" aria-label="გუნდი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="სააგენტო"><span class="lx-cmp-yes" role="img" aria-label="სააგენტო: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td></tr>
+                  <tr><th scope="row">საკომისიოს გაყოფა და გასაცემი წილები<span>განცხადების აგენტი, გამყიდველი აგენტი, სააგენტო</span></th><td data-plan="დამწყები"><span class="lx-cmp-no" role="img" aria-label="დამწყები: არ შედის"></span></td><td data-plan="პრო"><span class="lx-cmp-no" role="img" aria-label="პრო აგენტი: არ შედის"></span></td><td data-plan="გუნდი"><span class="lx-cmp-yes" role="img" aria-label="გუნდი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="სააგენტო"><span class="lx-cmp-yes" role="img" aria-label="სააგენტო: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td></tr>
+                  <tr><th scope="row">გუნდის რეიტინგი</th><td data-plan="დამწყები"><span class="lx-cmp-no" role="img" aria-label="დამწყები: არ შედის"></span></td><td data-plan="პრო"><span class="lx-cmp-no" role="img" aria-label="პრო აგენტი: არ შედის"></span></td><td data-plan="გუნდი"><span class="lx-cmp-yes" role="img" aria-label="გუნდი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="სააგენტო"><span class="lx-cmp-yes" role="img" aria-label="სააგენტო: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td></tr>
+                  <tr><th scope="row">ექსპორტი Excel / CSV</th><td data-plan="დამწყები"><span class="lx-cmp-no" role="img" aria-label="დამწყები: არ შედის"></span></td><td data-plan="პრო"><span class="lx-cmp-no" role="img" aria-label="პრო აგენტი: არ შედის"></span></td><td data-plan="გუნდი"><span class="lx-cmp-yes" role="img" aria-label="გუნდი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="სააგენტო"><span class="lx-cmp-yes" role="img" aria-label="სააგენტო: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td></tr>
+                  <tr class="lx-cmp-group"><th scope="rowgroup" colspan="5">მხარდაჭერა</th></tr>
+                  <tr><th scope="row">დახმარება WhatsApp‑ში</th><td data-plan="დამწყები"><span class="lx-cmp-yes" role="img" aria-label="დამწყები: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="პრო"><span class="lx-cmp-yes" role="img" aria-label="პრო აგენტი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="გუნდი"><span class="lx-cmp-yes" role="img" aria-label="გუნდი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="სააგენტო"><span class="lx-cmp-yes" role="img" aria-label="სააგენტო: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td></tr>
+                  <tr><th scope="row">პრიორიტეტული მხარდაჭერა</th><td data-plan="დამწყები"><span class="lx-cmp-no" role="img" aria-label="დამწყები: არ შედის"></span></td><td data-plan="პრო"><span class="lx-cmp-no" role="img" aria-label="პრო აგენტი: არ შედის"></span></td><td data-plan="გუნდი"><span class="lx-cmp-yes" role="img" aria-label="გუნდი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="სააგენტო"><span class="lx-cmp-yes" role="img" aria-label="სააგენტო: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <ul class="lx-cmp-notes">
+                <li><strong>14 დღე ყველაფერი ღიაა.</strong> რეგისტრაციისას ბარათი არ გჭირდება: საცდელ პერიოდში 50 ობიექტი და ყველა ფუნქცია გაქვს.</li>
+                <li><strong>საცდელის შემდეგ არაფერი იშლება.</strong> ანგარიში უფასო პაკეტზე გადადის: მონაცემები რჩება, 3 ყველაზე ძველი ობიექტის ბმული მუშაობს, დანარჩენი ჩერდება, სანამ პაკეტს არ აირჩევ.</li>
+                <li><strong>გააქტიურება იმავე დღეს.</strong> მოგვწერე WhatsApp‑ში, გადაიხადე და პაკეტს ჩაგირთავთ. ხელშეკრულება და ვალდებულება არ არის: როცა ვადა გავა, ანგარიში უბრალოდ უფასოზე ბრუნდება.</li>
+              </ul>
+            </div>
+          </details>
 
-          <!-- Full plan comparison -->
-          <div class="lx-cmp" id="plans-compare">
-            <div class="lx-cmp-head">
-              <h3>რას შეიცავს თითოეული პაკეტი</h3>
-              <p>სრული სია, რომ ყიდვამდე ზუსტად იცოდე, რას იღებ.</p>
-            </div>
-            <div class="lx-cmp-scroll" tabindex="0" role="region" aria-label="პაკეტების შედარება">
-              <table class="lx-cmp-table">
-                <thead>
-                  <tr>
-                    <th scope="col">ფუნქცია</th>
-                    <th scope="col">დამწყები<small>0 ₾</small></th>
-                    <th scope="col" class="is-featured">პრო აგენტი<small>39 ₾ / თვე</small></th>
-                    <th scope="col">გუნდი<small>99 ₾ / თვე</small></th>
-                    <th scope="col">სააგენტო<small>249 ₾ / თვე</small></th>
-                  </tr>
-                </thead>
-                <tbody>
-                <tr class="lx-cmp-group"><th scope="rowgroup" colspan="5">ლიმიტები</th></tr>
-                <tr><th scope="row">აქტიური ობიექტი<span>დაარქივებული ობიექტი ლიმიტში არ ითვლება</span></th><td data-plan="დამწყები" class="lx-tabular">3</td><td data-plan="პრო" class="lx-tabular">50</td><td data-plan="გუნდი" class="lx-tabular">150</td><td data-plan="სააგენტო" class="lx-tabular">ულიმიტო</td></tr>
-                <tr><th scope="row">მომხმარებელი (მენეჯერი ან აგენტი)</th><td data-plan="დამწყები" class="lx-tabular">1</td><td data-plan="პრო" class="lx-tabular">1</td><td data-plan="გუნდი" class="lx-tabular">3</td><td data-plan="სააგენტო" class="lx-tabular">ულიმიტო</td></tr>
-                <tr><th scope="row">საველე თანამშრომელი<span>ხედავს მხოლოდ თავის საქმეებს ტელეფონზე</span></th><td data-plan="დამწყები" class="lx-tabular">ულიმიტო</td><td data-plan="პრო" class="lx-tabular">ულიმიტო</td><td data-plan="გუნდი" class="lx-tabular">ულიმიტო</td><td data-plan="სააგენტო" class="lx-tabular">ულიმიტო</td></tr>
-                <tr class="lx-cmp-group"><th scope="rowgroup" colspan="5">ბინები და ბმულები</th></tr>
-                <tr><th scope="row">ჭკვიანი ბმული თითო ბინაზე<span>ფოტოები, ფასი ორ ვალუტაში, რუკა, WhatsApp ღილაკი</span></th><td data-plan="დამწყები"><span class="lx-cmp-yes" role="img" aria-label="დამწყები: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="პრო"><span class="lx-cmp-yes" role="img" aria-label="პრო აგენტი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="გუნდი"><span class="lx-cmp-yes" role="img" aria-label="გუნდი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="სააგენტო"><span class="lx-cmp-yes" role="img" aria-label="სააგენტო: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td></tr>
-                <tr><th scope="row">ბმულის სტატისტიკა<span>ნახვები, WhatsApp‑ზე დაჭერა, ზარები</span></th><td data-plan="დამწყები"><span class="lx-cmp-yes" role="img" aria-label="დამწყები: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="პრო"><span class="lx-cmp-yes" role="img" aria-label="პრო აგენტი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="გუნდი"><span class="lx-cmp-yes" role="img" aria-label="გუნდი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="სააგენტო"><span class="lx-cmp-yes" role="img" aria-label="სააგენტო: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td></tr>
-                <tr><th scope="row">შევსება განცხადების ბმულით<span>MyHome.ge, SS.ge, Place.ge</span></th><td data-plan="დამწყები"><span class="lx-cmp-no" role="img" aria-label="დამწყები: არ შედის"></span></td><td data-plan="პრო"><span class="lx-cmp-yes" role="img" aria-label="პრო აგენტი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="გუნდი"><span class="lx-cmp-yes" role="img" aria-label="გუნდი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="სააგენტო"><span class="lx-cmp-yes" role="img" aria-label="სააგენტო: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td></tr>
-                <tr><th scope="row">PDF პრეზენტაცია<span>კატალოგი ან ერთგვერდიანი ფლაერი QR კოდით</span></th><td data-plan="დამწყები"><span class="lx-cmp-no" role="img" aria-label="დამწყები: არ შედის"></span></td><td data-plan="პრო"><span class="lx-cmp-yes" role="img" aria-label="პრო აგენტი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="გუნდი"><span class="lx-cmp-yes" role="img" aria-label="გუნდი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="სააგენტო"><span class="lx-cmp-yes" role="img" aria-label="სააგენტო: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td></tr>
-                <tr><th scope="row">პოსტის გენერატორი<span>Facebook, Instagram, WhatsApp; ქართულად და ინგლისურად</span></th><td data-plan="დამწყები"><span class="lx-cmp-yes" role="img" aria-label="დამწყები: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="პრო"><span class="lx-cmp-yes" role="img" aria-label="პრო აგენტი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="გუნდი"><span class="lx-cmp-yes" role="img" aria-label="გუნდი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="სააგენტო"><span class="lx-cmp-yes" role="img" aria-label="სააგენტო: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td></tr>
-                <tr><th scope="row">გაზიარება კოლეგა აგენტთან<span>მეპატრონის მონაცემები ნაგულისხმევად დამალულია</span></th><td data-plan="დამწყები"><span class="lx-cmp-yes" role="img" aria-label="დამწყები: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="პრო"><span class="lx-cmp-yes" role="img" aria-label="პრო აგენტი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="გუნდი"><span class="lx-cmp-yes" role="img" aria-label="გუნდი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="სააგენტო"><span class="lx-cmp-yes" role="img" aria-label="სააგენტო: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td></tr>
-                <tr><th scope="row">საკადასტრო კოდის დუბლიკატის შემოწმება</th><td data-plan="დამწყები"><span class="lx-cmp-yes" role="img" aria-label="დამწყები: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="პრო"><span class="lx-cmp-yes" role="img" aria-label="პრო აგენტი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="გუნდი"><span class="lx-cmp-yes" role="img" aria-label="გუნდი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="სააგენტო"><span class="lx-cmp-yes" role="img" aria-label="სააგენტო: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td></tr>
-                <tr><th scope="row">Excel / CSV იმპორტი</th><td data-plan="დამწყები"><span class="lx-cmp-yes" role="img" aria-label="დამწყები: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="პრო"><span class="lx-cmp-yes" role="img" aria-label="პრო აგენტი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="გუნდი"><span class="lx-cmp-yes" role="img" aria-label="გუნდი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="სააგენტო"><span class="lx-cmp-yes" role="img" aria-label="სააგენტო: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td></tr>
-                <tr class="lx-cmp-group"><th scope="rowgroup" colspan="5">კლიენტები და გარიგებები</th></tr>
-                <tr><th scope="row">მდგმურის, მეპატრონის, მყიდველის და გამყიდველის ბაზა</th><td data-plan="დამწყები"><span class="lx-cmp-yes" role="img" aria-label="დამწყები: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="პრო"><span class="lx-cmp-yes" role="img" aria-label="პრო აგენტი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="გუნდი"><span class="lx-cmp-yes" role="img" aria-label="გუნდი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="სააგენტო"><span class="lx-cmp-yes" role="img" aria-label="სააგენტო: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td></tr>
-                <tr><th scope="row">გარიგებების ეტაპები: ქირავნობა და გაყიდვა</th><td data-plan="დამწყები"><span class="lx-cmp-yes" role="img" aria-label="დამწყები: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="პრო"><span class="lx-cmp-yes" role="img" aria-label="პრო აგენტი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="გუნდი"><span class="lx-cmp-yes" role="img" aria-label="გუნდი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="სააგენტო"><span class="lx-cmp-yes" role="img" aria-label="სააგენტო: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td></tr>
-                <tr><th scope="row">საკომისიოს კალკულატორი</th><td data-plan="დამწყები"><span class="lx-cmp-yes" role="img" aria-label="დამწყები: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="პრო"><span class="lx-cmp-yes" role="img" aria-label="პრო აგენტი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="გუნდი"><span class="lx-cmp-yes" role="img" aria-label="გუნდი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="სააგენტო"><span class="lx-cmp-yes" role="img" aria-label="სააგენტო: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td></tr>
-                <tr><th scope="row">არასანდო კლიენტის ნიშანი</th><td data-plan="დამწყები"><span class="lx-cmp-yes" role="img" aria-label="დამწყები: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="პრო"><span class="lx-cmp-yes" role="img" aria-label="პრო აგენტი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="გუნდი"><span class="lx-cmp-yes" role="img" aria-label="გუნდი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="სააგენტო"><span class="lx-cmp-yes" role="img" aria-label="სააგენტო: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td></tr>
-                <tr><th scope="row">კლიენტის მოთხოვნით ბინის შერჩევა<span>ბიუჯეტი, უბანი, ოთახები: საუკეთესო დამთხვევა ზემოთ</span></th><td data-plan="დამწყები"><span class="lx-cmp-no" role="img" aria-label="დამწყები: არ შედის"></span></td><td data-plan="პრო"><span class="lx-cmp-yes" role="img" aria-label="პრო აგენტი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="გუნდი"><span class="lx-cmp-yes" role="img" aria-label="გუნდი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="სააგენტო"><span class="lx-cmp-yes" role="img" aria-label="სააგენტო: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td></tr>
-                <tr><th scope="row">ვადის გასვლის შეხსენებები<span>ქირავნობის ხელშეკრულებები, რომლებიც 30 დღეში იწურება</span></th><td data-plan="დამწყები"><span class="lx-cmp-no" role="img" aria-label="დამწყები: არ შედის"></span></td><td data-plan="პრო"><span class="lx-cmp-yes" role="img" aria-label="პრო აგენტი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="გუნდი"><span class="lx-cmp-yes" role="img" aria-label="გუნდი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="სააგენტო"><span class="lx-cmp-yes" role="img" aria-label="სააგენტო: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td></tr>
-                <tr class="lx-cmp-group"><th scope="rowgroup" colspan="5">დოკუმენტები და ბრენდი</th></tr>
-                <tr><th scope="row">ორენოვანი ქირავნობის ხელშეკრულება (KA/EN)</th><td data-plan="დამწყები"><span class="lx-cmp-no" role="img" aria-label="დამწყები: არ შედის"></span></td><td data-plan="პრო"><span class="lx-cmp-yes" role="img" aria-label="პრო აგენტი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="გუნდი"><span class="lx-cmp-yes" role="img" aria-label="გუნდი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="სააგენტო"><span class="lx-cmp-yes" role="img" aria-label="სააგენტო: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td></tr>
-                <tr><th scope="row">ექსკლუზივი, საბროკერო, ბე, მიღება‑ჩაბარება<span>ავტომატურად ივსება ბინისა და გარიგების მონაცემებით</span></th><td data-plan="დამწყები"><span class="lx-cmp-no" role="img" aria-label="დამწყები: არ შედის"></span></td><td data-plan="პრო"><span class="lx-cmp-yes" role="img" aria-label="პრო აგენტი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="გუნდი"><span class="lx-cmp-yes" role="img" aria-label="გუნდი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="სააგენტო"><span class="lx-cmp-yes" role="img" aria-label="სააგენტო: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td></tr>
-                <tr><th scope="row">შენი ლოგო და სახელი საჯარო გვერდებზე</th><td data-plan="დამწყები"><span class="lx-cmp-no" role="img" aria-label="დამწყები: არ შედის"></span></td><td data-plan="პრო"><span class="lx-cmp-yes" role="img" aria-label="პრო აგენტი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="გუნდი"><span class="lx-cmp-yes" role="img" aria-label="გუნდი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="სააგენტო"><span class="lx-cmp-yes" role="img" aria-label="სააგენტო: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td></tr>
-                <tr><th scope="row">ბრენდის ფერი (White‑label)</th><td data-plan="დამწყები"><span class="lx-cmp-no" role="img" aria-label="დამწყები: არ შედის"></span></td><td data-plan="პრო"><span class="lx-cmp-no" role="img" aria-label="პრო აგენტი: არ შედის"></span></td><td data-plan="გუნდი"><span class="lx-cmp-no" role="img" aria-label="გუნდი: არ შედის"></span></td><td data-plan="სააგენტო"><span class="lx-cmp-yes" role="img" aria-label="სააგენტო: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td></tr>
-                <tr class="lx-cmp-group"><th scope="rowgroup" colspan="5">გუნდი</th></tr>
-                <tr><th scope="row">აგენტის როლი<span>ხედავს საერთო ბაზას, მუშაობს მხოლოდ თავის გარიგებებზე</span></th><td data-plan="დამწყები"><span class="lx-cmp-no" role="img" aria-label="დამწყები: არ შედის"></span></td><td data-plan="პრო"><span class="lx-cmp-no" role="img" aria-label="პრო აგენტი: არ შედის"></span></td><td data-plan="გუნდი"><span class="lx-cmp-yes" role="img" aria-label="გუნდი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="სააგენტო"><span class="lx-cmp-yes" role="img" aria-label="სააგენტო: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td></tr>
-                <tr><th scope="row">შერჩეული ბინების ერთი ბმული<span>რამდენიმე ბინა ერთ გვერდზე კონკრეტული კლიენტისთვის</span></th><td data-plan="დამწყები"><span class="lx-cmp-no" role="img" aria-label="დამწყები: არ შედის"></span></td><td data-plan="პრო"><span class="lx-cmp-no" role="img" aria-label="პრო აგენტი: არ შედის"></span></td><td data-plan="გუნდი"><span class="lx-cmp-yes" role="img" aria-label="გუნდი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="სააგენტო"><span class="lx-cmp-yes" role="img" aria-label="სააგენტო: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td></tr>
-                <tr><th scope="row">საკომისიოს გაყოფა და გასაცემი წილები<span>განცხადების აგენტი, გამყიდველი აგენტი, სააგენტო</span></th><td data-plan="დამწყები"><span class="lx-cmp-no" role="img" aria-label="დამწყები: არ შედის"></span></td><td data-plan="პრო"><span class="lx-cmp-no" role="img" aria-label="პრო აგენტი: არ შედის"></span></td><td data-plan="გუნდი"><span class="lx-cmp-yes" role="img" aria-label="გუნდი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="სააგენტო"><span class="lx-cmp-yes" role="img" aria-label="სააგენტო: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td></tr>
-                <tr><th scope="row">გუნდის რეიტინგი</th><td data-plan="დამწყები"><span class="lx-cmp-no" role="img" aria-label="დამწყები: არ შედის"></span></td><td data-plan="პრო"><span class="lx-cmp-no" role="img" aria-label="პრო აგენტი: არ შედის"></span></td><td data-plan="გუნდი"><span class="lx-cmp-yes" role="img" aria-label="გუნდი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="სააგენტო"><span class="lx-cmp-yes" role="img" aria-label="სააგენტო: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td></tr>
-                <tr><th scope="row">ექსპორტი Excel / CSV</th><td data-plan="დამწყები"><span class="lx-cmp-no" role="img" aria-label="დამწყები: არ შედის"></span></td><td data-plan="პრო"><span class="lx-cmp-no" role="img" aria-label="პრო აგენტი: არ შედის"></span></td><td data-plan="გუნდი"><span class="lx-cmp-yes" role="img" aria-label="გუნდი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="სააგენტო"><span class="lx-cmp-yes" role="img" aria-label="სააგენტო: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td></tr>
-                <tr class="lx-cmp-group"><th scope="rowgroup" colspan="5">მხარდაჭერა</th></tr>
-                <tr><th scope="row">დახმარება WhatsApp‑ში</th><td data-plan="დამწყები"><span class="lx-cmp-yes" role="img" aria-label="დამწყები: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="პრო"><span class="lx-cmp-yes" role="img" aria-label="პრო აგენტი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="გუნდი"><span class="lx-cmp-yes" role="img" aria-label="გუნდი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="სააგენტო"><span class="lx-cmp-yes" role="img" aria-label="სააგენტო: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td></tr>
-                <tr><th scope="row">პრიორიტეტული მხარდაჭერა</th><td data-plan="დამწყები"><span class="lx-cmp-no" role="img" aria-label="დამწყები: არ შედის"></span></td><td data-plan="პრო"><span class="lx-cmp-no" role="img" aria-label="პრო აგენტი: არ შედის"></span></td><td data-plan="გუნდი"><span class="lx-cmp-yes" role="img" aria-label="გუნდი: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td data-plan="სააგენტო"><span class="lx-cmp-yes" role="img" aria-label="სააგენტო: შედის"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td></tr>
-                </tbody>
-              </table>
-            </div>
-            <ul class="lx-cmp-notes">
-              <li><strong>14 დღე ყველაფერი ღიაა.</strong> რეგისტრაციისას ბარათი არ გჭირდება: საცდელ პერიოდში 50 ობიექტი და ყველა ფუნქცია გაქვს.</li>
-              <li><strong>საცდელის შემდეგ არაფერი იშლება.</strong> ანგარიში უფასო პაკეტზე გადადის: მონაცემები რჩება, 3 ყველაზე ძველი ობიექტის ბმული მუშაობს, დანარჩენი ჩერდება, სანამ პაკეტს არ აირჩევ.</li>
-              <li><strong>გააქტიურება იმავე დღეს.</strong> მოგვწერე WhatsApp‑ში, გადაიხადე და პაკეტს ჩაგირთავთ. ხელშეკრულება და ვალდებულება არ არის: როცა ვადა გავა, ანგარიში უბრალოდ უფასოზე ბრუნდება.</li>
-            </ul>
+        </div>
+      </section>
+
+      <!-- 6.5 FAQ Accordion Section -->
+      <section class="lx-faq-section" id="faq">
+        <div class="lx-container">
+          <div class="lx-section-header">
+            <span class="lx-badge">კითხვა-პასუხი</span>
+            <h2>ხშირად დასმული კითხვები</h2>
+            <p>ყველაფერი, რაც Rigzea-ს დაწყებამდე უნდა იცოდე</p>
           </div>
 
+          <div class="lx-faq-accordion">
+            <details class="lx-faq-item">
+              <summary class="lx-faq-question">
+                <span>1. ჩემი მესაკუთრეების ნომრებს სხვა აგენტები ხომ ვერ ნახავენ?</span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lx-faq-chevron"><polyline points="6 9 12 15 18 9"></polyline></svg>
+              </summary>
+              <div class="lx-faq-answer">
+                <p><strong>არა, არასდროს.</strong> მესაკუთრის სახელი, ტელეფონის ნომერი და ბინის ზუსტი ნომერი მკაცრად დაცულია შენს პირად სამუშაო კაბინეტში. საჯარო VIP ბმულზე ჩანს მხოლოდ შენი საკონტაქტო ნომერი, შენი ლოგო და WhatsApp ღილაკი.</p>
+              </div>
+            </details>
+
+            <details class="lx-faq-item">
+              <summary class="lx-faq-question">
+                <span>2. რეგისტრაციისას საბანკო ბარათის მიბმა საჭიროა?</span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lx-faq-chevron"><polyline points="6 9 12 15 18 9"></polyline></svg>
+              </summary>
+              <div class="lx-faq-answer">
+                <p><strong>არა.</strong> საცდელი 14 დღით სარგებლობა სრულიად უფასოა და საბანკო ბარათის მონაცემების შეყვანა არ გჭირდება. თანხა ავტომატურად არასდროს ჩამოგეჭრება.</p>
+              </div>
+            </details>
+
+            <details class="lx-faq-item">
+              <summary class="lx-faq-question">
+                <span>3. ტელეფონიდან მუშაობს თუ კომპიუტერი მჭირდება?</span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lx-faq-chevron"><polyline points="6 9 12 15 18 9"></polyline></svg>
+              </summary>
+              <div class="lx-faq-answer">
+                <p><strong>სრულად მორგებულია მობილურზე.</strong> Rigzea სპეციალურად შეიქმნა აქტიური რეალტორებისთვის, რომლებიც სულ გზაში არიან: ბმულის გადმოტანა, ფოტოების ატვირთვა და კლიენტთან WhatsApp-ით გაგზავნა ტელეფონიდან სულ რაღაც 10-15 წამში ხდება.</p>
+              </div>
+            </details>
+
+            <details class="lx-faq-item">
+              <summary class="lx-faq-question">
+                <span>4. საცდელი ვადის გასვლის შემდეგ ჩემი ბაზა ხომ არ წაიშლება?</span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lx-faq-chevron"><polyline points="6 9 12 15 18 9"></polyline></svg>
+              </summary>
+              <div class="lx-faq-answer">
+                <p><strong>არაფერი იშლება.</strong> 14 დღის გასვლის შემდეგ შენი ანგარიში ავტომატურად გადადის სამუდამოდ უფასო „დამწყები“ პაკეტზე. შენი ბაზა, კონტაქტები და ისტორია უსაფრთხოდ ინახება და ნებისმიერ დროს შეგიძლია გააგრძელო მუშაობა.</p>
+              </div>
+            </details>
+          </div>
         </div>
       </section>
 
@@ -1057,10 +925,12 @@
         </div>
 
         <div class="lx-footer-links">
+          <a href="#how-it-works">როგორ მუშაობს</a>
           <a href="#features">ფუნქციები</a>
           <a href="#comparison">შედარება</a>
           <a href="#calculator">კალკულატორი</a>
           <a href="#pricing">ტარიფები</a>
+          <a href="#faq">FAQ</a>
           <a href="mailto:contact@rigzea.com">contact@rigzea.com</a>
           <a href="/app/">სისტემაში შესვლა</a>
         </div>

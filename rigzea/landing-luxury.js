@@ -489,6 +489,14 @@
   const dealsSlider = document.querySelector('#calc-deals');
   const splitSelect = document.querySelector('#calc-split');
 
+  const priceLabel = document.querySelector('#calc-price-label');
+  const boundMin = document.querySelector('#calc-bound-min');
+  const boundMid = document.querySelector('#calc-bound-mid');
+  const boundMax = document.querySelector('#calc-bound-max');
+  const dealsMin = document.querySelector('#calc-deals-min');
+  const dealsMid = document.querySelector('#calc-deals-mid');
+  const dealsMax = document.querySelector('#calc-deals-max');
+
   const rentVal = document.querySelector('#calc-rent-val');
   const dealsVal = document.querySelector('#calc-deals-val');
 
@@ -497,6 +505,9 @@
   const annualCommUsd = document.querySelector('#calc-result-annual-usd');
   const hoursSaved = document.querySelector('#calc-result-hours');
   const calcHighlight = document.querySelector('.lx-calc-metric-highlight');
+  const calcModeBtns = document.querySelectorAll('.lx-calc-mode-btn');
+
+  let currentCalcMode = 'rent'; // 'rent' | 'sale'
 
   // State interpolation for numbers
   const tickerState = {
@@ -565,17 +576,17 @@
   function triggerROIChange() {
     if (!rentSlider || !dealsSlider) return;
 
-    const rent = parseFloat(rentSlider.value);
+    const price = parseFloat(rentSlider.value);
     const deals = parseFloat(dealsSlider.value);
-    const splitRate = splitSelect ? parseFloat(splitSelect.value) : 0.50;
+    const splitRate = splitSelect ? parseFloat(splitSelect.value) : (currentCalcMode === 'sale' ? 0.03 : 0.50);
 
-    const monthlyTotal = rent * deals * splitRate;
+    const monthlyTotal = price * deals * splitRate;
     const gelRate = 2.72;
     const monthlyGel = Math.round(monthlyTotal * gelRate);
     const annualTotal = monthlyTotal * 12;
-    const saved = deals * 8;
+    const saved = deals * (currentCalcMode === 'sale' ? 16 : 8);
 
-    tickerState.targetRent = rent;
+    tickerState.targetRent = price;
     tickerState.targetDeals = deals;
     tickerState.targetMonthlyUsd = Math.round(monthlyTotal);
     tickerState.targetMonthlyGel = monthlyGel;
@@ -590,6 +601,82 @@
     }
   }
 
+  function setCalcMode(mode) {
+    currentCalcMode = mode;
+    calcModeBtns.forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.calcMode === mode);
+    });
+
+    if (mode === 'sale') {
+      if (priceLabel) priceLabel.textContent = 'ბინის საშუალო ფასი ($)';
+      if (rentSlider) {
+        rentSlider.min = '50000';
+        rentSlider.max = '300000';
+        rentSlider.step = '5000';
+        rentSlider.value = '120000';
+      }
+      if (boundMin) boundMin.textContent = '$50k';
+      if (boundMid) boundMid.textContent = '$175k';
+      if (boundMax) boundMax.textContent = '$300k';
+
+      if (dealsSlider) {
+        dealsSlider.min = '1';
+        dealsSlider.max = '8';
+        dealsSlider.step = '1';
+        dealsSlider.value = '1';
+      }
+      if (dealsMin) dealsMin.textContent = '1';
+      if (dealsMid) dealsMid.textContent = '4';
+      if (dealsMax) dealsMax.textContent = '8';
+
+      if (splitSelect) {
+        splitSelect.innerHTML = `
+          <option value="0.03">3%: სრული საკომისიო (გაყიდვა)</option>
+          <option value="0.015">1.5%: გაყოფილი საკომისიო (Co-Broker)</option>
+        `;
+      }
+    } else {
+      if (priceLabel) priceLabel.textContent = 'საშუალო ქირა ($)';
+      if (rentSlider) {
+        rentSlider.min = '300';
+        rentSlider.max = '3000';
+        rentSlider.step = '50';
+        rentSlider.value = '800';
+      }
+      if (boundMin) boundMin.textContent = '$300';
+      if (boundMid) boundMid.textContent = '$1,500';
+      if (boundMax) boundMax.textContent = '$3,000';
+
+      if (dealsSlider) {
+        dealsSlider.min = '1';
+        dealsSlider.max = '15';
+        dealsSlider.step = '1';
+        dealsSlider.value = '4';
+      }
+      if (dealsMin) dealsMin.textContent = '1';
+      if (dealsMid) dealsMid.textContent = '5';
+      if (dealsMax) dealsMax.textContent = '15';
+
+      if (splitSelect) {
+        splitSelect.innerHTML = `
+          <option value="0.50">50%: სრული საკომისიო</option>
+          <option value="0.25">25%: გაყოფილი საკომისიო (50/50)</option>
+        `;
+      }
+    }
+
+    triggerROIChange();
+  }
+
+  calcModeBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const mode = btn.dataset.calcMode;
+      if (mode && mode !== currentCalcMode) {
+        setCalcMode(mode);
+      }
+    });
+  });
+
   rentSlider?.addEventListener('input', triggerROIChange);
   dealsSlider?.addEventListener('input', triggerROIChange);
   splitSelect?.addEventListener('change', triggerROIChange);
@@ -598,148 +685,11 @@
   triggerROIChange();
 
   // =========================================================================
-  // 10. HORIZONTAL PIN-SCROLL CHOREOGRAPHY (BENTO SHOWCASE)
-  //     60fps LERP Scrubber with linear interpolation & smooth camera gliding
+  // 10. SCROLL EVENT LISTENER (Header & Parallax)
   // =========================================================================
-  const pinWrap = document.querySelector('.lx-pin-scroll-wrap');
-  const horizontalViewport = document.querySelector('.lx-horizontal-viewport');
-  const horizontalTrack = document.querySelector('.lx-horizontal-track');
-  const progressBarFill = document.querySelector('.lx-pin-progress-bar-fill');
-  const stepCounter = document.querySelector('.lx-pin-step-counter');
-  const bentoCards = document.querySelectorAll('.lx-horizontal-track .lx-bento-card');
-  const pinDots = document.querySelectorAll('.lx-pin-dot');
-
-  let isMobileMode = window.innerWidth <= 900;
-  let laidOutW = window.innerWidth;
-  let wrapTop = 0;
-  let scrollDistance = 0;
-  let maxHorizontalScroll = 0;
-
-  let targetProgress = 0;
-  let currentProgress = 0;
-  let currentTranslateX = 0;
-  let isLoopActive = false;
-  let activeStep = 0;
-
-  const LERP_FACTOR = prefersReducedMotion ? 1.0 : 0.16;
-
-  function measureLayout() {
-    laidOutW = window.innerWidth;
-    isMobileMode = laidOutW <= 900;
-
-    if (!pinWrap || !horizontalTrack) return;
-
-    if (isMobileMode) {
-      horizontalTrack.style.transform = '';
-      bentoCards.forEach(c => {
-        c.style.transform = '';
-        c.style.opacity = '';
-        c._bentoScale = 1.0;
-      });
-      syncMobileState();
-      return;
-    }
-
-    const rect = pinWrap.getBoundingClientRect();
-    const currentY = window.scrollY || window.pageYOffset;
-    wrapTop = rect.top + currentY;
-    const wrapHeight = pinWrap.offsetHeight;
-    const windowHeight = window.innerHeight;
-
-    scrollDistance = Math.max(1, wrapHeight - windowHeight);
-    const trackWidth = horizontalTrack.scrollWidth;
-    maxHorizontalScroll = Math.max(0, trackWidth - laidOutW + 80);
-
-    const pastTop = currentY - wrapTop;
-    targetProgress = Math.max(0, Math.min(1, pastTop / scrollDistance));
-
-    if (prefersReducedMotion) {
-      currentProgress = targetProgress;
-    }
-
-    renderScrubFrame(true);
-  }
-
-  function renderScrubFrame(force = false) {
-    if (isMobileMode || !horizontalTrack) return;
-
-    currentTranslateX = currentProgress * maxHorizontalScroll;
-    horizontalTrack.style.transform = `translate3d(-${currentTranslateX.toFixed(2)}px, 0, 0)`;
-
-    if (progressBarFill) {
-      const scale = 0.2 + currentProgress * 0.8;
-      progressBarFill.style.transform = `scaleX(${scale.toFixed(4)})`;
-    }
-
-    const nearest = Math.min(4, Math.max(0, Math.round(currentProgress * 4)));
-    if (nearest !== activeStep || force) {
-      activeStep = nearest;
-      if (stepCounter) {
-        stepCounter.textContent = `0${activeStep + 1} / 05`;
-      }
-      pinDots.forEach((dot, k) => {
-        dot.classList.toggle('active', k === activeStep);
-      });
-    }
-
-    if (!prefersReducedMotion && bentoCards.length) {
-      bentoCards.forEach((card, i) => {
-        const cardCenterProgress = i / 4;
-        const dist = Math.abs(currentProgress - cardCenterProgress);
-        const rawFocus = Math.max(0, 1 - dist / 0.28);
-        const smoothFocus = rawFocus * rawFocus * (3 - 2 * rawFocus);
-
-        const scale = (0.975 + 0.025 * smoothFocus).toFixed(4);
-        const opacity = (0.70 + 0.30 * smoothFocus).toFixed(3);
-
-        card._bentoScale = parseFloat(scale);
-        card.style.opacity = opacity;
-        card.classList.toggle('is-active-feature', smoothFocus > 0.65);
-
-        // If card is not actively hovered by 3D tilt, apply scale
-        if (!card.matches(':hover')) {
-          card.style.transform = `scale(${scale})`;
-        }
-      });
-    }
-  }
-
-  function scrubTick() {
-    if (isMobileMode) {
-      isLoopActive = false;
-      return;
-    }
-
-    const delta = targetProgress - currentProgress;
-
-    if (Math.abs(delta) > 0.0003) {
-      currentProgress += delta * LERP_FACTOR;
-      renderScrubFrame();
-      requestAnimationFrame(scrubTick);
-    } else {
-      currentProgress = targetProgress;
-      renderScrubFrame();
-      isLoopActive = false;
-    }
-  }
-
-  function wakeScrubLoop() {
-    if (!isLoopActive && !isMobileMode) {
-      isLoopActive = true;
-      requestAnimationFrame(scrubTick);
-    }
-  }
-
-  // Unified Scroll Listener (Pure Math, 60fps)
   function handleScrollUpdate(scrollY) {
-    updateHeader(scrollY);
-    updateParallax(scrollY);
-
-    if (!isMobileMode && scrollDistance > 0) {
-      const pastTop = scrollY - wrapTop;
-      targetProgress = Math.max(0, Math.min(1, pastTop / scrollDistance));
-      wakeScrubLoop();
-    }
+    if (typeof updateHeader === 'function') updateHeader(scrollY);
+    if (typeof updateParallax === 'function') updateParallax(scrollY);
   }
 
   if (lenis) {
@@ -753,87 +703,14 @@
     }, { passive: true });
   }
 
-  function syncMobileState() {
-    if (!isMobileMode || !horizontalViewport || !bentoCards.length) return;
-
-    const scrollLeft = horizontalViewport.scrollLeft;
-    const card = bentoCards[0];
-    const cardWidth = card ? card.offsetWidth : 300;
-    const gap = 16;
-    const stride = cardWidth + gap;
-
-    const nearestIdx = Math.min(4, Math.max(0, Math.round(scrollLeft / stride)));
-
-    if (stepCounter) {
-      stepCounter.textContent = `0${nearestIdx + 1} / 05`;
-    }
-    if (progressBarFill) {
-      const scale = 0.2 + (nearestIdx / 4) * 0.8;
-      progressBarFill.style.transform = `scaleX(${scale.toFixed(4)})`;
-    }
-    pinDots.forEach((dot, k) => {
-      dot.classList.toggle('active', k === nearestIdx);
-    });
-    bentoCards.forEach((c, idx) => {
-      c.classList.toggle('is-active-feature', idx === nearestIdx);
-    });
-  }
-
-  let mobileScrollTicking = false;
-  if (horizontalViewport) {
-    horizontalViewport.addEventListener('scroll', () => {
-      if (!mobileScrollTicking) {
-        requestAnimationFrame(() => {
-          mobileScrollTicking = false;
-          syncMobileState();
-        });
-        mobileScrollTicking = true;
-      }
-    }, { passive: true });
-  }
-
-  pinDots.forEach((dot, k) => {
-    dot.addEventListener('click', () => {
-      if (isMobileMode) {
-        if (bentoCards[k] && horizontalViewport) {
-          const targetX = bentoCards[k].offsetLeft - 20;
-          horizontalViewport.scrollTo({
-            left: targetX,
-            behavior: prefersReducedMotion ? 'auto' : 'smooth'
-          });
-        }
-      } else {
-        if (scrollDistance > 0) {
-          const targetY = wrapTop + (k / 4) * scrollDistance;
-          if (lenis) {
-            lenis.scrollTo(targetY, { duration: 1.2 });
-          } else {
-            window.scrollTo({
-              top: targetY,
-              behavior: prefersReducedMotion ? 'auto' : 'smooth'
-            });
-          }
-        }
-      }
-    });
-  });
-
-  function handleResize() {
-    if (isCoarse && window.innerWidth === laidOutW) return;
-    measureLayout();
-  }
-
-  window.addEventListener('resize', handleResize, { passive: true });
-  window.addEventListener('orientationchange', measureLayout);
-  window.addEventListener('load', measureLayout);
-  measureLayout();
-
   // =========================================================================
-  // 11. HERO INTERACTIVE PHONE VIEW TOGGLE (/p/ RENTER LINK)
+  // 11. HERO INTERACTIVE PHONE VIEW TOGGLE (/p/ PREVIEWS)
   // =========================================================================
   const modePills = document.querySelectorAll('.lx-mode-pill');
+  const phoneSaleView = document.querySelector('#phone-sale-view');
   const phoneRenterView = document.querySelector('#phone-renter-view');
   const phoneAgentView = document.querySelector('#phone-agent-view');
+  const phoneUrlDisplay = document.querySelector('#phone-url-display');
 
   modePills.forEach(pill => {
     pill.addEventListener('click', () => {
@@ -842,11 +719,21 @@
       const mode = pill.dataset.phoneMode;
 
       if (mode === 'agent') {
+        if (phoneSaleView) phoneSaleView.style.display = 'none';
         if (phoneRenterView) phoneRenterView.style.display = 'none';
         if (phoneAgentView) phoneAgentView.style.display = 'flex';
-      } else {
+        if (phoneUrlDisplay) phoneUrlDisplay.textContent = 'rigzea.com/app/#/analytics';
+      } else if (mode === 'rent') {
+        if (phoneSaleView) phoneSaleView.style.display = 'none';
         if (phoneRenterView) phoneRenterView.style.display = 'flex';
         if (phoneAgentView) phoneAgentView.style.display = 'none';
+        if (phoneUrlDisplay) phoneUrlDisplay.textContent = 'rigzea.com/p/chavchavadze-82';
+      } else {
+        // default: sale
+        if (phoneSaleView) phoneSaleView.style.display = 'flex';
+        if (phoneRenterView) phoneRenterView.style.display = 'none';
+        if (phoneAgentView) phoneAgentView.style.display = 'none';
+        if (phoneUrlDisplay) phoneUrlDisplay.textContent = 'rigzea.com/p/vake-loft-42';
       }
     });
   });
@@ -1270,70 +1157,7 @@
      KOKONUT UI & SHADCN SPACE JAVASCRIPT ENHANCEMENTS
      ========================================================================== */
 
-  // 1. KokonutUI: particle-button Engine
-  function createParticleBurst(x, y, count = 28) {
-    const colors = ['#00f59b', '#10b981', '#ffd700', '#ffffff', '#34d399', '#6ee7b7'];
-    const container = document.body;
 
-    for (let i = 0; i < count; i++) {
-      const particle = document.createElement('div');
-      particle.className = 'lx-burst-particle';
-      
-      const size = Math.random() * 7 + 3;
-      const color = colors[Math.floor(Math.random() * colors.length)];
-      
-      particle.style.width = size + 'px';
-      particle.style.height = size + 'px';
-      particle.style.backgroundColor = color;
-      particle.style.left = x + 'px';
-      particle.style.top = y + 'px';
-      particle.style.zIndex = '999999';
-      particle.style.boxShadow = '0 0 ' + (size * 1.5) + 'px ' + color;
-
-      container.appendChild(particle);
-
-      const angle = Math.random() * Math.PI * 2;
-      const speed = Math.random() * 110 + 45;
-      const vx = Math.cos(angle) * speed;
-      const vy = Math.sin(angle) * speed;
-      const duration = Math.random() * 600 + 450;
-      const startTime = performance.now();
-
-      function update(currentTime) {
-        const elapsed = currentTime - startTime;
-        const progress = elapsed / duration;
-
-        if (progress >= 1) {
-          if (particle.parentNode) particle.parentNode.removeChild(particle);
-          return;
-        }
-
-        // Ease out quadratic with slight gravity
-        const currentX = x + vx * progress * (1 - progress * 0.4);
-        const currentY = y + vy * progress + (progress * progress * 80);
-        const scale = 1 - progress * 0.7;
-        const opacity = 1 - Math.pow(progress, 1.8);
-
-        particle.style.transform = 'translate(' + (currentX - x) + 'px, ' + (currentY - y) + 'px) scale(' + scale + ')';
-        particle.style.opacity = opacity;
-
-        requestAnimationFrame(update);
-      }
-
-      requestAnimationFrame(update);
-    }
-  }
-
-  // Bind particle bursts to all primary & interactive buttons
-  document.addEventListener('click', function(e) {
-    const target = e.target.closest('.lx-btn-primary, .lx-particle-btn, .lx-copy-btn, #btn-new-task, .lx-quick-tour-btn');
-    if (target) {
-      const rect = target.getBoundingClientRect();
-      const clickX = e.clientX || (rect.left + rect.width / 2);
-      const clickY = e.clientY || (rect.top + rect.height / 2);
-      createParticleBurst(clickX, clickY, 26);
-    }
-  });
 
   // 2. Micro-Toast Notification Utility
   window.showLuxuryToast = function(message) {
