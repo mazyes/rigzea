@@ -55,18 +55,23 @@
           <span>რიგზეა<span class="lx-brand-dot">.</span></span>
         </a>
 
-        <nav class="lx-nav-links" aria-label="მთავარი მენიუ">
+        <nav class="lx-nav-links" id="main-nav" aria-label="მთავარი მენიუ">
           <a class="lx-nav-link" href="#how-it-works">როგორ მუშაობს</a>
           <a class="lx-nav-link" href="#features">ფუნქციები</a>
           <a class="lx-nav-link" href="#comparison">შედარება</a>
           <a class="lx-nav-link" href="#pricing">ტარიფები</a>
           <a class="lx-nav-link" href="#faq">FAQ</a>
           <a class="lx-nav-link" href="/demo/">დემო</a>
+          <div class="lx-mobile-menu-actions">
+            <a class="lx-btn lx-btn-primary" href="/app/#signup" style="width:100%;justify-content:center;">დაიწყე უფასოდ</a>
+            <a class="lx-btn lx-btn-secondary" href="/app/#signin" style="width:100%;justify-content:center;">შესვლა</a>
+            <a class="lx-btn lx-btn-ghost" href="/demo/" style="width:100%;justify-content:center;">👁 ცოცხალი დემო</a>
+          </div>
         </nav>
 
         <div class="lx-header-actions">
-          <a class="lx-btn lx-btn-secondary lx-btn-sm" href="/app/#signin">შესვლა</a>
-          <a class="lx-btn lx-btn-primary lx-btn-sm" href="/app/#signup">უფასო დაწყება</a>
+          <a class="lx-btn lx-btn-secondary lx-btn-sm lx-header-signin" href="/app/#signin">შესვლა</a>
+          <a class="lx-btn lx-btn-primary lx-btn-sm lx-header-cta" href="/app/#signup">უფასო დაწყება</a>
           <button class="lx-mobile-toggle" aria-label="მენიუს გახსნა"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></button>
         </div>
       </div>
@@ -873,6 +878,12 @@
       </div>
     </footer>
   </div>
+
+  <!-- Sticky Mobile Thumb Bar (shows when scrolled past Hero on mobile) -->
+  <aside class="lx-mobile-thumb-bar" id="mobile-thumb-bar" aria-label="სწრაფი მოქმედებები">
+    <a class="lx-thumb-btn lx-thumb-btn-primary" href="/app/#signup">დაიწყე უფასოდ</a>
+    <a class="lx-thumb-btn lx-thumb-btn-secondary" href="/demo/">👁 დემო</a>
+  </aside>
 
   <!-- ShadcnSpace hero-02: Interactive Tour Modal -->
   <div class="lx-tour-modal-backdrop" id="tour-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="tour-modal-title">

@@ -117,11 +117,14 @@
   }
 
   // =========================================================================
-  // 3. HEADER SCROLL & MOBILE DRAWER NAVIGATION
+  // 3. HEADER SCROLL, MOBILE DRAWER & STICKY THUMB BAR
   // =========================================================================
   const header = document.querySelector('.lx-header');
   const mobileToggle = document.querySelector('.lx-mobile-toggle');
   const navLinks = document.querySelector('.lx-nav-links');
+  const thumbBar = document.getElementById('mobile-thumb-bar');
+  const finalCta = document.querySelector('.lx-final-cta-box') || document.querySelector('.lx-final-cta-section');
+  const tourModal = document.getElementById('tour-modal-backdrop');
   let headerScrolled = false;
 
   function updateHeader(y) {
@@ -133,26 +136,89 @@
     }
   }
 
+  function updateThumbBar(y) {
+    if (!thumbBar) return;
+    if (window.innerWidth > 768) {
+      thumbBar.classList.remove('is-visible');
+      return;
+    }
+    const isModalOpen = tourModal && tourModal.classList.contains('is-open');
+    const isMenuOpen = navLinks && navLinks.classList.contains('open');
+    if (isModalOpen || isMenuOpen) {
+      thumbBar.classList.remove('is-visible');
+      return;
+    }
+
+    const heroPassed = y > 420;
+    let nearBottom = false;
+    if (finalCta) {
+      const rect = finalCta.getBoundingClientRect();
+      nearBottom = rect.top < window.innerHeight - 80;
+    }
+    thumbBar.classList.toggle('is-visible', heroPassed && !nearBottom);
+  }
+
+  function closeMobileMenu() {
+    if (!navLinks || !navLinks.classList.contains('open')) return;
+    navLinks.classList.remove('open');
+    document.body.classList.remove('lx-menu-open');
+    document.body.style.overflow = '';
+    if (mobileToggle) {
+      mobileToggle.innerHTML = ICON_MENU;
+      mobileToggle.setAttribute('aria-expanded', 'false');
+    }
+    updateThumbBar(window.scrollY);
+  }
+
   const ICON_MENU = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>';
   const ICON_CLOSE = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
 
   if (mobileToggle && navLinks) {
-    mobileToggle.addEventListener('click', () => {
+    mobileToggle.addEventListener('click', (e) => {
+      e.stopPropagation();
       const isOpen = navLinks.classList.toggle('open');
+      document.body.classList.toggle('lx-menu-open', isOpen);
+      document.body.style.overflow = isOpen ? 'hidden' : '';
       mobileToggle.innerHTML = isOpen ? ICON_CLOSE : ICON_MENU;
       mobileToggle.setAttribute('aria-expanded', String(isOpen));
+      updateThumbBar(window.scrollY);
     });
 
     navLinks.querySelectorAll('a').forEach(link => {
-      link.addEventListener('click', () => {
-        navLinks.classList.remove('open');
-        if (mobileToggle) {
-          mobileToggle.innerHTML = ICON_MENU;
-          mobileToggle.setAttribute('aria-expanded', 'false');
-        }
-      });
+      link.addEventListener('click', () => closeMobileMenu());
+    });
+
+    document.addEventListener('click', (e) => {
+      if (navLinks.classList.contains('open') && !navLinks.contains(e.target) && !mobileToggle.contains(e.target)) {
+        closeMobileMenu();
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && navLinks.classList.contains('open')) {
+        closeMobileMenu();
+      }
     });
   }
+
+  // Unified scroll handler for header, parallax, and thumb bar
+  const onPageScroll = () => {
+    const y = window.scrollY;
+    updateHeader(y);
+    updateThumbBar(y);
+    updateParallax(y);
+  };
+  window.addEventListener('scroll', onPageScroll, { passive: true });
+  window.addEventListener('resize', () => updateThumbBar(window.scrollY), { passive: true });
+  if (lenis) {
+    lenis.on('scroll', (e) => {
+      const y = typeof e.scroll === 'number' ? e.scroll : window.scrollY;
+      updateHeader(y);
+      updateThumbBar(y);
+      updateParallax(y);
+    });
+  }
+  onPageScroll();
 
   // =========================================================================
   // 4. RADIAL MOUSE SPOTLIGHT (HARDWARE-ACCELERATED VIA rAF THROTTLE)
@@ -1204,12 +1270,17 @@
     if (!modalBackdrop) return;
 
     let modalOpener = null;
+    const setModalOpen = (open) => {
+      modalBackdrop.classList.toggle('is-open', open);
+      document.body.classList.toggle('lx-modal-open', open);
+      if (typeof updateThumbBar === 'function') updateThumbBar(window.scrollY);
+    };
 
     tourBtns.forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.preventDefault();
         modalOpener = btn;
-        modalBackdrop.classList.add('is-open');
+        setModalOpen(true);
         if (modalCloseBtn) modalCloseBtn.focus();
       });
     });
@@ -1225,19 +1296,19 @@
         return;
       }
       if (e.key !== 'Escape') return;
-      modalBackdrop.classList.remove('is-open');
+      setModalOpen(false);
       if (modalOpener) modalOpener.focus();
     });
 
     if (modalCloseBtn) {
       modalCloseBtn.addEventListener('click', () => {
-        modalBackdrop.classList.remove('is-open');
+        setModalOpen(false);
       });
     }
 
     modalBackdrop.addEventListener('click', (e) => {
       if (e.target === modalBackdrop) {
-        modalBackdrop.classList.remove('is-open');
+        setModalOpen(false);
       }
     });
 
@@ -1252,7 +1323,7 @@
       modalConfirmBtn.addEventListener('click', (e) => {
         const selectedSlot = document.querySelector('.lx-time-slot-btn.is-selected');
         const slotText = selectedSlot ? selectedSlot.textContent : 'დღეს 18:00';
-        modalBackdrop.classList.remove('is-open');
+        setModalOpen(false);
         
         const rect = modalConfirmBtn.getBoundingClientRect();
         createParticleBurst(rect.left + rect.width / 2, rect.top + rect.height / 2, 36);
