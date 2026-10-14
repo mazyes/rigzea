@@ -438,7 +438,7 @@
   App.openDocChooser = ({ apartment = null, deal = null } = {}) => {
     if (!App.guardFeature('contracts')) return undefined;
     const a = apartment || H.apt(deal?.apartment_id) || null;
-    const rental = a && a.transaction_type !== 'sale' && !deal;
+    const rental = a ? a.transaction_type !== 'sale' : (deal ? deal.deal_type !== 'sale' : true);
     return R.dialog({
       title: 'ხელშეკრულებები',
       subtitle: a?.name || deal?.client_name || '',
@@ -448,7 +448,7 @@
       onOpen: (form, dlg) => {
         $$('[data-pick]', form).forEach(b => b.addEventListener('click', () => {
           dlg.close();
-          setTimeout(() => (b.dataset.pick === 'lease' ? App.openLeaseAgreementGenerator(a, null) : App.openLegalDoc(b.dataset.pick, { apartment: a, deal })), 0);
+          setTimeout(() => (b.dataset.pick === 'lease' ? App.openLeaseAgreementGenerator(a, deal) : App.openLegalDoc(b.dataset.pick, { apartment: a, deal })), 0);
         }));
         App.bindNapr(form);
       },
@@ -476,7 +476,8 @@
         <section class="card"><div class="card-head"><h2>${icon('file', 18)} შაბლონები</h2></div>
           <div class="rows">${Object.entries(DOCS).map(([k, def]) => `<div class="row" style="--cols:minmax(0,1fr) auto"><span class="cell-main"><strong>${def.title}</strong><span>${def.sub} · ავტომატურად ივსება გარიგებიდან და ობიექტიდან</span></span>
             <button type="button" class="btn btn-secondary btn-sm" data-doc="${k}">შედგენა</button></div>`).join('')}
-            <div class="row" style="--cols:minmax(0,1fr)"><span class="cell-main"><strong>ქირავნობის ხელშეკრულება (ორენოვანი)</strong><span>იხსნება გაქირავების გარიგების ბარათიდან ან ბინის გვერდიდან</span></span></div>
+            <div class="row" style="--cols:minmax(0,1fr) auto"><span class="cell-main"><strong>ქირავნობის ხელშეკრულება (ორენოვანი)</strong><span>მეპატრონე ↔ მდგმური · სსკ 531–575 მუხლები და მიღება-ჩაბარების აქტი</span></span>
+              <button type="button" class="btn btn-secondary btn-sm" data-doc="lease">შედგენა</button></div>
           </div></section>
         <section class="card"><div class="card-head"><h2>შენახული დოკუმენტები</h2></div>
           ${docCache.error ? `<div class="error-state"><p>დოკუმენტები ვერ ჩაიტვირთა. ${esc(R.friendlyError(docCache.error))}</p><button type="button" class="btn btn-primary" id="doc-retry">${icon('refresh', 16)} ხელახლა ცდა</button></div>`
@@ -492,7 +493,10 @@
           <button type="button" class="btn btn-primary btn-block" id="napr-go" style="margin-top:10px">${icon('search', 16)} NAPR რეესტრში გადამოწმება</button>
         </div></section>
       </div></div>`;
-    $$('[data-doc]', root).forEach(b => b.addEventListener('click', () => App.openLegalDoc(b.dataset.doc)));
+    $$('[data-doc]', root).forEach(b => b.addEventListener('click', () => {
+      if (b.dataset.doc === 'lease') App.openLeaseAgreementGenerator(null, null);
+      else App.openLegalDoc(b.dataset.doc);
+    }));
     $$('[data-saved]', root).forEach(b => b.addEventListener('click', () => {
       const c = docCache.rows.find(x => x.id === b.dataset.saved);
       if (!c) return;

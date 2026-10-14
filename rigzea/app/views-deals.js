@@ -224,7 +224,8 @@
                       <option value="lost" ${d.stage === 'lost' ? 'selected' : ''}>ჩაშლილი</option>
                     </select>
                   </td>
-                  <td style="text-align:right">
+                  <td style="text-align:right;white-space:nowrap">
+                    ${!isSale ? `<button type="button" class="btn btn-ghost btn-sm" data-deal-lease="${d.id}" title="ხელშეკრულება" aria-label="ხელშეკრულება">${icon('file', 14)}</button>` : `<button type="button" class="btn btn-ghost btn-sm" data-deal-docs="${d.id}" title="ხელშეკრულებები" aria-label="ხელშეკრულებები">${icon('file', 14)}</button>`}
                     <button type="button" class="btn btn-ghost btn-sm" data-deal-edit="${d.id}" title="რედაქტირება">${icon('wrench', 14)}</button>
                   </td>
                 </tr>`;
@@ -285,7 +286,7 @@
     $$('[data-deal-lease]').forEach(b => b.addEventListener('click', () => {
       const deal = H.deal(b.dataset.dealLease);
       const apt = H.apt(deal?.apartment_id);
-      if (apt) App.openLeaseAgreementGenerator(apt, deal);
+      App.openLeaseAgreementGenerator(apt, deal);
     }));
 
     if (dealViewMode === 'board') {
@@ -368,7 +369,7 @@
             <button type="button" class="btn btn-ghost btn-sm" data-deal-viewing="${d.id}" title="ნახვის დანიშვნა" aria-label="ნახვის დანიშვნა">${icon('clock', 14)}</button>
             <button type="button" class="btn btn-ghost btn-sm" data-deal-match="${d.id}" title="შერჩევა" aria-label="შერჩევა">${icon('sparkle', 14)}</button>
             ${apt ? `<button type="button" class="btn btn-ghost btn-sm" data-deal-post="${apt.id}" title="პოსტის გენერატორი" aria-label="პოსტის გენერატორი">${icon('whatsapp', 14)}</button>` : ''}
-            ${apt && !isSale ? `<button type="button" class="btn btn-ghost btn-sm" data-deal-lease="${d.id}" title="ხელშეკრულება" aria-label="ხელშეკრულება">${icon('file', 14)}</button>` : ''}
+            ${!isSale ? `<button type="button" class="btn btn-ghost btn-sm" data-deal-lease="${d.id}" title="ხელშეკრულება" aria-label="ხელშეკრულება">${icon('file', 14)}</button>` : ''}
             ${isSale ? `<button type="button" class="btn btn-ghost btn-sm" data-deal-docs="${d.id}" title="ხელშეკრულებები" aria-label="ხელშეკრულებები">${icon('file', 14)}</button>` : ''}
           </div>
           ${next ? `<button type="button" class="btn ${next[2]} btn-sm" data-deal-advance="${d.id}" data-next-stage="${next[0]}">${icon(next[3], 14)} ${next[1]}</button>` : ''}
@@ -1793,43 +1794,59 @@
 
   App.openLeaseAgreementGenerator = async (apartment, deal = null) => {
     if (!App.guardFeature('contracts')) return;
-    const a = apartment;
-    const owner = H.owner(a.owner_id);
-    // Reopen the last saved contract for this deal/apartment, if any.
+    let a = apartment || (deal?.apartment_id ? H.apt(deal.apartment_id) : null);
+    let dl = deal;
     let last = null;
     try {
       let query = sb.from('contracts').select('*').eq('organization_id', S.org.id);
-      query = deal ? query.eq('deal_id', deal.id) : query.eq('apartment_id', a.id);
-      const { data } = await query.order('created_at', { ascending: false }).limit(1);
-      last = data?.[0]?.data || null;
+      if (dl?.id) query = query.eq('deal_id', dl.id);
+      else if (a?.id) query = query.eq('apartment_id', a.id);
+      else query = null;
+      if (query) {
+        const { data } = await query.order('created_at', { ascending: false }).limit(1);
+        last = data?.[0]?.data || null;
+      }
     } catch { last = null; }
 
+    function getDefaults(apt, dealObj) {
+      const ow = apt ? H.owner(apt.owner_id) : null;
+      return {
+        notice_days: '30',
+        penalty_pct: '0.1',
+        keys_count: '2',
+        city: apt?.city || 'თბილისი',
+        landlord_name: ow?.name || '', landlord_phone: ow?.phone || '', landlord_id: ow?.personal_id || '', landlord_address: '', landlord_bank: ow?.payout_account || '',
+        tenant_name: dealObj?.client_name || '', tenant_phone: dealObj?.client_phone || '', tenant_id: '', tenant_address: '',
+        property_address: apt ? [apt.city, apt.district, apt.address, apt.unit_number && `ბინა ${apt.unit_number}`].filter(Boolean).join(', ') : '',
+        cadastral_code: apt?.cadastral_code || '', area_sqm: apt?.area_sqm || '', contract_date: R.isoDate(),
+        start_date: dealObj?.target_move_in || '', end_date: '', rent: dealObj?.deal_amount || apt?.monthly_rent || '', currency: dealObj?.currency || apt?.currency || 'USD',
+        pay_day: apt?.rent_due_day || '1', deposit: apt?.deposit_amount || '', pets: apt?.pets_allowed ? 'yes' : 'no', utilities: 'tenant', utilities_note: '', extra_terms: '',
+        meter_electricity: '', meter_gas: '', meter_water: '', inventory_notes: '', acceptance_notes: '',
+      };
+    }
+
     const d = {
-      notice_days: '30',
-      penalty_pct: '0.1',
-      keys_count: '2',
-      city: a.city || 'თბილისი',
-      ...(last || {
-        landlord_name: owner?.name || '', landlord_phone: owner?.phone || '', landlord_id: '', landlord_address: '', landlord_bank: owner?.payout_account || '',
-        tenant_name: deal?.client_name || '', tenant_phone: deal?.client_phone || '', tenant_id: '', tenant_address: '',
-        property_address: [a.city, a.district, a.address, a.unit_number && `ბინა ${a.unit_number}`].filter(Boolean).join(', '),
-        cadastral_code: '', area_sqm: a.area_sqm || '', city: a.city || 'თბილისი', contract_date: R.isoDate(),
-        start_date: deal?.target_move_in || '', end_date: '', rent: deal?.deal_amount || a.monthly_rent || '', currency: deal?.currency || a.currency || 'USD',
-        pay_day: a.rent_due_day || '1', deposit: a.deposit_amount || '', notice_days: '30', penalty_pct: '0.1', pets: a.pets_allowed ? 'yes' : 'no', utilities: 'tenant', utilities_note: '', extra_terms: '',
-        keys_count: '2', meter_electricity: '', meter_gas: '', meter_water: '', inventory_notes: '', acceptance_notes: '',
-      }),
+      ...getDefaults(a, dl),
+      ...(last || {}),
     };
     const f = (name, label, opts = {}) => `<label class="field ${opts.span ? 'span-2' : ''}"><span class="field-label">${label}</span>${opts.textarea
       ? `<textarea name="${name}" rows="${opts.rows || 2}" ${opts.required ? 'required' : ''} placeholder="${esc(opts.ph || '')}">${esc(d[name] || '')}</textarea>`
       : `<input name="${name}" type="${opts.type || 'text'}" ${opts.required ? `required data-error="${esc(opts.err || 'შეავსე სავალდებულო ველები.')}"` : ''} ${opts.attrs || ''} value="${esc(d[name] ?? '')}" placeholder="${esc(opts.ph || '')}" />`}${opts.hint ? `<span class="field-hint">${opts.hint}</span>` : ''}</label>`;
 
+    const deals = (S.data.deals || []).filter(x => !['lost'].includes(x.stage) && x.deal_type !== 'sale');
+    const apts = (S.data.apartments || []).filter(x => x.status !== 'archived' && x.transaction_type !== 'sale');
+
     return R.dialog({
       title: 'ქირავნობის ხელშეკრულება (სამოქალაქო კოდექსი)',
-      subtitle: a.name,
+      subtitle: a?.name || dl?.client_name || 'ორენოვანი შაბლონი',
       wide: true,
       submitLabel: 'ხელშეკრულების შედგენა',
       body: `
         <div class="notice small">${icon('shield', 14)} ხელშეკრულების ტექსტი მკაცრად შეესაბამება საქართველოს სამოქალაქო კოდექსს (მუხლები 531–575). მოიცავს საგარანტიო დეპოზიტის დაცვას, ვადაგადაცილების პირგასამტეხლოს და მიღება-ჩაბარების აქტს მრიცხველების ჩვენებებით.</div>
+        <div class="form-section"><div class="form-section-title">საიდან შევავსო</div><div class="form-grid">
+          <label class="field"><span class="field-label">გარიგება</span><select id="lease-deal"><option value="">არ არის არჩეული</option>${deals.map(x => `<option value="${x.id}" ${x.id === dl?.id ? 'selected' : ''}>${esc(x.client_name)}${x.apartment_id ? ' · ' + esc(H.aptName(x.apartment_id)) : ''}</option>`).join('')}</select></label>
+          <label class="field"><span class="field-label">ობიექტი</span><select id="lease-apt"><option value="">არ არის არჩეული</option>${apts.map(x => `<option value="${x.id}" ${x.id === a?.id ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select></label>
+        </div></div>
         <div class="form-section"><div class="form-section-title">გამქირავებელი</div><div class="form-grid">
           ${f('landlord_name', 'სახელი, გვარი', { required: true, err: 'მიუთითე გამქირავებლის სახელი და გვარი.' })}${f('landlord_id', 'პირადი ნომერი', { attrs: 'inputmode="numeric" maxlength="20"' })}
           ${f('landlord_address', 'მისამართი')}${f('landlord_phone', 'ტელეფონი', { type: 'tel' })}
@@ -1868,19 +1885,35 @@
           ${f('acceptance_notes', 'შენიშვნები მიღებისას / ხარვეზები', { textarea: true, span: true, rows: 2, ph: 'არსებული ხარვეზები (თუ არის), ან დატოვე ცარიელი' })}
         </div></div>`,
       onOpen: (form) => {
+        const refill = () => {
+          dl = H.deal($('#lease-deal', form)?.value) || null;
+          a = H.apt($('#lease-apt', form)?.value) || null;
+          const next = getDefaults(a, dl);
+          Object.entries(next).forEach(([k, v]) => {
+            const el = form.elements[k];
+            if (el && k !== 'extra_terms') el.value = v ?? '';
+          });
+        };
+        $('#lease-deal', form)?.addEventListener('change', () => {
+          const x = H.deal($('#lease-deal', form).value);
+          if (x?.apartment_id && $('#lease-apt', form)) $('#lease-apt', form).value = x.apartment_id;
+          refill();
+        });
+        $('#lease-apt', form)?.addEventListener('change', refill);
+
         const start = $('[name=start_date]', form), end = $('[name=end_date]', form);
-        start.addEventListener('change', () => {
+        start?.addEventListener('change', () => {
           if (!start.value || end.value) return;
           const s = R.toDate(start.value); const e = new Date(s.getFullYear() + 1, s.getMonth(), s.getDate() - 1);
           end.value = R.isoDate(e);
         });
         const util = $('#lease-util', form);
-        util.addEventListener('change', () => { $('#lease-util-note', form).hidden = util.value !== 'custom'; });
+        util?.addEventListener('change', () => { $('#lease-util-note', form).hidden = util.value !== 'custom'; });
       },
       onSubmit: async (_f, v) => {
         if (v.start_date && v.end_date && v.end_date <= v.start_date) throw new Error('დასრულების თარიღი დაწყების თარიღის შემდეგ უნდა იყოს.');
         const data = { ...v, rent: Number(v.rent), deposit: v.deposit === '' ? '' : Number(v.deposit) };
-        const row = await App.insertOnce('contracts', { id: R.uuid(), organization_id: S.org.id, apartment_id: a.id, deal_id: deal?.id || null, data, created_by: S.user.id });
+        const row = await App.insertOnce('contracts', { id: R.uuid(), organization_id: S.org.id, apartment_id: a?.id || null, deal_id: dl?.id || null, data, created_by: S.user.id });
         toast('ხელშეკრულება შენახულია', { type: 'success' });
         setTimeout(() => openLeasePreview(row.data || data, a), 0);
       },
@@ -1889,9 +1922,10 @@
 
   function openLeasePreview(d, a) {
     let mode = 'dual';
+    const titleName = a?.name || d.property_address || 'ბინა';
     return R.dialog({
       title: 'ხელშეკრულება მზადაა',
-      subtitle: a.name,
+      subtitle: titleName,
       wide: true,
       body: `
         <style>${LEASE_CSS}</style>
@@ -1905,7 +1939,7 @@
         <div class="lease-paper" id="lease-paper">${leaseHtml(d, mode)}</div>`,
       onOpen: (form) => {
         $$('input[name="lease-mode"]', form).forEach(i => i.addEventListener('change', () => { mode = i.value; $('#lease-paper', form).innerHTML = leaseHtml(d, mode); }));
-        $('#btn-print-lease', form).onclick = () => printLease(d, mode, `ხელშეკრულება · ${a.name}`);
+        $('#btn-print-lease', form).onclick = () => printLease(d, mode, `ხელშეკრულება · ${titleName}`);
       },
     });
   }

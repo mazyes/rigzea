@@ -1103,6 +1103,7 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
     $('#a-share')?.addEventListener('click', () => App.openCoBrokerShare(a));
     $('#a-pdf')?.addEventListener('click', () => App.openPresentation(a));
     $('#a-docs')?.addEventListener('click', () => App.openDocChooser({ apartment: a }));
+    $('#btn-open-lease')?.addEventListener('click', () => App.openLeaseAgreementGenerator(a, null));
     App.bindNapr($('#view'));
     const openViewing = () => App.openTaskForm({ apartmentId: id, type: 'viewing', prefill: { title: `დათვალიერება: ${a.name}` } });
     $('#btn-apt-viewing')?.addEventListener('click', openViewing);
