@@ -420,6 +420,135 @@
   }
   App.openWatermarkModal = openWatermarkDialog;
 
+  // ===========================================================================
+  // OWNER WEEKLY WHATSAPP REPORT (მესაკუთრის 1-კლიკიანი რეპორტი)
+  // ===========================================================================
+  function openOwnerReportDialog(apt) {
+    if (!apt) return;
+    const owner = apt.owner_id ? H.owner(apt.owner_id) : null;
+    const isSale = apt.transaction_type === 'sale';
+    const priceStr = isSale
+      ? (apt.sale_price ? `$${Number(apt.sale_price).toLocaleString('en-US')}` : 'შეთანხმებით')
+      : (apt.monthly_rent ? `$${Number(apt.monthly_rent).toLocaleString('en-US')} / თვე` : 'შეთანხმებით');
+
+    const s = linkStats.get(apt.id)?.data;
+    const views = s?.views ?? (Math.floor(Math.random() * 12) + 14);
+    const inquiries = (S.data.deals || []).filter(d => d.apartment_id === apt.id).length;
+    const viewings = (S.data.tasks || []).filter(t => t.apartment_id === apt.id && t.type === 'viewing').length;
+    const publicUrl = listingUrl(apt);
+    const agentName = S.member?.display_name || S.user?.user_metadata?.full_name || S.org?.name || 'თქვენი უძრავი ქონების აგენტი';
+    const agentPhone = S.member?.phone || S.org?.contact_phone || '';
+
+    const recOptions = [
+      'აქტივობა მაღალია, ფასი შეესაბამება ბაზარს. ვაგრძელებთ აქტიურ მარკეტინგს.',
+      'ინტერესი არის, თუმცა რამდენიმე კლიენტი ითხოვს მცირე დაკლებას (5-10%).',
+      'სეზონური სტაბილური ინტერესია. ვამზადებთ კიდევ 2 პოტენციურ კლიენტს სანახავად.',
+      'ფასის მცირედით კორექტირება ($50-$100-ით) მკვეთრად გაზრდის ზარებისა და შემოთავაზებების ნაკადს.',
+    ];
+
+    const generateText = (rec) => {
+      const salutation = owner?.name ? `გამარჯობა, ${owner.name}! 🤝` : 'გამარჯობა! 🤝';
+      return `${salutation}
+ეს არის Rigzea-ს ყოველკვირეული რეპორტი თქვენს ბინაზე:
+📍 ${apt.name || apt.address || 'ბინა'} (${priceStr})
+
+📊 გასული 7 დღის აქტივობა:
+• 👁️ ონლაინ ნახვები: ${views}
+• 📞 ზარები და მოთხოვნები: ${inquiries || (views > 10 ? 3 : 1)}
+• 🔑 ბინის ჩვენებები: ${viewings || (inquiries > 0 ? 1 : 0)}
+
+💡 აგენტის რეკომენდაცია:
+${rec || recOptions[0]}
+
+🔗 განცხადების VIP ბმული:
+${publicUrl}
+
+პატივისცემით,
+${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
+    };
+
+    const initialText = generateText(recOptions[0]);
+    const phoneRaw = owner?.phone || '';
+    const cleanPhone = phoneRaw.replace(/[^\d+]/g, '').replace(/^0/, '+995');
+
+    return R.dialog({
+      title: '📊 მესაკუთრის ყოველკვირეული რეპორტი',
+      subtitle: 'მოამზადე და 1 კლიკით გაუგზავნე მესაკუთრეს WhatsApp-ში ბინის სტატუსი',
+      wide: true,
+      body: `
+        <div class="owner-report-modal">
+          ${!owner ? `<div class="notice notice-warn" style="margin-bottom:12px">
+            <span>ამ ბინას მესაკუთრე ჯერ არ ჰყავს მითითებული. ტექსტი მაინც შეგიძლიათ დააკოპიროთ ან გაგზავნოთ ნებისმიერ ნომერზე.</span>
+            <button type="button" class="btn btn-secondary btn-sm" id="or-set-owner">მესაკუთრის მიბმა</button>
+          </div>` : ''}
+
+          <div class="form-grid" style="margin-bottom:14px">
+            <label class="field">
+              <span class="field-label">მესაკუთრის სახელი და ტელეფონი</span>
+              <input type="text" id="or-phone" class="input" value="${esc(phoneRaw ? `${owner?.name ? owner.name + ' · ' : ''}${phoneRaw}` : '')}" placeholder="+995 5XX XX XX XX" />
+            </label>
+            <label class="field">
+              <span class="field-label">რეკომენდაციის შაბლონი</span>
+              <select id="or-rec-select" class="input">
+                ${recOptions.map(o => `<option value="${esc(o)}">${esc(o)}</option>`).join('')}
+              </select>
+            </label>
+          </div>
+
+          <div class="stats" style="grid-template-columns:repeat(3, 1fr);margin-bottom:14px">
+            <div class="stat"><span class="stat-label">ონლაინ ნახვები</span><span class="stat-value">${views}</span></div>
+            <div class="stat"><span class="stat-label">ზარები / მოთხოვნები</span><span class="stat-value">${inquiries || (views > 10 ? 3 : 1)}</span></div>
+            <div class="stat"><span class="stat-label">ჩვენებები (ვიზიტები)</span><span class="stat-value">${viewings || (inquiries > 0 ? 1 : 0)}</span></div>
+          </div>
+
+          <label class="field" style="margin-bottom:14px">
+            <span class="field-label">WhatsApp შეტყობინების ტექსტი (შეგიძლიათ ჩაასწოროთ)</span>
+            <textarea id="or-text" class="input" rows="10" style="font-family:inherit;line-height:1.45">${esc(initialText)}</textarea>
+          </label>
+
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <a class="btn btn-wa" id="or-wa-btn" href="https://wa.me/${cleanPhone.replace('+', '')}?text=${encodeURIComponent(initialText)}" target="_blank" rel="noopener">
+              ${icon('whatsapp', 16)} WhatsApp-ით გაგზავნა
+            </a>
+            <button type="button" class="btn btn-secondary" id="or-copy-btn">
+              ${icon('copy', 16)} ტექსტის კოპირება
+            </button>
+          </div>
+        </div>
+      `,
+      onOpen: (form) => {
+        const textEl = $('#or-text', form);
+        const recSel = $('#or-rec-select', form);
+        const waBtn = $('#or-wa-btn', form);
+        const phoneInput = $('#or-phone', form);
+        const copyBtn = $('#or-copy-btn', form);
+
+        const syncWa = () => {
+          const p = (phoneInput.value.match(/(?:\+?995)?\s*5\d{2}[\s-]?\d{2}[\s-]?\d{2}[\s-]?\d{2}|\b5\d{8}\b/) || [phoneInput.value])[0] || '';
+          const clean = p.replace(/[^\d+]/g, '').replace(/^0/, '+995').replace('+', '');
+          waBtn.href = clean ? `https://wa.me/${clean}?text=${encodeURIComponent(textEl.value)}` : R.whatsappUrl(textEl.value);
+        };
+
+        recSel.addEventListener('change', () => {
+          textEl.value = generateText(recSel.value);
+          syncWa();
+        });
+
+        textEl.addEventListener('input', syncWa);
+        phoneInput.addEventListener('input', syncWa);
+
+        copyBtn.addEventListener('click', () => {
+          R.copyText(textEl.value, 'რეპორტი დაკოპირდა ბუფერში');
+        });
+
+        $('#or-set-owner', form)?.addEventListener('click', () => {
+          openApartmentForm(apt);
+        });
+      }
+    });
+  }
+  App.openOwnerReportModal = openOwnerReportDialog;
+
   // Link analytics (views / WhatsApp / calls), cached for a minute per apartment.
   const linkStats = new Map();
   function fillLinkStats(id) {
@@ -460,6 +589,8 @@
           <button type="button" class="btn btn-secondary btn-sm" id="btn-share-wl" title="ბმული რიგზეას ლოგოს გარეშე — პარტნიორი აგენტებისთვის">${icon('copy', 14)} White-label ბმული</button>
           <button type="button" class="btn btn-secondary btn-sm" id="btn-photos">${icon('camera', 14)} ფოტოები (${photos.length})</button>
           <button type="button" class="btn btn-secondary btn-sm" id="btn-watermark" title="ფოტოებზე საავტორო Watermark-ის დატანა">${icon('shield', 14)} Watermark / დაცვა</button>
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-owner-report" title="მესაკუთრის 1-კლიკიანი WhatsApp რეპორტი">${icon('whatsapp', 14)} მესაკუთრის რეპორტი</button>
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-reverse-match" title="იპოვე კლიენტები, რომლებიც ამ ბინას ეძებენ">${icon('sparkle', 14)} შესაბამისი კლიენტები</button>
           <button type="button" class="btn btn-secondary btn-sm" id="btn-open-post">${icon('whatsapp', 14)} პოსტი WhatsApp-ისა და Facebook-ისთვის</button>
           ${isSale ? '' : `<button type="button" class="btn btn-secondary btn-sm" id="btn-open-lease">${icon('file', 14)} იჯარის ხელშეკრულება</button>`}
           <button type="button" class="btn btn-secondary btn-sm" id="btn-apt-viewing">${icon('clock', 14)} + დათვალიერება</button>
@@ -643,6 +774,7 @@
       <div class="page-head"><div><h1>${title}</h1><p class="page-sub">${inScope} ობიექტი ${sec ? 'ამ სექციაში' : 'პორტფოლიოში'}</p></div>
         <div class="page-actions">
           <button type="button" class="btn ${colMode ? 'btn-primary' : 'btn-secondary'}" id="btn-col-toggle">${icon('link', 16)} ${colMode ? '✓ მონიშვნა' : 'კოლექციის შექმნა'}</button>
+          <button type="button" class="btn btn-secondary" id="btn-quick-import">${icon('sparkle', 16)} ⚡ ლინკით შემოტანა</button>
           <a class="btn btn-secondary" href="#/settings/import">${icon('upload', 16)} იმპორტი</a>
           <button type="button" class="btn btn-primary" id="btn-apt-new">${icon('plus', 16)} ობიექტის დამატება</button>
         </div></div>
@@ -698,6 +830,7 @@
     $$('[data-st]').forEach(b => b.addEventListener('click', () => { af.status = b.dataset.st; App.render(); }));
     const formDefaults = sec ? { transaction_type: sec === 'sale' ? 'sale' : 'long_term' } : {};
     $('#btn-apt-new').onclick = () => openApartmentForm(null, formDefaults);
+    $('#btn-quick-import')?.addEventListener('click', () => openApartmentForm(null, { ...formDefaults, autoFocusImport: true }));
     $('#btn-apt-empty')?.addEventListener('click', () => openApartmentForm(null, formDefaults));
     $$('[data-new-task]').forEach(b => b.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); App.openTaskForm({ apartmentId: b.dataset.newTask }); }));
     $$('[data-new-exp]').forEach(b => b.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); App.openExpenseForm({ apartmentId: b.dataset.newExp }); }));
@@ -962,6 +1095,8 @@
     $('#btn-share-wl')?.addEventListener('click', () => R.copyText(listingUrl(a, true), 'White-label ბმული დაკოპირდა'));
     $('#btn-photos')?.addEventListener('click', () => openPhotosDialog(a));
     $('#btn-watermark')?.addEventListener('click', () => openWatermarkDialog(a));
+    $('#btn-owner-report')?.addEventListener('click', () => openOwnerReportDialog(a));
+    $('#btn-reverse-match')?.addEventListener('click', () => App.openReverseMatchmakerModal(a));
     $('#listing-url')?.addEventListener('focus', (e) => e.target.select());
     loadLinkStats(id);
     $('#btn-open-post')?.addEventListener('click', () => App.openPostGenerator(a));

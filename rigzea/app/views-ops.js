@@ -298,12 +298,16 @@
 
   function setupSteps() {
     const d = S.data;
+    const hasApt = d.apartments.length > 0;
+    const hasWatermark = hasApt && (localStorage.getItem('rigzea_watermark_done') === '1' || d.apartments.some(a => a.photos && a.photos.length > 1));
+    const hasCollection = (d.selections || []).length > 0 || localStorage.getItem('rigzea_col_done') === '1';
+    const hasLease = localStorage.getItem('rigzea_lease_done') === '1' || (d.deals || []).some(x => x.stage === 'closed' || x.stage === 'deposit');
+
     return [
-      { done: true, title: 'სამუშაო სივრცე შეიქმნა', desc: S.org.name },
-      { done: d.apartments.length > 0, title: 'შემოიტანე პირველი ბინა', desc: 'MyHome / SS.ge ლინკით 1 წამში ან ხელით', action: `<button class="btn btn-primary btn-sm" data-setup="apartment">⚡ ბინის შემოტანა</button>` },
-      { done: d.apartments.some(a => a.photos && a.photos.length), title: 'ნახე პირადი VIP ბმული (/p/)', desc: 'მესაკუთრის ნომერი დაცულია, შენი WhatsApp მზადაა', action: `<a class="btn btn-secondary btn-sm" href="#/apartments">ვიტრინის ნახვა</a>` },
-      { done: (d.deals || []).length > 0, title: 'დაამატე კლიენტის მოთხოვნა', desc: 'Matchmaker 98% თანხვედრით იპოვის ბინას', action: `<a class="btn btn-secondary btn-sm" href="#/deals">+ ახალი მოთხოვნა</a>` },
-      { done: d.tasks.filter(t => t.type === 'viewing').length > 0, title: 'დაგეგმე პირველი ნახვა (ვიზიტი)', desc: 'კალენდარში მონიშნე კლიენტთან შეხვედრის დრო', action: `<button class="btn btn-secondary btn-sm" data-setup="task">ვიზიტის ჩანიშვნა</button>` },
+      { id: 'apt', done: hasApt, title: '1. დაამატე პირველი ბინა', desc: 'MyHome / SS.ge ლინკით 1 წამში ან ხელით', action: `<button class="btn btn-primary btn-sm" data-setup="apartment">⚡ ბინის შემოტანა</button>` },
+      { id: 'wm', done: hasWatermark, title: '2. დაადე Watermark ფოტოს', desc: 'დაიცავი ფოტოები მოპარვისგან შენი ლოგოთი და ნომრით', action: `<button class="btn btn-secondary btn-sm" data-setup="watermark">🛡️ Watermark</button>` },
+      { id: 'col', done: hasCollection, title: '3. გააზიარე კოლექცია WhatsApp-ში', desc: 'მრავალბინიანი პრემიუმ კატალოგი კლიენტისთვის', action: `<button class="btn btn-secondary btn-sm" data-setup="collection">✨ კოლექციის შექმნა</button>` },
+      { id: 'lease', done: hasLease, title: '4. შექმენი ქირავნობის ხელშეკრულება', desc: 'სსკ 531–575 მუხლების 11-მუხლიანი იურიდიული აქტი', action: `<button class="btn btn-secondary btn-sm" data-setup="lease">📄 ხელშეკრულება</button>` },
     ];
   }
 
@@ -478,8 +482,16 @@
       <div class="chips" role="group" aria-label="ფილტრი">${FILTERS.map(([id, label]) => `<button type="button" class="chip" data-filter="${id}" aria-pressed="${todayFilter === id}">${label}${id !== 'all' ? ` <span class="count">${counts[id]}</span>` : ''}</button>`).join('')}</div>
       <div class="cols">
         <div class="stack">
-          ${showSetup ? `<section class="card"><div class="card-head"><h2>${icon('sparkle', 16)} პირველი ნაბიჯები <span class="count">${steps.filter(s => s.done).length}/${steps.length}</span></h2><button type="button" class="link-btn small" id="btn-hide-setup">დამალვა</button></div>
-            <ol class="setup">${steps.map(s => `<li class="${s.done ? 'done' : ''}"><div><div class="step-title">${esc(s.title)}</div><div class="step-desc">${esc(s.desc)}</div></div><div>${s.done ? '' : s.action || ''}</div></li>`).join('')}</ol></section>` : ''}
+          ${showSetup ? `<section class="card onboarding-card" style="margin-bottom:16px;border:1px solid rgba(0,245,155,0.25);background:linear-gradient(180deg, var(--surface) 0%, rgba(0,245,155,0.03) 100%)">
+            <div class="card-head">
+              <h2>${icon('sparkle', 16)} ახალი აგენტის Quick Start <span class="badge badge-neutral" style="font-size:12px;font-weight:700">${steps.filter(s => s.done).length} / ${steps.length} დასრულებულია</span></h2>
+              <button type="button" class="link-btn small" id="btn-hide-setup">დამალვა</button>
+            </div>
+            <div style="background:var(--line);height:6px;border-radius:99px;margin:8px 0 16px 0;overflow:hidden">
+              <div style="background:#00f59b;height:100%;width:${(steps.filter(s => s.done).length / steps.length) * 100}%;border-radius:99px;transition:width 0.3s"></div>
+            </div>
+            <ol class="setup">${steps.map(s => `<li class="${s.done ? 'done' : ''}"><div><div class="step-title">${esc(s.title)}</div><div class="step-desc">${esc(s.desc)}</div></div><div>${s.done ? '<span class="t-ok" style="font-weight:700">შესრულებულია ✓</span>' : s.action || ''}</div></li>`).join('')}</ol>
+          </section>` : ''}
           ${focus || `
           <section class="card ${att.some(a => a.sev === 'danger') ? 'card-alert' : ''}">
             <div class="card-head"><h2>${icon('alert', 16)} სასწრაფო და ვადაგადაცილებული <span class="count ${att.some(a => a.sev === 'danger') ? 'count-danger' : ''}">${att.length}</span></h2></div>
@@ -547,7 +559,40 @@
 
   function bindSetup(root) {
     $$('[data-setup]', root).forEach(b => b.addEventListener('click', () => {
-      ({ task: () => openTaskForm(), apartment: () => App.openApartmentForm(), owner: () => App.openOwnerForm() })[b.dataset.setup]();
+      const apts = S.data.apartments.filter(a => a.status !== 'archived');
+      const firstApt = apts[0];
+      const actions = {
+        task: () => openTaskForm(),
+        apartment: () => App.openApartmentForm(),
+        owner: () => App.openOwnerForm(),
+        watermark: () => {
+          if (!firstApt) {
+            toast('ჯერ დაამატე ბინა, რომ მის ფოტოებს Watermark დაადო', { type: 'warn' });
+            App.openApartmentForm();
+            return;
+          }
+          localStorage.setItem('rigzea_watermark_done', '1');
+          App.openWatermarkModal(firstApt);
+        },
+        collection: () => {
+          if (!firstApt) {
+            toast('ჯერ დაამატე ბინები კოლექციის შესაქმნელად', { type: 'warn' });
+            App.openApartmentForm();
+            return;
+          }
+          localStorage.setItem('rigzea_col_done', '1');
+          App.openCollectionModal({ apartmentIds: apts.slice(0, 3).map(a => a.id), clientName: 'ახალი კლიენტი' });
+        },
+        lease: () => {
+          localStorage.setItem('rigzea_lease_done', '1');
+          if (firstApt && App.openLeaseAgreementGenerator) {
+            App.openLeaseAgreementGenerator(firstApt, null);
+          } else {
+            App.go('#/deals/documents');
+          }
+        }
+      };
+      actions[b.dataset.setup]?.();
     }));
   }
 

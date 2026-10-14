@@ -359,8 +359,10 @@
           <div><dt>ობიექტი</dt><dd>${apt ? `<a href="#/apartments/${apt.id}">${esc(apt.name)}</a>` : '<span class="muted">არ არის მიბმული</span>'}</dd></div>
           <div><dt>${isSale ? 'გაყიდვა' : 'ქირა'}</dt><dd>${fmtMoney(d.deal_amount, cur)}${isSale ? '' : ' / თვე'}</dd></div>
         </dl>
-        <div class="deal-net"><span>სუფთა საკომისიო</span><strong>${fmtMoney(comm.net, cur)}</strong></div>
-        ${comm.hasPartner ? `<div class="deal-partner">${icon('team', 12)} ${esc(d.partner_agent)} · ${comm.cobrokerPct}% (${fmtMoney(comm.partnerShare, cur)})</div>` : ''}
+        ${comm.hasPartner ? `<div class="deal-partner" style="display:flex;align-items:center;justify-content:space-between;gap:6px">
+          <span>${icon('team', 12)} ${esc(d.partner_agent)} · ${comm.cobrokerPct}% (${fmtMoney(comm.partnerShare, cur)})</span>
+          ${d.partner_phone ? `<a href="https://wa.me/${d.partner_phone.replace(/[^\d]/g, '').replace(/^0/, '995')}" target="_blank" rel="noopener" class="t-ok" style="display:inline-flex;align-items:center;gap:3px;font-size:11px" title="WhatsApp მიწერა">${icon('whatsapp', 12)} WA</a>` : ''}
+        </div>` : ''}
         <div class="deal-card-foot">
           <div class="deal-card-tools">
             <button type="button" class="btn btn-ghost btn-sm" data-deal-viewing="${d.id}" title="ნახვის დანიშვნა" aria-label="ნახვის დანიშვნა">${icon('clock', 14)}</button>
@@ -465,14 +467,33 @@
             </div>
           </div>
 
-          <!-- Progressive disclosure: Co-broker, team split, dates -->
+          <!-- Co-broker (Partner Agent Split) -->
+          <div class="form-section span-2" style="background:var(--surface-sunken);border:1px solid var(--line);border-radius:10px;padding:14px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+              <label style="display:flex;align-items:center;gap:8px;font-weight:700;cursor:pointer;margin:0">
+                <input type="checkbox" id="deal-cobroker-toggle" ${v.partner_agent || (v.cobroker_split && v.cobroker_split !== 0) ? 'checked' : ''} />
+                <span>🤝 პარტნიორ აგენტთან გარიგება (Co-Broking)</span>
+              </label>
+              <div class="seg" id="cb-quick-split" style="margin:0">
+                <button type="button" class="btn btn-ghost btn-sm" data-cb-set="50">50/50</button>
+                <button type="button" class="btn btn-ghost btn-sm" data-cb-set="40">60/40</button>
+                <button type="button" class="btn btn-ghost btn-sm" data-cb-set="30">70/30</button>
+              </div>
+            </div>
+            <div id="cb-fields" style="${v.partner_agent || (v.cobroker_split && v.cobroker_split !== 0) ? '' : 'display:none'}">
+              <div class="form-grid">
+                <label class="field"><span class="field-label">პარტნიორი აგენტი (სახელი, სააგენტო)</span><input name="partner_agent" id="deal-partner" value="${esc(v.partner_agent || '')}" placeholder="მაგ.: დავითი (Remax)" /></label>
+                <label class="field"><span class="field-label">პარტნიორის წილი (%)</span><input type="number" id="deal-partner-split" name="cobroker_split" min="0" max="100" step="5" value="${esc(v.cobroker_split ?? 50)}" /><span class="field-hint">50 = თანაბრად გაყოფა</span></label>
+                <label class="field"><span class="field-label">პარტნიორის ტელეფონი</span><input type="tel" name="partner_phone" id="deal-partner-phone" value="${esc(v.partner_phone || '')}" placeholder="+995 5XX XX XX XX" /></label>
+                <label class="field"><span class="field-label">მესაკუთრის ბონუსი</span><input type="number" id="deal-bonus" name="owner_bonus" min="0" step="10" value="${esc(v.owner_bonus || 0)}" /><span class="field-hint">დამატებითი ბონუსი</span></label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Progressive disclosure: Team split, dates -->
           <details class="form-more span-2" ${hasMore ? 'open' : ''}>
-            <summary>⚙️ დამატებითი: პარტნიორი აგენტი (Co-Broker), გუნდის წილები და თარიღები</summary>
+            <summary>⚙️ დამატებითი: გუნდის წილები და თარიღები</summary>
             <div class="form-grid" style="margin-top:12px">
-              <label class="field"><span class="field-label">მესაკუთრის ბონუსი</span><input type="number" id="deal-bonus" name="owner_bonus" min="0" step="10" value="${esc(v.owner_bonus || 0)}" /><span class="field-hint">გარიგების ვალუტაში</span></label>
-              <label class="field"><span class="field-label">პარტნიორი აგენტი (Co-Broker)</span><input name="partner_agent" id="deal-partner" value="${esc(v.partner_agent || '')}" placeholder="სახელი, სააგენტო" /></label>
-              <label class="field"><span class="field-label">პარტნიორის წილი (%)</span><input type="number" id="deal-partner-split" name="cobroker_split" min="0" max="100" step="5" value="${esc(v.cobroker_split ?? 50)}" /><span class="field-hint">50 = თანაბრად გაყოფა</span></label>
-              <label class="field"><span class="field-label">პარტნიორის ტელეფონი</span><input type="tel" name="partner_phone" value="${esc(v.partner_phone || '')}" /></label>
 
               <div class="form-section span-2" id="deal-split-section">
                 <div class="form-section-title">${icon('team', 16)} გუნდის წილები</div>
@@ -580,10 +601,27 @@
           }
           updateCalc();
         });
-        ['deal-amount', 'deal-comm-pct', 'deal-comm-fixed', 'deal-bonus', 'deal-partner', 'deal-partner-split', 'deal-currency', 'deal-listing-agent', 'deal-listing-split', 'deal-selling-agent', 'deal-selling-split'].forEach(x => {
-          $(`#${x}`, form)?.addEventListener('input', updateCalc);
-          $(`#${x}`, form)?.addEventListener('change', updateCalc);
+        const cbToggle = $('#deal-cobroker-toggle', form);
+        const cbFields = $('#cb-fields', form);
+        const partnerInput = $('#deal-partner', form);
+        const partnerSplit = $('#deal-partner-split', form);
+        cbToggle?.addEventListener('change', () => {
+          cbFields.style.display = cbToggle.checked ? '' : 'none';
+          if (!cbToggle.checked) {
+            partnerInput.value = '';
+          } else if (!partnerInput.value) {
+            partnerSplit.value = 50;
+          }
+          updateCalc();
         });
+        $$('[data-cb-set]', form).forEach(btn => btn.addEventListener('click', () => {
+          if (!cbToggle.checked) {
+            cbToggle.checked = true;
+            cbFields.style.display = '';
+          }
+          partnerSplit.value = btn.dataset.cbSet;
+          updateCalc();
+        }));
 
         syncType();
         syncCommType();
@@ -1134,6 +1172,114 @@
     });
   }
   App.openMatchmakerModal = openMatchmakerModal;
+
+  // ===========================================================================
+  // REVERSE MATCHMAKER (იპოვე კლიენტები ამ ბინისთვის)
+  // ===========================================================================
+  function openReverseMatchmakerModal(apt) {
+    if (!apt) return;
+    const deals = (S.data.deals || []).filter(d => OPEN_STAGES.includes(d.stage));
+    const isSaleApt = apt.transaction_type === 'sale';
+    const aptPrice = isSaleApt ? apt.sale_price : apt.monthly_rent;
+    const cur = apt.currency || 'USD';
+    const pUrl = R.listingUrl(apt);
+
+    // Calculate score for each deal
+    const matches = deals.map(d => {
+      let crit = d.criteria;
+      if (!crit || !Object.keys(crit).length) {
+        crit = {
+          transaction_type: d.deal_type || (isSaleApt ? 'sale' : 'rental'),
+          budget_max: d.deal_amount ? Number(d.deal_amount) * 1.15 : null,
+          budget_min: d.deal_amount ? Number(d.deal_amount) * 0.75 : null,
+          currency: d.currency || cur,
+        };
+      }
+      const score = matchScore(apt, crit);
+      return { deal: d, crit, score: score ?? (d.deal_type === (isSaleApt ? 'sale' : 'rental') ? 65 : 30) };
+    });
+
+    matches.sort((a, b) => (b.score - a.score));
+
+    return R.dialog({
+      title: '🎯 კლიენტების მოძიება (Reverse Matchmaker)',
+      subtitle: `ვინ ეძებს ამ ტიპის ბინას? — ${apt.name}`,
+      wide: true,
+      body: `
+        <div class="reverse-mm">
+          <div class="card" style="margin-bottom:14px;background:var(--surface-sunken);border:1px solid var(--line);padding:12px 16px;border-radius:10px">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+              <div>
+                <strong style="font-size:15px;display:block">${esc(apt.name)}</strong>
+                <span class="muted small">${esc([apt.city, apt.district, apt.address].filter(Boolean).join(', '))} · ${apt.rooms ? `${apt.rooms} ოთახი · ` : ''}${apt.area_sqm ? `${apt.area_sqm} მ²` : ''}</span>
+              </div>
+              <div style="text-align:right">
+                <strong class="t-ok" style="font-size:16px">${aptPrice ? fmtMoney(aptPrice, cur) : '—'}${isSaleApt ? '' : ' / თვე'}</strong>
+                <span class="badge badge-neutral" style="display:block;margin-top:2px">${isSaleApt ? 'გაყიდვა' : 'ქირავდება'}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="field-label" style="margin-bottom:8px">შესაბამისი აქტიური კლიენტები (${matches.length}):</div>
+
+          <div class="rows" id="rmm-list" style="max-height:420px;overflow-y:auto;display:flex;flex-direction:column;gap:8px">
+            ${matches.length ? matches.map(({ deal: d, score }) => {
+              const tone = score >= 80 ? 't-ok' : score >= 50 ? 't-warn' : 'muted';
+              const cleanPhone = (d.client_phone || '').replace(/[^\d+]/g, '').replace(/^0/, '+995');
+              const waText = `გამარჯობა, ${d.client_name || ''}! თქვენი მოთხოვნის შესაბამისად გამოგიგზავნეთ ახალი ვარიანტი:\n📍 ${apt.name} (${aptPrice ? fmtMoney(aptPrice, cur) : ''})\n🔗 ნახეთ დეტალები და ფოტოები: ${pUrl}`;
+
+              return `<div class="card" style="padding:12px 16px;border:1px solid var(--line);border-radius:8px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+                <div style="flex:1;min-width:200px">
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <strong>${esc(d.client_name)}</strong>
+                    <span class="badge" style="font-size:11px;font-weight:700;color:var(--${tone === 't-ok' ? 'ok' : tone === 't-warn' ? 'warn' : 'muted'})">${score}% დამთხვევა</span>
+                  </div>
+                  <div class="small muted" style="margin-top:2px">
+                    ${d.client_phone ? `<a href="tel:${esc(d.client_phone)}">${esc(d.client_phone)}</a> · ` : ''}
+                    ბიუჯეტი: ${d.deal_amount ? fmtMoney(d.deal_amount, d.currency || 'USD') : 'მიუთითებელი'} · ეტაპი: ${STAGES.find(s => s.id === d.stage)?.label || d.stage}
+                  </div>
+                </div>
+                <div style="display:flex;gap:8px;align-items:center">
+                  <a class="btn btn-wa btn-sm" href="https://wa.me/${cleanPhone.replace('+', '')}?text=${encodeURIComponent(waText)}" target="_blank" rel="noopener" title="გაუგზავნე ეს ბინა WhatsApp-ში">
+                    ${icon('whatsapp', 14)} შეთავაზება
+                  </a>
+                  <button type="button" class="btn btn-secondary btn-sm" data-rmm-link="${d.id}" title="მიაბი ეს ბინა გარიგებას">
+                    მიბმა
+                  </button>
+                  <button type="button" class="btn btn-ghost btn-sm" data-rmm-deal="${d.id}" title="გარიგების გახსნა">
+                    ${icon('wrench', 14)}
+                  </button>
+                </div>
+              </div>`;
+            }).join('') : '<div class="empty-inline">აქტიური კლიენტები არ მოიძებნა.</div>'}
+          </div>
+        </div>
+      `,
+      onOpen: (form) => {
+        $$('[data-rmm-deal]', form).forEach(b => b.addEventListener('click', () => {
+          const d = H.deal(b.dataset.rmmDeal);
+          if (d) openDealForm(d);
+        }));
+
+        $$('[data-rmm-link]', form).forEach(b => b.addEventListener('click', async () => {
+          const d = H.deal(b.dataset.rmmLink);
+          if (!d) return;
+          b.disabled = true;
+          try {
+            const row = await q(sb.from('deals').update({ apartment_id: apt.id, updated_at: new Date().toISOString() }).eq('id', d.id).select().single());
+            App.upsertLocal('deals', row);
+            toast(`ბინა წარმატებით მიება კლიენტს: ${d.client_name}`, { type: 'success' });
+            b.textContent = 'მიბმულია ✓';
+            b.classList.add('t-ok');
+          } catch (err) {
+            toast('შეცდომა მიბმისას', { type: 'error' });
+            b.disabled = false;
+          }
+        }));
+      }
+    });
+  }
+  App.openReverseMatchmakerModal = openReverseMatchmakerModal;
 
   // ===========================================================================
   // POST GENERATOR (KA · EN · WhatsApp · Co-Brokering 50/50)
