@@ -4,12 +4,8 @@
 // page renders without a second request. Falls back to the plain page on any error.
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const ROOT = [path.join(__dirname, '..', 'rigzea'), path.join(process.cwd(), 'rigzea')]
+const ROOT = [path.join(process.cwd(), 'rigzea'), process.cwd()]
   .find(d => fs.existsSync(path.join(d, 'p', 'index.html'))) || path.join(process.cwd(), 'rigzea');
 let cachedHtml = null;
 let cachedCfg = null;

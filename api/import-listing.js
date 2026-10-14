@@ -3,12 +3,9 @@
 // No paid services: a single fetch and local parsing (api/_import-parse.js).
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import importParse from './_import-parse.js';
-const { hostOf, parseListing } = importParse;
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const hostOf = importParse.hostOf || importParse.default?.hostOf;
+const parseListing = importParse.parseListing || importParse.default?.parseListing;
 
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36';
 const MAX_BYTES = 3 * 1024 * 1024;
@@ -22,14 +19,13 @@ function config() {
   let url = process.env.SUPABASE_URL || '';
   let key = process.env.SUPABASE_ANON_KEY || '';
   if (!url || !key) {
-    for (const root of [path.join(__dirname, '..', 'rigzea'), path.join(process.cwd(), 'rigzea')]) {
-      try {
-        const src = fs.readFileSync(path.join(root, 'js', 'config.js'), 'utf8');
-        url = url || (src.match(/SUPABASE_URL:\s*['"]([^'"]+)['"]/) || [])[1] || '';
-        key = key || (src.match(/SUPABASE_ANON_KEY:\s*['"]([^'"]+)['"]/) || [])[1] || '';
-        break;
-      } catch { /* try the next location */ }
-    }
+    const root = [path.join(process.cwd(), 'rigzea'), process.cwd()]
+      .find(d => fs.existsSync(path.join(d, 'js', 'config.js'))) || path.join(process.cwd(), 'rigzea');
+    try {
+      const src = fs.readFileSync(path.join(root, 'js', 'config.js'), 'utf8');
+      url = url || (src.match(/SUPABASE_URL:\s*['"]([^'"]+)['"]/) || [])[1] || '';
+      key = key || (src.match(/SUPABASE_ANON_KEY:\s*['"]([^'"]+)['"]/) || [])[1] || '';
+    } catch { /* try next */ }
   }
   cachedCfg = { url: url.replace(/\/$/, ''), key };
   return cachedCfg;
