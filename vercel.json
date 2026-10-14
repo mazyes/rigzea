@@ -4,15 +4,61 @@
   "cleanUrls": true,
   "trailingSlash": true,
   "functions": {
-    "api/p.js": { "includeFiles": "rigzea/{p/index.html,js/config.js}" },
-    "api/import-listing.js": { "includeFiles": "rigzea/js/config.js" },
-    "api/plan-email.js": { "includeFiles": "rigzea/js/config.js" }
+    "api/p.js": {
+      "includeFiles": "rigzea/{p/index.html,js/config.js}"
+    },
+    "api/import-listing.js": {
+      "includeFiles": "rigzea/js/config.js"
+    },
+    "api/plan-email.js": {
+      "includeFiles": "rigzea/js/config.js"
+    },
+    "api/cron-reminders.js": {
+      "maxDuration": 60,
+      "includeFiles": "rigzea/js/config.js"
+    },
+    "api/telegram.js": {
+      "includeFiles": "rigzea/js/config.js"
+    },
+    "api/link-event.js": {
+      "includeFiles": "rigzea/js/config.js"
+    }
   },
+  "redirects": [
+    {
+      "source": "/p/",
+      "has": [
+        {
+          "type": "query",
+          "key": "id",
+          "value": "(?<id>[A-Za-z0-9-]{3,80})"
+        }
+      ],
+      "destination": "/p/:id/",
+      "permanent": false
+    },
+    {
+      "source": "/p",
+      "has": [
+        {
+          "type": "query",
+          "key": "id",
+          "value": "(?<id>[A-Za-z0-9-]{3,80})"
+        }
+      ],
+      "destination": "/p/:id/",
+      "permanent": false
+    }
+  ],
   "rewrites": [
-    { "source": "/p/:ref([A-Za-z0-9-]{3,80})/", "destination": "/api/p?ref=:ref" },
-    { "source": "/p/:ref([A-Za-z0-9-]{3,80})", "destination": "/api/p?ref=:ref" },
-    { "source": "/p/", "has": [{ "type": "query", "key": "id" }], "destination": "/api/p" },
-    { "source": "/p", "has": [{ "type": "query", "key": "id" }], "destination": "/api/p" }
+    {
+      "source": "/p/:ref([A-Za-z0-9-]{3,80})/",
+      "destination": "/api/p?ref=:ref"
+    },
+    {
+      "source": "/p/:ref([A-Za-z0-9-]{3,80})",
+      "destination": "/api/p?ref=:ref"
+    }
   ],
   "headers": [
     {
@@ -53,7 +99,7 @@
   ],
   "crons": [
     {
-      "path": "/api/cron-reminders",
+      "path": "/api/cron-reminders/",
       "schedule": "0 5 * * *"
     }
   ]

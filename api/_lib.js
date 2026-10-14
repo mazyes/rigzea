@@ -36,23 +36,27 @@ export function sendMessage(chatId, text, extra = {}) {
   return telegramRequest('sendMessage', { chat_id: chatId, text, parse_mode: 'HTML', disable_web_page_preview: true, ...extra });
 }
 
-const supabaseUrl = () => (process.env.SUPABASE_URL || 'https://cuioodytwyzykqlrjfej.supabase.co').replace(/\/$/, '');
-
-// Supabase URL + anon key for calls made on behalf of a signed-in user:
-// env vars first, otherwise the public values in rigzea/js/config.js.
+// Supabase URL + anon key, the single source for every function. URL and key always come from the
+// same place (both env vars, or both from the public rigzea/js/config.js), so a staging URL can never
+// be paired with the production key. Empty values mean "not configured" and callers must say so.
 let cachedPublic = null;
 export function publicConfig() {
   if (cachedPublic) return cachedPublic;
+  let url = process.env.SUPABASE_URL || '';
   let key = process.env.SUPABASE_ANON_KEY || '';
-  if (!key) {
+  if (!url || !key) {
+    url = ''; key = '';
+    const file = [path.join(process.cwd(), 'rigzea', 'js', 'config.js'), path.join(process.cwd(), 'js', 'config.js')].find(f => fs.existsSync(f));
     try {
-      const src = fs.readFileSync(path.join(process.cwd(), 'rigzea', 'js', 'config.js'), 'utf8');
+      const src = fs.readFileSync(file, 'utf8');
+      url = (src.match(/SUPABASE_URL:\s*['"]([^'"]+)['"]/) || [])[1] || '';
       key = (src.match(/SUPABASE_ANON_KEY:\s*['"]([^'"]+)['"]/) || [])[1] || '';
     } catch { /* missing file: the caller reports "not configured" */ }
   }
-  cachedPublic = { url: supabaseUrl(), key };
+  cachedPublic = { url: url.replace(/\/$/, ''), key };
   return cachedPublic;
 }
+const supabaseUrl = () => publicConfig().url;
 
 // Supabase RPC as the signed-in caller (their JWT, so RLS and role checks apply).
 export async function callRpcAs(token, functionName, params = {}) {

@@ -457,6 +457,7 @@ button.row { width: 100%; border: 0; border-bottom: 1px solid var(--line); backg
 .toast span { flex: 1; }
 .toast-success { background: var(--ok); color: #fff; }
 .toast-error { background: var(--danger); color: #fff; }
+.toast-warn { background: var(--warn); color: #fff; }
 .toast-action { border: 1px solid rgba(255, 255, 255, .6); background: transparent; color: inherit; border-radius: 4px; padding: 4px 10px; cursor: pointer; font-weight: 500; white-space: nowrap; }
 .toast-close { border: 0; background: none; color: inherit; opacity: .8; cursor: pointer; padding: 4px; display: flex; }
 

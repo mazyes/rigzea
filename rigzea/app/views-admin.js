@@ -9,8 +9,10 @@
   // ===========================================================================
   let invitations = null;
   let invitationsError = null;
+  let invitationsOrg = null;
 
   async function loadInvitations() {
+    invitationsOrg = S.org.id;
     try { invitations = await q(sb.from('invitations').select('*').eq('organization_id', S.org.id).order('created_at', { ascending: false })); invitationsError = null; }
     catch (err) { invitationsError = err; invitations = []; }
     S.seatInvites = invitations.filter(i => i.status === 'pending' && i.role !== 'staff').length;
@@ -25,7 +27,7 @@
 
   App.views.team = () => {
     if (agentRole === null) checkAgentRole();
-    if (invitations === null) { loadInvitations().then(() => App.route().name === 'team' && App.render()); }
+    if (invitations === null || invitationsOrg !== S.org.id) { invitations = null; loadInvitations().then(() => App.route().name === 'team' && App.render()); }
     const members = S.data.members.slice().sort((a, b) => (a.display_name || '').localeCompare(b.display_name || ''));
     const pendingInv = (invitations || []).filter(i => i.status === 'pending');
     const cols = 'minmax(0,1.6fr) 170px minmax(0,1fr) 130px 160px';
@@ -428,6 +430,7 @@
         if (r.lease_end && !lease) return { error: 'ხელშეკრულების თარიღი არასწორია (გამოიყენე 2026-10-01 ან 01.10.2026)' };
         if (ctx.apartmentByName(r.name)) return { error: 'ასეთი ბინა უკვე არსებობს' };
         const row = { name: r.name, address: r.address, unit_number: r.unit_number || null, city: r.city || S.org.city || null, owner_id: owner?.id || null, door_code: r.door_code || null, wifi_name: r.wifi_name || null, wifi_password: r.wifi_password || null, commission_pct: pct, status: 'active',
+          transaction_type: 'long_term', rental_type: 'long_term',
           district: r.district || null, floor: r.floor || null, area_sqm: area, monthly_rent: rent, agent_phone: r.agent_phone || null, lease_end: lease };
         if (rooms !== null) row.rooms = rooms;
         if (currency) row.currency = currency;
@@ -610,9 +613,10 @@
       let inserted = 0;
       for (let i = 0; i < payload.length; i += 100) {
         const chunk = payload.slice(i, i + 100);
-        const { error } = await sb.from(def.table).insert(chunk);
-        if (error && error.code !== '23505') throw new Error(`${inserted} ჩანაწერი შემოვიდა, დანარჩენი ვერა: ${R.friendlyError(error)}`);
-        inserted += chunk.length;
+        // Rows already saved by an earlier attempt are skipped, the rest still go in.
+        const { data, error } = await sb.from(def.table).upsert(chunk, { onConflict: 'id', ignoreDuplicates: true }).select('id');
+        if (error) throw new Error(`${inserted} ჩანაწერი შემოვიდა, დანარჩენი ვერა: ${R.friendlyError(error)}`);
+        inserted += (data || []).length;
       }
       importState.rows = null;
       await App.refresh({ quiet: true });

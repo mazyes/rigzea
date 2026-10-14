@@ -20,6 +20,8 @@ async function pickApartment(page, name) {
 
 const tests = [];
 const test = (name, fn) => tests.push({ name, fn });
+// Forms keep rarely used fields in a collapsed "more details" section.
+const openMore = (scope) => scope.locator('details.form-more').evaluateAll(ds => ds.forEach(d => { d.open = true; }));
 
 test('1. manager sees real tasks needing attention on Today', async (browser) => {
   const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
@@ -86,6 +88,7 @@ test('3. create and assign a task once, even with double submit and a failed sav
   await page.goto(BASE + '/app/#/tasks');
   await page.locator('#view .rows').waitFor();
   await page.locator('#btn-new-task').click();
+  await page.locator('#quick-add-panel [data-qa=task]').click();
   await page.locator('dialog[open] input[name=type][value=repair]').check({ force: true });
   await pickApartment(page, 'ძველი ბათუმი · 5');
   await page.locator('dialog[open] input[name=title]').fill('ნათურის გამოცვლა');
@@ -228,7 +231,7 @@ test('10. auth, organization switching and permissions still work', async (brows
     }
     localStorage.setItem('rigzea_mockdb', JSON.stringify(d));
   });
-  await page.goto(BASE + '/app/');
+  await page.goto(BASE + '/app/#signin');
   await page.locator('#form-signin').waitFor();
   await page.fill('#form-signin input[name=email]', 'manager@rigzea.test');
   await page.fill('#form-signin input[name=password]', 'wrong');
@@ -421,6 +424,7 @@ test('13. apartment edit keeps commission, saves photos and amenities, shows lin
   await page.locator('dialog[open] [data-pm-input]').setInputFiles([FIXTURE, FIXTURE]);
   await page.locator('dialog[open] .pm-item img').nth(1).waitFor();
   await page.locator('dialog[open] [data-pm-del="1"]').click();
+  await openMore(page.locator('dialog[open]'));
   await page.locator('dialog[open] [data-amenity="balcony"]').click();
   await page.locator('dialog[open] textarea[name=description_en]').fill('Bright apartment');
   await page.locator('dialog[open] [data-submit]').click();
@@ -488,7 +492,7 @@ test('D1. deals: create, failed stage change is not shown as saved, matchmaker s
   const body = await page.locator('body').innerText();
   assert(!/4821|sea-view/.test(body), 'no access secrets on public selection');
   assert(body.includes('შედარება') && body.includes('$900'), 'comparison table');
-  assert((await page.locator('.s-card a.s-btn-primary').first().getAttribute('href')).startsWith('/p/?id='), 'links to single listing');
+  assert((await page.locator('.s-card a.s-btn-primary').first().getAttribute('href')).startsWith('/p/'), 'links to single listing');
   const { sw, w } = await page.evaluate(() => ({ sw: document.documentElement.scrollWidth, w: window.innerWidth }));
   assert(sw <= w, `selection page overflows: ${sw} > ${w}`);
   await page.goto(BASE + '/p/s/?id=doesnotexist1');
@@ -698,23 +702,21 @@ test('16. sales public listing: sales price, sqm price, no rental labels or inte
 
 test('17. navigation: rentals and sales sections scope apartments, contacts and deals', async (browser) => {
   const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
-  await page.goto(BASE + '/app/');
-  await page.getByRole('heading', { name: 'დღეს', exact: true }).waitFor();
-
-  // Buyers and landlords are separate pages reached from the menu
-  await page.locator('#rail a[href="#/owners?type=buyer"]').click();
+  // The menu has one "contacts" item; buyers, landlords and tenants are filtered views of it.
+  const go = async (hash) => { await page.goto(BASE + '/app/' + hash); };
+  await go('#/owners?type=buyer');
   await page.getByRole('heading', { name: 'მყიდველები', exact: true }).waitFor();
   await page.locator('#o-body .row', { hasText: 'გიორგი მაისურაძე' }).waitFor();
   assert.strictEqual(await page.locator('#o-body .row', { hasText: 'დავით მამულაშვილი' }).count(), 0, 'landlord is not listed among buyers');
-  assert.strictEqual(await page.locator('#rail [aria-current="page"]').getAttribute('href'), '#/owners?type=buyer');
+  assert.strictEqual(await page.locator('#rail [aria-current="page"]').getAttribute('href'), '#/owners');
 
-  await page.locator('#rail a[href="#/owners?type=owner"]').click();
+  await go('#/owners?type=owner');
   await page.getByRole('heading', { name: 'მეპატრონეები', exact: true }).waitFor();
   await page.locator('#o-body .row', { hasText: 'დავით მამულაშვილი' }).waitFor();
   assert.strictEqual(await page.locator('#o-body .row', { hasText: 'გიორგი მაისურაძე' }).count(), 0, 'buyer is not listed among landlords');
 
   // A contact added from the tenants page is saved as a tenant
-  await page.locator('#rail a[href="#/owners?type=renter"]').click();
+  await go('#/owners?type=renter');
   await page.getByRole('heading', { name: 'მდგმურები', exact: true }).waitFor();
   await page.locator('#o-new').click();
   const dlg = page.locator('dialog[open]');
@@ -728,13 +730,13 @@ test('17. navigation: rentals and sales sections scope apartments, contacts and 
   // The contact's own page keeps the section highlighted
   await page.locator('#o-body .row', { hasText: 'ლიკა თოდუა' }).click();
   await page.getByRole('heading', { name: 'ლიკა თოდუა' }).waitFor();
-  assert.strictEqual(await page.locator('#rail [aria-current="page"]').getAttribute('href'), '#/owners?type=renter');
+  assert.strictEqual(await page.locator('#rail [aria-current="page"]').getAttribute('href'), '#/owners');
 
   // Apartments and deals follow the section
-  await page.locator('#rail a[href="#/apartments?type=sale"]').click();
+  await go('#/apartments?type=sale');
   await page.getByRole('heading', { name: 'გასაყიდი ბინები', exact: true }).waitFor();
   assert.strictEqual(await page.locator('[data-tp]').count(), 0, 'no type filter inside the sales section');
-  await page.locator('#rail a[href="#/deals?type=sale"]').click();
+  await go('#/deals?type=sale');
   await page.getByRole('heading', { name: 'გაყიდვის გარიგებები', exact: true }).waitFor();
   await page.locator('#btn-deal-new').click();
   assert.strictEqual(await page.locator('dialog[open] #deal-type-select').inputValue(), 'sale');
@@ -743,15 +745,17 @@ test('17. navigation: rentals and sales sections scope apartments, contacts and 
 
   // Phone: section tabs above the content, sections in the bottom bar, the rest in the menu
   const phone = await newPage(browser, { viewport: PHONE, login: USERS.manager });
+  const tabCount = { apartments: 3, owners: 5, deals: 3 };
   for (const hash of ['#/apartments?type=rent', '#/owners?type=renter', '#/owners?type=owner&tab=approvals', '#/deals?type=sale']) {
     await phone.goto(BASE + '/app/' + hash);
     await phone.locator('#view h1').waitFor();
     await phone.waitForTimeout(150);
     const { sw, w } = await phone.evaluate(() => ({ sw: document.documentElement.scrollWidth, w: window.innerWidth }));
     assert(sw <= w, `${hash} overflows: ${sw} > ${w}`);
-    assert.strictEqual(await phone.locator('#section-bar a').count(), 4, `${hash} shows the section pages`);
+    assert.strictEqual(await phone.locator('#section-bar a').count(), tabCount[hash.slice(2).split('?')[0]], `${hash} shows the section tabs`);
   }
-  assert.strictEqual((await phone.locator('#bottom-nav [aria-current="page"]').innerText()).trim(), 'გაყიდვა');
+  assert.strictEqual((await phone.locator('#bottom-nav [aria-current="page"]').innerText()).trim(), 'გარიგებები');
+  await phone.goto(BASE + '/app/#/owners');
   await phone.locator('#section-bar a[href="#/owners?type=seller"]').click();
   await phone.getByRole('heading', { name: 'გამყიდველები', exact: true }).waitFor();
   await phone.locator('#btn-more').click();
@@ -771,7 +775,7 @@ test('18. co-broker share: owner data hidden by default, toggles rebuild the tex
   assert(!t.includes('577 00 11 22') && !t.includes('დავით მამულაშვილი'), 'owner is hidden by default');
   assert(t.includes('შერიფ ხიმშიაშვილის') && !t.includes('ხიმშიაშვილის 7'), 'building number is removed from the address');
   assert(t.includes('50/50'), 'default commission terms');
-  assert(t.includes('/p/?id='), 'white-label link is included');
+  assert(/\/p\/[^\s]+\/\?wl=1/.test(t), 'white-label link is included');
   assert((await dlg.locator('#cb-wa').getAttribute('href')).startsWith('https://wa.me/?text='), 'WhatsApp deep link');
 
   await dlg.locator('#cb-hide').uncheck();
@@ -809,6 +813,7 @@ test('19. trust: cadastral duplicate banner, unreliable client flag warns in con
   await page.goto(BASE + '/app/#/apartments?type=rent');
   await page.locator('#btn-apt-new').click();
   const dlg = page.locator('dialog[open]');
+  await openMore(dlg);
   await dlg.locator('#apt-cadastral').fill('01101400901');
   assert(await dlg.locator('#apt-dup').isHidden(), 'no warning for an incomplete code');
   await dlg.locator('input[name=name]').fill('დუბლიკატი');
@@ -935,11 +940,13 @@ test('22. team: commission split, payout marks, leaderboard and the agent role',
   await dlg.locator('input[name=client_name]').fill('ლევან ჩხეიძე');
   await dlg.locator('#deal-amount').fill('200000');
   await dlg.locator('#deal-comm-pct').fill('3');
+  await openMore(dlg);
   await dlg.locator('#deal-listing-agent').selectOption({ label: 'ნინო ბერიძე' });
   await dlg.locator('#deal-stage-select').selectOption('closed');
   // net 6 000: 25% + 25% to the agents, 50% to the agency
   const split = (await dlg.locator('#deal-split-out').innerText()).replace(/\s+/g, ' ');
-  assert((split.match(/\$1,500/g) || []).length === 2 && split.includes('$3,000') && split.includes('სააგენტო (50%)'), 'split amounts: ' + split);
+  // Amounts use the Georgian thousands separator (a space), e.g. "$1 500".
+  assert((split.match(/\$1[ ,  ]500/g) || []).length === 2 && /\$3[ ,  ]000/.test(split) && split.includes('სააგენტო (50%)'), 'split amounts: ' + split);
   await dlg.locator('#deal-listing-split').fill('80');
   assert((await dlg.locator('#deal-split-out').innerText()).includes('100%-ს აღემატება'), 'over 100% is refused');
   await dlg.locator('#deal-listing-split').fill('25');
@@ -956,7 +963,7 @@ test('22. team: commission split, payout marks, leaderboard and the agent role',
   await page.locator(`[data-payout="${deal.id}"][data-role="listing"][aria-pressed="true"]`).waitFor();
   assert.strictEqual((await db(page)).tables.deals.find(x => x.id === deal.id).listing_paid, true);
   const board = (await page.locator('#leaderboard').innerText()).replace(/\s+/g, ' ');
-  assert(board.includes('ნინო ბერიძე') && board.includes('$200,000') && board.includes('$3,000'), 'leaderboard: ' + board);
+  assert(board.includes('ნინო ბერიძე') && /\$200[ ,  ]000/.test(board) && /\$3[ ,  ]000/.test(board), 'leaderboard: ' + board);
   await page.context().close();
 
   // Agent: no finance or team pages, owner contact hidden until a viewing exists
@@ -971,7 +978,7 @@ test('22. team: commission split, payout marks, leaderboard and the agent role',
   await agent.goto(BASE + '/app/#/finance');
   await agent.getByRole('heading', { name: 'დღეს', exact: true }).waitFor();
   assert.strictEqual(await agent.locator('#rail a[href="#/finance"], #rail a[href="#/team"], #rail a[href="#/settings"]').count(), 0, 'management pages are not in the menu');
-  assert.strictEqual(await agent.locator('#rail a[href="#/deals?type=sale"]').count(), 1);
+  assert.strictEqual(await agent.locator('#rail a[href="#/deals"]').count(), 1);
   await agent.goto(BASE + '/app/#/apartments/dddddddd-0000-4000-8000-000000000001');
   await agent.locator('#a-owner-masked').waitFor();
   assert(!(await agent.locator('#view').innerText()).includes('577 00 11 22'), 'owner phone is not shown');
@@ -998,11 +1005,43 @@ test('23. password reset link asks for a new password before opening the workspa
   return page;
 });
 
+test('24. honest owner report, direct lead source, guest guide keeps codes behind the token', async (browser) => {
+  const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
+  // Owner report: no invented numbers (the apartment has no deals or viewings this week)
+  await page.goto(BASE + '/app/#/apartments/dddddddd-0000-4000-8000-000000000001');
+  await page.locator('#btn-owner-report').click();
+  const report = await page.locator('dialog[open] #or-text').inputValue();
+  assert(/ახალი მოთხოვნები: 0/.test(report) && /ბინის ჩვენებები: 0/.test(report), 'report shows real counts: ' + report.slice(0, 300));
+  await page.keyboard.press('Escape');
+
+  // A new contact is saved with lead source "direct", not the first option (Instagram)
+  await page.goto(BASE + '/app/#/owners?type=buyer');
+  await page.locator('#o-new').click();
+  await page.locator('dialog[open] input[name=name]').fill('ტესტ წყარო');
+  await page.locator('dialog[open] [data-submit]').click();
+  await page.locator('dialog[open]').waitFor({ state: 'detached' });
+  assert.strictEqual((await db(page)).tables.owners.find(o => o.name === 'ტესტ წყარო').lead_source, 'direct');
+
+  // The apartment page links the guest guide by token; the old id link hides the codes
+  const href = await page.goto(BASE + '/app/#/apartments/dddddddd-0000-4000-8000-000000000001').then(() => page.locator('a[href^="/guide/"]').getAttribute('href'));
+  assert(href.includes('t=g1d3t0k3n'), 'guide link uses the token: ' + href);
+  await page.goto(BASE + href);
+  await page.locator('.door-code', { hasText: '4821#' }).waitFor();
+  await page.goto(BASE + '/guide/?apt=dddddddd-0000-4000-8000-000000000001');
+  await page.locator('.guide-hero h1').waitFor();
+  const body = await page.locator('body').innerText();
+  assert(!body.includes('4821') && !body.includes('sea-view-24'), 'id link must not show door code or Wi-Fi password');
+  return page;
+});
+
 (async () => {
   const server = await serve();
   const browser = await launch();
   let failed = 0;
-  for (const t of tests) {
+  // `node tests/e2e.js 7 D1` runs only the tests whose number matches.
+  const only = process.argv.slice(2);
+  const selected = only.length ? tests.filter(t => only.some(o => t.name.startsWith(o + '.'))) : tests;
+  for (const t of selected) {
     let page;
     try {
       page = await t.fn(browser);
@@ -1012,13 +1051,13 @@ test('23. password reset link asks for a new password before opening the workspa
     } catch (err) {
       failed++;
       console.log('✗', t.name, '\n   ', err.message.split('\n').slice(0,4).join(' | ') + ' ' + (err.stack||'').split('\n').find(l=>l.includes('e2e.js')));
-      if (page) await page.screenshot({ path: `/tmp/fail-${tests.indexOf(t) + 1}.png` }).catch(() => {});
+      if (page) await page.screenshot({ path: require('path').join(require('os').tmpdir(), `rigzea-fail-${tests.indexOf(t) + 1}.png`) }).catch(() => {});
     } finally {
       await page?.context().close().catch(() => {});
     }
   }
   await browser.close();
   server.close();
-  console.log(`\n${tests.length - failed}/${tests.length} passed`);
+  console.log(`\n${selected.length - failed}/${selected.length} passed`);
   process.exit(failed ? 1 : 0);
 })();

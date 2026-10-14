@@ -299,7 +299,7 @@
   function setupSteps() {
     const d = S.data;
     const hasApt = d.apartments.length > 0;
-    const hasWatermark = hasApt && (localStorage.getItem('rigzea_watermark_done') === '1' || d.apartments.some(a => a.photos && a.photos.length > 1));
+    const hasWatermark = hasApt && (localStorage.getItem('rigzea_watermark_done') === '1' || d.apartments.some(a => (a.photos || []).some(p => p?.wm)));
     const hasCollection = (d.selections || []).length > 0 || localStorage.getItem('rigzea_col_done') === '1';
     const hasLease = localStorage.getItem('rigzea_lease_done') === '1' || (d.deals || []).some(x => x.stage === 'closed' || x.stage === 'deposit');
 
@@ -571,7 +571,6 @@
             App.openApartmentForm();
             return;
           }
-          localStorage.setItem('rigzea_watermark_done', '1');
           App.openWatermarkModal(firstApt);
         },
         collection: () => {
@@ -580,11 +579,9 @@
             App.openApartmentForm();
             return;
           }
-          localStorage.setItem('rigzea_col_done', '1');
           App.openCollectionModal({ apartmentIds: apts.slice(0, 3).map(a => a.id), clientName: 'ახალი კლიენტი' });
         },
         lease: () => {
-          localStorage.setItem('rigzea_lease_done', '1');
           if (firstApt && App.openLeaseAgreementGenerator) {
             App.openLeaseAgreementGenerator(firstApt, null);
           } else {
@@ -644,7 +641,7 @@
 
     R.dialog({
       title: 'მფლობელთან გაზიარება',
-      desc: `${apt} · ${money(a.amount)}`,
+      subtitle: `${apt} · ${money(a.amount)}`,
       body: `
         <div class="share-dialog-content">
           <div class="share-preview-box">${esc(msg)}</div>
@@ -658,7 +655,7 @@
           </div>
         </div>
       `,
-      buttons: [{ label: 'დახურვა', close: true }],
+      submitLabel: 'დახურვა',
     });
 
     document.getElementById('btn-copy-approval-link')?.addEventListener('click', () => {
@@ -810,7 +807,7 @@
         </div>
         <div>
           <div class="section-title"><span>ფოტოები</span><label class="btn btn-secondary btn-sm" style="cursor:pointer">${icon('camera', 15)} ატვირთვა<input type="file" accept="image/*" id="d-photo" hidden /></label></div>
-          ${photos.length ? `<div class="photos">${photos.map(p => `<a class="photo" href="${esc(p.url)}" target="_blank" rel="noopener"><img src="${esc(p.url)}" alt="${esc(phaseLabel(p.phase))}" loading="lazy" /><span>${esc(phaseLabel(p.phase))}</span></a>`).join('')}</div>` : '<p class="muted small">ფოტო ჯერ არ არის. დამლაგებელი „მანამდე“ და „შემდეგ“ ფოტოებს ტელეფონიდან ატვირთავს.</p>'}
+          ${photos.length ? `<div class="photos">${photos.map(p => `<a class="photo" href="${R.safeUrl(p.url)}" target="_blank" rel="noopener"><img src="${esc(p.url)}" alt="${esc(phaseLabel(p.phase))}" loading="lazy" /><span>${esc(phaseLabel(p.phase))}</span></a>`).join('')}</div>` : '<p class="muted small">ფოტო ჯერ არ არის. დამლაგებელი „მანამდე“ და „შემდეგ“ ფოტოებს ტელეფონიდან ატვირთავს.</p>'}
         </div>
         ${isRepair || approvals.length || expenses.length ? `<div>
           <div class="section-title"><span>ხარჯი და თანხმობა</span>
@@ -818,7 +815,7 @@
           ${repairs.map(r => `<p class="small">შეფასება: <strong>${money(r.estimate_amount)}</strong> <span class="muted">(ინფორმაციისთვის, ხარჯად არ ითვლება)</span></p>`).join('')}
           ${approvals.map(a => `<div class="row" style="--cols:minmax(0,1fr) auto;padding-left:0;padding-right:0"><span class="cell-main"><strong>თანხმობა · ${money(a.amount)}</strong><span>${esc(a.title || a.description || '')} · ${esc(R.dateTime(a.created_at))}${R.approvalStatus(a) === 'pending' ? ` · მფლობელი ${esc(R.elapsed(a.created_at))} არ პასუხობს` : a.response_note ? ' · „' + esc(a.response_note) + '“' : ''}</span></span>
             <span style="display:flex;gap:6px;align-items:center">${R.approvalBadge(a)}${R.approvalStatus(a) === 'pending' ? `<button type="button" class="btn btn-ghost btn-sm" data-share="${a.id}">${navigator.share ? 'გაზიარება' : 'ბმული'}</button>` : ''}</span></div>`).join('')}
-          ${expenses.map(e => `<div class="row" style="--cols:minmax(0,1fr) auto;padding-left:0;padding-right:0"><span class="cell-main"><strong>ხარჯი · ${money(e.amount)}</strong><span>${esc(L.expenseCategory[e.category] || e.category)} · ${esc(R.date(e.expense_date))}${e.receipt_url ? ` · <a href="${esc(e.receipt_url)}" target="_blank" rel="noopener">ქვითარი</a>` : ['incurred', 'paid'].includes(e.status) ? ' · <span class="t-warn">ქვითარი აკლია</span>' : ''}</span></span>${R.expenseBadge(e.status)}</div>`).join('')}
+          ${expenses.map(e => `<div class="row" style="--cols:minmax(0,1fr) auto;padding-left:0;padding-right:0"><span class="cell-main"><strong>ხარჯი · ${money(e.amount)}</strong><span>${esc(L.expenseCategory[e.category] || e.category)} · ${esc(R.date(e.expense_date))}${e.receipt_url ? ` · <a href="${R.safeUrl(e.receipt_url)}" target="_blank" rel="noopener">ქვითარი</a>` : ['incurred', 'paid'].includes(e.status) ? ' · <span class="t-warn">ქვითარი აკლია</span>' : ''}</span></span>${R.expenseBadge(e.status)}</div>`).join('')}
           ${!repairs.length && !approvals.length && !expenses.length ? '<p class="muted small">ხარჯი ჯერ არ არის ჩაწერილი.</p>' : ''}
         </div>` : ''}
         <div>

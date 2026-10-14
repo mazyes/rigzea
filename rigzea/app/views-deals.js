@@ -250,7 +250,8 @@
                 </div>
               </section>`;
           }).join('')}
-        </div>` : ''}`;
+        </div>
+        ${deals.some(d => d.stage === 'lost') ? `<p class="muted small" style="margin-top:8px">${deals.filter(d => d.stage === 'lost').length} წაგებული გარიგება დაფაზე არ ჩანს. ნახე „ცხრილის“ ხედში.</p>` : ''}` : ''}`;
 
     $$('[data-dt]').forEach(b => b.addEventListener('click', () => { dealTypeFilter = b.dataset.dt; renderPipeline(); }));
     $('#btn-deal-empty')?.addEventListener('click', () => openDealForm(null, dealSection ? { deal_type: dealSection } : {}));
@@ -401,6 +402,8 @@
       listing_agent_id: H.apt(defaults.apartment_id)?.listing_agent_id || '', selling_agent_id: S.member?.id || '', listing_split: 25, selling_split: 25, ...defaults };
     const id = deal?.id || R.uuid();
     const canSplit = App.isManager();
+    // Co-broking is on only when a partner is recorded; the default 50% split alone doesn't count.
+    const hasPartner = Boolean(v.partner_agent);
     const hasMore = Boolean(edit && (v.partner_agent || v.partner_phone || Number(v.owner_bonus) || v.target_move_in || v.follow_up_date || v.client_email || v.listing_agent_id));
     const agentOptions = (sel) => `<option value="">არ არის</option>${deskMembers().map(m => `<option value="${m.id}" ${m.id === sel ? 'selected' : ''}>${esc(m.display_name || 'უსახელო')}</option>`).join('')}`;
     const numOr = (val, dflt) => (val === '' || val === undefined || val === null ? dflt : Number(val));
@@ -472,7 +475,7 @@
           <div class="form-section span-2" style="background:var(--surface-sunken);border:1px solid var(--line);border-radius:10px;padding:14px">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
               <label style="display:flex;align-items:center;gap:8px;font-weight:700;cursor:pointer;margin:0">
-                <input type="checkbox" id="deal-cobroker-toggle" ${v.partner_agent || (v.cobroker_split && v.cobroker_split !== 0) ? 'checked' : ''} />
+                <input type="checkbox" id="deal-cobroker-toggle" ${hasPartner ? 'checked' : ''} />
                 <span>🤝 პარტნიორ აგენტთან გარიგება (Co-Broking)</span>
               </label>
               <div class="seg" id="cb-quick-split" style="margin:0">
@@ -481,7 +484,7 @@
                 <button type="button" class="btn btn-ghost btn-sm" data-cb-set="30">70/30</button>
               </div>
             </div>
-            <div id="cb-fields" style="${v.partner_agent || (v.cobroker_split && v.cobroker_split !== 0) ? '' : 'display:none'}">
+            <div id="cb-fields" style="${hasPartner || Number(v.owner_bonus) ? '' : 'display:none'}">
               <div class="form-grid">
                 <label class="field"><span class="field-label">პარტნიორი აგენტი (სახელი, სააგენტო)</span><input name="partner_agent" id="deal-partner" value="${esc(v.partner_agent || '')}" placeholder="მაგ.: დავითი (Remax)" /></label>
                 <label class="field"><span class="field-label">პარტნიორის წილი (%)</span><input type="number" id="deal-partner-split" name="cobroker_split" min="0" max="100" step="5" value="${esc(v.cobroker_split ?? 50)}" /><span class="field-hint">50 = თანაბრად გაყოფა</span></label>
@@ -589,6 +592,11 @@
         typeSelect.addEventListener('change', () => { syncType(); updateCalc(); });
         commTypeSelect.addEventListener('change', () => { syncCommType(); updateCalc(); });
         pctInput.addEventListener('input', () => { pctInput.dataset.manual = '1'; });
+        // A stage the user picked survives a later deal-type change.
+        stageSelect.addEventListener('change', () => { stageSelect.dataset.manual = '1'; });
+        // Keep the commission and split preview live while any field changes.
+        form.addEventListener('input', updateCalc);
+        form.addEventListener('change', updateCalc);
 
         aptSelect.addEventListener('change', () => {
           const opt = aptSelect.selectedOptions[0];
@@ -679,7 +687,6 @@
       },
     });
   }
-  App.openDealForm = openDealForm;
   App.openDealForm = openDealForm;
 
   // ===========================================================================
@@ -941,6 +948,10 @@
   // SELECTIONS LIST
   // ===========================================================================
   const selCache = { org: null, rows: [], error: null, loading: false };
+  App.addSelection = (sel) => {
+    if (selCache.org === S.org.id) selCache.rows.unshift(sel);
+    try { localStorage.setItem('rigzea_col_done', '1'); } catch { /* private mode */ }
+  };
 
   async function loadSelections() {
     selCache.loading = true; selCache.error = null;
@@ -1144,7 +1155,7 @@
             const sel = await App.insertOnce('selections', row);
             pendingId = null;
             if (linkedDeal) await saveCriteria(row.criteria);
-            if (selCache.org === S.org.id) selCache.rows.unshift(sel);
+            App.addSelection(sel);
             showDone(sel);
           });
         });
@@ -1155,7 +1166,7 @@
           const done = $('#mm-done', form);
           done.hidden = false;
           done.innerHTML = `
-            <div class="mm-done-head">${icon('check', 18)} <strong>ბმული მზადაა — ${sel.apartment_ids.length} ბინა</strong></div>
+            <div class="mm-done-head">${icon('check', 18)} <strong>ბმული მზადაა: ${sel.apartment_ids.length} ბინა</strong></div>
             <div class="mm-link"><input class="input" readonly value="${esc(url)}" aria-label="შერჩევის ბმული" /></div>
             <div class="mm-done-actions">
               <button type="button" class="btn btn-secondary" id="mm-copy">${icon('copy', 16)} კოპირება</button>
@@ -1265,6 +1276,7 @@
         $$('[data-rmm-link]', form).forEach(b => b.addEventListener('click', async () => {
           const d = H.deal(b.dataset.rmmLink);
           if (!d) return;
+          if (d.apartment_id && d.apartment_id !== apt.id && !window.confirm(`${d.client_name} უკვე მიბმულია ბინაზე „${H.aptName(d.apartment_id)}“. შევცვალო ამ ბინით?`)) return;
           b.disabled = true;
           try {
             const row = await q(sb.from('deals').update({ apartment_id: apt.id, updated_at: new Date().toISOString() }).eq('id', d.id).select().single());
@@ -1825,9 +1837,13 @@
       };
     }
 
+    // A previous contract of the same deal is this lease's draft: reuse all of it. One from the same
+    // apartment belongs to an earlier tenant: keep landlord, property and terms, never their personal data or dates.
+    const TENANT_KEYS = /^(tenant_|meter_)|^(contract_date|start_date|end_date|inventory_notes|acceptance_notes)$/;
+    const reuse = last && !dl?.id ? Object.fromEntries(Object.entries(last).filter(([k]) => !TENANT_KEYS.test(k))) : (last || {});
     const d = {
       ...getDefaults(a, dl),
-      ...(last || {}),
+      ...reuse,
     };
     const f = (name, label, opts = {}) => `<label class="field ${opts.span ? 'span-2' : ''}"><span class="field-label">${label}</span>${opts.textarea
       ? `<textarea name="${name}" rows="${opts.rows || 2}" ${opts.required ? 'required' : ''} placeholder="${esc(opts.ph || '')}">${esc(d[name] || '')}</textarea>`
@@ -1914,6 +1930,8 @@
         if (v.start_date && v.end_date && v.end_date <= v.start_date) throw new Error('დასრულების თარიღი დაწყების თარიღის შემდეგ უნდა იყოს.');
         const data = { ...v, rent: Number(v.rent), deposit: v.deposit === '' ? '' : Number(v.deposit) };
         const row = await App.insertOnce('contracts', { id: R.uuid(), organization_id: S.org.id, apartment_id: a?.id || null, deal_id: dl?.id || null, data, created_by: S.user.id });
+        App.invalidateDocs?.();
+        try { localStorage.setItem('rigzea_lease_done', '1'); } catch { /* private mode */ }
         toast('ხელშეკრულება შენახულია', { type: 'success' });
         setTimeout(() => openLeasePreview(row.data || data, a), 0);
       },

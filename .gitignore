@@ -14,3 +14,4 @@ screenshots/
 supabase/.temp/
 .env*
 videos/
+!.env.example

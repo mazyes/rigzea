@@ -214,13 +214,14 @@
   async function signOut() {
     await sb.auth.signOut();
     localStorage.removeItem('rigzea_selected_org_id');
-    location.href = '/app/';
+    location.href = '/app/?signin'; // returning users get the sign-in form, not sign-up
   }
   document.addEventListener('click', (e) => { if (e.target.closest('[data-action="signout"]')) signOut(); });
 
   // ---------------------------------------------------------------------------
   // Data
   // ---------------------------------------------------------------------------
+  const OPEN_TASK_STATUSES = ['new', 'assigned', 'in_progress', 'blocked'];
   async function loadData() {
     const org = S.org.id;
     S.loading = true;
@@ -228,10 +229,12 @@
     const since = new Date(); since.setDate(since.getDate() - 120);
     const sinceIso = R.isoDate(since);
     try {
-      const [apartments, owners, tasks, approvals, expenses, income, reservations, events, members, notifications, statements, repairs, deals] = await Promise.all([
+      const [apartments, owners, openTasks, closedTasks, approvals, expenses, income, reservations, events, members, notifications, statements, repairs, deals] = await Promise.all([
         q(sb.from('apartments').select('*').eq('organization_id', org).order('name')),
         q(sb.from('owners').select('*').eq('organization_id', org).order('name')),
-        q(sb.from('tasks').select('*').eq('organization_id', org).order('due_date', { ascending: true }).limit(500)),
+        // Every open task, plus the most recent closed ones for history.
+        q(sb.from('tasks').select('*').eq('organization_id', org).in('status', OPEN_TASK_STATUSES).order('due_date', { ascending: true })),
+        q(sb.from('tasks').select('*').eq('organization_id', org).in('status', ['done', 'cancelled']).order('due_date', { ascending: false }).limit(300)),
         q(sb.from('approvals').select('*').eq('organization_id', org).order('created_at', { ascending: false }).limit(300)),
         q(sb.from('expenses').select('*').eq('organization_id', org).order('expense_date', { ascending: false }).limit(500)),
         q(sb.from('income').select('*').eq('organization_id', org).order('income_date', { ascending: false }).limit(500)),
@@ -244,6 +247,7 @@
         q(sb.from('repairs').select('*').eq('organization_id', org)).catch(() => []),
         sb.from('deals').select('*').eq('organization_id', org).order('created_at', { ascending: false }).limit(500).then(r => r.data || [], () => []),
       ]);
+      const tasks = [...openTasks, ...closedTasks].sort((a, b) => String(a.due_date || '~').localeCompare(String(b.due_date || '~')));
       S.data = { apartments, owners, tasks, approvals, expenses, income, reservations, events, members, notifications, statements, repairs, deals: deals || [] };
       indexData();
     } catch (err) {
@@ -277,6 +281,8 @@
     await loadData();
     renderShell();
     render();
+    // Shown once per failed refresh, not on every later render.
+    if (S.loadError && S.data) toast('ბოლო განახლება ვერ მოხერხდა. ნაჩვენებია წინა მონაცემები.', { type: 'error', action: { label: 'განახლება', fn: () => refresh({ quiet: true }) } });
   }
 
   async function logEvent(apartmentId, type, title, description = null, metadata = {}) {
@@ -464,8 +470,12 @@
     S.org = o; S.member = o.member;
     localStorage.setItem('rigzea_selected_org_id', id);
     if (o.member.role === 'staff') { location.href = '/staff/'; return; }
+    // Drop the previous workspace's data first so nothing renders it under the new name.
+    S.data = null;
+    S.loadError = null;
     location.hash = '#/today';
     await refresh();
+    if (!S.data) return;
     toast(`გადაერთე: ${o.name}`);
   }
 
@@ -502,7 +512,6 @@
       console.error(err);
       $('#view').innerHTML = `<div class="card"><div class="error-state"><p>გვერდის ჩვენება ვერ მოხერხდა: ${esc(err.message)}</p><a class="btn btn-secondary" href="#/today">მთავარზე დაბრუნება</a></div></div>`;
     }
-    if (S.loadError) toast('ბოლო განახლება ვერ მოხერხდა — ნაჩვენებია წინა მონაცემები.', { type: 'error', action: { label: 'განახლება', fn: () => refresh({ quiet: true }) } });
     // Task overlay on top of any page
     const taskId = r.params.get('task');
     if (taskId) App.openTaskDrawer(taskId); else App.closeTaskDrawer?.(true);

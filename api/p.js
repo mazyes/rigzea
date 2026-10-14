@@ -4,32 +4,16 @@
 // page renders without a second request. Falls back to the plain page on any error.
 import fs from 'node:fs';
 import path from 'node:path';
+import { publicConfig as config } from './_lib.js';
 
 const ROOT = [path.join(process.cwd(), 'rigzea'), process.cwd()]
   .find(d => fs.existsSync(path.join(d, 'p', 'index.html'))) || path.join(process.cwd(), 'rigzea');
 let cachedHtml = null;
-let cachedCfg = null;
 
 function readHtml() {
   if (cachedHtml) return cachedHtml;
   cachedHtml = fs.readFileSync(path.join(ROOT, 'p', 'index.html'), 'utf8');
   return cachedHtml;
-}
-
-// Supabase URL + anon key: env vars first, otherwise the public values in rigzea/js/config.js.
-function config() {
-  if (cachedCfg) return cachedCfg;
-  let url = process.env.SUPABASE_URL || '';
-  let key = process.env.SUPABASE_ANON_KEY || '';
-  if (!url || !key) {
-    try {
-      const src = fs.readFileSync(path.join(ROOT, 'js', 'config.js'), 'utf8');
-      url = url || (src.match(/SUPABASE_URL:\s*['"]([^'"]+)['"]/) || [])[1] || '';
-      key = key || (src.match(/SUPABASE_ANON_KEY:\s*['"]([^'"]+)['"]/) || [])[1] || '';
-    } catch { /* ignore */ }
-  }
-  cachedCfg = { url: url.replace(/\/$/, ''), key };
-  return cachedCfg;
 }
 
 const esc = (v) => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));

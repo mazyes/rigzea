@@ -1,5 +1,5 @@
 // Rigzea Progressive Web App Service Worker
-const CACHE_NAME = 'rigzea-v1.2.0';
+const CACHE_NAME = 'rigzea-v1.3.0';
 const STATIC_ASSETS = [
   '/app/',
   '/app/index.html',
@@ -50,7 +50,12 @@ self.addEventListener('fetch', (e) => {
     return;
   }
 
-  // Network-first with cache fallback for navigation and static assets
+  // Public pages (/p/, /guide/, /approve/) are always live data: never cache them.
+  const isApp = url.pathname.startsWith('/app/') || url.pathname.startsWith('/js/') || url.pathname.startsWith('/staff/');
+  const isAsset = /\.(css|js|png|jpe?g|svg|webp|woff2?|ico|webmanifest)$/.test(url.pathname);
+  if (!isApp && !isAsset) return;
+
+  // Network-first with cache fallback for the app shell and static assets
   e.respondWith(
     fetch(e.request)
       .then((res) => {
@@ -65,7 +70,7 @@ self.addEventListener('fetch', (e) => {
       .catch(() => {
         return caches.match(e.request).then((cached) => {
           if (cached) return cached;
-          if (e.request.mode === 'navigate') {
+          if (e.request.mode === 'navigate' && url.pathname.startsWith('/app/')) {
             return caches.match('/app/');
           }
           return new Response('Offline', { status: 503, statusText: 'Offline' });

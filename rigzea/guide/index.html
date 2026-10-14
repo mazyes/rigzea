@@ -158,9 +158,10 @@
 
     async function loadData() {
       const params = new URLSearchParams(location.search);
+      const token = params.get('t');
       const aptId = params.get('apt') || params.get('id');
 
-      if (!aptId) {
+      if (!token && !aptId) {
         // Fallback demo apartment if testing
         aptData = {
           name: 'Orbi City · 1204',
@@ -180,7 +181,11 @@
       }
 
       try {
-        const { data, error } = await sb.rpc('get_guest_guide', { p_apartment_id: aptId });
+        // The token link carries the door code and Wi-Fi password; the older
+        // ?apt= links only get the public part of the guide.
+        const { data, error } = token
+          ? await sb.rpc('get_guest_guide_by_token', { p_token: token })
+          : await sb.rpc('get_guest_guide', { p_apartment_id: aptId });
         if (error || !data) throw error || new Error('Not found');
         aptData = data;
         render();
@@ -206,6 +211,7 @@
         </div>
 
         <!-- Wi-Fi Card -->
+        ${aptData.wifi_name || aptData.wifi_password ? `
         <section class="feature-card">
           <div class="feature-card-header">
             <h2>${icon('sparkle', 18)} ${t.wifiTitle}</h2>
@@ -213,18 +219,19 @@
           <div class="wifi-box">
             <div class="wifi-detail">
               <small>${t.wifiNet}</small>
-              <strong>${esc(aptData.wifi_name || 'Apartment_WiFi')}</strong>
+              <strong>${esc(aptData.wifi_name || '')}</strong>
             </div>
             <button type="button" class="btn btn-secondary btn-sm" id="btn-copy-net">${icon('copy', 14)}</button>
           </div>
+          ${aptData.wifi_password ? `
           <div class="wifi-box" style="margin-top:8px">
             <div class="wifi-detail">
               <small>${t.wifiPass}</small>
-              <strong>${esc(aptData.wifi_password || 'Welcome2026')}</strong>
+              <strong>${esc(aptData.wifi_password)}</strong>
             </div>
             <button type="button" class="btn btn-primary btn-sm" id="btn-copy-pass">${icon('copy', 14)} ${t.copyPass}</button>
-          </div>
-        </section>
+          </div>` : ''}
+        </section>` : ''}
 
         <!-- Access Card -->
         <section class="feature-card">

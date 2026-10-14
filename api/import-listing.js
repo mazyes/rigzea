@@ -1,8 +1,7 @@
 // Smart import: POST { url } → normalized listing fields for the "new property" form.
 // Reads one public listing page from MyHome.ge, SS.ge or Place.ge on behalf of a signed-in user.
 // No paid services: a single fetch and local parsing (api/_import-parse.js).
-import fs from 'node:fs';
-import path from 'node:path';
+import { publicConfig as config } from './_lib.js';
 import importParse from './_import-parse.js';
 const hostOf = importParse.hostOf || importParse.default?.hostOf;
 const parseListing = importParse.parseListing || importParse.default?.parseListing;
@@ -11,25 +10,6 @@ const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML,
 const MAX_BYTES = 3 * 1024 * 1024;
 // Stay inside the default function time limit, so a slow site gets our message instead of a gateway error.
 const FETCH_TIMEOUT_MS = 8000;
-let cachedCfg = null;
-
-// Supabase URL + anon key: env vars first, otherwise the public values in rigzea/js/config.js.
-function config() {
-  if (cachedCfg) return cachedCfg;
-  let url = process.env.SUPABASE_URL || '';
-  let key = process.env.SUPABASE_ANON_KEY || '';
-  if (!url || !key) {
-    const root = [path.join(process.cwd(), 'rigzea'), process.cwd()]
-      .find(d => fs.existsSync(path.join(d, 'js', 'config.js'))) || path.join(process.cwd(), 'rigzea');
-    try {
-      const src = fs.readFileSync(path.join(root, 'js', 'config.js'), 'utf8');
-      url = url || (src.match(/SUPABASE_URL:\s*['"]([^'"]+)['"]/) || [])[1] || '';
-      key = key || (src.match(/SUPABASE_ANON_KEY:\s*['"]([^'"]+)['"]/) || [])[1] || '';
-    } catch { /* try next */ }
-  }
-  cachedCfg = { url: url.replace(/\/$/, ''), key };
-  return cachedCfg;
-}
 
 const bearer = (req) => String(req.headers.authorization || '').replace(/^Bearer\s+/i, '');
 
@@ -37,7 +17,7 @@ const bearer = (req) => String(req.headers.authorization || '').replace(/^Bearer
 async function isSignedIn(req) {
   const token = bearer(req);
   const { url, key } = config();
-  if (!token || !url || !key) return false;
+  if (!token) return false;
   try {
     const res = await fetch(`${url}/auth/v1/user`, { headers: { apikey: key, Authorization: `Bearer ${token}` } });
     return res.ok;
@@ -99,9 +79,12 @@ async function fetchPage(url, site) {
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   if (req.method !== 'POST') return res.status(405).json({ ok: false, error: 'method' });
+  // A server problem must not look like an expired session to the user.
+  if (!config().url || !config().key) return res.status(503).json({ ok: false, error: 'not_configured', message: 'სერვისი დროებით მიუწვდომელია. შეავსე ველები ხელით.' });
   if (!(await isSignedIn(req))) return res.status(401).json({ ok: false, error: 'auth', message: 'სესია ამოიწურა. შედი ანგარიშში თავიდან და სცადე ხელახლა.' });
 
   const body = typeof req.body === 'string' ? (() => { try { return JSON.parse(req.body); } catch { return {}; } })() : (req.body || {});
+  if (!/^[0-9a-f-]{36}$/i.test(String(body.org || ''))) return res.status(400).json({ ok: false, error: 'org', message: 'სამუშაო სივრცე ვერ განისაზღვრა. განაახლე გვერდი და სცადე ხელახლა.' });
   if (!(await planAllowsImport(req, body.org))) return res.status(403).json({ ok: false, error: 'plan', message: 'ბმულით შევსება შენს პაკეტში არ შედის. ხელმისაწვდომია „პრო აგენტი“ პაკეტიდან.' });
   if (String(body.url || '').length > 600) return res.status(400).json({ ok: false, error: 'url', message: 'ბმული ძალიან გრძელია. ჩასვი განცხადების პირდაპირი ბმული.' });
   const target = hostOf(body.url);

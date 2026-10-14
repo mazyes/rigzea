@@ -87,7 +87,7 @@
     select(cols) { if (this.op !== 'select') this.ret = true; else this.cols = cols || '*'; return this; }
     insert(p) { this.op = 'insert'; this.payload = p; return this; }
     update(p) { this.op = 'update'; this.payload = p; return this; }
-    upsert(p) { this.op = 'upsert'; this.payload = p; return this; }
+    upsert(p, o = {}) { this.op = 'upsert'; this.payload = p; this.ignoreDup = !!o.ignoreDuplicates; return this; }
     delete() { this.op = 'delete'; return this; }
     eq(c, v) { this.filters.push(r => r[c] === v); return this; }
     neq(c, v) { this.filters.push(r => r[c] !== v); return this; }
@@ -121,6 +121,7 @@
         for (const p of list) {
           const row = { id: uuid(), created_at: now(), ...(DEFAULTS[this.table] || {}), ...structuredClone(p) };
           if (rows.some(r => r.id === row.id)) {
+            if (this.op === 'upsert' && this.ignoreDup) continue;
             if (this.op === 'upsert') { Object.assign(rows.find(r => r.id === row.id), row); out.push(row); continue; }
             return { data: null, error: { message: 'duplicate key value violates unique constraint', code: '23505' } };
           }
@@ -280,6 +281,18 @@
       ev.push({ id: ev.length + 1, organization_id: apt.organization_id, apartment_id: apt.id, selection_id: a.p_selection_id || null, kind: a.p_kind, visitor: a.p_visitor || null, created_at: now() });
       return true;
     },
+    // Same split as supabase/patches/18: the id link gets the public part, the token link everything.
+    get_guest_guide(a) {
+      const apt = T('apartments').find(x => x.id === a.p_apartment_id && x.status !== 'archived');
+      if (!apt) return null;
+      const { id, name, city, address, unit_number, checkin_time, checkout_time, parking_info } = apt;
+      return { id, name, city, address, unit_number, checkin_time, checkout_time, parking_info, contact_phone: apt.agent_phone || null };
+    },
+    get_guest_guide_by_token(a) {
+      const apt = String(a.p_token || '').length >= 24 && T('apartments').find(x => x.guide_token === a.p_token && x.status !== 'archived');
+      if (!apt) return null;
+      return { ...rpcs.get_guest_guide({ p_apartment_id: apt.id }), wifi_name: apt.wifi_name, wifi_password: apt.wifi_password, door_code: apt.door_code, access_instructions: apt.access_instructions };
+    },
     get_link_stats(a) {
       const ev = T('link_events').filter(e => e.apartment_id === a.p_apartment_id);
       const views = ev.filter(e => e.kind === 'view');
@@ -368,6 +381,7 @@
     storage: {
       from: () => ({
         async upload(path) { await delay(); if (shouldFail('upload:storage')) return netErr(); return { data: { path }, error: null }; },
+        async createSignedUrl(path) { await delay(); return { data: { signedUrl: 'https://mock.storage.local/signed/' + path }, error: null }; },
         getPublicUrl(path) { return { data: { publicUrl: 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="120" height="90"><rect width="120" height="90" fill="#cbd5e1"/><text x="10" y="50" font-size="10">' + path.split('/').pop() + '</text></svg>') } }; },
       }),
     },

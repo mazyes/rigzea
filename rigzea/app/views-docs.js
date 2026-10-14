@@ -459,6 +459,8 @@
   // Documents tab (inside Deals): templates, saved documents, registry check
   // ---------------------------------------------------------------------------
   const docCache = { org: null, rows: [], error: null, loading: false };
+  // Called when a contract is saved elsewhere (lease form) so the Documents tab reloads.
+  App.invalidateDocs = () => { docCache.org = null; };
   async function loadDocs() {
     docCache.loading = true; docCache.error = null;
     try {

@@ -11,6 +11,8 @@
   // Escaping & formatting
   // ---------------------------------------------------------------------------
   const esc = (v) => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  // Escaped value for href/src attributes holding stored URLs; anything that is not http(s) becomes '#'.
+  const safeUrl = (v) => esc(/^https?:\/\//i.test(String(v ?? '').trim()) ? String(v).trim() : '#');
 
   const MONTHS = ['იანვარი', 'თებერვალი', 'მარტი', 'აპრილი', 'მაისი', 'ივნისი', 'ივლისი', 'აგვისტო', 'სექტემბერი', 'ოქტომბერი', 'ნოემბერი', 'დეკემბერი'];
   const MONTHS_SHORT = ['იან', 'თებ', 'მარ', 'აპრ', 'მაი', 'ივნ', 'ივლ', 'აგვ', 'სექ', 'ოქტ', 'ნოე', 'დეკ'];
@@ -28,6 +30,8 @@
     return `${sign}₾${formatted}`;
   };
 
+  // Daily rental: transaction_type decides; rental_type is the older column and only counts when the new one is missing.
+  const isDaily = (a) => (a?.transaction_type ? a.transaction_type === 'daily' : a?.rental_type === 'short_term');
   const listingUrl = (a, wl = false) => {
     if (!a) return '';
     const origin = typeof location !== 'undefined' ? location.origin : '';
@@ -125,7 +129,7 @@
     propertyType: { apartment: 'ბინა', house: 'სახლი / აგარაკი', commercial: 'კომერციული', land: 'მიწის ნაკვეთი' },
     contactType: { buyer: 'მყიდველი', renter: 'მდგმური', owner: 'მეპატრონე', seller: 'გამყიდველი', other: 'სხვა' },
     contactTypeTone: { buyer: 'ok', renter: 'info', owner: 'warn', seller: 'ok', other: 'neutral' },
-    leadSource: { instagram: 'Instagram', facebook: 'Facebook', myhome: 'MyHome.ge', ss_ge: 'SS.ge', referral: 'რეკომენდაცია', walk_in: 'ოფისში მოსვლა', website: 'ვებსაიტი', other: 'სხვა' },
+    leadSource: { direct: 'პირდაპირი', instagram: 'Instagram', facebook: 'Facebook', myhome: 'MyHome.ge', ss_ge: 'SS.ge', referral: 'რეკომენდაცია', walk_in: 'ოფისში მოსვლა', website: 'ვებსაიტი', other: 'სხვა' },
     role: { owner: 'ანგარიშის მფლობელი', admin: 'ადმინისტრატორი', manager: 'მენეჯერი', agent: 'აგენტი', staff: 'თანამშრომელი' },
     source: { airbnb: 'Airbnb', booking: 'Booking.com', direct: 'პირდაპირი', other: 'სხვა' },
     statement: { draft: 'მონახაზი', finalized: 'დასრულებული', sent: 'გაგზავნილი' },
@@ -159,6 +163,7 @@
   // ---------------------------------------------------------------------------
   const ICONS = {
     today: '<rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/><path d="M8 14h3v3H8z"/>',
+    calendar: '<rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/>',
     tasks: '<path d="M9 11l2 2 4-4"/><rect x="3" y="3" width="18" height="18" rx="2"/>',
     building: '<rect x="4" y="2" width="16" height="20" rx="1.5"/><path d="M9 22v-4h6v4M8 6h.01M12 6h.01M16 6h.01M8 10h.01M12 10h.01M16 10h.01M8 14h.01M12 14h.01M16 14h.01"/>',
     owner: '<circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/>',
@@ -317,6 +322,8 @@
         if (invalid) {
           errBox.textContent = invalid.dataset.error || 'შეავსე მონიშნული სავალდებულო ველები.';
           errBox.hidden = false;
+          // The field may sit in a collapsed "more details" section; open it so the user can see it.
+          for (let d = invalid.closest('details'); d; d = d.parentElement?.closest('details')) d.open = true;
           invalid.focus();
           return;
         }
@@ -364,17 +371,14 @@
     const path = `${orgId}/${folder}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
     const isPrivate = ['receipts', 'tasks', 'approvals'].some(p => folder.startsWith(p));
     const bucket = isPrivate ? 'rigzea-private' : 'rigzea-public';
-    try {
-      await q(sb.storage.from(bucket).upload(path, file, { cacheControl: '3600', upsert: false }));
-      if (isPrivate) {
-        const signed = await sb.storage.from(bucket).createSignedUrl(path, 60 * 60 * 24 * 365);
-        return signed.data?.signedUrl || sb.storage.from(bucket).getPublicUrl(path).data.publicUrl;
-      }
-      return sb.storage.from(bucket).getPublicUrl(path).data.publicUrl;
-    } catch {
-      await q(sb.storage.from('rigzea-files').upload(path, file, { cacheControl: '3600', upsert: false }));
-      return sb.storage.from('rigzea-files').getPublicUrl(path).data.publicUrl;
+    // No fallback to a public bucket: receipts and approval photos must never become public.
+    await q(sb.storage.from(bucket).upload(path, file, { cacheControl: '3600', upsert: false }));
+    if (isPrivate) {
+      const signed = await sb.storage.from(bucket).createSignedUrl(path, 60 * 60 * 24 * 365);
+      if (!signed.data?.signedUrl) throw new Error('ფაილი აიტვირთა, მაგრამ ბმული ვერ შეიქმნა. სცადე თავიდან.');
+      return signed.data.signedUrl;
     }
+    return sb.storage.from(bucket).getPublicUrl(path).data.publicUrl;
   }
 
   async function copyText(text, okMsg = 'დაკოპირდა') {
@@ -394,7 +398,7 @@
   const uuid = () => (crypto.randomUUID ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => { const r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16); }));
 
   window.R = {
-    sb, $, $$, esc, money, listingUrl, toDate, isoDate, monthKey, time, date, dayLabel, dateTime, relative, elapsed, span, sameDay,
+    sb, $, $$, esc, safeUrl, money, isDaily, listingUrl, toDate, isoDate, monthKey, time, date, dayLabel, dateTime, relative, elapsed, span, sameDay,
     MONTHS, WEEKDAYS, L, badge, taskBadge, approvalStatus, approvalBadge, expenseBadge, dealBadge, transactionBadge, contactBadge, icon,
     friendlyError, phoneKey, CADASTRAL_RE, cadastralFormat, q, toast, run, dialog, confirm, ask, uploadFile, copyText, applyTheme, uuid,
     whatsappUrl: (text) => `https://wa.me/?text=${encodeURIComponent(text)}`,

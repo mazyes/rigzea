@@ -193,15 +193,6 @@
         navigator.serviceWorker.register('/service-worker.js').catch(() => {});
       });
     }
-    // Mobile install banner trigger
-    let deferredPrompt = null;
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      deferredPrompt = e;
-      window.rigzeaInstallPrompt = deferredPrompt;
-      const b = document.getElementById('pwa-install-bar');
-      if (b) b.hidden = false;
-    });
   </script>
 </body>
 </html>

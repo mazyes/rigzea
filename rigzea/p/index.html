@@ -416,7 +416,7 @@
       const photos = photosOf(a);
       if (slide >= photos.length) slide = 0;
       const isSale = a.transaction_type === 'sale';
-      const isDaily = a.transaction_type === 'daily' || a.rental_type === 'short_term';
+      const isDaily = a.transaction_type ? a.transaction_type === 'daily' : a.rental_type === 'short_term';
       const txnBadge = isSale ? L.forSale : isDaily ? L.dailyRent : L.forRent;
       const badge = a.badge ? (L.badges[a.badge] || a.badge) : txnBadge;
 

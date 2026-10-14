@@ -25,6 +25,7 @@ const { serve, launch, newPage, USERS, BASE } = require('./harness');
     await page.screenshot({ path: `${out}/${name}.png`, fullPage: !name.includes('drawer') });
     if (name === 'tasks-desktop') {
       await page.click('#btn-new-task');
+      await page.click('#quick-add-panel [data-qa=task]');
       await page.click('dialog[open] input[name=type][value=repair]', { force: true });
       await page.click('dialog[open] input[name=cost_mode][value=approval]', { force: true });
       await page.waitForTimeout(200);

@@ -18,6 +18,9 @@ create table if not exists public.link_events (
   created_at timestamptz not null default now()
 );
 
+alter table public.link_events enable row level security;
+revoke all on public.link_events from anon;
+
 alter table public.link_events add column if not exists visitor_id text;
 alter table public.link_events add column if not exists notified_at timestamptz;
 create index if not exists idx_link_events_notified on public.link_events (organization_id, notified_at);

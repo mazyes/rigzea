@@ -78,7 +78,7 @@
           <span class="cell-meta">${esc(H.aptName(e.apartment_id))} <span class="muted m-only">· ${esc(R.date(e.expense_date))}</span></span>
           <span class="cell-right num strong">${money(e.amount)}</span>
           <span class="cell-status">${R.expenseBadge(e.status)}</span>
-          <span class="cell-meta">${e.receipt_url ? `<a href="${esc(e.receipt_url)}" target="_blank" rel="noopener">${icon('file', 14)} ნახვა</a>` : missingReceipt(e) ? '<span class="t-warn">აკლია</span>' : '<span class="muted">—</span>'}</span>
+          <span class="cell-meta">${e.receipt_url ? `<a href="${R.safeUrl(e.receipt_url)}" target="_blank" rel="noopener">${icon('file', 14)} ნახვა</a>` : missingReceipt(e) ? '<span class="t-warn">აკლია</span>' : '<span class="muted">—</span>'}</span>
           <span class="cell-actions">${expenseAction(e)}</span>
         </div>`).join('')}
         <div class="row" style="--cols:minmax(0,1fr) auto"><span class="muted">ჯამი · ${list.length} ჩანაწერი</span><span class="num strong">${money(sum(list))}</span></div>
@@ -312,7 +312,7 @@
         <div class="card-head"><h2>შემოსავალი</h2></div>
         ${incomeLines.length ? `<div class="rows">${incomeLines.map(i => `<div class="row" style="--cols:90px minmax(0,1fr) auto"><span class="muted">${esc(R.date(i.date))}</span><span>${esc(i.description || i.source || '')}</span><span class="num">${money(i.amount)}</span></div>`).join('')}</div>` : App.emptyInline('ამ თვეში შემოსავალი არ არის.')}
         <div class="card-head"><h2>ხარჯები</h2></div>
-        ${expenseLines.length ? `<div class="rows">${expenseLines.map(e => `<div class="row" style="--cols:90px minmax(0,1fr) auto"><span class="muted">${esc(R.date(e.date))}</span><span>${esc(e.description || L.expenseCategory[e.category] || '')} <span class="muted small">· ${esc(L.expense[e.status] || '')}</span>${e.receipt_url ? ` · <a href="${esc(e.receipt_url)}" target="_blank" rel="noopener">ქვითარი</a>` : ''}</span><span class="num">−${money(e.amount)}</span></div>`).join('')}</div>` : App.emptyInline('ამ თვეში მფლობელზე დაკისრებული ხარჯი არ არის.')}
+        ${expenseLines.length ? `<div class="rows">${expenseLines.map(e => `<div class="row" style="--cols:90px minmax(0,1fr) auto"><span class="muted">${esc(R.date(e.date))}</span><span>${esc(e.description || L.expenseCategory[e.category] || '')} <span class="muted small">· ${esc(L.expense[e.status] || '')}</span>${e.receipt_url ? ` · <a href="${R.safeUrl(e.receipt_url)}" target="_blank" rel="noopener">ქვითარი</a>` : ''}</span><span class="num">−${money(e.amount)}</span></div>`).join('')}</div>` : App.emptyInline('ამ თვეში მფლობელზე დაკისრებული ხარჯი არ არის.')}
         <div class="rows" style="border-top:1px solid var(--line)">
           <div class="row" style="--cols:minmax(0,1fr) auto"><span>შემოსავალი</span><span class="num">${money(s.total_income)}</span></div>
           <div class="row" style="--cols:minmax(0,1fr) auto"><span>ხარჯი</span><span class="num">−${money(s.total_expenses)}</span></div>

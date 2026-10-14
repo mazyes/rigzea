@@ -29,7 +29,7 @@
 
   const listingUrl = (a, wl = false) => R.listingUrl(a, wl);
   const listingPhotos = (a) => (Array.isArray(a.photos) ? a.photos : [])
-    .map((p, i) => typeof p === 'string' ? { url: p, thumb: p, order: i } : { url: p?.url, thumb: p?.thumb || p?.url, order: p?.order ?? i })
+    .map((p, i) => typeof p === 'string' ? { url: p, thumb: p, order: i } : { url: p?.url, thumb: p?.thumb || p?.url, order: p?.order ?? i, ...(p?.wm ? { wm: true } : {}) })
     .filter(p => p.url).sort((x, y) => x.order - y.order);
 
   function loadBitmap(file) {
@@ -125,7 +125,7 @@
     });
     draw();
     const addUrls = (urls) => { urls.slice(0, Math.max(0, MAX_PHOTOS - items.length)).forEach(u => { if (!items.some(p => p.url === u)) items.push({ url: u, thumb: u }); }); draw(); };
-    return { get: () => items.map((p, i) => ({ url: p.url, thumb: p.thumb || p.url, order: i })), busy: () => pending > 0, addUrls };
+    return { get: () => items.map((p, i) => ({ url: p.url, thumb: p.thumb || p.url, order: i, ...(p.wm ? { wm: true } : {}) })), busy: () => pending > 0, addUrls };
   }
 
   function openPhotosDialog(a) {
@@ -332,20 +332,27 @@
 
         $('#btn-wm-save-apt', dialogEl)?.addEventListener('click', (e) => run(e.currentTarget, async () => {
           const btn = e.currentTarget;
+          const label = btn.innerHTML;
           btn.disabled = true;
-          btn.textContent = `მუშავდება 1/${photos.length}…`;
-
+          try {
           const newPhotos = [];
+          let skipped = 0;
           for (let i = 0; i < photos.length; i++) {
             btn.textContent = `მუშავდება ${i + 1}/${photos.length}…`;
             const p = photos[i];
-            const img = await new Promise((res, rej) => {
+            // Already watermarked photos are left alone so marks never stack. (The unmarked original is not
+            // kept: the photo list is public, so storing it would hand out a clean copy.)
+            if (p.wm) { skipped++; newPhotos.push({ ...p, order: i }); continue; }
+            const source = p.url;
+            const img = await new Promise((res) => {
               const im = new Image();
               im.crossOrigin = 'anonymous';
               im.onload = () => res(im);
-              im.onerror = () => rej(new Error('ფოტოს ჩატვირთვა ვერ მოხერხდა'));
-              im.src = p.url;
+              im.onerror = () => res(null);
+              im.src = source;
             });
+            // Photos from other sites (link import) can't be redrawn; keep them as they are.
+            if (!img) { skipped++; newPhotos.push({ ...p, order: i }); continue; }
 
             const off = document.createElement('canvas');
             off.width = img.naturalWidth || 1600;
@@ -407,13 +414,18 @@
             const blob = await new Promise(r => off.toBlob(r, 'image/jpeg', 0.86));
             const file = new File([blob], `photo-${i + 1}.jpg`, { type: 'image/jpeg' });
             const uploaded = await uploadListingPhoto(a.id, file);
-            newPhotos.push({ url: uploaded.url, thumb: uploaded.thumb, order: i });
+            newPhotos.push({ url: uploaded.url, thumb: uploaded.thumb, wm: true, order: i });
           }
 
           const row = await q(sb.from('apartments').update({ photos: newPhotos }).eq('id', a.id).select().single());
           App.upsertLocal('apartments', row);
           App.render();
-          toast('ყველა ფოტო წარმატებით განახლდა Watermark-ით!', { type: 'success' });
+          try { localStorage.setItem('rigzea_watermark_done', '1'); } catch { /* private mode */ }
+          toast(skipped ? `Watermark დაემატა ${photos.length - skipped} ფოტოს. ${skipped} ფოტო უცვლელი დარჩა (უკვე აქვს watermark ან სხვა საიტიდანაა).` : 'ყველა ფოტო განახლდა Watermark-ით.', { type: 'success' });
+          } finally {
+            btn.disabled = false;
+            btn.innerHTML = label;
+          }
         }));
       }
     });
@@ -423,18 +435,24 @@
   // ===========================================================================
   // OWNER WEEKLY WHATSAPP REPORT (მესაკუთრის 1-კლიკიანი რეპორტი)
   // ===========================================================================
-  function openOwnerReportDialog(apt) {
+  const budgetText = (o) => `${o.budget_min ? o.budget_min + '–' : ''}${o.budget_max} ${o.budget_currency || 'USD'}`;
+
+  async function openOwnerReportDialog(apt) {
     if (!apt) return;
     const owner = apt.owner_id ? H.owner(apt.owner_id) : null;
     const isSale = apt.transaction_type === 'sale';
     const priceStr = isSale
-      ? (apt.sale_price ? `$${Number(apt.sale_price).toLocaleString('en-US')}` : 'შეთანხმებით')
-      : (apt.monthly_rent ? `$${Number(apt.monthly_rent).toLocaleString('en-US')} / თვე` : 'შეთანხმებით');
+      ? (apt.sale_price ? money(apt.sale_price, apt.currency) : 'შეთანხმებით')
+      : (apt.monthly_rent ? `${money(apt.monthly_rent, apt.currency)} / თვე` : 'შეთანხმებით');
 
+    // Only real numbers go to the owner; anything we can't count shows as "—".
+    await loadLinkStats(apt.id);
     const s = linkStats.get(apt.id)?.data;
-    const views = s?.views ?? (Math.floor(Math.random() * 12) + 14);
-    const inquiries = (S.data.deals || []).filter(d => d.apartment_id === apt.id).length;
-    const viewings = (S.data.tasks || []).filter(t => t.apartment_id === apt.id && t.type === 'viewing').length;
+    const weekAgo = Date.now() - 7 * 864e5;
+    const inWeek = (v) => v && new Date(v).getTime() >= weekAgo;
+    const views = s ? (s.views_7d ?? 0) : '—';
+    const inquiries = (S.data.deals || []).filter(d => d.apartment_id === apt.id && inWeek(d.created_at)).length;
+    const viewings = (S.data.tasks || []).filter(t => t.apartment_id === apt.id && t.type === 'viewing' && inWeek(t.due_date || t.created_at)).length;
     const publicUrl = listingUrl(apt);
     const agentName = S.member?.display_name || S.user?.user_metadata?.full_name || S.org?.name || 'თქვენი უძრავი ქონების აგენტი';
     const agentPhone = S.member?.phone || S.org?.contact_phone || '';
@@ -454,8 +472,8 @@
 
 📊 გასული 7 დღის აქტივობა:
 • 👁️ ონლაინ ნახვები: ${views}
-• 📞 ზარები და მოთხოვნები: ${inquiries || (views > 10 ? 3 : 1)}
-• 🔑 ბინის ჩვენებები: ${viewings || (inquiries > 0 ? 1 : 0)}
+• 📞 ახალი მოთხოვნები: ${inquiries}
+• 🔑 ბინის ჩვენებები: ${viewings}
 
 💡 აგენტის რეკომენდაცია:
 ${rec || recOptions[0]}
@@ -496,9 +514,9 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
           </div>
 
           <div class="stats" style="grid-template-columns:repeat(3, 1fr);margin-bottom:14px">
-            <div class="stat"><span class="stat-label">ონლაინ ნახვები</span><span class="stat-value">${views}</span></div>
-            <div class="stat"><span class="stat-label">ზარები / მოთხოვნები</span><span class="stat-value">${inquiries || (views > 10 ? 3 : 1)}</span></div>
-            <div class="stat"><span class="stat-label">ჩვენებები (ვიზიტები)</span><span class="stat-value">${viewings || (inquiries > 0 ? 1 : 0)}</span></div>
+            <div class="stat"><span class="stat-label">ონლაინ ნახვები (7 დღე)</span><span class="stat-value">${views}</span></div>
+            <div class="stat"><span class="stat-label">ახალი მოთხოვნები</span><span class="stat-value">${inquiries}</span></div>
+            <div class="stat"><span class="stat-label">ჩვენებები (ვიზიტები)</span><span class="stat-value">${viewings}</span></div>
           </div>
 
           <label class="field" style="margin-bottom:14px">
@@ -615,7 +633,9 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
   const colPicked = new Set();
 
   function openCollectionModal({ apartmentIds = [], clientName = '', dealId = null } = {}) {
+    if (!App.guardFeature('selections')) return;
     let pickedIds = apartmentIds.slice();
+    let colRowId = null;
     if (!pickedIds.length) {
       toast('მონიშნე მინიმუმ 1 ბინა კოლექციისთვის', { type: 'error' });
       return;
@@ -687,12 +707,15 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
       },
       onSubmit: async (dialogEl) => {
         if (!pickedIds.length) throw new Error('კოლექციაში მინიმუმ 1 ბინა უნდა იყოს.');
+        if (pickedIds.length > 20) throw new Error('ერთ ბმულში მაქსიმუმ 20 ბინის დამატებაა შესაძლებელი.');
         const client = ($('#col-client-name', dialogEl)?.value || '').trim();
         const a = 'abcdefghijkmnpqrstuvwxyz23456789';
         const b = crypto.getRandomValues(new Uint8Array(12));
         const slug = Array.from(b, x => a[x % a.length]).join('');
+        // One id per dialog, so a retried submit can't create a second collection.
+        colRowId = colRowId || R.uuid();
         const row = {
-          id: R.uuid(),
+          id: colRowId,
           slug,
           organization_id: S.org.id,
           client_name: client || null,
@@ -702,6 +725,7 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
           created_by: S.user.id
         };
         const sel = await App.insertOnce('selections', row);
+        App.addSelection?.(sel);
         colMode = false;
         colPicked.clear();
         App.render();
@@ -709,7 +733,8 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
         const url = `${location.origin}/p/s/?id=${encodeURIComponent(sel.slug)}`;
         const waText = `გამარჯობა! თქვენთვის შევარჩიე ${sel.apartment_ids.length} ბინა. ფოტოები, ფასები და შედარების ცხრილი ერთ გვერდზეა:\n${url}`;
 
-        R.dialog({
+        // Close this form first, then show the link.
+        setTimeout(() => R.dialog({
           title: '🎉 კოლექციის ბმული მზადაა!',
           subtitle: `${sel.apartment_ids.length} ბინა მზადაა კლიენტთან გასაგზავნად`,
           body: `
@@ -727,8 +752,8 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
             $('#btn-col-copy-url', d)?.addEventListener('click', () => R.copyText(url, 'კოლექციის ბმული დაკოპირდა'));
             $('#col-done-url', d)?.addEventListener('focus', e => e.target.select());
           }
-        });
-        return false;
+        }), 0);
+        return true;
       }
     });
   }
@@ -799,7 +824,7 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
           const isSale = a.transaction_type === 'sale';
           const priceHtml = isSale
             ? (a.sale_price ? `<strong>${money(a.sale_price, a.currency || 'USD')}</strong>${a.price_sqm ? `<div class="small muted">${money(a.price_sqm, a.currency || 'USD')}/მ²</div>` : ''}` : '—')
-            : (a.monthly_rent ? `<strong>${money(a.monthly_rent, a.currency || 'USD')}</strong><div class="small muted">${a.rental_type === 'short_term' ? '/ დღე' : '/ თვე'}</div>` : '—');
+            : (a.monthly_rent ? `<strong>${money(a.monthly_rent, a.currency || 'USD')}</strong><div class="small muted">${R.isDaily(a) ? '/ დღე' : '/ თვე'}</div>` : '—');
           const tt = a.transaction_type || (a.rental_type === 'long_term' ? 'long_term' : 'daily');
           return `<a class="row ${colPicked.has(a.id) ? 'is-col-picked' : ''}" href="#/apartments/${a.id}" data-apt-row="${a.id}" style="--cols:${cols}">
             ${colMode ? `<span class="apt-select-cell"><input type="checkbox" class="apt-col-cb" data-col-id="${a.id}" ${colPicked.has(a.id) ? 'checked' : ''} aria-label="მონიშვნა: ${esc(a.name)}" /></span>` : ''}
@@ -926,7 +951,7 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
         <div><div class="crumbs"><a href="#/apartments?type=${App.aptSection(a)}">${isSale ? 'გასაყიდი ბინები' : 'გასაქირავებელი ბინები'}</a> ›</div>
           <h1>${esc(a.name)}</h1><p class="page-sub">${esc([a.address, a.unit_number && 'ბინა ' + a.unit_number, a.city].filter(Boolean).join(', '))}${a.cadastral_code ? ` · საკადასტრო ${esc(a.cadastral_code)} <button type="button" class="link-btn small" data-napr="${esc(a.cadastral_code)}">NAPR რეესტრში გადამოწმება</button>` : ''} · ${R.transactionBadge(a.transaction_type || (a.rental_type === 'long_term' ? 'long_term' : 'daily'))} ${R.badge(L.aptStatus[a.status] || a.status, L.aptStatusTone[a.status])}</p></div>
         <div class="page-actions">
-          <a class="btn btn-secondary" href="/guide/?apt=${encodeURIComponent(a.id)}" target="_blank" title="სტუმრის ციფრული გზამკვლევი და A5 ბარათი">${icon('sparkle', 16)} სტუმრის QR</a>
+          <a class="btn btn-secondary" href="/guide/?${a.guide_token ? 't=' + encodeURIComponent(a.guide_token) : 'apt=' + encodeURIComponent(a.id)}" target="_blank" title="სტუმრის ციფრული გზამკვლევი და A5 ბარათი">${icon('sparkle', 16)} სტუმრის QR</a>
           <button type="button" class="btn btn-secondary" id="a-pdf">${icon('file', 16)} PDF პრეზენტაცია</button>
           <button type="button" class="btn btn-secondary" id="a-share">${icon('whatsapp', 16)} კოლეგასთან გაზიარება</button>
           <button type="button" class="btn btn-secondary" id="a-docs">${icon('file', 16)} ხელშეკრულებები</button>
@@ -973,15 +998,14 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
               const dealAmount = Number(d.deal_amount || (isDealSale ? a.sale_price : a.monthly_rent) || 0);
               const comm = d.commission_type === 'fixed' ? Number(d.commission_amount || 0) : ((dealAmount * commPct) / 100);
               const cur = d.currency || a.currency || 'USD';
-              const curSym = cur === 'USD' ? '$' : '₾';
               return `
                 <div class="row" style="--cols:minmax(0,1.5fr) 130px 140px 150px auto">
                   <span class="cell-main">
                     <strong>${esc(d.client_name)}</strong>
                     <span>${d.client_phone ? `<a href="tel:${esc(d.client_phone)}">${esc(d.client_phone)}</a>` : 'ტელეფონი არაა'} · ${d.target_move_in ? 'თარიღი: ' + esc(R.date(d.target_move_in)) : (isDealSale ? 'გაყიდვა' : 'ქირა')}</span>
                   </span>
-                  <span class="cell-meta"><strong>${curSym}${dealAmount}</strong> ${isDealSale ? '<span class="small muted">(გაყიდვა)</span>' : '<span class="small muted">/ თვე</span>'}</span>
-                  <span class="cell-meta" style="color:#047857">საკომისიო: <strong>${curSym}${Math.round(comm)}</strong></span>
+                  <span class="cell-meta"><strong>${money(dealAmount, cur)}</strong> ${isDealSale ? '<span class="small muted">(გაყიდვა)</span>' : '<span class="small muted">/ თვე</span>'}</span>
+                  <span class="cell-meta" style="color:#047857">საკომისიო: <strong>${money(Math.round(comm), cur)}</strong></span>
                   <span class="cell-status">${R.dealBadge(d.stage)}</span>
                   <span class="cell-actions">
                     <button type="button" class="btn btn-ghost btn-sm" data-deal-edit="${d.id}">რედაქტირება</button>
@@ -1000,8 +1024,8 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
         </div>
         <div class="stats">
           <div class="stat"><span class="stat-label">მდგმური</span><span class="stat-value" style="font-size:16px">${esc(a.tenant_name || 'არ არის მითითებული')}</span><span class="stat-note">${a.tenant_phone ? `<a href="tel:${esc(a.tenant_phone)}">${esc(a.tenant_phone)}</a>` : ''}</span></div>
-          <div class="stat"><span class="stat-label">თვიური ქირა</span><span class="stat-value">${money(a.monthly_rent || 0)}</span><span class="stat-note">გადახდა: ყოველ ${a.rent_due_day || 1} რიცხვში</span></div>
-          <div class="stat"><span class="stat-label">დეპოზიტი</span><span class="stat-value">${money(a.deposit_amount || 0)}</span><span class="stat-note">${a.lease_end ? 'ვადა: ' + esc(R.date(a.lease_end)) : 'უვადო'}</span></div>
+          <div class="stat"><span class="stat-label">თვიური ქირა</span><span class="stat-value">${money(a.monthly_rent || 0, a.currency || 'USD')}</span><span class="stat-note">გადახდა: ყოველ ${a.rent_due_day || 1} რიცხვში</span></div>
+          <div class="stat"><span class="stat-label">დეპოზიტი</span><span class="stat-value">${money(a.deposit_amount || 0, a.currency || 'USD')}</span><span class="stat-note">${a.lease_end ? 'ვადა: ' + esc(R.date(a.lease_end)) : 'უვადო'}</span></div>
         </div>
       </section>` : ''}
       ${archived ? `<div class="notice notice-warn" style="margin-bottom:16px">${icon('alert', 16)}<div>ობიექტი დაარქივებულია და აქტიურ სიებში არ ჩანს. <button class="link-btn" id="a-restore">აღდგენა</button></div></div>` : ''}
@@ -1029,7 +1053,7 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
               <div class="stat"><span class="stat-label">მოლოდინში</span><span class="stat-value">${money(sum(pendingExp))}</span><span class="stat-note">შეთავაზებული/დადასტურებული</span></div>
             </div>
             ${inc.length || exp.length ? `<div class="rows">${[...inc.map(i => ({ d: i.income_date, html: `<span class="cell-main"><strong>${esc(i.description || i.source || 'შემოსავალი')}</strong><span>${esc(R.date(i.income_date))} · ${esc(i.source || '')}</span></span><span class="cell-right num t-ok">+${money(i.amount)}</span>` })),
-              ...exp.map(e => ({ d: e.expense_date, html: `<span class="cell-main"><strong>${esc(e.description || L.expenseCategory[e.category])}</strong><span>${esc(R.date(e.expense_date))} · ${esc(L.expenseCategory[e.category] || e.category)}${e.receipt_url ? ` · <a href="${esc(e.receipt_url)}" target="_blank" rel="noopener">ქვითარი</a>` : ['incurred', 'paid'].includes(e.status) && e.receipt_required !== false ? ' · <span class="t-warn">ქვითარი აკლია</span>' : ''}</span></span><span class="cell-right" style="display:flex;gap:8px;align-items:center">${R.expenseBadge(e.status)}<span class="num">−${money(e.amount)}</span></span>` }))]
+              ...exp.map(e => ({ d: e.expense_date, html: `<span class="cell-main"><strong>${esc(e.description || L.expenseCategory[e.category])}</strong><span>${esc(R.date(e.expense_date))} · ${esc(L.expenseCategory[e.category] || e.category)}${e.receipt_url ? ` · <a href="${R.safeUrl(e.receipt_url)}" target="_blank" rel="noopener">ქვითარი</a>` : ['incurred', 'paid'].includes(e.status) && e.receipt_required !== false ? ' · <span class="t-warn">ქვითარი აკლია</span>' : ''}</span></span><span class="cell-right" style="display:flex;gap:8px;align-items:center">${R.expenseBadge(e.status)}<span class="num">−${money(e.amount)}</span></span>` }))]
               .sort((x, y) => String(y.d).localeCompare(String(x.d))).map(x => `<div class="row" style="--cols:minmax(0,1fr) auto">${x.html}</div>`).join('')}</div>` : App.emptyInline('ამ პერიოდში ჩანაწერი არ არის.')}
           </section>
 
@@ -1228,9 +1252,9 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
         <div class="form-section span-2" style="background:var(--surface-2);padding:14px;border-radius:var(--r);border:1px solid var(--line)">
           <div class="form-section-title" style="margin-bottom:8px;font-weight:700">ძირითადი პარამეტრები და ფოტოები</div>
           <div class="form-grid">
-            <label class="field"><span class="field-label">ოთახების რაოდენობა</span><input type="number" name="rooms" min="1" max="20" value="${esc(v.rooms || v.bedrooms || 2)}" /></label>
-            <label class="field"><span class="field-label">საძინებლები</span><input type="number" name="bedrooms" min="0" max="10" value="${esc(v.bedrooms || 1)}" /></label>
-            <label class="field"><span class="field-label">სველი წერტილები</span><input type="number" name="bathrooms" min="1" max="10" value="${esc(v.bathrooms || 1)}" /></label>
+            <label class="field" data-rooms-field><span class="field-label">ოთახების რაოდენობა</span><input type="number" name="rooms" min="1" max="20" value="${esc(edit ? (v.rooms ?? '') : 2)}" /></label>
+            <label class="field" data-rooms-field><span class="field-label">საძინებლები</span><input type="number" name="bedrooms" min="0" max="10" value="${esc(edit ? (v.bedrooms ?? '') : 1)}" /></label>
+            <label class="field" data-rooms-field><span class="field-label">სველი წერტილები</span><input type="number" name="bathrooms" min="0" max="10" value="${esc(edit ? (v.bathrooms ?? '') : 1)}" /></label>
             <label class="field"><span class="field-label">ფართობი (მ²)</span><input type="number" name="area_sqm" id="apt-area-sqm" min="5" step="0.5" value="${esc(v.area_sqm || '')}" placeholder="75" /></label>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
               <label class="field"><span class="field-label">სართული</span><input name="floor" value="${esc(v.floor || '')}" placeholder="7" /></label>
@@ -1292,6 +1316,10 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
       </div>`,
       onOpen: (form) => {
         pm = photoManager(form, v.photos, id);
+        // Land and commercial space have no rooms; hide those fields so they aren't saved by accident.
+        const syncRooms = () => { const none = ['land', 'commercial'].includes(form.property_type.value); $$('[data-rooms-field]', form).forEach(el => { el.hidden = none; }); };
+        form.property_type.addEventListener('change', syncRooms);
+        syncRooms();
         $$('[data-amenity]', form).forEach(b => b.addEventListener('click', () => b.setAttribute('aria-pressed', String(b.getAttribute('aria-pressed') !== 'true'))));
         const txSelect = $('#apt-tx-type', form);
         const syncTx = () => {
@@ -1392,7 +1420,9 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
           property_type: f.property_type || 'apartment',
           sale_price: salePrice,
           price_sqm: priceSqm,
-          rooms: f.rooms ? Number(f.rooms) : 2, bedrooms: f.bedrooms ? Number(f.bedrooms) : 1, bathrooms: f.bathrooms ? Number(f.bathrooms) : 1,
+          ...(['land', 'commercial'].includes(f.property_type)
+            ? { rooms: null, bedrooms: null, bathrooms: null }
+            : { rooms: f.rooms ? Number(f.rooms) : null, bedrooms: f.bedrooms ? Number(f.bedrooms) : null, bathrooms: f.bathrooms ? Number(f.bathrooms) : null }),
           area_sqm: areaSqm, floor: f.floor?.trim() || null, total_floors: f.total_floors ? Number(f.total_floors) : null,
           pets_allowed: f.pets_allowed === 'true', utilities_estimate: f.utilities_estimate ? Number(f.utilities_estimate) : null,
           prepayment_terms: f.prepayment_terms?.trim() || null, agent_phone: f.agent_phone?.trim() || null,
@@ -1488,7 +1518,6 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
   // ===========================================================================
   // OWNERS & APPROVALS
   // ===========================================================================
-  let ownersTab = null;
   let apprFilter = 'pending';
 
   // Section pages: one contact type each (#/owners?type=renter|owner|buyer|seller).
@@ -1512,7 +1541,8 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
       ${isOwner ? `<div class="tabs" role="tablist"><a class="tab" role="tab" href="#/owners?type=owner" aria-selected="${tab === 'list'}">მეპატრონეები <span class="count">${count}</span></a><a class="tab" role="tab" href="#/owners?type=owner&tab=approvals" aria-selected="${tab === 'approvals'}">თანხმობები <span class="count">${pending.length}</span></a></div>` : ''}
       <div id="o-body"></div>`;
     $('#o-new').onclick = () => openOwnerForm(null, { contact_type: type });
-    $('#o-appr')?.addEventListener('click', () => App.openApprovalForm({}));
+    // Show the new request right away instead of leaving the user on the contact list.
+    $('#o-appr')?.addEventListener('click', async () => { if (await App.openApprovalForm({})) location.hash = '#/owners?type=owner&tab=approvals'; });
     if (tab === 'approvals') renderApprovals($('#o-body')); else renderOwnersList($('#o-body'), type);
   }
 
@@ -1520,15 +1550,15 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
     if (r.id) return renderOwner(r.id);
     if (CONTACT_PAGES[r.params.get('type')]) return renderContactPage(r, r.params.get('type'));
     const pending = S.data.approvals.filter(a => R.approvalStatus(a) === 'pending');
-    const tab = ownersTab || r.params.get('tab') || 'owners';
+    const tab = r.params.get('tab') === 'approvals' ? 'approvals' : 'owners';
     $('#view').innerHTML = `
       <div class="page-head"><div><h1>ყველა კონტაქტი</h1><p class="page-sub">${S.data.owners.length} კონტაქტი · ${pending.length} თანხმობა ელოდება პასუხს</p></div>
         <div class="page-actions"><button type="button" class="btn btn-secondary" id="o-appr">თანხმობის მოთხოვნა</button><button type="button" class="btn btn-primary" id="o-new">${icon('plus', 16)} კონტაქტის დამატება</button></div></div>
       <div class="tabs" role="tablist"><button type="button" role="tab" class="tab" data-tab="owners" aria-selected="${tab === 'owners'}">კონტაქტები <span class="count">${S.data.owners.length}</span></button><button type="button" role="tab" class="tab" data-tab="approvals" aria-selected="${tab === 'approvals'}">თანხმობები <span class="count">${pending.length}</span></button></div>
       <div id="o-body"></div>`;
-    $$('[data-tab]').forEach(b => b.addEventListener('click', () => { ownersTab = b.dataset.tab; App.render(); }));
+    $$('[data-tab]').forEach(b => b.addEventListener('click', () => { location.hash = b.dataset.tab === 'approvals' ? '#/owners?tab=approvals' : '#/owners'; }));
     $('#o-new').onclick = () => openOwnerForm();
-    $('#o-appr').onclick = () => App.openApprovalForm({});
+    $('#o-appr').onclick = async () => { if (await App.openApprovalForm({})) location.hash = '#/owners?tab=approvals'; };
     if (tab === 'approvals') renderApprovals($('#o-body')); else renderOwnersList($('#o-body'));
   };
 
@@ -1595,9 +1625,9 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
         const pend = S.data.approvals.filter(a => a.owner_id === o.id && R.approvalStatus(a) === 'pending').length;
         const ct = o.contact_type || 'owner';
         const isClient = ['buyer', 'renter'].includes(ct);
-        const budgetStr = o.budget_max ? `ბიუჯეტი: ${o.budget_min ? o.budget_min + '–' : ''}${o.budget_max} ${o.budget_currency || 'USD'}` : '';
+        const budgetStr = o.budget_max ? `ბიუჯეტი: ${budgetText(o)}` : '';
         const prefStr = [o.preferred_city, o.preferred_district].filter(Boolean).join(', ');
-        return `<a class="row" href="#/owners/${o.id}" style="--cols:${cols}"><span class="cell-main"><strong>${esc(o.name)} ${H.flagTag(o)}</strong><span>${o.user_id ? 'პორტალთან დაკავშირებული' : (o.lead_source ? 'წყარო: ' + (L.leadSource[o.lead_source] || o.lead_source) : '')}</span></span>
+        return `<a class="row" href="#/owners/${o.id}" style="--cols:${cols}"><span class="cell-main"><strong>${esc(o.name)} ${H.flagTag(o)}</strong><span>${o.user_id ? 'პორტალთან დაკავშირებული' : (o.lead_source ? 'წყარო: ' + esc(L.leadSource[o.lead_source] || o.lead_source) : '')}</span></span>
           <span class="cell-meta">${R.contactBadge(ct)}</span>
           <span class="cell-meta">${esc([o.phone, o.email].filter(Boolean).join(' · ') || '—')}${budgetStr ? `<div class="small t-ok" style="font-weight:600">${esc(budgetStr)}</div>` : ''}</span>
           <span class="cell-meta" data-label="დეტალები">${apts.length ? esc(apts.map(a => a.name).join(', ')) : (prefStr ? esc(prefStr) : (typeof o.requirements === 'string' && o.requirements ? esc(o.requirements.slice(0, 40)) : '—'))}</span>
@@ -1631,7 +1661,7 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
           <dt>ტელეფონი</dt><dd>${o.phone ? `<a href="tel:${esc(o.phone)}">${esc(o.phone)}</a>` : '—'}</dd>
           <dt>ელფოსტა</dt><dd>${o.email ? `<a href="mailto:${esc(o.email)}">${esc(o.email)}</a>` : '—'}</dd>
           ${o.personal_id ? `<dt>პირადი ნომერი</dt><dd>${esc(o.personal_id)}</dd>` : ''}
-          ${o.budget_max ? `<dt>ბიუჯეტი</dt><dd class="strong t-ok">${o.budget_min ? o.budget_min + '–' : ''}${o.budget_max} ${o.budget_currency || 'USD'}</dd>` : ''}
+          ${o.budget_max ? `<dt>ბიუჯეტი</dt><dd class="strong t-ok">${esc(budgetText(o))}</dd>` : ''}
           ${o.preferred_city || o.preferred_district ? `<dt>სასურველი ლოკაცია</dt><dd>${esc([o.preferred_city, o.preferred_district].filter(Boolean).join(', '))}</dd>` : ''}
           ${o.lead_source ? `<dt>წყარო</dt><dd>${esc(L.leadSource[o.lead_source] || o.lead_source)}</dd>` : ''}
           ${o.follow_up_date ? `<dt>შემდეგი დაკავშირების თარიღი</dt><dd>${esc(R.date(o.follow_up_date))}</dd>` : ''}
@@ -1790,7 +1820,7 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
           const apt = H.apt(form.apartment_id.value);
           const owner = apt && H.owner(apt.owner_id);
           const p = $('[data-owner]', form);
-          p.textContent = !apt ? '' : owner ? `მფლობელი: ${owner.name}${owner.phone ? ' · ' + owner.phone : ''}` : 'ამ ბინას მფლობელი არ ჰყავს მითითებული — ჯერ მიუთითე მფლობელი ბინის რედაქტირებით.';
+          p.textContent = !apt ? '' : owner ? `მფლობელი: ${owner.name}${owner.phone ? ' · ' + owner.phone : ''}` : 'ამ ბინას მფლობელი არ ჰყავს მითითებული. ჯერ მიუთითე მფლობელი ბინის რედაქტირებით.';
           p.className = 'field-hint' + (apt && !owner ? ' t-danger' : '');
         };
         form.apartment_id.addEventListener('change', sync);
@@ -1803,6 +1833,7 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
         if (!form.dataset.photoUrl && form.photo.files[0]) form.dataset.photoUrl = await R.uploadFile(S.org.id, `approvals/${ids.approval}`, form.photo.files[0]);
         await App.createApproval({ id: ids.approval, expenseId: ids.expense, apt, task, title: v.title.trim(), description: v.description.trim(), amount: Number(v.amount), category: v.category, photoUrl: form.dataset.photoUrl || null });
         App.render();
+        return true;
       },
     });
   };

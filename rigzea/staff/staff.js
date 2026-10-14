@@ -109,7 +109,7 @@
         ${t.status !== 'done' ? `<div class="upload-row">
           <label class="btn btn-secondary">${icon('camera', 16)} მანამდე<input type="file" accept="image/*" capture="environment" data-phase="before" hidden /></label>
           <label class="btn btn-secondary">${icon('camera', 16)} შემდეგ<input type="file" accept="image/*" capture="environment" data-phase="after" hidden /></label></div>` : ''}
-        ${photos.length ? `<div class="photos">${photos.map(p => `<a class="photo" href="${esc(p.url)}" target="_blank" rel="noopener"><img src="${esc(p.url)}" alt="" loading="lazy" /><span>${{ before: 'მანამდე', after: 'შემდეგ', problem: 'პრობლემა' }[p.phase] || ''}</span></a>`).join('')}</div>` : `<p class="muted small">${t.type === 'cleaning' ? 'დასრულებისთვის საჭიროა მინიმუმ ერთი „შემდეგ“ ფოტო.' : 'ფოტო არ არის ატვირთული.'}</p>`}
+        ${photos.length ? `<div class="photos">${photos.map(p => `<a class="photo" href="${R.safeUrl(p.url)}" target="_blank" rel="noopener"><img src="${esc(p.url)}" alt="" loading="lazy" /><span>${{ before: 'მანამდე', after: 'შემდეგ', problem: 'პრობლემა' }[p.phase] || ''}</span></a>`).join('')}</div>` : `<p class="muted small">${t.type === 'cleaning' ? 'დასრულებისთვის საჭიროა მინიმუმ ერთი „შემდეგ“ ფოტო.' : 'ფოტო არ არის ატვირთული.'}</p>`}
       </div></section>
       <section class="card" style="margin-bottom:12px"><div class="card-head"><h2>შენიშვნა</h2></div><div class="card-body">
         <form id="notes" class="form-stack" style="gap:8px"><textarea class="input" name="notes" rows="3" aria-label="შენიშვნა" placeholder="მაგ.: პირსახოცი აკლდა, ნათურა გამოსაცვლელია">${esc(t.notes || '')}</textarea><button type="submit" class="btn btn-secondary">შენიშვნის შენახვა</button></form>

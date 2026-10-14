@@ -8,13 +8,18 @@ import { BASE_APP_URL, requireEnv, esc, sendMessage, callRpc, fmtDate, daysText 
 
 const escapeRegExp = (s) => String(s || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
+// "ლ" alone must not start a word: "7 ლამპა" is not 7 lari.
+const MONEY_RE = /(?:₾\s*(\d+(?:\.\d+)?))|(?:(\d+(?:\.\d+)?)\s*(?:ლარი|ლ(?![ა-ჰ])|₾|gel\b))/i;
+
 // Georgian NLP Parser
 function parseGeorgianTaskText(rawText, apartments = []) {
   const text = rawText.trim();
 
   // 1. Amount
   let amount = 0;
-  const amountMatch = text.match(/(?:₾\s*(\d+(?:\.\d+)?))|(?:(\d+(?:\.\d+)?)\s*(?:ლარი|ლ|₾|gel|GEL))/i) || text.match(/\b(\d+)\s*(?:ლარი|ლ|₾)?\b/);
+  // A number only counts as money next to a currency word. Without this, "1204-ში" or "18-ში" (the
+  // apartment number) became the amount and the bot sent the owner an approval link for it.
+  const amountMatch = text.match(MONEY_RE);
   if (amountMatch) {
     amount = parseFloat(amountMatch[1] || amountMatch[2] || amountMatch[0]);
   }
@@ -36,7 +41,7 @@ function parseGeorgianTaskText(rawText, apartments = []) {
 
   // 3. Extract Issue Title Cleanly
   let issueTitle = text;
-  issueTitle = issueTitle.replace(/(?:₾\s*\d+(?:\.\d+)?)|(?:\d+(?:\.\d+)?\s*(?:ლარი|ლ|₾|gel|GEL))/gi, '');
+  issueTitle = issueTitle.replace(new RegExp(MONEY_RE.source, 'gi'), '');
   if (matchedApt) {
     const name = matchedApt.name || matchedApt.title || '';
     const unit = matchedApt.unit_number || name.match(/\d+/)?.[0];
@@ -107,8 +112,11 @@ async function handleUpdate(update) {
     return;
   }
 
+  // In group chats Telegram sends commands as "/today@Rigzeabot".
+  const cmd = text.startsWith('/') ? text.split(/\s/)[0].replace(/@\w+$/, '').toLowerCase() : '';
+
   // 5. /apartments Command
-  if (text === '/apartments') {
+  if (cmd === '/apartments') {
     const apts = await callRpc('get_telegram_apartments', { p_org_id: userOrg.orgId });
     if (!apts || apts.length === 0) {
       await sendMessage(chatId, `🏢 თქვენს პორტფელში ბინები ჯერ არ არის დამატებული.\nდაამატეთ ბინა სისტემაში: ${BASE_APP_URL}/app/`);
@@ -127,11 +135,11 @@ async function handleUpdate(update) {
   }
 
   // 6. /today or /status Command
-  if (text === '/today' || text === '/status') {
+  if (cmd === '/today' || cmd === '/status') {
     const apts = await callRpc('get_telegram_apartments', { p_org_id: userOrg.orgId });
     const aptCount = apts?.length || 0;
 
-    let response = `📊 <b>დღის საოპერაციო მდგომარეობა — ${esc(userOrg.orgName)}</b>\n\n`;
+    let response = `📊 <b>დღის საოპერაციო მდგომარეობა: ${esc(userOrg.orgName)}</b>\n\n`;
     response += `• 🏢 <b>ბინების რაოდენობა:</b> ${aptCount}\n`;
     response += `• 🤖 <b>Telegram ასისტენტი:</b> აქტიურია (Serverless 24/7)\n\n`;
     response += `🔗 <a href="${BASE_APP_URL}/app/">სისტემაში გახსნა</a>`;
@@ -141,7 +149,7 @@ async function handleUpdate(update) {
   }
 
   // 6b. /renewals Command
-  if (text === '/renewals' || text.startsWith('/renewals@')) {
+  if (cmd === '/renewals') {
     const list = await callRpc('get_telegram_renewals', { p_org_id: userOrg.orgId, p_days: 30 });
     if (!list || list.length === 0) {
       await sendMessage(chatId, `📅 მომდევნო 30 დღეში ვადამიწურებადი ხელშეკრულება არ არის.`);
@@ -149,7 +157,7 @@ async function handleUpdate(update) {
     }
     let response = `📅 <b>ხელშეკრულებები, რომლებიც 30 დღეში იწურება (${list.length}):</b>\n\n`;
     list.slice(0, 40).forEach((r) => {
-      response += `${r.days_left <= 3 ? '🔴' : '🟡'} <b>${esc(r.name)}</b>${r.tenant_name ? ` · ${esc(r.tenant_name)}` : ''}\n   ${fmtDate(r.lease_end)} — ${daysText(r.days_left)}\n`;
+      response += `${r.days_left <= 3 ? '🔴' : '🟡'} <b>${esc(r.name)}</b>${r.tenant_name ? ` · ${esc(r.tenant_name)}` : ''}\n   ${fmtDate(r.lease_end)}, ${daysText(r.days_left)}\n`;
     });
     response += `\n🔗 <a href="${BASE_APP_URL}/app/">გაგრძელება სისტემაში</a>`;
     await sendMessage(chatId, response);
@@ -157,7 +165,7 @@ async function handleUpdate(update) {
   }
 
   // 7. /help Command
-  if (text === '/help') {
+  if (cmd === '/help') {
     await sendMessage(chatId, `ℹ️ <b>როგორ გამოვიყენოთ რიგზეას ბოტი:</b>\n\nუბრალოდ მომწერეთ საქმე ჩვეულებრივი ქართული ტექსტით, მაგალითად:\n• <i>1204-ში კონდიციონერი გაფუჭდა, 170 ლარია</i>\n• <i>ბინა 7-ში ონკანი ჟონავს, 85 ლარი</i>\n• <i>ვაკე 18-ში დასუფთავება ხვალ 14:00-ზე</i>\n\nბრძანებები: /today, /apartments, /renewals\n\nრიგზეა ავტომატურად:\n1. ამოიცნობს ბინას და თანხას\n2. შექმნის საქმეს ბაზაში\n3. მოამზადებს მესაკუთრისთვის 1-Click თანხმობის ბმულს`);
     return;
   }
@@ -190,6 +198,11 @@ async function handleUpdate(update) {
     p_cost: parsed.amount,
     p_source: 'Telegram'
   });
+
+  if (!createdRecord) {
+    await sendMessage(chatId, `❌ <b>საქმე ვერ შეინახა.</b> სცადეთ ცოტა ხანში ან დაამატეთ სისტემაში: ${BASE_APP_URL}/app/`);
+    return;
+  }
 
   // Response text
   let confirmation = `✅ <b>საქმე შეიქმნა და შენახულია ბაზაში!</b>\n\n` +
