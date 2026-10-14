@@ -1,1 +1,10 @@
+node_modules/
+videos/
+tests/
+scripts/
+skills/
+.git/
+.github/
+.claude/
+.impeccable/
 rigzea/telegram_bot.js
