@@ -97,13 +97,24 @@
       if (f) f.hidden = v !== view;
     });
     const tabs = $('#auth-tabs');
+    const oauthStack = $('#auth-oauth-stack');
+    const divider = $('#auth-divider');
+    const isAuthMain = ['signin', 'signup'].includes(view);
     if (tabs) {
-      tabs.hidden = !['signin', 'signup'].includes(view);
+      tabs.hidden = !isAuthMain;
       const tabSignup = $('#tab-auth-signup');
       const tabSignin = $('#tab-auth-signin');
       if (tabSignup) tabSignup.classList.toggle('active', view === 'signup');
       if (tabSignin) tabSignin.classList.toggle('active', view === 'signin');
     }
+    if (oauthStack) {
+      oauthStack.hidden = !isAuthMain;
+      const gLabel = $('#oauth-google-label');
+      const fLabel = $('#oauth-facebook-label');
+      if (gLabel) gLabel.textContent = view === 'signup' ? 'Google-ით რეგისტრაცია' : 'Google-ით შესვლა';
+      if (fLabel) fLabel.textContent = view === 'signup' ? 'Facebook-ით რეგისტრაცია' : 'Facebook-ით შესვლა';
+    }
+    if (divider) divider.hidden = !isAuthMain;
     $('#form-' + view)?.querySelector('input')?.focus();
   }
 
@@ -169,6 +180,31 @@
   });
 
   $$('[data-auth]').forEach(b => b.addEventListener('click', () => showAuth(b.dataset.auth)));
+
+  $$('[data-oauth]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const provider = btn.dataset.oauth;
+      if (btn.dataset.busy === '1') return;
+      btn.dataset.busy = '1';
+      btn.disabled = true;
+      btn.classList.add('is-busy');
+      try {
+        const { error } = await sb.auth.signInWithOAuth({
+          provider,
+          options: {
+            redirectTo: location.origin + '/app/'
+          }
+        });
+        if (error) throw error;
+      } catch (err) {
+        console.error('OAuth error:', err);
+        toast(`ავტორიზაციის შეცდომა: ${R.friendlyError(err)}`, { type: 'error', timeout: 8000 });
+        btn.dataset.busy = '';
+        btn.disabled = false;
+        btn.classList.remove('is-busy');
+      }
+    });
+  });
 
   bindForm($('#form-org'), async (v) => {
     const orgId = await q(sb.rpc('create_user_organization', { p_org_name: v.name.trim(), p_city: v.city, p_portfolio_size: v.size }));

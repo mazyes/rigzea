@@ -496,6 +496,52 @@ button.row { width: 100%; border: 0; border-bottom: 1px solid var(--line); backg
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   font-weight: 700;
 }
+.oauth-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.btn-oauth {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  height: 42px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .15s ease;
+}
+.btn-oauth:hover {
+  background: var(--surface-2);
+  border-color: var(--ink-2);
+}
+.btn-oauth svg {
+  flex: none;
+}
+.auth-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 14px 0 18px 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid var(--line);
+}
+.auth-divider span {
+  padding: 0 10px;
+}
 .auth-demo-prompt { margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--line); }
 .auth-demo-prompt .btn { font-size: 13.5px; border-color: var(--line-strong); background: var(--surface-2); }
 .auth-demo-prompt .btn:hover { background: var(--brand-soft); color: var(--brand); border-color: var(--brand); }
