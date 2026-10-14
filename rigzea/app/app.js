@@ -293,24 +293,14 @@
     if (v) { history.replaceState(null, '', '/app/#/' + ({ dashboard: 'today', reports: 'finance' }[v] || v)); }
   }
 
-  // Navigation is grouped by what the user is doing: renting out or selling.
-  // Each item is one destination; ?type= scopes the shared list views to it.
+  // Simplified clean navigation: 5 core daily workflows + 1 management group.
   const NAV = [
     { items: [
       { id: 'today', label: 'მთავარი', icon: 'today', href: '#/today' },
+      { id: 'apartments', label: 'ბინები', icon: 'building', href: '#/apartments' },
+      { id: 'deals', label: 'გარიგებები', icon: 'wallet', href: '#/deals' },
+      { id: 'contacts', label: 'კონტაქტები', icon: 'user', href: '#/owners' },
       { id: 'tasks', label: 'საქმეები', icon: 'tasks', href: '#/tasks' },
-    ] },
-    { id: 'rent', label: 'გაქირავება', icon: 'key', items: [
-      { id: 'rent-apts', label: 'ბინები', icon: 'building', href: '#/apartments?type=rent' },
-      { id: 'renters', label: 'მდგმურები', icon: 'user', href: '#/owners?type=renter' },
-      { id: 'landlords', label: 'მეპატრონეები', icon: 'owner', href: '#/owners?type=owner' },
-      { id: 'rent-deals', label: 'გარიგებები', icon: 'wallet', href: '#/deals?type=rental' },
-    ] },
-    { id: 'sale', label: 'გაყიდვა', icon: 'building', items: [
-      { id: 'sale-apts', label: 'ბინები', icon: 'building', href: '#/apartments?type=sale' },
-      { id: 'buyers', label: 'მყიდველები', icon: 'user', href: '#/owners?type=buyer' },
-      { id: 'sellers', label: 'გამყიდველები', icon: 'owner', href: '#/owners?type=seller' },
-      { id: 'sale-deals', label: 'გარიგებები', icon: 'wallet', href: '#/deals?type=sale' },
     ] },
     { id: 'manage', label: 'მართვა', items: [
       { id: 'finance', label: 'ფინანსები', icon: 'wallet', href: '#/finance' },
@@ -319,23 +309,15 @@
     ] },
   ];
   const navGroups = () => (isAgent() ? NAV.filter(g => g.id !== 'manage') : NAV);
-  const CONTACT_NAV = { renter: 'renters', owner: 'landlords', buyer: 'buyers', seller: 'sellers' };
-  const aptSection = (a) => (a?.transaction_type === 'sale' ? 'sale' : 'rent');
-  const contactSection = (ct) => (['buyer', 'seller'].includes(ct) ? 'sale' : 'rent');
   const sectionOf = (itemId) => NAV.find(g => g.items.some(i => i.id === itemId));
 
-  // The nav item the current route belongs to (detail pages follow their record).
+  // The nav item the current route belongs to.
   function navKey(r = route()) {
-    const type = r.params.get('type');
-    if (r.name === 'apartments') {
-      if (r.id) return H.apt(r.id) ? `${aptSection(H.apt(r.id))}-apts` : null;
-      return type === 'sale' ? 'sale-apts' : type === 'rent' ? 'rent-apts' : null;
-    }
-    if (r.name === 'owners') {
-      if (r.id) return CONTACT_NAV[H.owner(r.id)?.contact_type || 'owner'] || null;
-      return type ? CONTACT_NAV[type] || null : 'landlords';
-    }
-    if (r.name === 'deals') return type === 'sale' ? 'sale-deals' : type === 'rental' ? 'rent-deals' : null;
+    if (r.name === 'apartments') return 'apartments';
+    if (r.name === 'owners') return 'contacts';
+    if (r.name === 'deals') return 'deals';
+    if (r.name === 'tasks') return 'tasks';
+    if (r.name === 'today') return 'today';
     return r.name;
   }
 
@@ -343,15 +325,11 @@
     if (!S.data) return {};
     const overdue = S.data.tasks.filter(H.isOverdue).length;
     const pending = S.data.approvals.filter(a => R.approvalStatus(a) === 'pending').length;
-    const open = (S.data.deals || []).filter(d => !['closed', 'lost'].includes(d.stage));
-    const sale = open.filter(d => d.deal_type === 'sale').length;
-    const rent = open.length - sale;
-    const dealCount = (n) => (n ? { n, label: `${n} აქტიური გარიგება` } : null);
+    const open = (S.data.deals || []).filter(d => !['closed', 'lost'].includes(d.stage)).length;
     return {
       tasks: overdue ? { n: overdue, danger: true, label: `${overdue} ვადაგადაცილებული` } : null,
-      landlords: pending ? { n: pending, label: `${pending} თანხმობა პასუხს ელოდება` } : null,
-      'rent-deals': dealCount(rent),
-      'sale-deals': dealCount(sale),
+      contacts: pending ? { n: pending, label: `${pending} თანხმობა პასუხს ელოდება` } : null,
+      deals: open ? { n: open, label: `${open} აქტიური გარიგება` } : null,
     };
   }
 
@@ -363,25 +341,51 @@
   function renderShell() {
     const key = S.data ? navKey() : route().name;
     const counts = navCounts();
-    const section = sectionOf(key);
     $('#rail').innerHTML = navGroups().map(g => `${g.label ? `<div class="nav-group">${g.label}</div>` : ''}${navLinks(g, key, counts)}`).join('')
       + `<div class="rail-foot">${S.data ? `${S.data.apartments.filter(a => a.status !== 'archived').length} ბინა · ${S.data.owners.length} კონტაქტი · ${S.data.members.length} წევრი` : ''}</div>`;
 
-    // Phone: two primary pages, the two sections, and the full menu.
+    // Phone: 4 primary workflows + More menu sheet.
     const tab = (href, ic, label, active, count) => `<a href="${href}" ${active ? 'aria-current="page"' : ''}>${icon(ic, 20)}<span>${label}</span>${count ? `<span class="count ${count.danger ? 'count-danger' : ''}">${count.n}</span>` : ''}</a>`;
-    const sectionTab = (id) => { const g = NAV.find(x => x.id === id); return tab(g.items[0].href, g.icon, g.label, section?.id === id); };
-    const inMenu = !['today', 'tasks'].includes(key) && !['rent', 'sale'].includes(section?.id);
-    $('#bottom-nav').innerHTML = tab('#/today', 'today', 'მთავარი', key === 'today') + tab('#/tasks', 'tasks', 'საქმეები', key === 'tasks', counts.tasks)
-      + sectionTab('rent') + sectionTab('sale')
-      + `<button type="button" id="btn-more" ${inMenu ? 'aria-current="page"' : ''}>${icon('menu', 20)}<span>მენიუ</span></button>`;
+    const inMore = ['tasks', 'finance', 'team', 'settings'].includes(key);
+    $('#bottom-nav').innerHTML = tab('#/today', 'today', 'მთავარი', key === 'today')
+      + tab('#/apartments', 'building', 'ბინები', key === 'apartments')
+      + tab('#/deals', 'wallet', 'გარიგებები', key === 'deals', counts.deals)
+      + tab('#/owners', 'user', 'კონტაქტები', key === 'contacts', counts.contacts)
+      + `<button type="button" id="btn-more" ${inMore ? 'aria-current="page"' : ''}>${icon('menu', 20)}<span>მენიუ</span>${counts.tasks ? `<span class="count count-danger">${counts.tasks.n}</span>` : ''}</button>`;
     $('#btn-more').onclick = openMoreSheet;
 
-    // Phone: the pages of the current section, right above the content.
+    // Phone: quick filter bar right above the content for list views
     const bar = $('#section-bar');
-    const showBar = ['rent', 'sale'].includes(section?.id);
-    bar.hidden = !showBar;
-    bar.setAttribute('aria-label', showBar ? section.label : 'სექცია');
-    bar.innerHTML = showBar ? navLinks(section, key, counts, 'section-tab') : '';
+    const r = route();
+    let subLinks = null;
+    if (r.name === 'apartments' && !r.id) {
+      const curType = r.params.get('type') || '';
+      subLinks = [
+        { href: '#/apartments', label: 'ყველა', active: !curType },
+        { href: '#/apartments?type=rent', label: 'ქირავდება', active: curType === 'rent' },
+        { href: '#/apartments?type=sale', label: 'იყიდება', active: curType === 'sale' },
+      ];
+    } else if (r.name === 'deals' && !['commissions', 'selections', 'documents'].includes(r.id)) {
+      const curType = r.params.get('type') || '';
+      subLinks = [
+        { href: '#/deals', label: 'ყველა', active: !curType },
+        { href: '#/deals?type=rental', label: 'გაქირავება', active: curType === 'rental' },
+        { href: '#/deals?type=sale', label: 'გაყიდვა', active: curType === 'sale' },
+      ];
+    } else if (r.name === 'owners' && !r.id) {
+      const curType = r.params.get('type') || '';
+      subLinks = [
+        { href: '#/owners', label: 'ყველა', active: !curType },
+        { href: '#/owners?type=owner', label: 'მეპატრონეები', active: curType === 'owner' },
+        { href: '#/owners?type=buyer', label: 'მყიდველები', active: curType === 'buyer' },
+        { href: '#/owners?type=renter', label: 'მდგმურები', active: curType === 'renter' },
+        { href: '#/owners?type=seller', label: 'გამყიდველები', active: curType === 'seller' },
+      ];
+    }
+    bar.hidden = !subLinks;
+    if (subLinks) {
+      bar.innerHTML = subLinks.map(l => `<a class="section-tab" href="${l.href}" ${l.active ? 'aria-current="page"' : ''}>${l.label}</a>`).join('');
+    }
 
     // Organization switcher
     const sw = $('#org-switch');
@@ -560,7 +564,34 @@
     if (e.key === '/' && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName) && !$('#shell').hidden) { e.preventDefault(); openSearch(); }
   });
 
-  $('#btn-new-task').addEventListener('click', () => App.openTaskForm({ apartmentId: route().name === 'apartments' ? route().id : null }));
+  const qaWrap = $('#quick-add-wrap');
+  const qaBtn = $('#btn-new-task');
+  const qaPanel = $('#quick-add-panel');
+  if (qaBtn && qaPanel) {
+    qaBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const open = !qaPanel.hidden;
+      qaPanel.hidden = open;
+      qaBtn.setAttribute('aria-expanded', String(!open));
+    });
+    qaPanel.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-qa]');
+      if (!b) return;
+      qaPanel.hidden = true;
+      qaBtn.setAttribute('aria-expanded', 'false');
+      const action = b.dataset.qa;
+      if (action === 'apartment') App.openApartmentForm();
+      else if (action === 'deal') App.openDealForm();
+      else if (action === 'viewing') App.openTaskForm({ type: 'viewing' });
+      else if (action === 'task') App.openTaskForm({ apartmentId: route().name === 'apartments' ? route().id : null });
+    });
+    document.addEventListener('click', (e) => {
+      if (qaWrap && !qaWrap.contains(e.target)) {
+        qaPanel.hidden = true;
+        qaBtn.setAttribute('aria-expanded', 'false');
+      }
+    });
+  }
 
   // ---------------------------------------------------------------------------
   // Enter workspace

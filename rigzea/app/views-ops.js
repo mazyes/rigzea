@@ -394,7 +394,8 @@
       repair: open.filter(t => ['repair', 'maintenance'].includes(t.type)).length,
       owner: pendingApprovals.length,
     };
-    const FILTERS = [
+    const ALWAYS_FILTERS = new Set(['all', 'urgent', 'viewing', 'today']);
+    const ALL_FILTERS = [
       ['all', 'ყველა'],
       ['urgent', 'სასწრაფო'],
       ['viewing', 'დათვალიერება'],
@@ -404,6 +405,7 @@
       ['repair', 'რემონტი'],
       ['owner', 'მფლობელს ელოდება']
     ];
+    const FILTERS = ALL_FILTERS.filter(([id]) => ALWAYS_FILTERS.has(id) || (counts[id] > 0) || todayFilter === id);
     const fin = financeSnapshot();
     const steps = setupSteps();
     const showSetup = steps.some(s => !s.done) && localStorage.getItem('rigzea_setup_hidden_' + S.org.id) !== '1';
@@ -482,10 +484,11 @@
           </section>`}
         </div>
         <div class="stack">
+          ${pendingApprovals.length ? `
           <section class="card">
-            <div class="card-head"><h2>მფლობელის გადაწყვეტილებები <span class="count">${pendingApprovals.length}</span></h2><a class="link-btn small" href="#/owners?type=owner&tab=approvals">ყველა</a></div>
-            ${pendingApprovals.length ? approvalsList(pendingApprovals.slice(0, 5), true) : emptyInline('პასუხის მომლოდინე მოთხოვნა არ არის.')}
-          </section>
+            <div class="card-head"><h2>მესაკუთრესთან შესათანხმებელი ხარჯები <span class="count">${pendingApprovals.length}</span></h2><a class="link-btn small" href="#/owners?type=owner&tab=approvals">ყველა</a></div>
+            ${approvalsList(pendingApprovals.slice(0, 5), true)}
+          </section>` : ''}
           <section class="card">
             <div class="card-head"><h2>${R.MONTHS[now.getMonth()]} · ფინანსები</h2><a class="link-btn small" href="#/finance">დეტალურად</a></div>
             <div class="stats">

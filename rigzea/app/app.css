@@ -717,3 +717,35 @@ button.row { width: 100%; border: 0; border-bottom: 1px solid var(--line); backg
 .deal-split-out > div { background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r-sm); padding: 8px 10px; display: flex; flex-direction: column; gap: 2px; }
 .deal-split-out span { color: var(--muted); }
 @media (max-width: 600px) { .deal-split-out { grid-template-columns: 1fr; } }
+
+/* Quick Add Universal Popover */
+.quick-add-menu { padding: 6px; border-radius: var(--r); box-shadow: var(--shadow-lg); border: 1px solid var(--line); }
+.quick-add-items { display: flex; flex-direction: column; gap: 4px; }
+.quick-add-btn { display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px 12px; border: none; background: transparent; border-radius: var(--r-sm); cursor: pointer; text-align: left; transition: background .15s ease; color: var(--ink); }
+.quick-add-btn:hover { background: var(--hover); }
+.quick-add-btn .qa-ico { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px; background: var(--surface-2); color: var(--brand); flex-shrink: 0; }
+.quick-add-btn .qa-text { display: flex; flex-direction: column; gap: 2px; }
+.quick-add-btn .qa-text strong { font-size: 13.5px; font-weight: 600; color: var(--ink); }
+.quick-add-btn .qa-text small { font-size: 11.5px; color: var(--muted); }
+
+/* Form Progressive Disclosure (Collapsible Details) */
+details.form-more { border: 1px dashed var(--line); border-radius: var(--r); padding: 12px 14px; background: var(--surface-2); margin-top: 10px; }
+details.form-more summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var(--brand); list-style: none; display: flex; align-items: center; gap: 8px; user-select: none; }
+details.form-more summary::-webkit-details-marker { display: none; }
+details.form-more summary::after { content: '▾'; margin-left: auto; font-size: 12px; color: var(--muted); transition: transform .2s ease; }
+details.form-more[open] summary::after { transform: rotate(180deg); }
+details.form-more[open] summary { margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+
+/* Deals Table View */
+.deal-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.deal-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.deal-table th { background: var(--surface-2); padding: 10px 14px; font-weight: 600; text-align: left; color: var(--muted); border-bottom: 1px solid var(--line); white-space: nowrap; font-size: 12.5px; }
+.deal-table td { padding: 12px 14px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+.deal-table tr:hover td { background: var(--hover); }
+.deal-stage-select { font-size: 12.5px; font-weight: 600; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; }
+
+/* Deals Drag & Drop */
+.deal-card[draggable="true"] { cursor: grab; }
+.deal-card[draggable="true"]:active { cursor: grabbing; }
+.deal-card.is-dragging { opacity: 0.35; transform: scale(0.98); }
+.deal-col-cards.is-drag-over { background: color-mix(in srgb, var(--brand) 10%, var(--surface)); outline: 2px dashed var(--brand); outline-offset: -4px; border-radius: var(--r); }

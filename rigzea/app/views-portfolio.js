@@ -562,6 +562,7 @@
     const amen = new Set(Array.isArray(v.amenities) ? v.amenities : []);
     const numVal = (x) => (x === null || x === undefined || x === '' ? '' : esc(Number(x)));
     const txType = v.transaction_type || (v.rental_type === 'long_term' ? 'long_term' : 'daily');
+    const hasMore = Boolean(edit && (v.cadastral_code || v.door_code || v.wifi_name || v.parking_info || v.access_instructions || v.prepayment_terms || v.utilities_estimate || v.notes || (v.amenities && v.amenities.length) || (v.agent_commission_percent !== 50 && v.agent_commission_percent !== undefined) || v.owner_bonus || (v.cobroker_split !== 50 && v.cobroker_split !== undefined)));
     let pm;
     return R.dialog({
       title: edit ? 'ობიექტის რედაქტირება' : 'ახალი უძრავი ქონება', wide: true, submitLabel: edit ? 'შენახვა' : 'ობიექტის დამატება',
@@ -576,9 +577,7 @@
         <label class="field"><span class="field-label">მისამართი</span><input name="address" required value="${esc(v.address || '')}" placeholder="ქუჩა და ნომერი" data-error="ჩაწერე მისამართი." /></label>
         <label class="field"><span class="field-label">ქალაქი</span><input name="city" value="${esc(v.city || '')}" list="city-list" /><datalist id="city-list"><option>თბილისი</option><option>ბათუმი</option><option>ქუთაისი</option><option>გუდაური</option><option>ბაკურიანი</option></datalist></label>
         <label class="field"><span class="field-label">რაიონი / უბანი</span><input name="district" value="${esc(v.district || '')}" list="district-list" placeholder="ვაკე, საბურთალო, ბულვარი..." /><datalist id="district-list"><option>ვაკე</option><option>საბურთალო</option><option>ვერა</option><option>მთაწმინდა</option><option>ჩუღურეთი</option><option>ორთაჭალა</option><option>დიღომი</option><option>ძველი ბულვარი</option><option>ახალი ბულვარი</option><option>რუსთაველი</option></datalist></label>
-        <label class="field"><span class="field-label">მესაკუთრე (Owner Vault)</span><select name="owner_id"><option value="">არ არის მითითებული</option>${S.data.owners.map(o => `<option value="${o.id}" ${o.id === v.owner_id ? 'selected' : ''}>${esc(o.name)} (${esc(L.contactType[o.contact_type] || 'მესაკუთრე')})</option>`).join('')}</select></label>
-        <label class="field"><span class="field-label">საკადასტრო კოდი</span><input name="cadastral_code" id="apt-cadastral" value="${esc(v.cadastral_code || '')}" placeholder="01.10.14.009.011" inputmode="numeric" autocomplete="off" /><span class="field-hint">წერტილები თავისით ჩაისმება. დუბლიკატს ბაზაში ავტომატურად ვამოწმებთ.</span></label>
-        <div class="span-2" id="apt-dup" hidden></div>
+        <label class="field"><span class="field-label">მესაკუთრე (კონტაქტი დაცულია)</span><select name="owner_id"><option value="">არ არის მითითებული</option>${S.data.owners.map(o => `<option value="${o.id}" ${o.id === v.owner_id ? 'selected' : ''}>${esc(o.name)} (${esc(L.contactType[o.contact_type] || 'მესაკუთრე')})</option>`).join('')}</select></label>
         <label class="field"><span class="field-label">ტრანზაქციის ტიპი</span>
           <select name="transaction_type" id="apt-tx-type">
             <option value="sale" ${txType === 'sale' ? 'selected' : ''}>იყიდება (გაყიდვა)</option>
@@ -595,42 +594,6 @@
           </select>
         </label>
         <label class="field"><span class="field-label">სტატუსი</span><select name="status">${['active', 'reserved', 'rented', 'sold', 'maintenance', 'vacant'].map(s => `<option value="${s}" ${v.status === s ? 'selected' : ''}>${L.aptStatus[s]}</option>`).join('')}${edit && v.status === 'archived' ? '<option value="archived" selected>დაარქივებული</option>' : ''}</select></label>
-
-        <!-- Real Estate Property Specs & Public Showcase Info -->
-        <div class="form-section span-2" style="background:var(--surface-2);padding:14px;border-radius:var(--r);border:1px solid var(--line)">
-          <div class="form-section-title" style="margin-bottom:8px;font-weight:700">პარამეტრები და საჯარო განცხადება (ბმული /p/)</div>
-          <div class="form-grid">
-            <label class="field"><span class="field-label">ოთახების რაოდენობა</span><input type="number" name="rooms" min="1" max="20" value="${esc(v.rooms || v.bedrooms || 2)}" /></label>
-            <label class="field"><span class="field-label">საძინებლები</span><input type="number" name="bedrooms" min="0" max="10" value="${esc(v.bedrooms || 1)}" /></label>
-            <label class="field"><span class="field-label">სველი წერტილები</span><input type="number" name="bathrooms" min="1" max="10" value="${esc(v.bathrooms || 1)}" /></label>
-            <label class="field"><span class="field-label">ფართობი (მ²)</span><input type="number" name="area_sqm" id="apt-area-sqm" min="5" step="0.5" value="${esc(v.area_sqm || '')}" placeholder="75" /></label>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
-              <label class="field"><span class="field-label">სართული</span><input name="floor" value="${esc(v.floor || '')}" placeholder="7" /></label>
-              <label class="field"><span class="field-label">სულ სართ.</span><input type="number" name="total_floors" value="${esc(v.total_floors || '')}" placeholder="12" /></label>
-            </div>
-            <label class="field"><span class="field-label">შინაური ცხოველები</span>
-              <select name="pets_allowed">
-                <option value="true" ${v.pets_allowed ? 'selected' : ''}>🐾 ნებადართულია (Pet Friendly)</option>
-                <option value="false" ${!v.pets_allowed ? 'selected' : ''}>🚫 ცხოველების გარეშე</option>
-              </select>
-            </label>
-            <label class="field"><span class="field-label">კომუნალური ხარჯი (~₾)</span><input type="number" name="utilities_estimate" min="0" step="10" value="${esc(v.utilities_estimate || '')}" placeholder="220" /><span class="field-hint">გაზი, დენი, წყალი, ინტერნეტი</span></label>
-            <label class="field"><span class="field-label">წინასწარი გადახდის პირობები</span><input name="prepayment_terms" value="${esc(v.prepayment_terms || '')}" placeholder="1-ლი და ბოლო თვე + 1 თვის დეპოზიტი" /></label>
-            <label class="field"><span class="field-label">აგენტის WhatsApp ნომერი</span><input type="tel" name="agent_phone" value="${esc(v.agent_phone || S.org.contact_phone || '')}" placeholder="+995599001122" /><span class="field-hint">ნახვის დაჯავშნის ღილაკისთვის</span></label>
-            ${sl ? `<label class="field"><span class="field-label">აგენტის სახელი განცხადებაზე</span><input name="agent_name" maxlength="80" value="${esc(v.agent_name || '')}" placeholder="მაგ.: ნინო ბერიძე" /></label>` : ''}
-            ${sl ? `<label class="field"><span class="field-label">ნიშანი ფოტოზე</span><select name="badge">${BADGES.map(([k, l]) => `<option value="${k}" ${(v.badge || '') === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label>` : ''}
-            <div class="field span-2"><span class="field-label">ფოტოები</span>${photoManagerHtml()}</div>
-            <div class="field span-2" role="group" aria-label="კეთილმოწყობა"><span class="field-label">კეთილმოწყობა</span>
-              <div class="chips amenity-chips">${AMENITIES.map(([k, l]) => `<button type="button" class="chip" data-amenity="${k}" aria-pressed="${amen.has(k)}">${esc(l)}</button>`).join('')}</div></div>
-            <label class="field span-2"><span class="field-label">აღწერა (ქართულად)</span><textarea name="description" rows="3" placeholder="თანამედროვე უძრავი ქონება...">${esc(v.description || '')}</textarea></label>
-            <label class="field span-2"><span class="field-label">აღწერა ინგლისურად <span class="muted">(არასავალდებულო)</span></span><textarea name="description_en" rows="3" lang="en" placeholder="Modern real estate listing...">${esc(v.description_en || '')}</textarea><span class="field-hint">უცხოელ კლიენტს ბმულზე ინგლისური ვერსია გამოუჩნდება.</span></label>
-            ${sl ? `<label class="field span-2"><span class="field-label">ბმულის მისამართი</span>
-              <div class="slug-input"><span class="muted small">${esc(location.host)}/p/</span><input name="slug" value="${esc(v.slug || '')}" maxlength="80" placeholder="vake-3-otakhiani" autocapitalize="off" spellcheck="false" data-error="ბმულში გამოიყენე მხოლოდ ლათინური ასოები, ციფრები და ტირე (მინიმუმ 3 სიმბოლო)." /></div>
-              <span class="field-hint">${edit ? 'მისამართის შეცვლის შემდეგ ძველი ბმული აღარ იმუშავებს.' : 'თუ ცარიელს დატოვებ, სახელიდან ავტომატურად შეიქმნება.'}</span></label>
-            <label class="field"><span class="field-label">განედი (lat) <span class="muted">(არასავალდებულო)</span></span><input name="lat" type="number" step="any" min="-90" max="90" value="${numVal(v.lat)}" placeholder="41.7151" data-error="განედი უნდა იყოს −90-დან 90-მდე." /></label>
-            <label class="field"><span class="field-label">გრძედი (lng) <span class="muted">(არასავალდებულო)</span></span><input name="lng" type="number" step="any" min="-180" max="180" value="${numVal(v.lng)}" placeholder="44.8271" data-error="გრძედი უნდა იყოს −180-დან 180-მდე." /><span class="field-hint">კოორდინატების გარეშე რუკა მისამართით განისაზღვრება.</span></label>` : ''}
-          </div>
-        </div>
 
         <!-- Sales Price Section -->
         <div class="form-section span-2" id="apt-sale-section">
@@ -667,26 +630,71 @@
           </div>
         </div>
 
-        <div class="form-section span-2">
-          <div class="form-section-title">საკომისიო</div>
+        <!-- Core Property Specs & Photos -->
+        <div class="form-section span-2" style="background:var(--surface-2);padding:14px;border-radius:var(--r);border:1px solid var(--line)">
+          <div class="form-section-title" style="margin-bottom:8px;font-weight:700">ძირითადი პარამეტრები და ფოტოები</div>
           <div class="form-grid">
-            <label class="field"><span class="field-label">მართვის საკომისიო (%)</span><input type="number" name="commission_pct" min="0" max="100" step="0.5" value="${numVal(v.commission_pct ?? 20)}" data-error="საკომისიო უნდა იყოს 0-დან 100-მდე." /><span class="field-hint">მფლობელის თვიურ ამონაწერში შემოსავლიდან გამოიქვითება.</span></label>
-            <label class="field"><span class="field-label">აგენტის საკომისიო (% ქირიდან ან გაყიდვიდან)</span><input type="number" name="agent_commission_percent" min="0" max="300" step="1" value="${numVal(v.agent_commission_percent)}" placeholder="50" /></label>
-            <label class="field"><span class="field-label">მფლობელის ბონუსი</span><input type="number" name="owner_bonus" min="0" step="10" value="${numVal(v.owner_bonus)}" placeholder="0" /><span class="field-hint">ფიქსირებული თანხა ვალუტაში.</span></label>
-            <label class="field"><span class="field-label">პარტნიორი აგენტის წილი (%)</span><input type="number" name="cobroker_split" min="0" max="100" step="5" value="${numVal(v.cobroker_split)}" placeholder="50" /></label>
+            <label class="field"><span class="field-label">ოთახების რაოდენობა</span><input type="number" name="rooms" min="1" max="20" value="${esc(v.rooms || v.bedrooms || 2)}" /></label>
+            <label class="field"><span class="field-label">საძინებლები</span><input type="number" name="bedrooms" min="0" max="10" value="${esc(v.bedrooms || 1)}" /></label>
+            <label class="field"><span class="field-label">სველი წერტილები</span><input type="number" name="bathrooms" min="1" max="10" value="${esc(v.bathrooms || 1)}" /></label>
+            <label class="field"><span class="field-label">ფართობი (მ²)</span><input type="number" name="area_sqm" id="apt-area-sqm" min="5" step="0.5" value="${esc(v.area_sqm || '')}" placeholder="75" /></label>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+              <label class="field"><span class="field-label">სართული</span><input name="floor" value="${esc(v.floor || '')}" placeholder="7" /></label>
+              <label class="field"><span class="field-label">სულ სართ.</span><input type="number" name="total_floors" value="${esc(v.total_floors || '')}" placeholder="12" /></label>
+            </div>
+            <div class="field span-2"><span class="field-label">ფოტოები</span>${photoManagerHtml()}</div>
+            <label class="field span-2"><span class="field-label">აღწერა (ქართულად)</span><textarea name="description" rows="3" placeholder="თანამედროვე უძრავი ქონება...">${esc(v.description || '')}</textarea></label>
           </div>
         </div>
 
-        <div class="form-grid span-2" id="apt-daily-section" style="gap:8px"><label class="field"><span class="field-label">Check-in</span><input type="time" name="checkin_time" value="${esc(String(v.checkin_time || '14:00').slice(0, 5))}" /></label><label class="field"><span class="field-label">Check-out</span><input type="time" name="checkout_time" value="${esc(String(v.checkout_time || '12:00').slice(0, 5))}" /></label></div>
-        <div class="form-section span-2"><div class="form-section-title">დაშვება <span class="muted small">— ჩანს მხოლოდ მენეჯერებისთვის</span></div>
-          <div class="form-grid">
-            <label class="field"><span class="field-label">კარის კოდი</span><input name="door_code" value="${esc(v.door_code || '')}" autocomplete="off" /></label>
-            <label class="field"><span class="field-label">პარკინგი</span><input name="parking_info" value="${esc(v.parking_info || '')}" /></label>
-            <label class="field"><span class="field-label">Wi-Fi ქსელი</span><input name="wifi_name" value="${esc(v.wifi_name || '')}" autocomplete="off" /></label>
-            <label class="field"><span class="field-label">Wi-Fi პაროლი</span><input name="wifi_password" value="${esc(v.wifi_password || '')}" autocomplete="off" /></label>
-            <label class="field span-2"><span class="field-label">ინსტრუქცია დამლაგებლისა და ტექნიკოსისთვის</span><textarea name="access_instructions" rows="2" placeholder="მაგ.: გასაღები რეცეფციაზე, სახელით">${esc(v.access_instructions || '')}</textarea></label>
-          </div></div>
-        <label class="field span-2"><span class="field-label">შიდა შენიშვნა</span><textarea name="notes" rows="2">${esc(v.notes || '')}</textarea></label>
+        <!-- Progressive disclosure: Advanced details -->
+        <details class="form-more span-2" ${hasMore ? 'open' : ''}>
+          <summary>⚙️ დამატებითი დეტალები (საკადასტრო, კოდები, საკომისიოს წილები)</summary>
+          <div class="form-grid" style="margin-top:12px">
+            <label class="field"><span class="field-label">საკადასტრო კოდი</span><input name="cadastral_code" id="apt-cadastral" value="${esc(v.cadastral_code || '')}" placeholder="01.10.14.009.011" inputmode="numeric" autocomplete="off" /><span class="field-hint">წერტილები თავისით ჩაისმება. დუბლიკატს ბაზაში ავტომატურად ვამოწმებთ.</span></label>
+            <div class="span-2" id="apt-dup" hidden></div>
+            <label class="field"><span class="field-label">შინაური ცხოველები</span>
+              <select name="pets_allowed">
+                <option value="true" ${v.pets_allowed ? 'selected' : ''}>🐾 ნებადართულია (Pet Friendly)</option>
+                <option value="false" ${!v.pets_allowed ? 'selected' : ''}>🚫 ცხოველების გარეშე</option>
+              </select>
+            </label>
+            <label class="field"><span class="field-label">კომუნალური ხარჯი (~₾)</span><input type="number" name="utilities_estimate" min="0" step="10" value="${esc(v.utilities_estimate || '')}" placeholder="220" /><span class="field-hint">გაზი, დენი, წყალი, ინტერნეტი</span></label>
+            <label class="field"><span class="field-label">წინასწარი გადახდის პირობები</span><input name="prepayment_terms" value="${esc(v.prepayment_terms || '')}" placeholder="1-ლი და ბოლო თვე + 1 თვის დეპოზიტი" /></label>
+            <label class="field"><span class="field-label">აგენტის WhatsApp ნომერი</span><input type="tel" name="agent_phone" value="${esc(v.agent_phone || S.org.contact_phone || '')}" placeholder="+995599001122" /><span class="field-hint">ნახვის დაჯავშნის ღილაკისთვის</span></label>
+            ${sl ? `<label class="field"><span class="field-label">აგენტის სახელი განცხადებაზე</span><input name="agent_name" maxlength="80" value="${esc(v.agent_name || '')}" placeholder="მაგ.: ნინო ბერიძე" /></label>` : ''}
+            ${sl ? `<label class="field"><span class="field-label">ნიშანი ფოტოზე</span><select name="badge">${BADGES.map(([k, l]) => `<option value="${k}" ${(v.badge || '') === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label>` : ''}
+            <div class="field span-2" role="group" aria-label="კეთილმოწყობა"><span class="field-label">კეთილმოწყობა</span>
+              <div class="chips amenity-chips">${AMENITIES.map(([k, l]) => `<button type="button" class="chip" data-amenity="${k}" aria-pressed="${amen.has(k)}">${esc(l)}</button>`).join('')}</div></div>
+            <label class="field span-2"><span class="field-label">აღწერა ინგლისურად <span class="muted">(არასავალდებულო)</span></span><textarea name="description_en" rows="3" lang="en" placeholder="Modern real estate listing...">${esc(v.description_en || '')}</textarea><span class="field-hint">უცხოელ კლიენტს ბმულზე ინგლისური ვერსია გამოუჩნდება.</span></label>
+            ${sl ? `<label class="field span-2"><span class="field-label">ბმულის მისამართი</span>
+              <div class="slug-input"><span class="muted small">${esc(location.host)}/p/</span><input name="slug" value="${esc(v.slug || '')}" maxlength="80" placeholder="vake-3-otakhiani" autocapitalize="off" spellcheck="false" data-error="ბმულში გამოიყენე მხოლოდ ლათინური ასოები, ციფრები და ტირე (მინიმუმ 3 სიმბოლო)." /></div>
+              <span class="field-hint">${edit ? 'მისამართის შეცვლის შემდეგ ძველი ბმული აღარ იმუშავებს.' : 'თუ ცარიელს დატოვებ, სახელიდან ავტომატურად შეიქმნება.'}</span></label>
+            <label class="field"><span class="field-label">განედი (lat) <span class="muted">(არასავალდებულო)</span></span><input name="lat" type="number" step="any" min="-90" max="90" value="${numVal(v.lat)}" placeholder="41.7151" data-error="განედი უნდა იყოს −90-დან 90-მდე." /></label>
+            <label class="field"><span class="field-label">გრძედი (lng) <span class="muted">(არასავალდებულო)</span></span><input name="lng" type="number" step="any" min="-180" max="180" value="${numVal(v.lng)}" placeholder="44.8271" data-error="გრძედი უნდა იყოს −180-დან 180-მდე." /><span class="field-hint">კოორდინატების გარეშე რუკა მისამართით განისაზღვრება.</span></label>` : ''}
+            
+            <div class="form-section span-2">
+              <div class="form-section-title">საკომისიო</div>
+              <div class="form-grid">
+                <label class="field"><span class="field-label">მართვის საკომისიო (%)</span><input type="number" name="commission_pct" min="0" max="100" step="0.5" value="${numVal(v.commission_pct ?? 20)}" data-error="საკომისიო უნდა იყოს 0-დან 100-მდე." /><span class="field-hint">მფლობელის თვიურ ამონაწერში შემოსავლიდან გამოიქვითება.</span></label>
+                <label class="field"><span class="field-label">აგენტის საკომისიო (% ქირიდან ან გაყიდვიდან)</span><input type="number" name="agent_commission_percent" min="0" max="300" step="1" value="${numVal(v.agent_commission_percent)}" placeholder="50" /></label>
+                <label class="field"><span class="field-label">მფლობელის ბონუსი</span><input type="number" name="owner_bonus" min="0" step="10" value="${numVal(v.owner_bonus)}" placeholder="0" /><span class="field-hint">ფიქსირებული თანხა ვალუტაში.</span></label>
+                <label class="field"><span class="field-label">პარტნიორი აგენტის წილი (%)</span><input type="number" name="cobroker_split" min="0" max="100" step="5" value="${numVal(v.cobroker_split)}" placeholder="50" /></label>
+              </div>
+            </div>
+
+            <div class="form-grid span-2" id="apt-daily-section" style="gap:8px"><label class="field"><span class="field-label">Check-in</span><input type="time" name="checkin_time" value="${esc(String(v.checkin_time || '14:00').slice(0, 5))}" /></label><label class="field"><span class="field-label">Check-out</span><input type="time" name="checkout_time" value="${esc(String(v.checkout_time || '12:00').slice(0, 5))}" /></label></div>
+            <div class="form-section span-2"><div class="form-section-title">დაშვება <span class="muted small">— ჩანს მხოლოდ მენეჯერებისთვის</span></div>
+              <div class="form-grid">
+                <label class="field"><span class="field-label">კარის კოდი</span><input name="door_code" value="${esc(v.door_code || '')}" autocomplete="off" /></label>
+                <label class="field"><span class="field-label">პარკინგი</span><input name="parking_info" value="${esc(v.parking_info || '')}" /></label>
+                <label class="field"><span class="field-label">Wi-Fi ქსელი</span><input name="wifi_name" value="${esc(v.wifi_name || '')}" autocomplete="off" /></label>
+                <label class="field"><span class="field-label">Wi-Fi პაროლი</span><input name="wifi_password" value="${esc(v.wifi_password || '')}" autocomplete="off" /></label>
+                <label class="field span-2"><span class="field-label">ინსტრუქცია დამლაგებლისა და ტექნიკოსისთვის</span><textarea name="access_instructions" rows="2" placeholder="მაგ.: გასაღები რეცეფციაზე, სახელით">${esc(v.access_instructions || '')}</textarea></label>
+              </div></div>
+            <label class="field span-2"><span class="field-label">შიდა შენიშვნა</span><textarea name="notes" rows="2">${esc(v.notes || '')}</textarea></label>
+          </div>
+        </details>
       </div>`,
       onOpen: (form) => {
         pm = photoManager(form, v.photos, id);
@@ -918,11 +926,11 @@
     if (r.id) return renderOwner(r.id);
     if (CONTACT_PAGES[r.params.get('type')]) return renderContactPage(r, r.params.get('type'));
     const pending = S.data.approvals.filter(a => R.approvalStatus(a) === 'pending');
-    const tab = ownersTab || r.params.get('tab') || (pending.length ? 'approvals' : 'owners');
+    const tab = ownersTab || r.params.get('tab') || 'owners';
     $('#view').innerHTML = `
       <div class="page-head"><div><h1>ყველა კონტაქტი</h1><p class="page-sub">${S.data.owners.length} კონტაქტი · ${pending.length} თანხმობა ელოდება პასუხს</p></div>
         <div class="page-actions"><button type="button" class="btn btn-secondary" id="o-appr">თანხმობის მოთხოვნა</button><button type="button" class="btn btn-primary" id="o-new">${icon('plus', 16)} კონტაქტის დამატება</button></div></div>
-      <div class="tabs" role="tablist"><button type="button" role="tab" class="tab" data-tab="approvals" aria-selected="${tab === 'approvals'}">თანხმობები <span class="count">${pending.length}</span></button><button type="button" role="tab" class="tab" data-tab="owners" aria-selected="${tab === 'owners'}">კონტაქტები <span class="count">${S.data.owners.length}</span></button></div>
+      <div class="tabs" role="tablist"><button type="button" role="tab" class="tab" data-tab="owners" aria-selected="${tab === 'owners'}">კონტაქტები <span class="count">${S.data.owners.length}</span></button><button type="button" role="tab" class="tab" data-tab="approvals" aria-selected="${tab === 'approvals'}">თანხმობები <span class="count">${pending.length}</span></button></div>
       <div id="o-body"></div>`;
     $$('[data-tab]').forEach(b => b.addEventListener('click', () => { ownersTab = b.dataset.tab; App.render(); }));
     $('#o-new').onclick = () => openOwnerForm();
@@ -977,7 +985,7 @@
   // fixedType: a section page shows one contact type and no type filter.
   function renderOwnersList(root, fixedType = null) {
     const all = S.data.owners;
-    const TYPES = [['all', 'ყველა კონტაქტი'], ['owner', 'მეპატრონეები'], ['seller', 'გამყიდველები'], ['buyer', 'მყიდველები'], ['renter', 'მდგმურები']];
+    const TYPES = [['all', 'ყველა'], ['owner', 'მეპატრონეები'], ['buyer', 'მყიდველები'], ['renter', 'მდგმურები'], ['seller', 'გამყიდველები']];
     const activeType = fixedType || ownerContactType;
     const list = all.filter(o => activeType === 'all' || (o.contact_type || 'owner') === activeType);
     const page = CONTACT_PAGES[fixedType];
@@ -1032,7 +1040,7 @@
           ${o.budget_max ? `<dt>ბიუჯეტი</dt><dd class="strong t-ok">${o.budget_min ? o.budget_min + '–' : ''}${o.budget_max} ${o.budget_currency || 'USD'}</dd>` : ''}
           ${o.preferred_city || o.preferred_district ? `<dt>სასურველი ლოკაცია</dt><dd>${esc([o.preferred_city, o.preferred_district].filter(Boolean).join(', '))}</dd>` : ''}
           ${o.lead_source ? `<dt>წყარო</dt><dd>${esc(L.leadSource[o.lead_source] || o.lead_source)}</dd>` : ''}
-          ${o.follow_up_date ? `<dt>Follow-up თარიღი</dt><dd>${esc(R.date(o.follow_up_date))}</dd>` : ''}
+          ${o.follow_up_date ? `<dt>შემდეგი დაკავშირების თარიღი</dt><dd>${esc(R.date(o.follow_up_date))}</dd>` : ''}
           ${o.payout_account ? `<dt>ანგარიში</dt><dd>${esc(o.payout_account)}</dd>` : ''}
           ${reqText(o) ? `<dt>მოთხოვნები</dt><dd style="white-space:pre-wrap">${esc(reqText(o))}</dd>` : ''}
           ${o.notes ? `<dt>შიდა შენიშვნა</dt><dd style="white-space:pre-wrap">${esc(o.notes)}</dd>` : ''}</dl></div></section>
@@ -1090,7 +1098,7 @@
             ${Object.entries(L.leadSource).map(([k, l]) => `<option value="${k}" ${(o?.lead_source || 'direct') === k ? 'selected' : ''}>${l}</option>`).join('')}
           </select>
         </label>
-        <label class="field"><span class="field-label">Follow-up თარიღი</span><input type="date" name="follow_up_date" value="${esc(o?.follow_up_date || '')}" /></label>
+        <label class="field"><span class="field-label">შემდეგი დაკავშირების თარიღი</span><input type="date" name="follow_up_date" value="${esc(o?.follow_up_date || '')}" /></label>
         <label class="field span-2"><span class="field-label">საბანკო ანგარიში (მესაკუთრისთვის)</span><input name="payout_account" value="${esc(o?.payout_account || '')}" placeholder="GE00TB0000000000000000" /></label>
         <label class="field span-2"><span class="field-label">შიდა შენიშვნა</span><textarea name="notes" rows="2">${esc(o?.notes || '')}</textarea></label>
         <div class="form-section span-2">

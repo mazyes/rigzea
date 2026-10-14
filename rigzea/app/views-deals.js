@@ -109,6 +109,7 @@
   // DEALS VIEW (tabs: pipeline · commissions · selections)
   // ===========================================================================
   let dealTypeFilter = 'all';
+  let dealViewMode = localStorage.getItem('rigzea_deal_view') || 'board';
   // Section pages (#/deals?type=rental|sale) show one side of the business.
   let dealSection = null;
   const inSection = (d) => !dealSection || (dealSection === 'sale') === (d.deal_type === 'sale');
@@ -177,34 +178,93 @@
         </div>
         ${missing ? `<div class="calc">${icon('alert', 14)} ${missing} გარიგება სხვა ვალუტაშია და ჯამში არ შევიდა — მიუთითე ვალუტის კურსი „საკომისიოების“ ჩანართში.</div>` : ''}
       </section>
-      <div class="toolbar">
+      <div class="toolbar" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
         ${curToggle(cur)}
+        <div class="seg" role="radiogroup" aria-label="ხედი">
+          <label><input type="radio" name="deals-view-mode" value="board" ${dealViewMode === 'board' ? 'checked' : ''} /><span>📋 დაფა</span></label>
+          <label><input type="radio" name="deals-view-mode" value="table" ${dealViewMode === 'table' ? 'checked' : ''} /><span>📊 ცხრილი</span></label>
+        </div>
         <span class="grow"></span>
         <button type="button" class="btn btn-ghost btn-sm" data-export="csv">${icon('file', 14)} CSV</button>
         <button type="button" class="btn btn-ghost btn-sm" data-export="xlsx">${icon('file', 14)} Excel</button>
       </div>
       ${deals.length ? '' : `<section class="card" style="margin-bottom:16px"><div class="empty">${icon('wallet', 28)}<h3>გარიგება ჯერ არ არის</h3><p>დაამატე კლიენტი, მიაბი ქონება და აქ დაინახავ ეტაპებს, ნახვებს, მოსალოდნელ და მიღებულ საკომისიოს.</p><button type="button" class="btn btn-primary" id="btn-deal-empty">${icon('plus', 16)} პირველი გარიგება</button></div></section>`}
-      <div class="deal-board">
-        ${STAGES.map(st => {
-          const list = deals.filter(d => d.stage === st.id || (st.id === 'enquiry' && d.stage === 'active'));
-          const colSum = sumIn(list, cur, d => calcCommission(d).net).value;
-          return `
-            <section class="deal-col card">
-              <div class="deal-col-head">
-                <span class="badge badge-${st.badge}">${list.length}</span>
-                <strong>${esc(st.label)}</strong>
-                <small class="muted">${fmtMoney(colSum, cur)}</small>
-              </div>
-              <div class="deal-col-cards">
-                ${list.length ? list.map(renderDealCard).join('') : '<div class="empty-inline">ჩანაწერი არ არის</div>'}
-              </div>
-            </section>`;
-        }).join('')}
-      </div>`;
+      ${dealViewMode === 'table' && deals.length ? `
+        <section class="card deal-table-wrap">
+          <table class="deal-table">
+            <thead>
+              <tr>
+                <th>კლიენტი</th>
+                <th>ობიექტი</th>
+                <th>ტიპი</th>
+                <th>თანხა</th>
+                <th>სუფთა საკომისიო</th>
+                <th>ეტაპი</th>
+                <th style="text-align:right">მოქმედება</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${deals.map(d => {
+                const apt = H.apt(d.apartment_id);
+                const comm = calcCommission(d);
+                const cur = d.currency || 'USD';
+                const isSale = d.deal_type === 'sale';
+                return `<tr>
+                  <td>
+                    <strong>${esc(d.client_name)} ${H.flagTag(H.contactByPhone(d.client_phone))}</strong>
+                    <div class="small muted">${d.contact_type ? R.contactBadge(d.contact_type) + ' · ' : ''}${d.client_phone ? `<a href="tel:${esc(d.client_phone)}">${esc(d.client_phone)}</a>` : '—'}</div>
+                  </td>
+                  <td>${apt ? `<a href="#/apartments/${apt.id}">${esc(apt.name)}</a>` : '<span class="muted">—</span>'}</td>
+                  <td>${isSale ? 'გაყიდვა' : 'ქირა'}</td>
+                  <td class="num strong">${fmtMoney(d.deal_amount, cur)}</td>
+                  <td class="num strong t-ok">${fmtMoney(comm.net, cur)}</td>
+                  <td>
+                    <select class="deal-stage-select" data-deal-quick-stage="${d.id}" aria-label="ეტაპი: ${esc(d.client_name)}">
+                      ${STAGES.map(s => `<option value="${s.id}" ${d.stage === s.id ? 'selected' : ''}>${s.label}</option>`).join('')}
+                      <option value="lost" ${d.stage === 'lost' ? 'selected' : ''}>ჩაშლილი</option>
+                    </select>
+                  </td>
+                  <td style="text-align:right">
+                    <button type="button" class="btn btn-ghost btn-sm" data-deal-edit="${d.id}" title="რედაქტირება">${icon('wrench', 14)}</button>
+                  </td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>
+        </section>` : ''}
+      ${dealViewMode === 'board' && deals.length ? `
+        <div class="deal-board">
+          ${STAGES.map(st => {
+            const list = deals.filter(d => d.stage === st.id || (st.id === 'enquiry' && d.stage === 'active'));
+            const colSum = sumIn(list, cur, d => calcCommission(d).net).value;
+            return `
+              <section class="deal-col card">
+                <div class="deal-col-head">
+                  <span class="badge badge-${st.badge}">${list.length}</span>
+                  <strong>${esc(st.label)}</strong>
+                  <small class="muted">${fmtMoney(colSum, cur)}</small>
+                </div>
+                <div class="deal-col-cards" data-stage-col="${st.id}">
+                  ${list.length ? list.map(renderDealCard).join('') : '<div class="empty-inline">ჩანაწერი არ არის</div>'}
+                </div>
+              </section>`;
+          }).join('')}
+        </div>` : ''}`;
 
     $$('[data-dt]').forEach(b => b.addEventListener('click', () => { dealTypeFilter = b.dataset.dt; renderPipeline(); }));
     $('#btn-deal-empty')?.addEventListener('click', () => openDealForm(null, dealSection ? { deal_type: dealSection } : {}));
     bindCurToggle();
+    $$('input[name="deals-view-mode"]').forEach(i => i.addEventListener('change', () => {
+      dealViewMode = i.value;
+      localStorage.setItem('rigzea_deal_view', dealViewMode);
+      renderPipeline();
+    }));
+    $$('[data-deal-quick-stage]').forEach(sel => sel.addEventListener('change', () => {
+      const deal = H.deal(sel.dataset.dealQuickStage);
+      if (deal && deal.stage !== sel.value) {
+        advanceDealStage(deal, sel.value, sel);
+      }
+    }));
     $$('[data-export]').forEach(b => b.addEventListener('click', () => exportDeals(deals, b.dataset.export, b, 'all')));
 
     $$('[data-deal-edit]').forEach(b => b.addEventListener('click', () => {
@@ -227,6 +287,39 @@
       const apt = H.apt(deal?.apartment_id);
       if (apt) App.openLeaseAgreementGenerator(apt, deal);
     }));
+
+    if (dealViewMode === 'board') {
+      $$('.deal-card[draggable="true"]').forEach(card => {
+        card.addEventListener('dragstart', (e) => {
+          e.dataTransfer.setData('text/plain', card.dataset.dealId);
+          e.dataTransfer.effectAllowed = 'move';
+          card.classList.add('is-dragging');
+        });
+        card.addEventListener('dragend', () => {
+          card.classList.remove('is-dragging');
+        });
+      });
+      $$('.deal-col-cards[data-stage-col]').forEach(col => {
+        col.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+          col.classList.add('is-drag-over');
+        });
+        col.addEventListener('dragleave', (e) => {
+          if (!col.contains(e.relatedTarget)) col.classList.remove('is-drag-over');
+        });
+        col.addEventListener('drop', (e) => {
+          e.preventDefault();
+          col.classList.remove('is-drag-over');
+          const dealId = e.dataTransfer.getData('text/plain');
+          const deal = H.deal(dealId);
+          const newStage = col.dataset.stageCol;
+          if (deal && newStage && deal.stage !== newStage) {
+            advanceDealStage(deal, newStage);
+          }
+        });
+      });
+    }
   }
 
   function curToggle(cur) {
@@ -254,7 +347,7 @@
     };
     const next = nextMap[d.stage];
     return `
-      <article class="deal-card">
+      <article class="deal-card" draggable="true" data-deal-id="${d.id}">
         <div class="deal-card-head">
           <div class="cell-main">
             <strong>${esc(d.client_name)} ${H.flagTag(H.contactByPhone(d.client_phone))}</strong>
@@ -305,6 +398,7 @@
       listing_agent_id: H.apt(defaults.apartment_id)?.listing_agent_id || '', selling_agent_id: S.member?.id || '', listing_split: 25, selling_split: 25, ...defaults };
     const id = deal?.id || R.uuid();
     const canSplit = App.isManager();
+    const hasMore = Boolean(edit && (v.partner_agent || v.partner_phone || Number(v.owner_bonus) || v.target_move_in || v.follow_up_date || v.client_email || v.listing_agent_id));
     const agentOptions = (sel) => `<option value="">არ არის</option>${deskMembers().map(m => `<option value="${m.id}" ${m.id === sel ? 'selected' : ''}>${esc(m.display_name || 'უსახელო')}</option>`).join('')}`;
     const numOr = (val, dflt) => (val === '' || val === undefined || val === null ? dflt : Number(val));
 
@@ -364,10 +458,6 @@
               </label>
               <label class="field" id="deal-comm-pct-field"><span class="field-label" id="deal-comm-pct-label">საკომისიო (%)</span><input type="number" id="deal-comm-pct" name="commission_percent" min="0" max="100" step="0.5" value="${esc(v.commission_percent ?? (v.deal_type === 'sale' ? 3 : 50))}" /></label>
               <label class="field" id="deal-comm-fixed-field" hidden><span class="field-label">ფიქსირებული საკომისიო</span><input type="number" id="deal-comm-fixed" name="commission_amount" min="0" step="50" value="${esc(v.commission_amount || '')}" placeholder="3000" /></label>
-              <label class="field"><span class="field-label">მესაკუთრის ბონუსი</span><input type="number" id="deal-bonus" name="owner_bonus" min="0" step="10" value="${esc(v.owner_bonus || 0)}" /><span class="field-hint">გარიგების ვალუტაში</span></label>
-              <label class="field"><span class="field-label">პარტნიორი აგენტი (Co-Broker)</span><input name="partner_agent" id="deal-partner" value="${esc(v.partner_agent || '')}" placeholder="სახელი, სააგენტო" /></label>
-              <label class="field"><span class="field-label">პარტნიორის წილი (%)</span><input type="number" id="deal-partner-split" name="cobroker_split" min="0" max="100" step="5" value="${esc(v.cobroker_split ?? 50)}" /><span class="field-hint">50 = თანაბრად გაყოფა</span></label>
-              <label class="field"><span class="field-label">პარტნიორის ტელეფონი</span><input type="tel" name="partner_phone" value="${esc(v.partner_phone || '')}" /></label>
             </div>
             <div class="deal-calc-box">
               <div><small class="muted">შენი სუფთა საკომისიო</small><strong id="deal-calc-net">—</strong></div>
@@ -375,26 +465,38 @@
             </div>
           </div>
 
-          <div class="form-section span-2" id="deal-split-section">
-            <div class="form-section-title">${icon('team', 16)} გუნდის წილები</div>
-            <div class="form-grid">
-              <label class="field"><span class="field-label">ობიექტის აგენტი</span><select name="listing_agent_id" id="deal-listing-agent" ${canSplit ? '' : 'disabled'}>${agentOptions(v.listing_agent_id)}</select></label>
-              <label class="field"><span class="field-label">ობიექტის აგენტის წილი (%)</span><input type="number" name="listing_split" id="deal-listing-split" min="0" max="100" step="1" value="${esc(v.listing_split ?? 25)}" ${canSplit ? '' : 'disabled'} /></label>
-              <label class="field"><span class="field-label">მყიდველის აგენტი</span><select name="selling_agent_id" id="deal-selling-agent" ${canSplit ? '' : 'disabled'}>${agentOptions(v.selling_agent_id)}</select></label>
-              <label class="field"><span class="field-label">მყიდველის აგენტის წილი (%)</span><input type="number" name="selling_split" id="deal-selling-split" min="0" max="100" step="1" value="${esc(v.selling_split ?? 25)}" ${canSplit ? '' : 'disabled'} /></label>
-            </div>
-            <div id="deal-split-out" class="deal-split-out small"></div>
-            ${canSplit ? '' : '<p class="field-hint">წილებს ადმინისტრატორი ან მენეჯერი ადგენს.</p>'}
-          </div>
+          <!-- Progressive disclosure: Co-broker, team split, dates -->
+          <details class="form-more span-2" ${hasMore ? 'open' : ''}>
+            <summary>⚙️ დამატებითი: პარტნიორი აგენტი (Co-Broker), გუნდის წილები და თარიღები</summary>
+            <div class="form-grid" style="margin-top:12px">
+              <label class="field"><span class="field-label">მესაკუთრის ბონუსი</span><input type="number" id="deal-bonus" name="owner_bonus" min="0" step="10" value="${esc(v.owner_bonus || 0)}" /><span class="field-hint">გარიგების ვალუტაში</span></label>
+              <label class="field"><span class="field-label">პარტნიორი აგენტი (Co-Broker)</span><input name="partner_agent" id="deal-partner" value="${esc(v.partner_agent || '')}" placeholder="სახელი, სააგენტო" /></label>
+              <label class="field"><span class="field-label">პარტნიორის წილი (%)</span><input type="number" id="deal-partner-split" name="cobroker_split" min="0" max="100" step="5" value="${esc(v.cobroker_split ?? 50)}" /><span class="field-hint">50 = თანაბრად გაყოფა</span></label>
+              <label class="field"><span class="field-label">პარტნიორის ტელეფონი</span><input type="tel" name="partner_phone" value="${esc(v.partner_phone || '')}" /></label>
 
-          <label class="field"><span class="field-label">სამიზნე / დასრულების თარიღი</span><input type="date" name="target_move_in" value="${esc(v.target_move_in || '')}" /></label>
-          <label class="field"><span class="field-label">Follow-up თარიღი</span><input type="date" name="follow_up_date" value="${esc(v.follow_up_date || '')}" /></label>
-          <label class="field"><span class="field-label">ლიდის წყარო</span>
-            <select name="lead_source">
-              ${Object.entries(L.leadSource).map(([k, l]) => `<option value="${k}" ${(v.lead_source || 'direct') === k ? 'selected' : ''}>${l}</option>`).join('')}
-            </select>
-          </label>
-          <label class="field"><span class="field-label">კლიენტის ელფოსტა</span><input type="email" name="client_email" value="${esc(v.client_email || '')}" /></label>
+              <div class="form-section span-2" id="deal-split-section">
+                <div class="form-section-title">${icon('team', 16)} გუნდის წილები</div>
+                <div class="form-grid">
+                  <label class="field"><span class="field-label">ობიექტის აგენტი</span><select name="listing_agent_id" id="deal-listing-agent" ${canSplit ? '' : 'disabled'}>${agentOptions(v.listing_agent_id)}</select></label>
+                  <label class="field"><span class="field-label">ობიექტის აგენტის წილი (%)</span><input type="number" name="listing_split" id="deal-listing-split" min="0" max="100" step="1" value="${esc(v.listing_split ?? 25)}" ${canSplit ? '' : 'disabled'} /></label>
+                  <label class="field"><span class="field-label">მყიდველის აგენტი</span><select name="selling_agent_id" id="deal-selling-agent" ${canSplit ? '' : 'disabled'}>${agentOptions(v.selling_agent_id)}</select></label>
+                  <label class="field"><span class="field-label">მყიდველის აგენტის წილი (%)</span><input type="number" name="selling_split" id="deal-selling-split" min="0" max="100" step="1" value="${esc(v.selling_split ?? 25)}" ${canSplit ? '' : 'disabled'} /></label>
+                </div>
+                <div id="deal-split-out" class="deal-split-out small"></div>
+                ${canSplit ? '' : '<p class="field-hint">წილებს ადმინისტრატორი ან მენეჯერი ადგენს.</p>'}
+              </div>
+
+              <label class="field"><span class="field-label">სამიზნე / დასრულების თარიღი</span><input type="date" name="target_move_in" value="${esc(v.target_move_in || '')}" /></label>
+              <label class="field"><span class="field-label">შემდეგი დაკავშირების თარიღი</span><input type="date" name="follow_up_date" value="${esc(v.follow_up_date || '')}" /></label>
+              <label class="field"><span class="field-label">ლიდის წყარო</span>
+                <select name="lead_source">
+                  ${Object.entries(L.leadSource).map(([k, l]) => `<option value="${k}" ${(v.lead_source || 'direct') === k ? 'selected' : ''}>${l}</option>`).join('')}
+                </select>
+              </label>
+              <label class="field"><span class="field-label">კლიენტის ელფოსტა</span><input type="email" name="client_email" value="${esc(v.client_email || '')}" /></label>
+            </div>
+          </details>
+
           <label class="field span-2"><span class="field-label">შენიშვნა / კლიენტის მოთხოვნები</span><textarea name="notes" rows="2" placeholder="მაგ.: ეძებს წყნარ ადგილს, ბიუჯეტი $100K-მდე">${esc(v.notes || '')}</textarea></label>
         </div>`,
       onOpen: (form) => {
