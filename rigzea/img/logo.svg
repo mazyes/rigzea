@@ -25,8 +25,7 @@
   </defs>
   <g transform="translate(6, 6)">
     <rect x="0" y="0" width="76" height="76" rx="20" fill="url(#logoBgGrad)" stroke="#00f59b" stroke-opacity="0.3" stroke-width="2"/>
-    <rect x="18" y="18" width="40" height="40" rx="9" fill="none" stroke="#00f59b" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M28 30h20M28 38h13M28 46h20" stroke="#00f59b" stroke-width="5.5" stroke-linecap="round"/>
+    <g transform="translate(15.96 15.96) scale(1.8367)" fill="none" stroke="#00f59b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12L12 5L16.5 9"/><path d="M6.5 6.5V9.8"/><path d="M8.5 14.5L12 18L20 10"/></g>
   </g>
   <text x="98" y="62" class="logo-txt">რიგზეა<tspan class="logo-dot">.</tspan></text>
 </svg>

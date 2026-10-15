@@ -10,6 +10,5 @@
     </filter>
   </defs>
   <rect x="24" y="24" width="464" height="464" rx="124" fill="url(#bgGrad)" stroke="#00f59b" stroke-opacity="0.35" stroke-width="8" filter="url(#glow)"/>
-  <rect x="124" y="124" width="264" height="264" rx="60" fill="none" stroke="#00f59b" stroke-width="38" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M184 204h144M184 256h96M184 308h144" stroke="#00f59b" stroke-width="38" stroke-linecap="round" stroke-linejoin="round"/>
+  <g transform="translate(121.44 121.44) scale(11.2133)" fill="none" stroke="#00f59b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12L12 5L16.5 9"/><path d="M6.5 6.5V9.8"/><path d="M8.5 14.5L12 18L20 10"/></g>
 </svg>
