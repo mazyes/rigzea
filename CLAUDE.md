@@ -14,7 +14,8 @@ Live at https://rigzea.com (Vercel project `rigzea-website`); database is Supaba
   CommonJS tests and `.claude` hook scripts keep working). Files starting with `_` are helpers, not routes.
   Supabase config for every function comes from `publicConfig()` in `api/_lib.js`.
 - `supabase/patches/NN_*.sql` database changes. **Which ones are live: `supabase/APPLIED.md`.**
-  `schema.sql` is an old snapshot, not the live schema.
+  `supabase/schema.sql` is a generated snapshot of the live database and `supabase/migrations.md`
+  is the live migration list; refresh both with `node scripts/dump-schema.mjs` (needs `SUPABASE_ACCESS_TOKEN`).
 - `tests/` Playwright tests against a mocked Supabase (`mock-supabase.js` + `seed.js`).
 
 ## Commands (work in PowerShell and Git Bash)
@@ -45,7 +46,8 @@ Failed e2e tests save a screenshot to the OS temp dir (`rigzea-fail-<n>.png`).
 1. Write a new `supabase/patches/NN_name.sql` (re-runnable; new tables need GRANTs and RLS). Agents must ask
    the user before running SQL on production; it is no longer auto-approved.
 2. Dry run on live inside `do $$ ... raise exception 'DRYRUN %', result; $$` so it always rolls back.
-3. Apply with the Supabase MCP `apply_migration`, run `get_advisors` (security), update `APPLIED.md`.
+3. Apply with the Supabase MCP `apply_migration`, run `get_advisors` (security), update `APPLIED.md`,
+   then refresh the snapshot with `node scripts/dump-schema.mjs` so the repo still matches production.
 
 ## Deploy and environment
 

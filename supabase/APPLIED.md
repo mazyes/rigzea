@@ -1,11 +1,23 @@
 # Live database state
 
 Project ref: `cuioodytwyzykqlrjfej`. This file is the source of truth for which SQL in this repo is live.
-Update it in the same change that applies a patch. To check the live list, use the Supabase MCP
-`list_migrations`.
+Update it in the same change that applies a patch.
+
+Two files are generated from live and describe production exactly:
+
+- `supabase/schema.sql` — full structural snapshot (tables, constraints, indexes, functions,
+  triggers, RLS policies, grants).
+- `supabase/migrations.md` — the migrations recorded in `supabase_migrations.schema_migrations`.
+
+Refresh both after any database change (token from Supabase -> Account -> Access Tokens):
+
+```powershell
+$env:SUPABASE_ACCESS_TOKEN = "sbp_..."
+node scripts/dump-schema.mjs
+```
 
 The live database was **not** built from `schema.sql` or patches 01-04. It was built from the
-`rigzea_01..09` and "sharing" migrations (`share_links`, `record_link_event`), which are not in this
+`rigzea_01..09` and "sharing" migrations (`sharing_foundations`, `link_tracking`), which are not in this
 repo, and then aligned with the app by patches 06-09.
 
 | Patch | Live? | How / when |
