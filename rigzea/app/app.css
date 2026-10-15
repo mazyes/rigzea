@@ -673,6 +673,9 @@ button.row { width: 100%; border: 0; border-bottom: 1px solid var(--line); backg
 .plan-banner-info { background: var(--info-bg); color: var(--info); }
 .plan-banner-warn { background: var(--warn-bg); color: var(--warn); }
 .plan-banner-danger { background: var(--danger-bg); color: var(--danger); }
+.data-notice { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 8px 24px; font-size: 13px; border-bottom: 1px solid var(--line); background: var(--warn-bg); color: var(--warn); }
+.data-notice[hidden] { display: none; }
+.data-notice-text { margin-right: auto; }
 .plan-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
 .plan-card { position: relative; display: flex; flex-direction: column; gap: 8px; padding: 14px 12px; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); }
 .plan-card h3 { font-size: 14px; margin: 0; }
@@ -692,7 +695,7 @@ button.row { width: 100%; border: 0; border-bottom: 1px solid var(--line); backg
 .brand-preview { display: flex; align-items: center; gap: 12px; padding: 12px; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface-2); }
 .brand-preview img { width: 48px; height: 48px; object-fit: contain; border-radius: var(--r-sm); background: #fff; border: 1px solid var(--line); }
 .brand-preview .swatch { width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--line-strong); }
-@media (max-width: 760px) { .plan-banner { padding: 8px 16px; flex-wrap: wrap; } }
+@media (max-width: 760px) { .plan-banner, .data-notice { padding: 8px 16px; flex-wrap: wrap; } }
 
 /* ------------------------------------------------ smart link: listing card + photo manager */
 .listing-url .input { width: 100%; font-size: 13px; color: var(--ink-2); background: var(--surface-2); }

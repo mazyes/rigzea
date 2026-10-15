@@ -84,7 +84,7 @@
 
   class Query {
     constructor(table) { this.table = table; this.op = 'select'; this.filters = []; this.orders = []; this.lim = null; this.mode = null; this.ret = false; }
-    select(cols) { if (this.op !== 'select') this.ret = true; else this.cols = cols || '*'; return this; }
+    select(cols, opts) { if (this.op !== 'select') this.ret = true; else { this.cols = cols || '*'; this.wantCount = !!(opts && opts.count); } return this; }
     insert(p) { this.op = 'insert'; this.payload = p; return this; }
     update(p) { this.op = 'update'; this.payload = p; return this; }
     upsert(p, o = {}) { this.op = 'upsert'; this.payload = p; this.ignoreDup = !!o.ignoreDuplicates; return this; }
@@ -151,7 +151,7 @@
       const data = structuredClone(out);
       if (this.mode === 'single') return data.length === 1 ? { data: data[0], error: null } : { data: null, error: { message: 'JSON object requested, multiple (or no) rows returned', code: 'PGRST116' } };
       if (this.mode === 'maybe') return { data: data[0] || null, error: null };
-      return { data, error: null };
+      return { data, error: null, count: this.wantCount ? match.length : null };
     }
   }
 

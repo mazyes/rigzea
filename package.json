@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "node serve.js",
     "dev:full": "npx vercel dev",
-    "test": "node tests/import-parse.test.js && node tests/e2e.js && node tests/audit-suite.js",
+    "test": "node tests/plans-sync.test.js && node tests/import-parse.test.js && node tests/e2e.js && node tests/audit-suite.js",
     "test:unit": "node tests/import-parse.test.js",
     "test:e2e": "node tests/e2e.js",
     "screenshots": "node tests/screenshots.js screenshots",

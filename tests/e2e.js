@@ -1047,6 +1047,29 @@ test('25. an expired private receipt link is re-signed when clicked', async (bro
   return page;
 });
 
+test('26. a capped list says how much is hidden and can load more', async (browser) => {
+  const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
+  await page.goto(BASE + '/app/');
+  await page.getByRole('heading', { name: 'დღეს', exact: true }).waitFor();
+  // Seed more expenses than a deliberately small cap, then reload the workspace with that cap.
+  await page.evaluate((uid) => {
+    const d = JSON.parse(localStorage.getItem('rigzea_mockdb'));
+    const org = d.tables.organization_members.find(m => m.user_id === uid).organization_id;
+    for (let i = 0; i < 6; i++) d.tables.expenses.push({ id: 'e2e-exp-' + i, organization_id: org, amount: 5 + i, expense_date: '2026-02-0' + (i + 1), status: 'incurred', created_at: new Date().toISOString() });
+    localStorage.setItem('rigzea_mockdb', JSON.stringify(d));
+    window.App.S.limits.expenses = 2;
+    return window.App.refresh({ quiet: true });
+  }, USERS.manager.id);
+  const notice = page.locator('#data-notice');
+  await notice.waitFor();
+  const text = await notice.innerText();
+  assert(/ხარჯები 2\/\d+/.test(text), 'notice says how many expenses are hidden: ' + text);
+  // Loading more raises the cap and the notice disappears once everything fits.
+  await notice.getByRole('button', { name: /ხარჯები/ }).click();
+  await page.waitForFunction(() => document.querySelector('#data-notice')?.hidden === true);
+  return page;
+});
+
 (async () => {
   const server = await serve();
   const browser = await launch();

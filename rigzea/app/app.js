@@ -4,12 +4,26 @@
   'use strict';
   const { sb, $, $$, esc, icon, q, toast, run, L } = R;
 
+  // Lists that are capped in the query. The cap can be raised from the UI ("load more"), and
+  // whenever the server holds more rows than we fetched the app says so instead of quietly
+  // dropping them (see renderDataNotice). Activity, notifications and monthly reports are
+  // intentionally capped as feeds and are not listed here.
+  const PAGED = {
+    deals:       { label: 'გარიგებები', page: 500 },
+    approvals:   { label: 'დადასტურებები', page: 300 },
+    expenses:    { label: 'ხარჯები', page: 500 },
+    income:      { label: 'შემოსავალი', page: 500 },
+    closedTasks: { label: 'დასრულებული საქმეები', page: 300 },
+  };
+
   const S = {
     user: null,
     orgs: [],          // [{ ...organization, member }]
     org: null,
     member: null,
     data: null,        // loaded org data, see loadData()
+    limits: Object.fromEntries(Object.entries(PAGED).map(([k, v]) => [k, v.page])),
+    totals: {},        // { kind: { total, shown } } only when the server held more rows than fetched
     loading: false,
     loadError: null,
     platformAdmin: false,
@@ -222,10 +236,20 @@
   // Data
   // ---------------------------------------------------------------------------
   const OPEN_TASK_STATUSES = ['new', 'assigned', 'in_progress', 'blocked'];
+  // Runs a capped query and remembers how many rows the server actually held, so the UI can
+  // say "500 of 1200" instead of pretending the rest do not exist.
+  async function take(kind, builder) {
+    const r = await builder;
+    const rows = r.data || [];
+    if (!r.error && typeof r.count === 'number') S.totals[kind] = { total: r.count, shown: rows.length };
+    return rows;
+  }
+
   async function loadData() {
     const org = S.org.id;
     S.loading = true;
     S.loadError = null;
+    S.totals = {};
     const since = new Date(); since.setDate(since.getDate() - 120);
     const sinceIso = R.isoDate(since);
     try {
@@ -234,10 +258,10 @@
         q(sb.from('owners').select('*').eq('organization_id', org).order('name')),
         // Every open task, plus the most recent closed ones for history.
         q(sb.from('tasks').select('*').eq('organization_id', org).in('status', OPEN_TASK_STATUSES).order('due_date', { ascending: true })),
-        q(sb.from('tasks').select('*').eq('organization_id', org).in('status', ['done', 'cancelled']).order('due_date', { ascending: false }).limit(300)),
-        q(sb.from('approvals').select('*').eq('organization_id', org).order('created_at', { ascending: false }).limit(300)),
-        q(sb.from('expenses').select('*').eq('organization_id', org).order('expense_date', { ascending: false }).limit(500)),
-        q(sb.from('income').select('*').eq('organization_id', org).order('income_date', { ascending: false }).limit(500)),
+        take('closedTasks', sb.from('tasks').select('*', { count: 'exact' }).eq('organization_id', org).in('status', ['done', 'cancelled']).order('due_date', { ascending: false }).limit(S.limits.closedTasks)),
+        take('approvals', sb.from('approvals').select('*', { count: 'exact' }).eq('organization_id', org).order('created_at', { ascending: false }).limit(S.limits.approvals)),
+        take('expenses', sb.from('expenses').select('*', { count: 'exact' }).eq('organization_id', org).order('expense_date', { ascending: false }).limit(S.limits.expenses)),
+        take('income', sb.from('income').select('*', { count: 'exact' }).eq('organization_id', org).order('income_date', { ascending: false }).limit(S.limits.income)),
         // Reservations need the operations RLS migration; treat a failure as "no data" rather than breaking the app.
         sb.from('reservations').select('*').eq('organization_id', org).gte('check_out', sinceIso).order('check_in').then(r => r.data || [], () => []),
         q(sb.from('activity_events').select('*').eq('organization_id', org).order('created_at', { ascending: false }).limit(200)),
@@ -245,7 +269,7 @@
         q(sb.from('notifications').select('*').eq('organization_id', org).eq('user_id', S.user.id).order('created_at', { ascending: false }).limit(40)),
         q(sb.from('monthly_reports').select('*').eq('organization_id', org).order('month_period', { ascending: false }).limit(48)),
         q(sb.from('repairs').select('*').eq('organization_id', org)).catch(() => []),
-        sb.from('deals').select('*').eq('organization_id', org).order('created_at', { ascending: false }).limit(500).then(r => r.data || [], () => []),
+        take('deals', sb.from('deals').select('*', { count: 'exact' }).eq('organization_id', org).order('created_at', { ascending: false }).limit(S.limits.deals)).catch(() => []),
       ]);
       const tasks = [...openTasks, ...closedTasks].sort((a, b) => String(a.due_date || '~').localeCompare(String(b.due_date || '~')));
       S.data = { apartments, owners, tasks, approvals, expenses, income, reservations, events, members, notifications, statements, repairs, deals: deals || [] };
@@ -453,6 +477,7 @@
     }
 
     renderPlanBanner();
+    renderDataNotice();
 
     const name = S.member?.display_name || S.user.email;
     $('#user-name').textContent = name;
@@ -674,26 +699,9 @@
   // Plans, trial and feature gates (mirrors plan_limit and plan_has_feature in supabase/patches/10 and 11)
   // ---------------------------------------------------------------------------
   const CONTACT = { phone: '+995599548575', wa: '995599548575' };
-  const ALL_FEATURES = ['profile', 'contracts', 'matchmaker', 'reminders', 'import', 'presentation', 'selections', 'analytics', 'export', 'whitelabel'];
-  // apartments / seats: null = unlimited. A seat is an owner/admin/manager member; field staff are free.
-  const PLANS = {
-    trial:   { id: 'trial', name: 'საცდელი', price: 0, apartments: 50, seats: 3, features: ALL_FEATURES },
-    starter: { id: 'starter', name: 'დამწყები', price: 0, apartments: 3, seats: 1, features: [],
-      bullets: ['3 აქტიური ობიექტი', 'ჭკვიანი ბმულები', 'საკომისიოს კალკულატორი'] },
-    pro:     { id: 'pro', name: 'პრო აგენტი', price: 39, apartments: 50, seats: 1, features: ['profile', 'contracts', 'matchmaker', 'reminders', 'import', 'presentation'],
-      bullets: ['50 აქტიური ობიექტი', 'შევსება განცხადების ბმულით', 'PDF პრეზენტაცია', 'ორენოვანი ხელშეკრულებები', 'ბინის შერჩევა კლიენტის მოთხოვნით', 'ვადის გასვლის შეხსენებები'] },
-    top:     { id: 'top', name: 'გუნდი', price: 99, apartments: 150, seats: 3, features: ['profile', 'contracts', 'matchmaker', 'reminders', 'import', 'presentation', 'selections', 'analytics', 'export'],
-      bullets: ['150 აქტიური ობიექტი', '3 სამუშაო ადგილი', 'მრავალობიექტიანი გვერდი', 'ანალიტიკა და ექსპორტი'] },
-    agency:  { id: 'agency', name: 'სააგენტო', price: 249, apartments: null, seats: null, features: ALL_FEATURES,
-      bullets: ['ულიმიტო ობიექტები', '10+ აგენტის სამუშაო ადგილი', 'White-label ბრენდირება', 'პრიორიტეტული მხარდაჭერა'] },
-  };
-  const PLAN_ORDER = ['starter', 'pro', 'top', 'agency'];
-  const FEATURE_LABEL = {
-    profile: 'პირადი პროფილი და ლოგო', contracts: 'ორენოვანი ხელშეკრულებები', matchmaker: 'კლიენტის მოთხოვნით ბინის შერჩევა',
-    reminders: 'ვადის გასვლის შეხსენებები', selections: 'მრავალობიექტიანი პერსონალური გვერდი', analytics: 'საკომისიოების დეტალური ანალიტიკა',
-    import: 'შევსება MyHome.ge, SS.ge და Place.ge ბმულით', presentation: 'PDF პრეზენტაცია',
-    export: 'ექსპორტი Excel-ში', whitelabel: 'White-label ბრენდირება',
-  };
+  // Plan limits, feature lists and copy live in one place: js/plans.js, loaded before this file.
+  // The database mirrors the limits in plan_limit() and plan_has_feature(); see that file's header.
+  const { ALL_FEATURES, PLANS, PLAN_ORDER, FEATURE_LABEL } = window.RIGZEA_PLANS;
 
   function planState() {
     const o = S.org || {};
@@ -814,7 +822,31 @@
     $('#btn-plan-banner').onclick = () => openUpgrade(paused ? { kind: 'apartments' } : { kind: 'info' });
   }
 
-  window.App = { S, H, views, aptSection, contactSection, isManager, isAdmin, isAgent, refresh, render, renderShell, go, route, taskHref, closeTaskOverlay, upsertLocal, logEvent,
+  // Raise a capped list's limit and reload. Called from the notice below.
+  async function loadMore(kind) {
+    const paged = PAGED[kind];
+    if (!paged) return;
+    S.limits[kind] = S.limits[kind] + paged.page;
+    await refresh({ quiet: true });
+  }
+
+  // Says when a list was cut short, with a button to pull in the rest. Without it those rows
+  // simply vanish from the UI with no explanation.
+  function renderDataNotice() {
+    let el = $('#data-notice');
+    if (!el) { el = document.createElement('div'); el.id = 'data-notice'; $('.layout').before(el); }
+    const full = Object.keys(PAGED).filter(k => S.data && S.totals[k] && S.totals[k].total > S.totals[k].shown);
+    if (!full.length) { el.hidden = true; el.innerHTML = ''; return; }
+    const parts = full.map(k => `${PAGED[k].label} ${S.totals[k].shown}/${S.totals[k].total}`).join(', ');
+    el.hidden = false;
+    el.className = 'data-notice';
+    el.setAttribute('role', 'status');
+    el.innerHTML = `<span class="data-notice-text">${esc(`ნაჩვენებია ბოლო ჩანაწერები: ${parts}. დანარჩენი ჯერ არ ჩანს.`)}</span>`
+      + full.map(k => `<button type="button" class="btn btn-sm btn-secondary" data-load-more="${k}">კიდევ ჩატვირთვა: ${esc(PAGED[k].label)}</button>`).join('');
+    $$('#data-notice [data-load-more]').forEach(b => { b.onclick = () => loadMore(b.dataset.loadMore); });
+  }
+
+  window.App = { S, H, views, aptSection, contactSection, isManager, isAdmin, isAgent, refresh, render, renderShell, go, route, taskHref, closeTaskOverlay, upsertLocal, logEvent, loadMore,
     PLANS, PLAN_ORDER, FEATURE_LABEL, CONTACT, planState, can, guardLimit, guardFeature, openUpgrade, planCardsHtml, waLink, activeApartments, pausedApartmentIds, seatsUsed };
 
   document.addEventListener('DOMContentLoaded', () => {

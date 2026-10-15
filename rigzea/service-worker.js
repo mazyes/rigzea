@@ -1,5 +1,9 @@
 // Rigzea Progressive Web App Service Worker
-const CACHE_NAME = 'rigzea-v1.3.0';
+//
+// There is no version string to remember to bump: the cache is named after a hash of the
+// precached files, so the name always matches what was stored. Fetches are network-first, so an
+// online user always gets the latest files regardless of the cache.
+const CACHE_PREFIX = 'rigzea-';
 const STATIC_ASSETS = [
   '/app/',
   '/app/index.html',
@@ -13,6 +17,8 @@ const STATIC_ASSETS = [
   '/app/views-docs.js',
   '/js/config.js',
   '/js/core.js',
+  '/js/plans.js',
+  '/js/supabase.js',
   '/favicon.svg',
   '/favicon-192x192.png',
   '/favicon-512x512.png',
@@ -20,24 +26,43 @@ const STATIC_ASSETS = [
   '/manifest.webmanifest'
 ];
 
+// Known to the install handler, read by activate (same worker instance).
+let CACHE_NAME = '';
+
+const toHex = (buf) => [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
+
+// Fetch every static asset, hash their contents and store them. A file that fails to load is
+// skipped (with a warning) instead of aborting the whole install.
+async function precache() {
+  const entries = [];
+  for (const url of STATIC_ASSETS) {
+    try {
+      const res = await fetch(url, { cache: 'no-cache' });
+      if (!res.ok) { console.warn('SW pre-cache skip:', url, res.status); continue; }
+      const bytes = await res.clone().arrayBuffer();
+      entries.push({ url, bytes, res });
+    } catch (err) {
+      console.warn('SW pre-cache warning:', url, err);
+    }
+  }
+  const joined = new Uint8Array(entries.reduce((n, e) => n + e.bytes.byteLength, 0));
+  let at = 0;
+  for (const e of entries) { joined.set(new Uint8Array(e.bytes), at); at += e.bytes.byteLength; }
+  CACHE_NAME = entries.length ? CACHE_PREFIX + toHex(await crypto.subtle.digest('SHA-256', joined)).slice(0, 12) : CACHE_PREFIX + 'runtime';
+  const cache = await caches.open(CACHE_NAME);
+  await Promise.all(entries.map((e) => cache.put(e.url, e.res)));
+}
+
 self.addEventListener('install', (e) => {
-  e.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(STATIC_ASSETS).catch((err) => {
-        console.warn('SW pre-cache warning:', err);
-      });
-    })
-  );
+  e.waitUntil(precache().catch((err) => console.warn('SW pre-cache failed:', err)));
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (e) => {
   e.waitUntil(
-    caches.keys().then((keys) => {
-      return Promise.all(
-        keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k))
-      );
-    })
+    caches.keys().then((keys) => Promise.all(
+      keys.filter((k) => k.startsWith(CACHE_PREFIX) && k !== CACHE_NAME).map((k) => caches.delete(k))
+    ))
   );
   self.clients.claim();
 });
@@ -59,7 +84,7 @@ self.addEventListener('fetch', (e) => {
   e.respondWith(
     fetch(e.request)
       .then((res) => {
-        if (res.ok && e.request.method === 'GET') {
+        if (res.ok && e.request.method === 'GET' && CACHE_NAME) {
           const resClone = res.clone();
           caches.open(CACHE_NAME).then((cache) => {
             cache.put(e.request, resClone);
