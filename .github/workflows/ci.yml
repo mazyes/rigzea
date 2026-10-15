@@ -1,0 +1,27 @@
+name: CI
+
+on: [push, pull_request]
+
+# A newer push to the same ref makes an in-flight run pointless.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # The end-to-end and audit suites drive a real Chromium through Playwright.
+      - run: npx playwright install --with-deps chromium
+
+      - run: npm test
