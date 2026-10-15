@@ -41,6 +41,7 @@ repo, and then aligned with the app by patches 06-09.
 | 17_missing_columns | yes | run from the SQL editor (not recorded as a migration) |
 | 18_security_hardening | yes | migration `18_security_hardening`, 2026-10-14 |
 | 19_listing_notify_cap | yes | migration `19_listing_notify_cap`, 2026-10-15 |
+| 20_import_rate_limit | **not yet** | needs `apply_migration` or the SQL editor; API fails open until then |
 
 ## Rules for new patches
 

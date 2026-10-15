@@ -34,6 +34,21 @@ async function planAllowsImport(req, org) {
   } catch { return false; }
 }
 
+// Per-user import budget: 10 an hour. Counted in the database so it holds across serverless
+// instances (supabase/patches/20_import_rate_limit.sql). Fails open: if the helper is not
+// deployed yet the import still works, so the cap never becomes an outage.
+const IMPORT_LIMIT_PER_HOUR = 10;
+async function withinImportBudget(req, org) {
+  const { url, key } = config();
+  try {
+    const res = await fetch(`${url}/rest/v1/rpc/register_import`, { method: 'POST',
+      headers: { apikey: key, Authorization: `Bearer ${bearer(req)}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_org: org, p_limit: IMPORT_LIMIT_PER_HOUR }) });
+    if (!res.ok) { console.error('import-listing: register_import', res.status); return true; }
+    return (await res.json()) === true;
+  } catch (err) { console.error('import-listing: register_import', err && err.message); return true; }
+}
+
 async function fetchPage(url, site) {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
@@ -87,6 +102,8 @@ export default async function handler(req, res) {
   if (String(body.url || '').length > 600) return res.status(400).json({ ok: false, error: 'url', message: 'ბმული ძალიან გრძელია. ჩასვი განცხადების პირდაპირი ბმული.' });
   const target = hostOf(body.url);
   if (!target) return res.status(400).json({ ok: false, error: 'url', message: 'ჩასვი განცხადების ბმული MyHome.ge-დან, SS.ge-დან ან Place.ge-დან.' });
+  // Charged only for a real read, after the URL is known to be one of the three sites.
+  if (!(await withinImportBudget(req, body.org))) return res.status(429).json({ ok: false, error: 'rate_limit', message: 'საათში მაქსიმუმ 10 განცხადების ჩატვირთვა შეიძლება. სცადე ცოტა ხანში ან შეავსე ველები ხელით.' });
 
   try {
     const page = await fetchPage(target.url, target.site);

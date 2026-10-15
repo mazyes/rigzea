@@ -7,13 +7,10 @@
  */
 import { BASE_APP_URL, requireEnv, callRpcAs, publicConfig } from './_lib.js';
 import { sendEmail } from './_email.js';
+// The same plan catalogue the app uses, so names and limits cannot drift apart.
+import planCatalog from '../rigzea/js/plans.js';
 
-// Mirrors PLANS in rigzea/app/app.js.
-const PLANS = {
-  pro: { name: 'პრო აგენტი', includes: ['50 აქტიური ობიექტი', 'შევსება MyHome, SS.ge და Place.ge ბმულით', 'PDF პრეზენტაცია QR კოდით', 'ხელშეკრულებები ქართულად და ინგლისურად', 'ვადის გასვლის შეხსენებები'] },
-  top: { name: 'გუნდი', includes: ['150 აქტიური ობიექტი და 3 მომხმარებელი', '„პრო აგენტის“ ყველა ფუნქცია', 'შერჩეული ბინების ერთი ბმული კლიენტისთვის', 'საკომისიოს გაყოფა და ექსპორტი Excel-ში'] },
-  agency: { name: 'სააგენტო', includes: ['ულიმიტო ობიექტი და მომხმარებელი', '„გუნდის“ ყველა ფუნქცია', 'ბრენდის ფერი საჯარო გვერდებზე', 'პრიორიტეტული მხარდაჭერა'] },
-};
+const { PLANS, PLAN_ORDER } = planCatalog;
 
 const fmtDay = (iso) => new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Tbilisi', day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(iso)).replace(/\//g, '.');
 
@@ -40,7 +37,7 @@ export default async function handler(req, res) {
   const org = (orgs.data || []).find((o) => o.id === body.org);
   if (!org) return res.status(404).json({ ok: false, error: 'org' });
   const plan = PLANS[org.effective_plan];
-  if (!plan) return res.status(409).json({ ok: false, error: 'not_paid' }); // free, trial, or already expired
+  if (!plan || !PLAN_ORDER.includes(plan.id)) return res.status(409).json({ ok: false, error: 'not_paid' }); // free, trial, or already expired
   if (!org.owner_email) return res.status(409).json({ ok: false, error: 'no_owner' });
 
   const until = org.plan_expires_at ? fmtDay(org.plan_expires_at) : null;
@@ -52,7 +49,7 @@ export default async function handler(req, res) {
       title: `პაკეტი „${plan.name}“ გააქტიურდა`,
       lines: ['გადახდა მივიღეთ, მადლობა. პაკეტი უკვე ჩართულია და ყველა ფუნქცია ხელმისაწვდომია.'],
       rows: [['სამუშაო სივრცე', org.name], ['პაკეტი', plan.name], ['მოქმედებს', until ? `${until}-მდე` : 'ვადის გარეშე']],
-      list: plan.includes,
+      list: plan.bullets,
       button: { label: 'გახსენი Rigzea', url: `${BASE_APP_URL}/app/` },
       note: until ? `ვადის გასვლის შემდეგ ანგარიში უფასო პაკეტზე გადავა. მონაცემები არ წაიშლება.` : '',
     },
