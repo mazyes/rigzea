@@ -4046,3 +4046,84 @@ p, li { text-wrap: pretty; }
   .lx-stack-shade { display: none; }
   .lx-stage { perspective: none; }
 }
+
+/* ==========================================================================
+   LIGHT THEME (toggle in header; default follows the system, dark otherwise)
+   ========================================================================== */
+:root[data-theme="light"] {
+  color-scheme: light;
+  --lx-obsidian: #f6f7f8;
+  --lx-obsidian-card: rgba(255, 255, 255, 0.86);
+  --lx-obsidian-card-hover: #ffffff;
+  --lx-obsidian-card-solid: #ffffff;
+  --lx-obsidian-inset: #eef1ef;
+
+  --lx-mint-neon: #0a8a63;
+  --lx-mint-bright: #0a7a58;
+  --lx-mint-glow: rgba(10, 138, 99, 0.18);
+  --lx-mint-dim: rgba(10, 138, 99, 0.09);
+  --lx-mint-badge: rgba(10, 138, 99, 0.12);
+
+  --lx-border-subtle: rgba(16, 24, 40, 0.08);
+  --lx-border-medium: rgba(16, 24, 40, 0.16);
+  --lx-border-mint: rgba(10, 138, 99, 0.35);
+  --lx-border-mint-hover: rgba(10, 138, 99, 0.65);
+
+  --lx-text-white: #0f1a14;
+  --lx-text-silver: #33423a;
+  --lx-text-muted: #5b6b62;
+  --lx-text-dark: #8a978f;
+
+  --lx-red-text: #b42318;
+
+  --lx-glow-card: 0 10px 30px -10px rgba(16, 24, 40, 0.14), 0 0 0 1px var(--lx-border-subtle);
+  --lx-glow-mint: 0 10px 24px -6px rgba(16, 24, 40, 0.16);
+  --lx-glow-mint-lg: 0 20px 48px -10px rgba(16, 24, 40, 0.2);
+}
+
+/* Header theme button */
+.lx-theme-toggle {
+  width: 38px; height: 38px; display: inline-flex; align-items: center; justify-content: center;
+  border-radius: var(--lx-r-pill); border: 1px solid var(--lx-border-medium);
+  background: transparent; color: var(--lx-text-white); cursor: pointer;
+}
+.lx-theme-toggle:hover { border-color: var(--lx-border-mint); }
+.lx-theme-toggle .ic-sun { display: none; }
+:root[data-theme="light"] .lx-theme-toggle .ic-sun { display: block; }
+:root[data-theme="light"] .lx-theme-toggle .ic-moon { display: none; }
+
+/* Light page, dark feature surfaces: these blocks are designed on dark
+   backgrounds, so they keep the dark token set inside the light page. */
+:root[data-theme="light"] :is(
+  .lx-bento-card, .lx-step-card, .lx-card-old-way, .lx-card-rigzea-way, .lx-pricing-card,
+  .lx-final-cta-box, .lx-footer, .lx-faq-item, .lx-cmp-scroll, .lx-cmp-details, .lx-pin-sticky-container,
+  .lx-phone-mockup, .lx-property-card, .lx-spotlight-card, .lx-split-rigzea, .lx-tour-modal-card,
+  .lx-result-card, .lx-toast, .lx-mobile-thumb-bar, .lx-nav-links.open, .lx-mobile-nav
+) {
+  --lx-obsidian: #080c0a;
+  --lx-obsidian-card: rgba(13, 22, 18, 0.97);
+  --lx-obsidian-card-hover: rgba(18, 30, 24, 0.98);
+  --lx-obsidian-card-solid: #0d1612;
+  --lx-obsidian-inset: #060907;
+  --lx-mint-neon: #00f59b;
+  --lx-mint-bright: #38ef7d;
+  --lx-mint-glow: rgba(0, 245, 155, 0.28);
+  --lx-mint-dim: rgba(0, 245, 155, 0.12);
+  --lx-mint-badge: rgba(0, 245, 155, 0.16);
+  --lx-border-subtle: rgba(255, 255, 255, 0.07);
+  --lx-border-medium: rgba(255, 255, 255, 0.14);
+  --lx-border-mint: rgba(0, 245, 155, 0.32);
+  --lx-border-mint-hover: rgba(0, 245, 155, 0.65);
+  --lx-text-white: #ffffff;
+  --lx-text-silver: #d1ded6;
+  --lx-text-muted: #82988c;
+  --lx-text-dark: #506358;
+  --lx-red-text: #fca5a5;
+  color: var(--lx-text-silver);
+}
+:root[data-theme="light"] .lx-hero-title span { color: #0a5c44 !important; }
+:root[data-theme="light"] .lx-hero-desc { color: #33423a; }
+:root[data-theme="light"] .lx-social-proof-text strong { color: #0f1a14; }
+:root[data-theme="light"] body.luxury-theme::before,
+:root[data-theme="light"] .lx-ambient-grid { opacity: .35; }
+:root[data-theme="light"] .lx-card-old-way { background: #151918; }
