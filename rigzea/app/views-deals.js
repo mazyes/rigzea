@@ -1939,7 +1939,7 @@
   };
 
   function openLeasePreview(d, a) {
-    let mode = 'dual';
+    let mode = (window.RLang && window.RLang.lang === 'en') ? 'en' : 'dual';
     const titleName = a?.name || d.property_address || 'ბინა';
     return R.dialog({
       title: 'ხელშეკრულება მზადაა',

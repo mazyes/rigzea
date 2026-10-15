@@ -1693,6 +1693,7 @@
     [/^(\d+) ვადაგადაცილებული$/, function (m) { return m[1] + ' overdue'; }],
     [/^შეტყობინებები, (\d+) წაუკითხავი$/, function (m) { return 'Notifications, ' + m[1] + ' unread'; }],
     [/^(\S+), (\d+) (\S+)$/, function (m) { var w = WD.indexOf(m[1]), mo = MD.indexOf(m[3]); return w < 0 || mo < 0 ? null : WE[w] + ', ' + m[2] + ' ' + ME[mo]; }],
+    [/^(\d+) წევრი · სამუშაო ადგილი: (\d+) \/ (\d+) · .*$/, function (m) { return plural(m[1], 'member', 'members') + ' · seats: ' + m[2] + ' / ' + m[3] + ' · staff only see their assigned tasks from the phone.'; }],
     [/^(\d+) ობიექტი პორტფოლიოში$/, function (m) { return plural(m[1], 'property', 'properties') + ' in portfolio'; }],
     [/^ფოტოები \((\d+)\)$/, function (m) { return 'Photos (' + m[1] + ')'; }],
     [/^(\S+) (\d{4})$/, function (m) { var mo = MD.indexOf(m[1]); return mo < 0 ? null : ME[mo] + ' ' + m[2]; }],
@@ -1720,6 +1721,15 @@
     });
     return any && !bad ? out : null;
   }
+  var TL = { 'ა': 'a', 'ბ': 'b', 'გ': 'g', 'დ': 'd', 'ე': 'e', 'ვ': 'v', 'ზ': 'z', 'თ': 't', 'ი': 'i', 'კ': 'k', 'ლ': 'l', 'მ': 'm', 'ნ': 'n', 'ო': 'o', 'პ': 'p', 'ჟ': 'zh', 'რ': 'r', 'ს': 's', 'ტ': 't', 'უ': 'u', 'ფ': 'p', 'ქ': 'k', 'ღ': 'gh', 'ყ': 'q', 'შ': 'sh', 'ჩ': 'ch', 'ც': 'ts', 'ძ': 'dz', 'წ': 'ts', 'ჭ': 'ch', 'ხ': 'kh', 'ჯ': 'j', 'ჰ': 'h' };
+  // Names and addresses typed by users have no dictionary entry: romanize them (Georgian national system, simplified).
+  function translit(t) {
+    return t.replace(/[ა-ჰ]+/g, function (w) {
+      var o = '';
+      for (var i = 0; i < w.length; i++) o += TL[w[i]] || w[i];
+      return o.charAt(0).toUpperCase() + o.slice(1);
+    });
+  }
   function tr(s) {
     var t = s.replace(/\s+/g, ' ').trim();
     if (!t || !/[ა-ჰ]/.test(t)) return null;
@@ -1731,12 +1741,13 @@
       }
     }
     if (r == null) r = soft(t.replace(/([ა-ჰ])-(\S*)/g, '$1 $2').replace(/[()·→–,]/g, function (c) { return ' ' + c + ' '; }).replace(/\s+/g, ' ').trim());
+    if (r == null && t.length <= 80) r = translit(t);
     if (r == null) return null;
     return s.match(/^\s*/)[0] + r + s.match(/\s*$/)[0];
   }
   function text(n) {
     var p = n.parentNode;
-    if (!p || SKIP.test(p.nodeName)) return;
+    if (!p || SKIP.test(p.nodeName) || (p.closest && p.closest('.lease-paper'))) return;
     var cur = n.nodeValue, o = origText.get(n);
     if (o !== undefined && cur === o) return;
     var r = tr(cur);
