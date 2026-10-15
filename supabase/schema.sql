@@ -17,7 +17,7 @@ create extension if not exists supabase_vault with schema vault;
 create extension if not exists "uuid-ossp" with schema extensions;
 
 -- ===========================================================================
--- tables (25)
+-- tables (26)
 -- ===========================================================================
 
 create table public.activity_events (id uuid not null default gen_random_uuid(),
@@ -187,6 +187,10 @@ create table public.expenses (id uuid not null default gen_random_uuid(),
   created_by uuid,
   created_at timestamp with time zone default now(),
   updated_at timestamp with time zone default now());
+create table public.import_requests (id bigint not null generated always as identity,
+  organization_id uuid not null,
+  user_id uuid not null,
+  created_at timestamp with time zone not null default now());
 create table public.income (id uuid not null default gen_random_uuid(),
   organization_id uuid not null,
   apartment_id uuid not null,
@@ -401,7 +405,7 @@ create table public.trial_grants (user_id uuid not null,
   created_at timestamp with time zone not null default now());
 
 -- ===========================================================================
--- constraints (145)
+-- constraints (148)
 -- ===========================================================================
 
 alter table public.activity_events add constraint activity_events_actor_id_fkey FOREIGN KEY (actor_id) REFERENCES auth.users(id) ON DELETE SET NULL;
@@ -461,6 +465,9 @@ alter table public.expenses add constraint expenses_organization_id_fkey FOREIGN
 alter table public.expenses add constraint expenses_repair_id_fkey FOREIGN KEY (repair_id) REFERENCES repairs(id) ON DELETE SET NULL;
 alter table public.expenses add constraint expenses_task_id_fkey FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE SET NULL;
 alter table public.expenses add constraint expenses_pkey PRIMARY KEY (id);
+alter table public.import_requests add constraint import_requests_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE;
+alter table public.import_requests add constraint import_requests_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+alter table public.import_requests add constraint import_requests_pkey PRIMARY KEY (id);
 alter table public.income add constraint income_apartment_id_fkey FOREIGN KEY (apartment_id) REFERENCES apartments(id) ON DELETE CASCADE;
 alter table public.income add constraint income_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE;
 alter table public.income add constraint income_reservation_id_fkey FOREIGN KEY (reservation_id) REFERENCES reservations(id) ON DELETE SET NULL;
@@ -551,7 +558,7 @@ alter table public.trial_grants add constraint trial_grants_user_id_fkey FOREIGN
 alter table public.trial_grants add constraint trial_grants_pkey PRIMARY KEY (user_id);
 
 -- ===========================================================================
--- indexes (34)
+-- indexes (35)
 -- ===========================================================================
 
 CREATE INDEX apartments_org_cadastral_idx ON public.apartments USING btree (organization_id, cadastral_code) WHERE (cadastral_code IS NOT NULL);
@@ -564,6 +571,7 @@ CREATE INDEX idx_approvals_org ON public.approvals USING btree (organization_id)
 CREATE INDEX idx_deals_org ON public.deals USING btree (organization_id, created_at DESC);
 CREATE INDEX idx_events_org ON public.activity_events USING btree (organization_id, created_at DESC);
 CREATE INDEX idx_expenses_org_status ON public.expenses USING btree (organization_id, status);
+CREATE INDEX idx_import_requests_user_time ON public.import_requests USING btree (user_id, created_at DESC);
 CREATE INDEX idx_income_org ON public.income USING btree (organization_id);
 CREATE INDEX idx_link_events_apartment ON public.link_events USING btree (apartment_id, created_at DESC);
 CREATE INDEX idx_link_events_apt_visitor ON public.link_events USING btree (apartment_id, visitor, kind, created_at DESC);
@@ -590,7 +598,7 @@ CREATE UNIQUE INDEX uq_notifications_dedup ON public.notifications USING btree (
 CREATE UNIQUE INDEX uq_tasks_turnover ON public.tasks USING btree (reservation_id) WHERE ((type = 'cleaning'::text) AND (reservation_id IS NOT NULL));
 
 -- ===========================================================================
--- functions (74)
+-- functions (75)
 -- ===========================================================================
 
 CREATE OR REPLACE FUNCTION public.accept_my_invitations()
@@ -1713,6 +1721,40 @@ begin
 end;
 $function$
 ;
+CREATE OR REPLACE FUNCTION public.register_import(p_org uuid, p_limit integer DEFAULT 10)
+ RETURNS boolean
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+declare
+  v_user  uuid := auth.uid();
+  v_count int;
+begin
+  if v_user is null then return false; end if;
+
+  -- Only members of the workspace they are importing into.
+  if not exists (select 1 from public.organization_members
+                  where organization_id = p_org and user_id = v_user) then
+    return false;
+  end if;
+
+  -- Keep the table small: only the last day is ever needed.
+  delete from public.import_requests where created_at < now() - interval '1 day';
+
+  select count(*) into v_count
+    from public.import_requests
+   where user_id = v_user and created_at > now() - interval '1 hour';
+
+  if v_count >= greatest(coalesce(p_limit, 10), 1) then
+    return false;
+  end if;
+
+  insert into public.import_requests (organization_id, user_id) values (p_org, v_user);
+  return true;
+end
+$function$
+;
 CREATE OR REPLACE FUNCTION public.respond_public_approval(p_token text, p_decision text, p_note text DEFAULT NULL::text)
  RETURNS jsonb
  LANGUAGE plpgsql
@@ -2152,7 +2194,7 @@ CREATE TRIGGER trg_selections_plan BEFORE INSERT ON public.selections FOR EACH R
 CREATE TRIGGER trg_tasks_lifecycle BEFORE INSERT OR UPDATE ON public.tasks FOR EACH ROW EXECUTE FUNCTION tasks_lifecycle();
 
 -- ===========================================================================
--- row level security (25)
+-- row level security (26)
 -- ===========================================================================
 
 alter table public.activity_events enable row level security;
@@ -2162,6 +2204,7 @@ alter table public.condition_reports enable row level security;
 alter table public.contracts enable row level security;
 alter table public.deals enable row level security;
 alter table public.expenses enable row level security;
+alter table public.import_requests enable row level security;
 alter table public.income enable row level security;
 alter table public.invitations enable row level security;
 alter table public.link_events enable row level security;
@@ -2273,7 +2316,7 @@ create policy "rigzea public update" on storage.objects for update to authentica
 create policy "rigzea public upload" on storage.objects for insert to authenticated;
 
 -- ===========================================================================
--- table grants (469)
+-- table grants (476)
 -- ===========================================================================
 
 grant DELETE on table public.activity_events to anon;
@@ -2416,6 +2459,13 @@ grant SELECT on table public.expenses to service_role;
 grant TRIGGER on table public.expenses to service_role;
 grant TRUNCATE on table public.expenses to service_role;
 grant UPDATE on table public.expenses to service_role;
+grant DELETE on table public.import_requests to service_role;
+grant INSERT on table public.import_requests to service_role;
+grant REFERENCES on table public.import_requests to service_role;
+grant SELECT on table public.import_requests to service_role;
+grant TRIGGER on table public.import_requests to service_role;
+grant TRUNCATE on table public.import_requests to service_role;
+grant UPDATE on table public.import_requests to service_role;
 grant DELETE on table public.income to anon;
 grant INSERT on table public.income to anon;
 grant REFERENCES on table public.income to anon;
@@ -2747,7 +2797,7 @@ grant TRUNCATE on table public.trial_grants to service_role;
 grant UPDATE on table public.trial_grants to service_role;
 
 -- ===========================================================================
--- function grants (130)
+-- function grants (132)
 -- ===========================================================================
 
 grant execute on function public.accept_my_invitations() to authenticated;
@@ -2852,6 +2902,8 @@ grant execute on function public.protect_org_branding() to service_role;
 grant execute on function public.protect_org_plan() to service_role;
 grant execute on function public.record_link_event(p_ref text, p_kind text, p_visitor text, p_recipient text) to service_role;
 grant execute on function public.redeem_telegram_link_code(p_code text, p_chat_id bigint, p_user_name text) to service_role;
+grant execute on function public.register_import(p_org uuid, p_limit integer) to authenticated;
+grant execute on function public.register_import(p_org uuid, p_limit integer) to service_role;
 grant execute on function public.respond_public_approval(p_token text, p_decision text, p_note text) to anon;
 grant execute on function public.respond_public_approval(p_token text, p_decision text, p_note text) to authenticated;
 grant execute on function public.respond_public_approval(p_token text, p_decision text, p_note text) to service_role;

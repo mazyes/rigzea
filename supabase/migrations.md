@@ -36,3 +36,4 @@ migrations the database itself recorded in `supabase_migrations.schema_migration
 | 20261013161351 | 14_reminders_live |
 | 20261014184602 | 18_security_hardening |
 | 20261014211653 | 19_listing_notify_cap |
+| 20261015160720 | 20_import_rate_limit |
