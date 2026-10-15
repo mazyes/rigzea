@@ -713,7 +713,7 @@ body.luxury-theme::before {
   font-weight: 600;
   text-align: center;
   text-decoration: none;
-  cursor: pointer;
+  cursor: default;
   display: flex;
   align-items: center;
   justify-content: center;

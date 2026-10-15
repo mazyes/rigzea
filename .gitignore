@@ -1,17 +1,24 @@
 node_modules/
-.vercel
-.env
-.env.local
-.env.*.local
-.DS_Store
-Thumbs.db
 __pycache__/
 *.pyc
+.DS_Store
+Thumbs.db
 
+# Secrets and local env
+.env
+.env*
+!.env.example
+
+# Vercel
 .vercel
+
+# Local-only AI tooling (not part of the product)
+.claude/
+skills/
+.impeccable/
+
+# Local test/build artifacts
 tests/fixture-receipt.png
 screenshots/
 supabase/.temp/
-.env*
 videos/
-!.env.example
