@@ -8,11 +8,11 @@
 
 /* ------------------------------------------------------------------ tokens */
 :root {
-  --bg: #f4f5f7;
+  --bg: #f6f7f8;
   --surface: #ffffff;
-  --surface-2: #f8f9fa;
-  --hover: #f1f3f5;
-  --line: #e2e5e9;
+  --surface-2: #f9faf9;
+  --hover: #f1f4f2;
+  --line: #e6e9ec;
   --line-strong: #c9ced5;
   --ink: #15202b;
   --ink-2: #3b4754;
@@ -28,9 +28,9 @@
   --info: #1c5aa8;    --info-bg: #e8f0fb;
   --neutral: #3b4754; --neutral-bg: #eceff2;
 
-  --r: 8px;
-  --r-sm: 6px;
-  --shadow: 0 1px 2px rgba(16, 24, 40, .06);
+  --r: 14px;
+  --r-sm: 10px;
+  --shadow: none;
   --shadow-pop: 0 12px 32px -8px rgba(16, 24, 40, .22), 0 0 0 1px rgba(16, 24, 40, .06);
   --rail: 232px;
   --top: 56px;
@@ -359,9 +359,9 @@ button.row { width: 100%; border: 0; border-bottom: 1px solid var(--line); backg
 
 /* stats */
 .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1px; background: var(--line); }
-.stat { background: var(--surface); padding: 12px 16px; display: flex; flex-direction: column; gap: 2px; }
+.stat { background: var(--surface); padding: 16px 18px; display: flex; flex-direction: column; gap: 4px; }
 .stat-label { font-size: 12px; color: var(--muted); }
-.stat-value { font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.stat-value { font-size: 26px; font-weight: 700; line-height: 1.2; font-variant-numeric: tabular-nums; }
 .stat-note { font-size: 12px; color: var(--muted); }
 .calc { font-size: 12.5px; color: var(--muted); padding: 10px 16px; border-top: 1px solid var(--line); line-height: 1.6; }
 .calc b { color: var(--ink); font-weight: 600; }
