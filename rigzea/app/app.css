@@ -217,8 +217,8 @@ img { max-width: 100%; display: block; }
 }
 .brand { font-weight: 700; font-size: 19px; letter-spacing: -.03em; text-decoration: none; color: var(--ink); display: inline-flex; align-items: center; gap: 8px; }
 .brand i, .brand .brand-dot { font-style: normal; color: var(--brand); font-weight: 700; }
-.brand-mark { width: 26px; height: 26px; border-radius: 7px; background: var(--brand); display: grid; place-items: center; color: #fff; flex: none; box-shadow: 0 1px 2px rgba(10, 92, 68, 0.2); }
-.brand-mark svg { width: 16px; height: 16px; stroke: #ffffff; }
+.brand-mark { width: 30px; height: 30px; border-radius: 7px; background: var(--brand); display: grid; place-items: center; color: #fff; flex: none; box-shadow: 0 1px 2px rgba(10, 92, 68, 0.2); }
+.brand-mark svg { width: 24px; height: 24px; stroke: #ffffff; }
 .org-switch { display: flex; align-items: center; gap: 6px; padding-left: 12px; margin-left: 4px; border-left: 1px solid var(--line); min-width: 0; }
 .org-switch select { border: 1px solid transparent; background: transparent; font-weight: 600; padding: 6px 4px; border-radius: var(--r-sm); max-width: 220px; cursor: pointer; }
 .org-switch select:hover { background: var(--hover); }
