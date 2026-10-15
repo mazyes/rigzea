@@ -605,6 +605,18 @@
     $('#theme-select').onchange = (e) => { localStorage.setItem('rigzea_theme', e.target.value); R.applyTheme(e.target.value); };
   }
 
+  const syncThemeBtn = () => {
+    const dark = document.documentElement.dataset.theme === 'dark';
+    $('#btn-theme').innerHTML = icon(dark ? 'sun' : 'moon');
+    $('#btn-theme').setAttribute('aria-label', dark ? 'ღია თემა' : 'მუქი თემა');
+  };
+  $('#btn-theme').addEventListener('click', () => {
+    const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('rigzea_theme', next);
+    R.applyTheme(next);
+    syncThemeBtn();
+  });
+  syncThemeBtn();
   $('#btn-notif').addEventListener('click', (e) => { e.stopPropagation(); togglePopover('notif'); });
   $('#btn-user').addEventListener('click', (e) => { e.stopPropagation(); togglePopover('user'); });
   document.addEventListener('click', (e) => {
