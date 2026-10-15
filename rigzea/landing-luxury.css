@@ -4127,3 +4127,5 @@ p, li { text-wrap: pretty; }
 :root[data-theme="light"] body.luxury-theme::before,
 :root[data-theme="light"] .lx-ambient-grid { opacity: .35; }
 :root[data-theme="light"] .lx-card-old-way { background: #151918; }
+
+.lx-lang-toggle { font: inherit; font-size: 12px; font-weight: 700; letter-spacing: .02em; }
