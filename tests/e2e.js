@@ -1070,6 +1070,27 @@ test('26. a capped list says how much is hidden and can load more', async (brows
   return page;
 });
 
+test('27. watermarking every photo saves them and closes the tool', async (browser) => {
+  const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
+  await seedListing(page);
+  await page.goto(BASE + '/app/#/apartments/dddddddd-0000-4000-8000-000000000003');
+  await page.locator('#a-edit').click();
+  await page.locator('dialog[open] [data-pm-input]').setInputFiles([FIXTURE, FIXTURE]);
+  await page.locator('dialog[open] .pm-item img').nth(1).waitFor();
+  await page.locator('dialog[open] [data-submit]').click();
+  await page.locator('dialog[open]').waitFor({ state: 'detached' });
+  // The watermark tool used to throw while closing after a successful save, leaving the modal open.
+  await page.locator('#btn-watermark').click();
+  await page.locator('dialog[open] #btn-wm-save-apt').waitFor();
+  await page.locator('dialog[open] #wm-select-pos').selectOption('diag');
+  await page.locator('dialog[open] #btn-wm-save-apt').click();
+  await page.locator('dialog[open]').waitFor({ state: 'detached' });
+  const apt = (await db(page)).tables.apartments.find(a => a.id === 'dddddddd-0000-4000-8000-000000000003');
+  assert.strictEqual(apt.photos.length, 2, 'both photos kept');
+  assert(apt.photos.every(p => p.wm === true), 'every photo is marked as watermarked');
+  return page;
+});
+
 (async () => {
   const server = await serve();
   const browser = await launch();

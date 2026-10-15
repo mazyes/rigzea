@@ -82,6 +82,7 @@
     const grid = $('[data-pm-grid]', root);
     const hint = $('[data-pm-hint]', root);
     const draw = () => {
+      if (!grid) return;
       grid.innerHTML = items.map((p, i) => `<figure class="pm-item">
           <img src="${esc(p.thumb || p.url)}" alt="ფოტო ${i + 1}" loading="lazy" />
           ${i === 0 ? '<span class="pm-cover">მთავარი</span>' : ''}
@@ -207,7 +208,7 @@
           </div>
         </div>`,
       submitLabel: 'დახურვა',
-      onOpen: (dialogEl) => {
+      onOpen: (dialogEl, dlg) => {
         const canvas = $('#wm-canvas', dialogEl);
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
@@ -330,103 +331,108 @@
           }, 'image/jpeg', 0.92);
         });
 
-        $('#btn-wm-save-apt', dialogEl)?.addEventListener('click', (e) => run(e.currentTarget, async () => {
-          const btn = e.currentTarget;
-          const label = btn.innerHTML;
-          btn.disabled = true;
-          try {
-          const newPhotos = [];
-          let skipped = 0;
-          for (let i = 0; i < photos.length; i++) {
-            btn.textContent = `მუშავდება ${i + 1}/${photos.length}…`;
-            const p = photos[i];
-            // Already watermarked photos are left alone so marks never stack. (The unmarked original is not
-            // kept: the photo list is public, so storing it would hand out a clean copy.)
-            if (p.wm) { skipped++; newPhotos.push({ ...p, order: i }); continue; }
-            const source = p.url;
-            const img = await new Promise((res) => {
-              const im = new Image();
-              im.crossOrigin = 'anonymous';
-              im.onload = () => res(im);
-              im.onerror = () => res(null);
-              im.src = source;
-            });
-            // Photos from other sites (link import) can't be redrawn; keep them as they are.
-            if (!img) { skipped++; newPhotos.push({ ...p, order: i }); continue; }
+        $('#btn-wm-save-apt', dialogEl)?.addEventListener('click', (e) => {
+          const btn = e.currentTarget || $('#btn-wm-save-apt', dialogEl);
+          const label = btn ? btn.innerHTML : '';
+          return run(btn, async () => {
+            if (btn) btn.disabled = true;
+            try {
+              const newPhotos = [];
+              let skipped = 0;
+              for (let i = 0; i < photos.length; i++) {
+                if (btn) btn.textContent = `მუშავდება ${i + 1}/${photos.length}…`;
+                const p = photos[i];
+                // Already watermarked photos are left alone so marks never stack. (The unmarked original is not
+                // kept: the photo list is public, so storing it would hand out a clean copy.)
+                if (p.wm) { skipped++; newPhotos.push({ ...p, order: i }); continue; }
+                const source = p.url;
+                const img = await new Promise((res) => {
+                  const im = new Image();
+                  im.crossOrigin = 'anonymous';
+                  im.onload = () => res(im);
+                  im.onerror = () => res(null);
+                  im.src = source;
+                });
+                // Photos from other sites (link import) can't be redrawn; keep them as they are.
+                if (!img) { skipped++; newPhotos.push({ ...p, order: i }); continue; }
 
-            const off = document.createElement('canvas');
-            off.width = img.naturalWidth || 1600;
-            off.height = img.naturalHeight || 1000;
-            const oCtx = off.getContext('2d');
-            oCtx.drawImage(img, 0, 0, off.width, off.height);
+                const off = document.createElement('canvas');
+                off.width = img.naturalWidth || 1600;
+                off.height = img.naturalHeight || 1000;
+                const oCtx = off.getContext('2d');
+                oCtx.drawImage(img, 0, 0, off.width, off.height);
 
-            if (wmText) {
-              oCtx.save();
-              const baseFontSize = Math.max(16, Math.round(off.width / 30));
-              oCtx.font = `bold ${baseFontSize}px 'FiraGO', -apple-system, sans-serif`;
+                if (wmText) {
+                  oCtx.save();
+                  const baseFontSize = Math.max(16, Math.round(off.width / 30));
+                  oCtx.font = `bold ${baseFontSize}px 'FiraGO', -apple-system, sans-serif`;
 
-              if (wmPos === 'br' || wmPos === 'bl') {
-                const metrics = oCtx.measureText(wmText);
-                const padX = baseFontSize * 0.8;
-                const boxW = metrics.width + padX * 2;
-                const boxH = baseFontSize * 1.7;
-                const x = wmPos === 'br' ? off.width - boxW - (off.width * 0.03) : (off.width * 0.03);
-                const y = off.height - boxH - (off.height * 0.03);
-                oCtx.fillStyle = `rgba(15, 23, 42, ${wmOpacity * 0.85})`;
-                oCtx.beginPath();
-                if (oCtx.roundRect) oCtx.roundRect(x, y, boxW, boxH, 8);
-                else oCtx.rect(x, y, boxW, boxH);
-                oCtx.fill();
-                oCtx.fillStyle = '#ffffff';
-                oCtx.textBaseline = 'middle';
-                oCtx.fillText(wmText, x + padX, y + boxH / 2);
-              } else if (wmPos === 'diag') {
-                oCtx.translate(off.width / 2, off.height / 2);
-                oCtx.rotate(-28 * Math.PI / 180);
-                const diagSize = Math.max(24, Math.round(off.width / 18));
-                oCtx.font = `800 ${diagSize}px 'FiraGO', -apple-system, sans-serif`;
-                oCtx.textAlign = 'center';
-                oCtx.textBaseline = 'middle';
-                oCtx.strokeStyle = `rgba(0, 0, 0, ${wmOpacity * 0.6})`;
-                oCtx.lineWidth = Math.max(2, Math.round(diagSize / 8));
-                oCtx.strokeText(wmText, 0, 0);
-                oCtx.fillStyle = `rgba(255, 255, 255, ${wmOpacity * 0.9})`;
-                oCtx.fillText(wmText, 0, 0);
-              } else if (wmPos === 'repeat') {
-                oCtx.rotate(-25 * Math.PI / 180);
-                const repSize = Math.max(14, Math.round(off.width / 38));
-                oCtx.font = `700 ${repSize}px 'FiraGO', -apple-system, sans-serif`;
-                oCtx.fillStyle = `rgba(255, 255, 255, ${wmOpacity * 0.45})`;
-                oCtx.strokeStyle = `rgba(0, 0, 0, ${wmOpacity * 0.3})`;
-                oCtx.lineWidth = 1;
-                const stepX = off.width * 0.35;
-                const stepY = off.height * 0.25;
-                for (let y = -off.height; y < off.height * 2; y += stepY) {
-                  for (let x = -off.width; x < off.width * 2; x += stepX) {
-                    oCtx.strokeText(wmText, x, y);
-                    oCtx.fillText(wmText, x, y);
+                  if (wmPos === 'br' || wmPos === 'bl') {
+                    const metrics = oCtx.measureText(wmText);
+                    const padX = baseFontSize * 0.8;
+                    const boxW = metrics.width + padX * 2;
+                    const boxH = baseFontSize * 1.7;
+                    const x = wmPos === 'br' ? off.width - boxW - (off.width * 0.03) : (off.width * 0.03);
+                    const y = off.height - boxH - (off.height * 0.03);
+                    oCtx.fillStyle = `rgba(15, 23, 42, ${wmOpacity * 0.85})`;
+                    oCtx.beginPath();
+                    if (oCtx.roundRect) oCtx.roundRect(x, y, boxW, boxH, 8);
+                    else oCtx.rect(x, y, boxW, boxH);
+                    oCtx.fill();
+                    oCtx.fillStyle = '#ffffff';
+                    oCtx.textBaseline = 'middle';
+                    oCtx.fillText(wmText, x + padX, y + boxH / 2);
+                  } else if (wmPos === 'diag') {
+                    oCtx.translate(off.width / 2, off.height / 2);
+                    oCtx.rotate(-28 * Math.PI / 180);
+                    const diagSize = Math.max(24, Math.round(off.width / 18));
+                    oCtx.font = `800 ${diagSize}px 'FiraGO', -apple-system, sans-serif`;
+                    oCtx.textAlign = 'center';
+                    oCtx.textBaseline = 'middle';
+                    oCtx.strokeStyle = `rgba(0, 0, 0, ${wmOpacity * 0.6})`;
+                    oCtx.lineWidth = Math.max(2, Math.round(diagSize / 8));
+                    oCtx.strokeText(wmText, 0, 0);
+                    oCtx.fillStyle = `rgba(255, 255, 255, ${wmOpacity * 0.9})`;
+                    oCtx.fillText(wmText, 0, 0);
+                  } else if (wmPos === 'repeat') {
+                    oCtx.rotate(-25 * Math.PI / 180);
+                    const repSize = Math.max(14, Math.round(off.width / 38));
+                    oCtx.font = `700 ${repSize}px 'FiraGO', -apple-system, sans-serif`;
+                    oCtx.fillStyle = `rgba(255, 255, 255, ${wmOpacity * 0.45})`;
+                    oCtx.strokeStyle = `rgba(0, 0, 0, ${wmOpacity * 0.3})`;
+                    oCtx.lineWidth = 1;
+                    const stepX = off.width * 0.35;
+                    const stepY = off.height * 0.25;
+                    for (let y = -off.height; y < off.height * 2; y += stepY) {
+                      for (let x = -off.width; x < off.width * 2; x += stepX) {
+                        oCtx.strokeText(wmText, x, y);
+                        oCtx.fillText(wmText, x, y);
+                      }
+                    }
                   }
+                  oCtx.restore();
                 }
+
+                const blob = await new Promise(r => off.toBlob(r, 'image/jpeg', 0.86));
+                const file = new File([blob], `photo-${i + 1}.jpg`, { type: 'image/jpeg' });
+                const uploaded = await uploadListingPhoto(a.id, file);
+                newPhotos.push({ url: uploaded.url, thumb: uploaded.thumb, wm: true, order: i });
               }
-              oCtx.restore();
+
+              const row = await q(sb.from('apartments').update({ photos: newPhotos }).eq('id', a.id).select().single());
+              App.upsertLocal('apartments', row);
+              App.render();
+              try { localStorage.setItem('rigzea_watermark_done', '1'); } catch { /* private mode */ }
+              toast(skipped ? `Watermark დაემატა ${photos.length - skipped} ფოტოს. ${skipped} ფოტო უცვლელი დარჩა (უკვე აქვს watermark ან სხვა საიტიდანაა).` : 'ყველა ფოტო განახლდა Watermark-ით.', { type: 'success' });
+              dlg?.close();
+            } finally {
+              if (btn) {
+                btn.disabled = false;
+                if (label) btn.innerHTML = label;
+              }
             }
-
-            const blob = await new Promise(r => off.toBlob(r, 'image/jpeg', 0.86));
-            const file = new File([blob], `photo-${i + 1}.jpg`, { type: 'image/jpeg' });
-            const uploaded = await uploadListingPhoto(a.id, file);
-            newPhotos.push({ url: uploaded.url, thumb: uploaded.thumb, wm: true, order: i });
-          }
-
-          const row = await q(sb.from('apartments').update({ photos: newPhotos }).eq('id', a.id).select().single());
-          App.upsertLocal('apartments', row);
-          App.render();
-          try { localStorage.setItem('rigzea_watermark_done', '1'); } catch { /* private mode */ }
-          toast(skipped ? `Watermark დაემატა ${photos.length - skipped} ფოტოს. ${skipped} ფოტო უცვლელი დარჩა (უკვე აქვს watermark ან სხვა საიტიდანაა).` : 'ყველა ფოტო განახლდა Watermark-ით.', { type: 'success' });
-          } finally {
-            btn.disabled = false;
-            btn.innerHTML = label;
-          }
-        }));
+          });
+        });
       }
     });
   }
