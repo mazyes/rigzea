@@ -470,7 +470,7 @@
             <a class="btn btn-primary btn-sm" href="#/apartments">+ ბინის დამატება</a>
           </div>
         </div>
-        <div class="stats" style="grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));">
+        <div class="stats stats-tiles">
           <div class="stat"><span class="stat-label">აქტიური ქონება</span><span class="stat-value">${activeApts.length}</span><span class="stat-note">${forSaleApts.length} იყიდება · ${forRentApts.length} ქირავდება</span></div>
           <div class="stat"><span class="stat-label">ახალი ლიდები</span><span class="stat-value">${newLeads.length}</span><span class="stat-note">შემოსული მოთხოვნა</span></div>
           <div class="stat"><span class="stat-label">დათვალიერებები</span><span class="stat-value">${counts.viewing}</span><span class="stat-note">აქტიური ვიზიტი</span></div>
