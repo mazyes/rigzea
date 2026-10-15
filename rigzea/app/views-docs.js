@@ -203,6 +203,7 @@
       onOpen: (form) => {
         const box = $('#pz-preview', form);
         const draw = () => {
+          if (!box) return;
           box.style.setProperty('--pz-zoom', String(Math.min(0.62, (box.clientWidth - 24) / 794)));
           box.innerHTML = presentationHtml(a, state);
         };
