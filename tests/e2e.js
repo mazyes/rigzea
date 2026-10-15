@@ -1091,6 +1091,29 @@ test('27. watermarking every photo saves them and closes the tool', async (brows
   return page;
 });
 
+test('28. the service worker precaches the app shell under a content-named cache', async (browser) => {
+  const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
+  await page.goto(BASE + '/app/');
+  await page.getByRole('heading', { name: 'დღეს', exact: true }).waitFor();
+  const state = await page.evaluate(() => Promise.race([
+    navigator.serviceWorker.ready.then(() => 'ready'),
+    new Promise(r => setTimeout(() => r('timeout'), 15000)),
+  ]));
+  assert.strictEqual(state, 'ready', 'service worker became active');
+  const keys = await page.evaluate(() => caches.keys());
+  const mine = keys.filter(k => k.startsWith('rigzea-'));
+  assert.strictEqual(mine.length, 1, 'exactly one rigzea cache: ' + JSON.stringify(keys));
+  assert(/^rigzea-[0-9a-f]{12}$/.test(mine[0]), 'cache name is a content hash: ' + mine[0]);
+  const urls = await page.evaluate(async (name) => {
+    const cache = await caches.open(name);
+    return (await cache.keys()).map(r => new URL(r.url).pathname);
+  }, mine[0]);
+  for (const need of ['/js/supabase.js', '/js/plans.js', '/app/app.js', '/app/app.css']) {
+    assert(urls.includes(need), 'precached ' + need);
+  }
+  return page;
+});
+
 (async () => {
   const server = await serve();
   const browser = await launch();
