@@ -3352,3 +3352,54 @@ html.lenis, html.lenis body { height: auto; }
 
 /* Logo tile: flat, no glow */
 .lx-brand-icon, :root[data-theme="light"] .lx-brand-icon { box-shadow: none; filter: none; }
+
+/* ==========================================================================
+   FEATURE CARDS v2: product-first. The live demo leads (a panel rising from
+   the bottom of a quiet stage), title and one line underneath. Flat, hairlines.
+   ========================================================================== */
+#features-grid {
+  --fc-bg: #0E1311; --fc-line: rgba(255, 255, 255, .08); --fc-stage: #121A17; --fc-panel: #18211D; --fc-title: #fff; --fc-text: #A3B8AD;
+}
+:root[data-theme="light"] #features-grid {
+  --fc-bg: #fff; --fc-line: #E2E8F0; --fc-stage: #F2F6F4; --fc-panel: #fff; --fc-title: #0F172A; --fc-text: #475569;
+}
+:root #features-grid .lx-bento-card {
+  display: flex; flex-direction: column; height: 100%; padding: 0; overflow: hidden;
+  border: 1px solid var(--fc-line); border-radius: 24px; background: var(--fc-bg); box-shadow: none; backdrop-filter: none;
+}
+:root #features-grid .lx-bento-card::before, :root #features-grid .lx-bento-card::after { display: none; }
+:root #features-grid .lx-bento-preview-stage {
+  order: -1; display: flex; align-items: flex-end; justify-content: center; flex: 1 1 auto; min-height: 300px;
+  margin: 0; padding: 32px 32px 0; border: 0; border-bottom: 1px solid var(--fc-line); border-radius: 0; background: var(--fc-stage); box-shadow: none;
+}
+:root #features-grid .lx-bento-preview-stage::before { display: none; }
+:root #features-grid .lx-demo {
+  width: 100%; max-width: 460px; padding: 18px 18px 20px; border: 1px solid var(--fc-line); border-bottom: 0;
+  border-radius: 18px 18px 0 0; background: var(--fc-panel); margin: 0 auto; align-self: flex-end;
+}
+:root #features-grid .lx-demo > :first-child { margin-top: 0; }
+:root #features-grid .lx-demo > :last-child { margin-bottom: 0; }
+:root #features-grid .lx-bento-card-header { gap: 8px; padding: 24px 28px 28px; }
+:root #features-grid .lx-bento-card-header h3 { margin: 0; font-size: clamp(19px, 1.6vw, 22px); line-height: 1.25; color: var(--fc-title); }
+:root #features-grid .lx-bento-card-header p { margin: 0; font-size: 15px; line-height: 1.55; color: var(--fc-text); max-width: 46ch; }
+/* inner mock boxes sit flat inside the panel */
+:root #features-grid .lx-demo :is(.lx-import-preview-box, .lx-lease-preview, .lx-post-preview) { background: transparent; border: 0; box-shadow: none; padding: 0; }
+@media (max-width: 700px) {
+  :root #features-grid .lx-bento-preview-stage { min-height: 0; padding: 20px 16px 0; }
+  :root #features-grid .lx-demo { padding: 14px 14px 16px; border-radius: 16px 16px 0 0; }
+  :root #features-grid .lx-bento-card-header { padding: 18px 20px 22px; }
+  :root #features-grid .lx-bento-card-header h3 { font-size: 18px; }
+  :root #features-grid .lx-bento-card-header p { font-size: 14px; }
+}
+
+/* Card 1 demo: published to the portals */
+.lx-publish-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
+.lx-publish-chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 999px; font: 600 12px/1.2 var(--lx-font); background: rgba(16, 185, 129, .12); color: #34D399; }
+.lx-publish-chip b { color: var(--lx-text-white); font-weight: 700; }
+.lx-publish-chip span::after { content: " ✓"; }
+:root[data-theme="light"] .lx-publish-chip { background: #ECFDF5; color: #047857; }
+:root[data-theme="light"] .lx-publish-chip b { color: #0F172A; }
+.lx-motion #features-grid .lx-publish-chip { opacity: 0; transform: translateY(6px); transition: opacity .4s ease, transform .4s var(--lx-ease-out); }
+.lx-motion #features-grid .lx-publish-chip:first-child { transition-delay: 1.5s; }
+.lx-motion #features-grid .lx-publish-chip:last-child { transition-delay: 1.75s; }
+.lx-motion #features-grid .is-in .lx-publish-chip { opacity: 1; transform: none; }

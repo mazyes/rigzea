@@ -1750,6 +1750,137 @@
 "გადმოტანა": "Import",
 "კლიენტმა გახსნა ბმული": "Your client opened the link",
 "ხელშეკრულება მზადაა": "Contract is ready",
+"რა ვცადო დემოში": "What to try in the demo",
+"სადემონსტრაციო რეჟიმი: გასვლა არ არის საჭირო. საკუთარი ანგარიშისთვის დარეგისტრირდი.": "Demo mode: there is no need to sign out. Sign up to get your own account.",
+"11 მუხლი ქართულად და ინგლისურად, PDF": "11 clauses in Georgian and English, PDF",
+"PDF პრეზენტაცია 1 კლიკით": "PDF presentation in 1 click",
+"VIP კატალოგი ან ერთგვერდიანი ფლაერი, QR კოდით": "A catalogue or a one-page flyer, with a QR code",
+"White-label ბრენდინგი": "White-label branding",
+"ბინა ფოტოებით და ჭკვიანი ბმულით": "An apartment with photos and a smart link",
+"ბინების შერჩევა კლიენტისთვის": "Match apartments to a client",
+"გალერეა, კეთილმოწყობა, ბეჯი, ნახვები და WhatsApp-ის დაწკაპუნებები": "Gallery, amenities, badge, views and WhatsApp clicks",
+"განახლებები და Telegram": "Updates and Telegram",
+"განულება": "Reset",
+"განცხადების შევსება ლინკიდან": "Fill a listing from a link",
+"გაქირავება და გაყიდვა ცალ-ცალკე": "Rentals and sales kept apart",
+"გუნდის წილები და რეიტინგი": "Team shares and ranking",
+"დაიწყე 14-დღიანი უფასო ცდა": "Start your 14-day free trial",
+"დამწყები, პრო აგენტი, გუნდი, სააგენტო": "Starter, Pro Agent, Team, Agency",
+"ექსკლუზივი, საბროკერო, ბე, მიღება-ჩაბარება და NAPR შემოწმება": "Exclusive, brokerage, deposit, handover and NAPR check",
+"თვე, აგენტი, სრული, პარტნიორის წილი, სუფთა, CSV": "Month, agent, gross, partner share, net, CSV",
+"იყიდება 3 ოთახიანი ბინა საბურთალოზე": "3-room apartment for sale in Saburtalo",
+"ლოგო, სახელი და ფერი საჯარო გვერდებზე": "Logo, name and colour on public pages",
+"მენიუში: ბინები, მდგმურები, მეპატრონეები, მყიდველები, გამყიდველები": "In the menu: apartments, tenants, owners, buyers, sellers",
+"მეპატრონის ნომერი დამალულია, პირობა და ტექსტი WhatsApp-ისთვის მზადაა": "The owner's number is hidden; terms and text are ready for WhatsApp",
+"ნათელი 3-ოთახიანი ბინა ახალ კორპუსში. ახალი რემონტი, ჩაშენებული სამზარეულო და ხედი ქალაქზე. მეტრომდე ფეხით 7 წუთია.": "Bright 3-room apartment in a new building. Freshly renovated, built-in kitchen and a city view. 7 minutes on foot to the metro.",
+"ნანახი": "Done",
+"ობიექტის აგენტი, მყიდველის აგენტი, სააგენტო; გადახდის სტატუსი": "Listing agent, buyer's agent, agency; payment status",
+"ორენოვანი ხელშეკრულება": "Bilingual contract",
+"რა ვცადო?": "What to try?",
+"რამდენიმე ბინა ერთ გვერდზე, შედარებით": "Several apartments on one page, side by side",
+"რას ხედავს კლიენტი": "What the client sees",
+"რეგისტრაცია": "Sign up",
+"საბურთალო · ნუცუბიძის ქ., 3-ოთახიანი": "Saburtalo · Nutsubidze St., 3 rooms",
+"სადემონსტრაციო რეჟიმი": "Demo mode",
+"საკომისიოები და ექსპორტი": "Commissions and export",
+"სანიმუშო მონაცემების თავიდან ჩატვირთვა": "Reload the sample data",
+"სანიმუშო სააგენტო „Mzeo Realty“. ყველა ფუნქცია ღიაა, ცვლილებები მხოლოდ ამ ბრაუზერში ინახება.": "Sample agency \"Mzeo Realty\". Everything is unlocked; changes are saved only in this browser.",
+"საჯარო გვერდი /p/ ფოტოგალერეით": "Public /p/ page with a photo gallery",
+"სცადე უფასოდ": "Try for free",
+"უბანი, ბიუჯეტი, საძინებლები და დამთხვევის %": "District, budget, bedrooms and match %",
+"ქართული, English, WhatsApp და Co-Brokering 50/50": "Georgian, English, WhatsApp and co-brokering 50/50",
+"შალვა ნუცუბიძის ქ.": "Shalva Nutsubidze St.",
+"შერჩევის ერთი ბმული": "One link for a shortlist",
+"ჩაკეცვა": "Collapse",
+"ჩასვი MyHome / SS.ge / Place.ge ბმული და ფორმა თავისით ივსება": "Paste a MyHome / SS.ge / Place.ge link and the form fills itself",
+"ხელშეკრულებები 30, 14 და 3 დღეში": "Contracts ending in 30, 14 and 3 days",
+"გაიმეორე ახალი პაროლი.": "Repeat the new password.",
+"დემო იტვირთება…": "Loading the demo…",
+"ეს შენი კომპანიის ან გუნდის ანგარიშია. შემდეგ დაამატებ ბინებს, მფლობელებს და გუნდს. ყველა ნაბიჯის გამოტოვება და მოგვიანებით შევსება შეიძლება.": "This is your company or team account. Next you add apartments, owners and your team. You can skip any step and fill it in later.",
+"კომპანიის ან გუნდის სახელი": "Company or team name",
+"მაგ.: Batumi Stay": "e.g. Batumi Stay",
+"მინიმუმ 6 სიმბოლო": "At least 6 characters",
+"პაროლი მინიმუმ 6 სიმბოლოს უნდა შეიცავდეს.": "The password must be at least 6 characters.",
+"პაროლი მინიმუმ 8 სიმბოლოს უნდა შეიცავდეს.": "The password must be at least 8 characters.",
+"რეგისტრაციისთვის დაეთანხმე წესებს და კონფიდენციალურობის პოლიტიკას.": "To sign up, agree to the terms and the privacy policy.",
+"სამუშაო სივრცის შექმნა": "Create your workspace",
+"სცადე რიგზეა რეგისტრაციის გარეშე: ბინები ფოტოებით, ჭკვიანი ბმულები, კლიენტისთვის ბინების შერჩევა, პოსტები, ორენოვანი ხელშეკრულება და საკომისიოები.": "Try Rigzea without signing up: apartments with photos, smart links, matching apartments to clients, posts, bilingual contracts and commissions.",
+"შეიყვანე პაროლი.": "Enter a password.",
+"შეიყვანე სახელი.": "Enter a name.",
+"შეიყვანე სწორი ელფოსტა.": "Enter a valid email.",
+"შექმენი სამუშაო სივრცე": "Create your workspace",
+"პრო": "Pro",
+"1 საძინებელი, შინაური ცხოველი დასაშვები": "1 bedroom, pets allowed",
+"2 ოთახი, ახალი რემონტი": "2 rooms, newly renovated",
+"3 ოთახი, პარკინგი": "3 rooms, parking",
+"3-ოთახიანი ბინა ვაკეში, ახალ კორპუსში. მწვანე ჩარჩო, ორი სველი წერტილი, მიწისქვეშა პარკინგი.": "3-room apartment in Vake, in a new building. Green frame, two bathrooms, underground parking.",
+"4-ოთახიანი ბინა ისტორიულ შენობაში: მაღალი ჭერი, ხის იატაკი და ორი აივანი. ფასი შემცირებულია.": "4-room apartment in a historic building: high ceilings, wooden floors and two balconies. Price reduced.",
+"ავეჯით, სწრაფი ინტერნეტი": "Furnished, fast internet",
+"აივნის ხედი": "Balcony view",
+"ახალი ფარდები მისაღებში": "New curtains in the living room",
+"ბათუმი · ახალი ბულვარი, ზღვის ხედით": "Batumi · New Boulevard, sea view",
+"ახალი ბულვარი, ზღვის ხედით": "New Boulevard, sea view",
+"ბინა ახალ ბულვართან, ზღვის ხედით. შენობაში არის აუზი და დაცვა.": "Apartment by the New Boulevard with a sea view. The building has a pool and security.",
+"გარემონტებული 2-ოთახიანი ბინა ყაზბეგის გამზირზე, მეტროსთან ახლოს. ავეჯით და ტექნიკით.": "Renovated 2-room apartment on Kazbegi Avenue, close to the metro. Furnished, with appliances.",
+"დასუფთავება ჩაბარებამდე": "Cleaning before handover",
+"ერთი თვე წინასწარ": "One month in advance",
+"ერთი თვე წინასწარ + დეპოზიტი": "One month in advance + deposit",
+"ორი თვე წინასწარ": "Two months in advance",
+"პირველი და ბოლო თვე წინასწარ": "First and last month in advance",
+"ყოველთვიური ქირა": "Monthly rent",
+"ექსკლუზიური პენტჰაუსი კრწანისის რეზიდენციაში: პანორამული ტერასა, საერთო აუზი და სპორტული დარბაზი, 24-საათიანი დაცვა.": "Exclusive penthouse in the Krtsanisi residence: panoramic terrace, shared pool and gym, 24-hour security.",
+"ეძებს 2-ოთახიან ბინას საბურთალოზე ან დიდ დიღომში, ბიუჯეტი $150 000-მდე.": "Looking for a 2-room apartment in Saburtalo or Didi Dighomi, budget up to $150 000.",
+"ეძებს ბინას ვაკეში ან მთაწმინდაზე, ბიუჯეტი $1 300-მდე. ჰყავს პატარა ძაღლი.": "Looking for an apartment in Vake or Mtatsminda, budget up to $1 300. Has a small dog.",
+"ფალიაშვილის ქ., 3-ოთახიანი (იყიდება)": "Paliashvili St., 3 rooms (for sale)",
+"ჭავჭავაძის გამზ., 3-ოთახიანი": "Chavchavadze Ave., 3 rooms",
+"ბარნოვის ქ., 4-ოთახიანი": "Barnovi St., 4 rooms",
+"წერეთლის გამზ., 2-ოთახიანი": "Tsereteli Ave., 2 rooms",
+"ლერმონტოვის ქ., 2-ოთახიანი": "Lermontov St., 2 rooms",
+"ვაჟა-ფშაველას გამზ., 2-ოთახიანი": "Vazha-Pshavela Ave., 2 rooms",
+"ყაზბეგის გამზ., 2-ოთახიანი (იყიდება)": "Kazbegi Ave., 2 rooms (for sale)",
+"კერძო სახლი ეზოთი (იყიდება)": "Private house with a yard (for sale)",
+"პენტჰაუსი პანორამული ხედით": "Penthouse with a panoramic view",
+"კომფორტული ბინა წერეთლის გამზირზე, მეტროსთან ახლოს. იდეალურია ერთი ადამიანისთვის ან წყვილისთვის.": "Comfortable apartment on Tsereteli Avenue, close to the metro. Ideal for one person or a couple.",
+"კონდიციონერი არ მუშაობს": "Air conditioner is not working",
+"მდგმურმა დარეკა: საძინებლის კონდიციონერი არ რთავს.": "The tenant called: the bedroom air conditioner won't turn on.",
+"მეტროსთან ახლოს": "Close to the metro",
+"მზიანი 3-ოთახიანი ბინა ვაკის პარკთან ახლოს. ახალი რემონტი, სრულად აღჭურვილი სამზარეულო და დიდი აივანი ქალაქის ხედით. შენობაში არის ლიფტი და მიწისქვეშა პარკინგი.": "Sunny 3-room apartment near Vake Park. Newly renovated, fully equipped kitchen and a big balcony with a city view. The building has a lift and underground parking.",
+"მისაღები ოთახი და სამზარეულო": "Living room and kitchen",
+"მრიცხველების ჩვენების ჩაწერა": "Record the meter readings",
+"მყუდრო 2-ოთახიანი ბინა ლერმონტოვის ქუჩაზე, ქალაქის ხედით. ძველ თბილისამდე ფეხით 10 წუთია.": "Cosy 2-room apartment on Lermontov Street with a city view. 10 minutes on foot to Old Tbilisi.",
+"ნათელი 2-ოთახიანი ბინა მეტრო „დელისიდან“ 5 წუთის სავალზე. ახალი ავეჯი და ტექნიკა. შინაური ცხოველი დასაშვებია.": "Bright 2-room apartment 5 minutes from Delisi metro. New furniture and appliances. Pets allowed.",
+"ორსართულიანი სახლი წყნეთში, 600 მ² ეზოთი და ხეხილის ბაღით. ქალაქის ცენტრამდე 20 წუთია.": "Two-storey house in Tskneti with a 600 m² yard and a fruit garden. 20 minutes to the city centre.",
+"საინვესტიციო, გასაქირავებლად": "Investment, to rent out",
+"სამზარეულოს ონკანი ჟონავს, საჭიროა ახლით შეცვლა.": "The kitchen faucet leaks and needs replacing.",
+"ფარდების შეცვლა ჩაბარებამდე.": "Replace the curtains before handover.",
+"ფოტოსესია განცხადებისთვის": "Photo shoot for the listing",
+"ჩვენების შემდეგ სცადა მეპატრონესთან პირდაპირ დაკავშირება.": "After the viewing, tried to contact the owner directly.",
+"ხელშეკრულება 3 დღეში იწურება": "Contract ends in 3 days",
+"აკაკი წერეთლის გამზ. 116": "Akaki Tsereteli Ave. 116",
+"ალექსანდრე ყაზბეგის გამზ. 24": "Aleksandre Kazbegi Ave. 24",
+"ბარნოვის ქ. 18": "Barnovi St. 18",
+"ვაჟა-ფშაველას გამზ. 45": "Vazha-Pshavela Ave. 45",
+"ზაქარია ფალიაშვილის ქ. 52": "Zakaria Paliashvili St. 52",
+"ილია ჭავჭავაძის გამზ. 37": "Ilia Chavchavadze Ave. 37",
+"ირაკლი აბაშიძის ქ. 14": "Irakli Abashidze St. 14",
+"აბაშიძის ქ. 14": "Abashidze St. 14",
+"კრწანისის ქ. 12": "Krtsanisi St. 12",
+"ლერმონტოვის ქ. 9": "Lermontov St. 9",
+"მირიან მეფის ქ. 7": "King Mirian St. 7",
+"შალვა ნუცუბიძის ქ. 2": "Shalva Nutsubidze St. 2",
+"ნუცუბიძის ქ. 2": "Nutsubidze St. 2",
+"ნუცუბიძის ქ., 3-ოთახიანი": "Nutsubidze St., 3 rooms",
+"შერიფ ხიმშიაშვილის ქ. 21": "Sherif Khimshiashvili St. 21",
+"წყნეთის გზატკეცილი 31": "Tskneti Highway 31",
+"გარიგება დაიხურა": "Deal closed",
+"დეპოზიტი შეტანილია": "Deposit paid",
+"გასაღების გადაცემა": "Key handover",
+"გადმოიტანე და გამოაქვეყნე ერთ სივრცეში": "Import and publish from one space",
+"ჩასვი ბმული და მიიღე გამზადებული გვერდი, შემდეგ განცხადებას MyHome-სა და SS.ge-ზე პირდაპირ Rigzea-დან აქვეყნებ.": "Paste a link and get a ready page, then publish the listing to MyHome and SS.ge straight from Rigzea.",
+"გამოქვეყნდა": "Published",
+"გამოქვეყნება MyHome-სა და SS.ge-ზე პირდაპირ Rigzea-დან": "Publish to MyHome and SS.ge straight from Rigzea",
+"განცხადების გამოქვეყნება": "Listing publishing",
+"MyHome.ge და SS.ge, პირდაპირ Rigzea-დან": "MyHome.ge and SS.ge, straight from Rigzea",
 };
   var WD = ['კვირა', 'ორშაბათი', 'სამშაბათი', 'ოთხშაბათი', 'ხუთშაბათი', 'პარასკევი', 'შაბათი'];
   var WE = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -1777,11 +1908,20 @@
     [/^(\d+) ობიექტი პორტფოლიოში$/, function (m) { return plural(m[1], 'property', 'properties') + ' in portfolio'; }],
     [/^ფოტოები \((\d+)\)$/, function (m) { return 'Photos (' + m[1] + ')'; }],
     [/^(\S+) (\d{4})$/, function (m) { var mo = MD.indexOf(m[1]); return mo < 0 ? null : ME[mo] + ' ' + m[2]; }],
-    [/^(\S+) · ფინანსები$/, function (m) { var mo = MD.indexOf(m[1]); return mo < 0 ? null : ME[mo] + ' · Finance'; }]
+    [/^(\S+) · ფინანსები$/, function (m) { var mo = MD.indexOf(m[1]); return mo < 0 ? null : ME[mo] + ' · Finance'; }],
+    [/^საცდელი პერიოდი: დარჩენილია (\d+) დღე\. ყველა ფუნქცია ღიაა\.$/, function (m) { return 'Free trial: ' + plural(m[1], 'day', 'days') + ' left. Everything is unlocked.'; }],
+    [/^„(.+)“ პაკეტი მთავრდება (\d+) დღეში\.$/, function (m) { return 'The "' + (tr(m[1]) || m[1]).trim() + '" plan ends in ' + plural(m[2], 'day', 'days') + '.'; }],
+    [/^ვადა იწურება (\d+) დღეში$/, function (m) { return 'Expires in ' + plural(m[1], 'day', 'days'); }],
+    [/^ვადა გასულია (\d+) დღის წინ$/, function (m) { return 'Expired ' + plural(m[1], 'day', 'days') + ' ago'; }],
+    [/^ხელშეკრულება (\d+) დღეში იწურება$/, function (m) { return 'Contract ends in ' + plural(m[1], 'day', 'days'); }],
+    [/^(\d+) \/ (\d+) ნანახი$/, function (m) { return m[1] + ' / ' + m[2] + ' done'; }],
+    [/^(\d{1,2}) (\S+) (\d{4})$/, function (m) { var i = MS.indexOf(m[2]); return i < 0 ? null : m[1] + ' ' + ME[i].slice(0, 3) + ' ' + m[3]; }],
+    [/^(.+?)მ დაადასტურა (.+)$/, function (m) { return translit(m[1]) + ' approved ' + m[2]; }]
   ];
+  var MS = ['იან', 'თებ', 'მარ', 'აპრ', 'მაი', 'ივნ', 'ივლ', 'აგვ', 'სექ', 'ოქტ', 'ნოე', 'დეკ'];
 
   var origText = new WeakMap();
-  var ATTRS = ['placeholder', 'aria-label', 'title', 'alt'];
+  var ATTRS = ['placeholder', 'aria-label', 'title', 'alt', 'data-plan'];
   var SKIP = /^(SCRIPT|STYLE|NOSCRIPT|TEXTAREA|CODE)$/;
 
   var SW = {
@@ -1811,7 +1951,8 @@
     });
   }
   function tr(s) {
-    var t = s.replace(/\s+/g, ' ').trim();
+    // Georgian capitals (Mtavruli, e.g. from toUpperCase on an initial) map onto the ordinary letters
+    var t = s.replace(/[\u1C90-\u1CBF]/g, function (c) { return String.fromCharCode(c.charCodeAt(0) - 0xBC0); }).replace(/\s+/g, ' ').trim();
     if (!t || !/[ა-ჰ]/.test(t)) return null;
     var r = Object.prototype.hasOwnProperty.call(D, t) ? D[t] : null;
     if (r == null) {
@@ -1819,6 +1960,17 @@
         var m = P[i][0].exec(t);
         if (m) { r = P[i][1](m); if (r != null) break; }
       }
+    }
+    if (r == null) {
+      // "Prefix: rest" (activity and task lines)
+      var pm = /^([^:]{2,30}): (.+)$/.exec(t);
+      if (pm && Object.prototype.hasOwnProperty.call(D, pm[1])) r = D[pm[1]] + ': ' + ((tr(pm[2]) || pm[2]).trim());
+    }
+    if (r == null && t.indexOf(' · ') > 0) {
+      // place · street · person: translate each part on its own
+      var parts = t.split(' · '), outp = [];
+      for (var k = 0; k < parts.length; k++) { var x = tr(parts[k]); outp.push(x == null ? parts[k] : x.trim()); }
+      if (!outp.some(function (x) { return /[ა-ჰ]/.test(x); })) r = outp.join(' · ');
     }
     if (r == null) r = soft(t.replace(/([ა-ჰ])-(\S*)/g, '$1 $2').replace(/[()·→–,]/g, function (c) { return ' ' + c + ' '; }).replace(/\s+/g, ' ').trim());
     if (r == null && t.length <= 80) r = translit(t);

@@ -7,6 +7,13 @@
   const root = document.documentElement;
   const small = window.matchMedia('(max-width: 700px)').matches;
   const T = small ? 0.75 : 1; // shorter on phones
+
+  // English visitors see the app in English in the hero (dashboard and phone)
+  if (window.RLang && window.RLang.lang === 'en') {
+    document.querySelectorAll('.lx-hero-window img, .lx-hero-window source').forEach((el) => {
+      ['src', 'srcset'].forEach((a) => { const v = el.getAttribute(a); if (v && /hero-(dashboard|mobile)-(dark|light)\.webp$/.test(v)) el.setAttribute(a, v.replace(/\.webp$/, '-en.webp')); });
+    });
+  }
   const EASE = 'cubic-bezier(0.22, 1, 0.36, 1)';
 
   // 7. Scroll progress line (orientation, not decoration: runs even with reduced motion)
