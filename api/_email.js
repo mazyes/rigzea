@@ -8,7 +8,9 @@
 import { BASE_APP_URL, esc } from './_lib.js';
 
 const C = { page: '#f3f6f4', card: '#ffffff', ink: '#14201a', muted: '#5b6b62', line: '#e3eae6', dark: '#080c0a', mint: '#00f59b', emerald: '#107557' };
-const FONT = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Noto Sans Georgian','BPG Arial',Arial,sans-serif";
+const FONT = "'FiraGO',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Noto Sans Georgian','BPG Arial',Arial,sans-serif";
+// Clients that honour web fonts (Apple Mail, iOS) get the same FiraGO as the site; the rest fall back.
+const FONT_FACE = `@font-face{font-family:'FiraGO';src:url('${BASE_APP_URL}/fonts/FiraGO-Regular.woff2') format('woff2');font-weight:400}@font-face{font-family:'FiraGO';src:url('${BASE_APP_URL}/fonts/FiraGO-Bold.woff2') format('woff2');font-weight:700 800}`;
 
 const attr = (s) => esc(s).replace(/"/g, '&quot;');
 
@@ -34,6 +36,7 @@ export function renderEmail({ preheader = '', title, lines = [], button = null, 
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="light">
+<style>${FONT_FACE}</style>
 <title>${esc(title)}</title>
 </head>
 <body style="margin:0;padding:0;background:${C.page};font-family:${FONT}">
