@@ -3409,15 +3409,12 @@ html[lang="en"] :is(h1, h2, h3, .lx-nav-link, .lx-badge, .lx-btn, .lx-plan-name,
   text-transform: uppercase; letter-spacing: .01em;
 }
 
-/* No pills: the discount and "most popular" notes are plain text */
+/* Only "most popular" keeps a pill (flat); the yearly discount is plain text */
 :root .lx-discount-badge, :root[data-theme="light"] .lx-discount-badge {
   padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; color: #34D399; font-size: 13px;
 }
 :root[data-theme="light"] .lx-discount-badge { color: #047857; }
 :root .lx-pricing-card .lx-pricing-featured-badge, :root[data-theme="light"] .lx-pricing-card .lx-pricing-featured-badge {
-  position: absolute; top: 16px; left: 26px; right: auto; transform: none; margin: 0; padding: 0; border: 0; border-radius: 0;
-  background: none; box-shadow: none; color: #34D399; font-size: 12px; white-space: nowrap;
+  position: absolute; top: -13px; left: 50%; right: auto; transform: translateX(-50%); margin: 0; padding: 5px 14px;
+  border: 0; border-radius: 999px; background: #047857; box-shadow: none; color: #fff; font-size: 12px; white-space: nowrap;
 }
-:root[data-theme="light"] .lx-pricing-card .lx-pricing-featured-badge { color: #047857; }
-:root .lx-pricing-grid-4 > .lx-pricing-card > div:first-of-type { padding-top: 22px; }
-@media (max-width: 700px) { :root .lx-pricing-card .lx-pricing-featured-badge { left: 20px; } }
