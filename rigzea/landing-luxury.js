@@ -1,18 +1,7 @@
 /**
- * RIGZEA 3.0 - LUXURY MOTION & INTERACTION ENGINE
- * Elite Creative-Technologist Motion Suite
- * Lenis Smooth Scroll + GSAP 3.12 + ScrollTrigger Architecture
- * 
- * Features:
- * 1. Lenis 1.1 + GSAP ScrollTrigger Integration with Hardware rAF Synced Ticker
- * 2. Magnetic Button Physics with 2.5D Multilayer Depth (.lx-btn-primary, .lx-btn-secondary)
- * 3. Dynamic 3D Perspective Tilt on the Phone Mockup (cards stay still)
- * 4. Specular Diamond Glass Shine Ray Sweep on Hover
- * 5. Interactive Cursor Ripple & Animated SVG Checkmark on Copy CTAs
- * 6. Fluid Numeric Odometer / Count-Up Spring Ticker on ROI Calculator
- * 7. Hardware-Accelerated Ambient Mesh & Glow Orbs Parallax on Scroll
- * 8. Horizontal Bento Showcase 60fps LERP Scrubber & Mobile Momentum Tracking
- * 9. Respects @media (prefers-reduced-motion) and Coarse Pointer Detection
+ * Rigzea landing interactions: header and mobile drawer, the featured pricing card's
+ * pointer light, copy feedback, the interactive feature demos, billing toggle and anchors.
+ * Native scrolling only; respects prefers-reduced-motion and coarse pointers.
  */
 
 (() => {
@@ -23,40 +12,6 @@
   // =========================================================================
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const isCoarse = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
-
-  // =========================================================================
-  // 1. LENIS SMOOTH SCROLL + GSAP SCROLLTRIGGER ENGINE
-  // =========================================================================
-  let lenis = null;
-
-  if (typeof window.Lenis !== 'undefined' && !prefersReducedMotion) {
-    try {
-      lenis = new window.Lenis({
-        lerp: 0.12,
-        wheelMultiplier: 1.0,
-        touchMultiplier: 1.5,
-        smoothWheel: true,
-        smoothTouch: false // Leave mobile touch natural to browser momentum
-      });
-
-      if (typeof window.gsap !== 'undefined' && typeof window.ScrollTrigger !== 'undefined') {
-        window.gsap.registerPlugin(window.ScrollTrigger);
-        lenis.on('scroll', window.ScrollTrigger.update);
-        window.gsap.ticker.add((time) => {
-          lenis.raf(time * 1000);
-        });
-        window.gsap.ticker.lagSmoothing(0);
-      } else {
-        const lenisRaf = (time) => {
-          lenis.raf(time);
-          requestAnimationFrame(lenisRaf);
-        };
-        requestAnimationFrame(lenisRaf);
-      }
-    } catch (err) {
-      console.warn('Lenis init fallback:', err);
-    }
-  }
 
   // =========================================================================
   // 2. BUTTER-SMOOTH BACKGROUND MESH & AMBIENT ORBS PARALLAX
@@ -210,14 +165,6 @@
   };
   window.addEventListener('scroll', onPageScroll, { passive: true });
   window.addEventListener('resize', () => updateThumbBar(window.scrollY), { passive: true });
-  if (lenis) {
-    lenis.on('scroll', (e) => {
-      const y = typeof e.scroll === 'number' ? e.scroll : window.scrollY;
-      updateHeader(y);
-      updateThumbBar(y);
-      updateParallax(y);
-    });
-  }
   onPageScroll();
 
   // =========================================================================
@@ -343,97 +290,6 @@
   }
 
   // =========================================================================
-  // 7. DYNAMIC 3D CARD TILT ON HOVER (BENTO CARDS & PHONE MOCKUP)
-  //    Aceternity 3D Perspective + Smooth LERP Physics Reset
-  // =========================================================================
-  if (!prefersReducedMotion && !isCoarse) {
-    // 7A. Hero Phone Mockup 3D Tilt
-    const phone = document.querySelector('.lx-phone-mockup');
-    const phoneContainer = document.querySelector('#hero-phone-container') || phone;
-
-    if (phone) {
-      const restRotX = 0.0;
-      const restRotY = 0.0;
-      const restTransY = 0;
-
-      let targetRotX = restRotX;
-      let targetRotY = restRotY;
-      let targetTransY = restTransY;
-
-      let currRotX = restRotX;
-      let currRotY = restRotY;
-      let currTransY = restTransY;
-
-      let phoneTicking = false;
-      let phoneHovered = false;
-      let phoneRect = null;
-
-      function renderPhoneTilt() {
-        currRotX += (targetRotX - currRotX) * 0.12;
-        currRotY += (targetRotY - currRotY) * 0.12;
-        currTransY += (targetTransY - currTransY) * 0.12;
-
-        phone.style.transform = `perspective(1000px) rotateX(${currRotX.toFixed(2)}deg) rotateY(${currRotY.toFixed(2)}deg) translateY(${currTransY.toFixed(2)}px)`;
-
-        const delta = Math.abs(targetRotX - currRotX) + Math.abs(targetRotY - currRotY) + Math.abs(targetTransY - currTransY);
-        if (phoneHovered || delta > 0.05) {
-          requestAnimationFrame(renderPhoneTilt);
-        } else {
-          currRotX = restRotX;
-          currRotY = restRotY;
-          currTransY = restTransY;
-          phone.style.transform = `perspective(1000px) rotateX(${restRotX}deg) rotateY(${restRotY}deg) translateY(${restTransY}px)`;
-          phoneTicking = false;
-        }
-      }
-
-      function wakePhoneLoop() {
-        if (!phoneTicking) {
-          phoneTicking = true;
-          requestAnimationFrame(renderPhoneTilt);
-        }
-      }
-
-      phoneContainer.addEventListener('pointerenter', () => {
-        phoneRect = phone.getBoundingClientRect();
-        phoneHovered = true;
-        targetTransY = -8;
-        wakePhoneLoop();
-      });
-
-      let phonePressed = false;
-      phoneContainer.addEventListener('pointerdown', () => {
-        phonePressed = true;
-        targetRotX = currRotX;
-        targetRotY = currRotY;
-        targetTransY = currTransY;
-      });
-      window.addEventListener('pointerup', () => { phonePressed = false; });
-
-      phoneContainer.addEventListener('pointermove', (e) => {
-        if (phonePressed) return;
-        if (!phoneRect) phoneRect = phone.getBoundingClientRect();
-        const normX = (e.clientX - phoneRect.left - phoneRect.width / 2) / (phoneRect.width / 2);
-        const normY = (e.clientY - phoneRect.top - phoneRect.height / 2) / (phoneRect.height / 2);
-
-        targetRotX = -normY * 7.5;
-        targetRotY = normX * 8.5;
-        targetTransY = -8;
-
-        wakePhoneLoop();
-      });
-
-      phoneContainer.addEventListener('pointerleave', () => {
-        phoneHovered = false;
-        phoneRect = null;
-        targetRotX = restRotX;
-        targetRotY = restRotY;
-        targetTransY = restTransY;
-      });
-    }
-  }
-
-  // =========================================================================
   // 8. INTERACTIVE RIPPLE & ANIMATED SVG CHECKMARK ON COPY CTAS
   // =========================================================================
   const copyButtons = document.querySelectorAll('.lx-copy-btn');
@@ -496,255 +352,6 @@
 
 
   // =========================================================================
-  // 9. LANDO-STYLE 3D SCROLL EXPERIENCE
-  //    9A hero 3D stage · 9B scroll-drawn track · 9C velocity tilt
-  //    9D kinetic ribbons · 9E sticky 3D card stack
-  //    Only transform/opacity are animated. Skipped for prefers-reduced-motion.
-  // =========================================================================
-  const hasScrollFx = typeof window.gsap !== 'undefined' && typeof window.ScrollTrigger !== 'undefined';
-  const clampNum = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
-
-  // 9B. Track line: build the path from the real page size (used by static + animated modes)
-  const trackLayout = document.querySelector('.luxury-layout');
-  const trackSvg = document.querySelector('.lx-track-svg');
-  const trackPaths = trackSvg ? Array.from(trackSvg.querySelectorAll('path')) : [];
-  let trackTween = null;
-
-  function buildTrackLine() {
-    if (!trackLayout || !trackSvg || !trackPaths.length) return;
-    const W = trackLayout.clientWidth;
-    const H = trackLayout.scrollHeight;
-    if (W < 700 || H < 600) { trackSvg.style.display = 'none'; return; }
-    trackSvg.style.display = '';
-    trackSvg.setAttribute('viewBox', `0 0 ${W} ${H}`);
-
-    const xLeft = W * 0.04;
-    const xRight = W * 0.96;
-    const segs = Math.max(4, Math.round(H / 950));
-    const step = (H - 140) / segs;
-    let x = xRight;
-    let d = `M ${x.toFixed(1)} 70`;
-    for (let i = 0; i < segs; i++) {
-      const y0 = 70 + i * step;
-      const y1 = y0 + step;
-      const nx = x === xRight ? xLeft : xRight;
-      d += ` C ${x.toFixed(1)} ${(y0 + step * 0.5).toFixed(1)}, ${nx.toFixed(1)} ${(y0 + step * 0.5).toFixed(1)}, ${nx.toFixed(1)} ${y1.toFixed(1)}`;
-      x = nx;
-    }
-    trackPaths.forEach(p => p.setAttribute('d', d));
-
-    if (trackTween) {
-      if (trackTween.scrollTrigger) trackTween.scrollTrigger.kill();
-      trackTween.kill();
-      trackTween = null;
-    }
-
-    if (prefersReducedMotion || !hasScrollFx) {
-      // Static: whole line visible, no animation
-      trackPaths.forEach(p => { p.style.strokeDasharray = 'none'; p.style.strokeDashoffset = '0'; });
-      return;
-    }
-
-    const len = Math.ceil(trackPaths[0].getTotalLength());
-    trackPaths.forEach(p => { p.style.strokeDasharray = `${len}`; p.style.strokeDashoffset = `${len}`; });
-    trackTween = window.gsap.to(trackPaths, {
-      strokeDashoffset: 0,
-      ease: 'none',
-      scrollTrigger: { trigger: trackLayout, start: 'top top', end: 'bottom bottom', scrub: 0.5 }
-    });
-  }
-
-  let trackResizeTimer = null;
-  function scheduleTrackRebuild() {
-    clearTimeout(trackResizeTimer);
-    trackResizeTimer = setTimeout(buildTrackLine, 220);
-  }
-  buildTrackLine();
-  window.addEventListener('resize', scheduleTrackRebuild);
-  window.addEventListener('load', () => {
-    buildTrackLine();
-    if (hasScrollFx) window.ScrollTrigger.refresh();
-  });
-  if (typeof ResizeObserver !== 'undefined' && trackLayout) {
-    new ResizeObserver(scheduleTrackRebuild).observe(trackLayout);
-  }
-
-  if (hasScrollFx && !prefersReducedMotion) {
-    const gs = window.gsap;
-    const mm = gs.matchMedia();
-
-    // 9A. Hero 3D stage: phone straightens on scroll, badges/ghost move at different depths
-    const heroSection = document.querySelector('.lx-hero');
-    const stagePhone = document.querySelector('.lx-stage-phone');
-    const stageGhost = document.querySelector('.lx-stage-ghost');
-    const stageBadges = Array.from(document.querySelectorAll('.lx-float-badge'));
-    const badgeDepth = [1.0, 1.5, 2.1];
-
-    if (heroSection && stagePhone) {
-      mm.add('(min-width: 901px)', () => {
-        const st = { mx: 0, my: 0, cx: 0, cy: 0, prog: 0, visible: true };
-
-        gs.fromTo(stagePhone,
-          { rotateX: 14, rotateY: -16, rotateZ: 3, scale: 1 },
-          {
-            rotateX: 0, rotateY: 0, rotateZ: 0, scale: 1.06, ease: 'none',
-            scrollTrigger: {
-              trigger: heroSection, start: 'top top', end: 'bottom 35%', scrub: 0.6,
-              onUpdate: (self) => { st.prog = self.progress; }
-            }
-          }
-        );
-
-        const io = new IntersectionObserver((entries) => { st.visible = entries[0].isIntersecting; });
-        io.observe(heroSection);
-
-        const onMove = (e) => {
-          const r = heroSection.getBoundingClientRect();
-          st.mx = ((e.clientX - r.left) / r.width - 0.5) * 2;
-          st.my = ((e.clientY - r.top) / r.height - 0.5) * 2;
-        };
-        const onLeave = () => { st.mx = 0; st.my = 0; };
-        if (!isCoarse) {
-          heroSection.addEventListener('pointermove', onMove, { passive: true });
-          heroSection.addEventListener('pointerleave', onLeave);
-        }
-
-        const layerTick = () => {
-          if (!st.visible) return;
-          st.cx += (st.mx - st.cx) * 0.08;
-          st.cy += (st.my - st.cy) * 0.08;
-          if (stageGhost) {
-            stageGhost.style.transform = `translate3d(${(-st.cx * 18).toFixed(1)}px, ${(-st.cy * 12 - st.prog * 70).toFixed(1)}px, -150px)`;
-          }
-          stageBadges.forEach((b, i) => {
-            const dp = badgeDepth[i] || 1;
-            b.style.transform = `translate3d(${(st.cx * 26 * dp).toFixed(1)}px, ${(st.cy * 20 * dp - st.prog * 90 * dp).toFixed(1)}px, 80px)`;
-          });
-        };
-        gs.ticker.add(layerTick);
-
-        return () => {
-          gs.ticker.remove(layerTick);
-          io.disconnect();
-          heroSection.removeEventListener('pointermove', onMove);
-          heroSection.removeEventListener('pointerleave', onLeave);
-          if (stageGhost) stageGhost.style.transform = '';
-          stageBadges.forEach(b => { b.style.transform = ''; });
-        };
-      });
-    }
-
-    // 9C + 9D share one smoothed, signed scroll velocity (px per 60fps frame)
-    let lastScrollY = window.scrollY;
-    let scrollVel = 0;
-
-    // 9C. Velocity tilt on headings / grids (max ±4deg, springs back via LERP)
-    const tiltEls = isCoarse ? [] : Array.from(document.querySelectorAll('.lx-section-header, .lx-steps-grid-3, .lx-pricing-grid-4'));
-    tiltEls.forEach(el => el.classList.add('lx-fx-tilt'));
-    let tiltCur = 0;
-    let tiltActive = false;
-
-    // 9D. Kinetic ribbons: clone the text group until the loop is seamless
-    const ribbonState = Array.from(document.querySelectorAll('.lx-ribbon')).map(r => {
-      const track = r.querySelector('.lx-ribbon-track');
-      const group = track && track.querySelector('.lx-ribbon-group');
-      return { r, track, group, dir: r.dataset.dir === 'right' ? 1 : -1, base: parseFloat(r.dataset.speed) || 60, x: 0, w: 0, visible: true };
-    }).filter(o => o.track && o.group);
-
-    function measureRibbons() {
-      ribbonState.forEach(o => {
-        o.track.querySelectorAll('.lx-ribbon-group[data-clone]').forEach(c => c.remove());
-        o.w = o.group.offsetWidth;
-        if (!o.w) return;
-        const need = Math.ceil((o.r.offsetWidth + o.w) / o.w);
-        for (let i = 0; i < need; i++) {
-          const c = o.group.cloneNode(true);
-          c.setAttribute('data-clone', '');
-          c.setAttribute('aria-hidden', 'true');
-          o.track.appendChild(c);
-        }
-        if (o.x <= -o.w || o.x > 0) o.x = -o.w / 2;
-      });
-    }
-    measureRibbons();
-    window.addEventListener('resize', measureRibbons);
-    window.addEventListener('load', measureRibbons);
-    const ribbonIO = new IntersectionObserver((entries) => {
-      entries.forEach(e => {
-        const o = ribbonState.find(s => s.r === e.target);
-        if (o) o.visible = e.isIntersecting;
-      });
-    });
-    ribbonState.forEach(o => ribbonIO.observe(o.r));
-
-    gs.ticker.add((time, deltaMs) => {
-      const dtMs = Math.max(deltaMs || 16.667, 1);
-      const y = window.scrollY;
-      const raw = (y - lastScrollY) * (16.667 / dtMs);
-      lastScrollY = y;
-      scrollVel += (raw - scrollVel) * 0.2;
-
-      // 9C
-      if (tiltEls.length) {
-        const target = clampNum(scrollVel * 0.1, -4, 4);
-        tiltCur += (target - tiltCur) * 0.12;
-        if (Math.abs(tiltCur) < 0.01) {
-          if (tiltActive) { tiltEls.forEach(el => { el.style.transform = ''; }); tiltActive = false; }
-        } else {
-          tiltActive = true;
-          const t = `perspective(1000px) rotateX(${tiltCur.toFixed(2)}deg) skewY(${(tiltCur * 0.6).toFixed(2)}deg)`;
-          tiltEls.forEach(el => { el.style.transform = t; });
-        }
-      }
-
-      // 9D
-      const boost = 1 + Math.min(Math.abs(scrollVel) * 0.12, 5);
-      ribbonState.forEach(o => {
-        if (!o.visible || !o.w) return;
-        o.x += o.dir * o.base * boost * (dtMs / 1000);
-        if (o.x <= -o.w) o.x += o.w;
-        else if (o.x > 0) o.x -= o.w;
-        o.track.style.transform = `translate3d(${o.x.toFixed(1)}px, 0, 0)`;
-      });
-    });
-
-    // 9E. Sticky 3D card stack (desktop): the previous card sinks back as the next one slides over it
-    const stackEl = document.querySelector('#features-stack');
-    if (stackEl) {
-      mm.add('(min-width: 901px)', () => {
-        const items = Array.from(stackEl.querySelectorAll('.lx-stack-item'));
-        const docTop = () => stackEl.getBoundingClientRect().top + window.scrollY;
-        const stickTop = (it) => parseFloat(getComputedStyle(it).top) || 0;
-        const gapOf = (it) => parseFloat(getComputedStyle(it).marginBottom) || 0;
-        // Natural (un-stuck) top of item j, relative to the stack container
-        const naturalTop = (j) => {
-          let t = 0;
-          for (let k = 0; k < j; k++) t += items[k].offsetHeight + gapOf(items[k]);
-          return t;
-        };
-
-        items.forEach((item, i) => {
-          const next = items[i + 1];
-          if (!next) return;
-          const shade = item.querySelector('.lx-stack-shade');
-          const tl = gs.timeline({
-            scrollTrigger: {
-              // next card top touches the bottom of the stuck card -> reaches its own stuck position
-              start: () => docTop() + naturalTop(i + 1) - (stickTop(item) + item.offsetHeight + gapOf(item)),
-              end: () => docTop() + naturalTop(i + 1) - stickTop(next),
-              scrub: true,
-              invalidateOnRefresh: true
-            }
-          });
-          tl.to(item, { scale: 0.93, y: -20, rotateX: 4, transformPerspective: 1200, transformOrigin: '50% 0%', ease: 'none' }, 0);
-          if (shade) tl.to(shade, { opacity: 0.5, ease: 'none' }, 0);
-        });
-      });
-    }
-  }
-
-
-  // =========================================================================
   // 10. SCROLL EVENT LISTENER (Header & Parallax)
   // =========================================================================
   function handleScrollUpdate(scrollY) {
@@ -752,16 +359,10 @@
     if (typeof updateParallax === 'function') updateParallax(scrollY);
   }
 
-  if (lenis) {
-    lenis.on('scroll', (e) => {
-      handleScrollUpdate(e.scroll);
-    });
-  } else {
-    window.addEventListener('scroll', () => {
-      const y = window.scrollY || window.pageYOffset;
-      handleScrollUpdate(y);
-    }, { passive: true });
-  }
+  window.addEventListener('scroll', () => {
+    const y = window.scrollY || window.pageYOffset;
+    handleScrollUpdate(y);
+  }, { passive: true });
 
   // =========================================================================
   // 11. HERO INTERACTIVE PHONE VIEW TOGGLE (/p/ PREVIEWS)
@@ -948,19 +549,11 @@
         if (targetEl) {
           e.preventDefault();
           if (targetId === '#features' && !isMobileMode && wrapTop > 0) {
-            if (lenis) {
-              lenis.scrollTo(wrapTop, { duration: 0.8 });
-            } else {
-              window.scrollTo({ top: wrapTop, behavior: prefersReducedMotion ? 'auto' : 'smooth' });
-            }
+            window.scrollTo({ top: wrapTop, behavior: prefersReducedMotion ? 'auto' : 'smooth' });
           } else {
-            if (lenis) {
-              lenis.scrollTo(targetEl, { offset: -75, duration: 0.8 });
-            } else {
-              const rect = targetEl.getBoundingClientRect();
-              const targetY = window.pageYOffset + rect.top - 75;
-              window.scrollTo({ top: targetY, behavior: prefersReducedMotion ? 'auto' : 'smooth' });
-            }
+            const rect = targetEl.getBoundingClientRect();
+            const targetY = window.pageYOffset + rect.top - 75;
+            window.scrollTo({ top: targetY, behavior: prefersReducedMotion ? 'auto' : 'smooth' });
           }
         }
       }
