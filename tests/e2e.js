@@ -65,6 +65,34 @@ test('1b. upcoming lease renewals are listed and can be extended', async (browse
   return page;
 });
 
+test('1c. the next visit shows saved data at once, read-only, then the fresh data', async (browser) => {
+  const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
+  await page.goto(BASE + '/app/');
+  await page.getByText('სარეცხი მანქანის შემოწმება').first().waitFor();
+  // Wait until the copy is saved in this browser.
+  await page.waitForFunction(() => new Promise(res => {
+    const r = indexedDB.open('rigzea-cache');
+    r.onsuccess = () => { const q = r.result.transaction('org-data').objectStore('org-data').count(); q.onsuccess = () => res(q.result > 0); };
+    r.onerror = () => res(false);
+  }));
+  // The server's copy changes, and its tasks now load slowly.
+  await page.evaluate(() => {
+    const db = JSON.parse(localStorage.getItem('rigzea_mockdb'));
+    db.tables.tasks.find(t => t.title === 'სარეცხი მანქანის შემოწმება').title = 'სარეცხი მანქანა: განახლებული';
+    localStorage.setItem('rigzea_mockdb', JSON.stringify(db));
+    localStorage.setItem('rigzea_mock_slow', JSON.stringify({ tasks: 2500 }));
+  });
+  await page.reload();
+  await page.getByText('სარეცხი მანქანის შემოწმება').first().waitFor({ timeout: 2000 });
+  assert(await page.locator('#view.is-stale').count() === 1, 'saved data is marked as updating');
+  assert(await page.evaluate(() => document.querySelector('#view').inert), 'saved data cannot be edited');
+  await page.getByText('სარეცხი მანქანა: განახლებული').first().waitFor({ timeout: 15000 });
+  assert(await page.locator('#view.is-stale').count() === 0, 'fresh data is editable');
+  assert(!(await page.evaluate(() => document.querySelector('#view').inert)), 'view no longer inert');
+  await page.evaluate(() => localStorage.removeItem('rigzea_mock_slow'));
+  return page;
+});
+
 test('2. filter tasks and open the correct task and apartment', async (browser) => {
   const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
   await page.goto(BASE + '/app/');

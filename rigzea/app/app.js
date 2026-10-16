@@ -26,6 +26,7 @@
     totals: {},        // { kind: { total, shown } } only when the server held more rows than fetched
     loading: false,
     loadError: null,
+    stale: false,      // true while saved data from the last visit is shown and fresh data loads
     platformAdmin: false,
     seatInvites: 0,    // pending non-staff invitations, kept by the team view
   };
@@ -60,10 +61,13 @@
   // js/config.js notes the link type before the auth client clears it from the address.
   let recovery = !!window.RIGZEA_RECOVERY || /[#&?]type=recovery\b/.test(location.hash + location.search);
   sb.auth.onAuthStateChange((event) => {
+    if (event === 'SIGNED_OUT') dataCache.clear(); // also when signed out from another tab
     if (event !== 'PASSWORD_RECOVERY') return;
     recovery = true;
     showAuth('newpass');
   });
+
+  let prefetch = null; // { org, data: Promise } started by boot()
 
   async function boot() {
     try {
@@ -71,15 +75,23 @@
       S.user = session?.user || null;
       recovery = recovery || !!window.RIGZEA_RECOVERY;
       if (!S.user) {
+        dataCache.clear(); // signed out some other way (staff app, expired session): drop saved data
         if (recovery) { recovery = false; window.RIGZEA_RECOVERY = false; showAuth('reset'); toast('აღდგენის ბმული ვადაგასულია ან უკვე გამოყენებულია. მოითხოვე ახალი.', { type: 'error', timeout: 9000 }); return; }
         const wantsSignin = /[#&?]signin\b/i.test(location.hash + location.search);
         return showAuth(wantsSignin ? 'signin' : 'signup');
       }
       if (recovery) return showAuth('newpass');
+      // These do not depend on each other, so they run together instead of one after another.
+      // The last used organization's data starts loading now too; enterShell drops it if a
+      // different organization ends up selected.
+      const adminCheck = sb.rpc('is_platform_admin').then(r => r.data === true, () => false);
+      const savedOrg = localStorage.getItem('rigzea_selected_org_id');
+      prefetch = savedOrg ? { org: savedOrg, data: fetchData(savedOrg) } : null;
+      prefetch?.data.catch(() => {}); // a failure is reported by loadData, not here
       // Joins any organizations this email was invited to (no-op otherwise).
       await sb.rpc('accept_my_invitations').then(() => {}, () => {});
       await loadOrgs();
-      S.platformAdmin = await sb.rpc('is_platform_admin').then(r => r.data === true, () => false);
+      S.platformAdmin = await adminCheck;
       if (!S.orgs.length) return showScreen('onboarding');
       if (S.member.role === 'staff') { location.replace('/staff/'); return; }
       enterShell();
@@ -266,6 +278,7 @@
   async function signOut() {
     await sb.auth.signOut();
     localStorage.removeItem('rigzea_selected_org_id');
+    await dataCache.clear();
     location.href = '/signin/'; // clean redirect to standalone signin page
   }
   document.addEventListener('click', (e) => { if (e.target.closest('[data-action="signout"]')) signOut(); });
@@ -276,48 +289,102 @@
   const OPEN_TASK_STATUSES = ['new', 'assigned', 'in_progress', 'blocked'];
   // Runs a capped query and remembers how many rows the server actually held, so the UI can
   // say "500 of 1200" instead of pretending the rest do not exist.
-  async function take(kind, builder) {
+  async function take(totals, kind, builder) {
     const r = await builder;
     const rows = r.data || [];
-    if (!r.error && typeof r.count === 'number') S.totals[kind] = { total: r.count, shown: rows.length };
+    if (!r.error && typeof r.count === 'number') totals[kind] = { total: r.count, shown: rows.length };
     return rows;
   }
 
-  async function loadData() {
+  // Fetches everything the workspace shows for one organization. Throws on failure.
+  async function fetchData(org) {
+    const totals = {};
+    const since = new Date(); since.setDate(since.getDate() - 120);
+    const sinceIso = R.isoDate(since);
+    const [apartments, owners, openTasks, closedTasks, approvals, expenses, income, reservations, events, members, notifications, statements, repairs, deals] = await Promise.all([
+      q(sb.from('apartments').select('*').eq('organization_id', org).order('name')),
+      q(sb.from('owners').select('*').eq('organization_id', org).order('name')),
+      // Every open task, plus the most recent closed ones for history.
+      q(sb.from('tasks').select('*').eq('organization_id', org).in('status', OPEN_TASK_STATUSES).order('due_date', { ascending: true })),
+      take(totals, 'closedTasks', sb.from('tasks').select('*', { count: 'exact' }).eq('organization_id', org).in('status', ['done', 'cancelled']).order('due_date', { ascending: false }).limit(S.limits.closedTasks)),
+      take(totals, 'approvals', sb.from('approvals').select('*', { count: 'exact' }).eq('organization_id', org).order('created_at', { ascending: false }).limit(S.limits.approvals)),
+      take(totals, 'expenses', sb.from('expenses').select('*', { count: 'exact' }).eq('organization_id', org).order('expense_date', { ascending: false }).limit(S.limits.expenses)),
+      take(totals, 'income', sb.from('income').select('*', { count: 'exact' }).eq('organization_id', org).order('income_date', { ascending: false }).limit(S.limits.income)),
+      // Reservations need the operations RLS migration; treat a failure as "no data" rather than breaking the app.
+      sb.from('reservations').select('*').eq('organization_id', org).gte('check_out', sinceIso).order('check_in').then(r => r.data || [], () => []),
+      q(sb.from('activity_events').select('*').eq('organization_id', org).order('created_at', { ascending: false }).limit(200)),
+      q(sb.from('organization_members').select('*').eq('organization_id', org)),
+      q(sb.from('notifications').select('*').eq('organization_id', org).eq('user_id', S.user.id).order('created_at', { ascending: false }).limit(40)),
+      q(sb.from('monthly_reports').select('*').eq('organization_id', org).order('month_period', { ascending: false }).limit(48)),
+      q(sb.from('repairs').select('*').eq('organization_id', org)).catch(() => []),
+      take(totals, 'deals', sb.from('deals').select('*', { count: 'exact' }).eq('organization_id', org).order('created_at', { ascending: false }).limit(S.limits.deals)).catch(() => []),
+    ]);
+    const tasks = [...openTasks, ...closedTasks].sort((a, b) => String(a.due_date || '~').localeCompare(String(b.due_date || '~')));
+    return { totals, data: { apartments, owners, tasks, approvals, expenses, income, reservations, events, members, notifications, statements, repairs, deals: deals || [] } };
+  }
+
+  // Loads the selected organization's data into S. `pending` is a fetchData() already in flight.
+  async function loadData(pending) {
     const org = S.org.id;
     S.loading = true;
     S.loadError = null;
-    S.totals = {};
-    const since = new Date(); since.setDate(since.getDate() - 120);
-    const sinceIso = R.isoDate(since);
     try {
-      const [apartments, owners, openTasks, closedTasks, approvals, expenses, income, reservations, events, members, notifications, statements, repairs, deals] = await Promise.all([
-        q(sb.from('apartments').select('*').eq('organization_id', org).order('name')),
-        q(sb.from('owners').select('*').eq('organization_id', org).order('name')),
-        // Every open task, plus the most recent closed ones for history.
-        q(sb.from('tasks').select('*').eq('organization_id', org).in('status', OPEN_TASK_STATUSES).order('due_date', { ascending: true })),
-        take('closedTasks', sb.from('tasks').select('*', { count: 'exact' }).eq('organization_id', org).in('status', ['done', 'cancelled']).order('due_date', { ascending: false }).limit(S.limits.closedTasks)),
-        take('approvals', sb.from('approvals').select('*', { count: 'exact' }).eq('organization_id', org).order('created_at', { ascending: false }).limit(S.limits.approvals)),
-        take('expenses', sb.from('expenses').select('*', { count: 'exact' }).eq('organization_id', org).order('expense_date', { ascending: false }).limit(S.limits.expenses)),
-        take('income', sb.from('income').select('*', { count: 'exact' }).eq('organization_id', org).order('income_date', { ascending: false }).limit(S.limits.income)),
-        // Reservations need the operations RLS migration; treat a failure as "no data" rather than breaking the app.
-        sb.from('reservations').select('*').eq('organization_id', org).gte('check_out', sinceIso).order('check_in').then(r => r.data || [], () => []),
-        q(sb.from('activity_events').select('*').eq('organization_id', org).order('created_at', { ascending: false }).limit(200)),
-        q(sb.from('organization_members').select('*').eq('organization_id', org)),
-        q(sb.from('notifications').select('*').eq('organization_id', org).eq('user_id', S.user.id).order('created_at', { ascending: false }).limit(40)),
-        q(sb.from('monthly_reports').select('*').eq('organization_id', org).order('month_period', { ascending: false }).limit(48)),
-        q(sb.from('repairs').select('*').eq('organization_id', org)).catch(() => []),
-        take('deals', sb.from('deals').select('*', { count: 'exact' }).eq('organization_id', org).order('created_at', { ascending: false }).limit(S.limits.deals)).catch(() => []),
-      ]);
-      const tasks = [...openTasks, ...closedTasks].sort((a, b) => String(a.due_date || '~').localeCompare(String(b.due_date || '~')));
-      S.data = { apartments, owners, tasks, approvals, expenses, income, reservations, events, members, notifications, statements, repairs, deals: deals || [] };
+      const { data, totals } = await (pending || fetchData(org));
+      if (S.org?.id !== org) return; // switched organization while this was loading
+      S.data = data;
+      S.totals = totals;
       indexData();
+      dataCache.save(org);
     } catch (err) {
       console.error(err);
-      S.loadError = err;
+      if (S.org?.id === org) S.loadError = err;
     } finally {
       S.loading = false;
     }
+  }
+
+  // The last loaded data of each organization, kept in this browser so the next visit can show
+  // it at once while fresh data loads. Cleared on sign out. Any failure just means no saved copy.
+  const dataCache = (() => {
+    const VERSION = 1, MAX_AGE = 14 * 864e5, STORE = 'org-data';
+    let dbp = null;
+    const db = () => dbp || (dbp = new Promise((resolve, reject) => {
+      const req = indexedDB.open('rigzea-cache', 1);
+      req.onupgradeneeded = () => req.result.createObjectStore(STORE);
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    }));
+    const tx = (mode, fn) => db().then(d => new Promise((resolve, reject) => {
+      const t = d.transaction(STORE, mode);
+      const req = fn(t.objectStore(STORE));
+      t.oncomplete = () => resolve(req.result);
+      t.onerror = t.onabort = () => reject(t.error);
+    }));
+    const key = org => `${S.user.id}:${org}`;
+    return {
+      async read(org) {
+        try {
+          const v = await tx('readonly', st => st.get(key(org)));
+          return v && v.v === VERSION && Date.now() - v.at < MAX_AGE ? v : null;
+        } catch { return null; }
+      },
+      // Written after the screen has been drawn, so serializing the data never delays it.
+      save(org) {
+        const data = S.data, totals = S.totals;
+        setTimeout(() => tx('readwrite', st => st.put({ v: VERSION, at: Date.now(), data, totals }, key(org))).catch(() => {}), 0);
+      },
+      clear: () => tx('readwrite', st => st.clear()).catch(() => {}),
+    };
+  })();
+
+  // While saved data is on screen, the page can be read but not changed: edits made against an
+  // old copy could be overwritten when the fresh data arrives a moment later.
+  function setStale(on) {
+    S.stale = on;
+    const view = $('#view');
+    view.inert = on;
+    view.classList.toggle('is-stale', on);
+    view.setAttribute('aria-busy', String(on));
   }
 
   const idx = { apt: new Map(), owner: new Map(), member: new Map(), task: new Map(), deal: new Map() };
@@ -740,9 +807,22 @@
     lastViewName = route().name;
     S.data = null;
     renderShell();
-    renderLoading();
-    await loadData();
+    const org = S.org.id;
+    const pending = prefetch?.org === org ? prefetch.data : null;
+    prefetch = null;
+    const load = loadData(pending);
+    const saved = await dataCache.read(org);
+    if (saved && !S.data && S.org.id === org) {
+      S.data = saved.data;
+      S.totals = saved.totals || {};
+      indexData();
+      setStale(true);
+      render();
+    } else if (!S.data) renderLoading();
+    await load;
+    setStale(false);
     render();
+    if (S.loadError && saved) toast('ბოლო განახლება ვერ მოხერხდა. ნაჩვენებია წინა მონაცემები.', { type: 'error', action: { label: 'განახლება', fn: () => refresh({ quiet: true }) } });
     checkPaymentReturn();
     // Generate overdue alerts for this org (deduplicated server-side); best-effort.
     if (isManager()) sb.rpc('scan_alerts', { p_org: S.org.id }).then(() => {}, () => {});

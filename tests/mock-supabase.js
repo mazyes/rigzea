@@ -104,6 +104,9 @@
     then(res, rej) { return this.exec().then(res, rej); }
     async exec() {
       await delay();
+      // Slow one table down: localStorage.rigzea_mock_slow = JSON {"tasks": 2500}
+      const slow = JSON.parse(localStorage.getItem('rigzea_mock_slow') || '{}')[this.table];
+      if (slow) await new Promise(r => setTimeout(r, slow));
       db = load();
       if (shouldFail(`${this.op}:${this.table}`)) return netErr();
       const rows = T(this.table);

@@ -1,7 +1,8 @@
 node_modules/
 videos/
 tests/
-scripts/
+scripts/*
+!scripts/stamp-assets.mjs
 skills/
 .git/
 .github/

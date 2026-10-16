@@ -580,7 +580,7 @@ body.luxury-theme::before {
 
 .lx-post-tab-btn.active {
   background: var(--lx-emerald-deep);
-  color: var(--lx-mint-neon);
+  color: #fff;
 }
 
 .lx-post-box {

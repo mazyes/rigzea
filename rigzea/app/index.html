@@ -27,7 +27,7 @@
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:image" content="https://rigzea.com/img/og-preview.jpg?v=3" />
 
-  <link rel="stylesheet" href="/app/app.css" />
+  <link rel="stylesheet" href="/app/app.css?v=756599f1" />
 </head>
 <body>
   <div id="boot" class="boot" role="status">იტვირთება…</div>
@@ -187,18 +187,19 @@
     <nav class="bottom-nav" id="bottom-nav" aria-label="ნავიგაცია"></nav>
   </div>
 
-  <script src="/js/supabase.js"></script>
-  <script src="/js/config.js"></script>
-  <script src="/js/core.js"></script>
-  <script src="/js/i18n.js" defer></script>
-  <script src="/js/plans.js"></script>
-  <script src="/app/app.js"></script>
-  <script src="/app/views-ops.js"></script>
-  <script src="/app/views-portfolio.js"></script>
-  <script src="/app/views-deals.js"></script>
-  <script src="/app/views-docs.js"></script>
-  <script src="/app/views-finance.js"></script>
-  <script src="/app/views-admin.js"></script>
+  <script src="/js/supabase.js?v=6474aafb"></script>
+  <script src="/js/config.js?v=167b14f9"></script>
+  <script src="/js/core.js?v=709872bb"></script>
+  <!-- The English dictionary (about 200 KB) is only downloaded for English; Georgian needs just the toggle -->
+  <script>(function(){var en=false;try{en=localStorage.getItem('rigzea_lang')==='en'}catch(e){}window.RLang={lang:en?'en':'ka'};if(en){var s=document.createElement('script');s.src='/js/i18n.js';document.head.appendChild(s);return}document.addEventListener('click',function(e){if(!(e.target.closest&&e.target.closest('[data-lang-toggle]')))return;try{localStorage.setItem('rigzea_lang','en')}catch(x){}location.reload()})})()</script>
+  <script src="/js/plans.js?v=6a07db8f"></script>
+  <script src="/app/app.js?v=8a905fe7"></script>
+  <script src="/app/views-ops.js?v=c578e0bd"></script>
+  <script src="/app/views-portfolio.js?v=cc9e0a2e"></script>
+  <script src="/app/views-deals.js?v=d95db3e3"></script>
+  <script src="/app/views-docs.js?v=967cd001"></script>
+  <script src="/app/views-finance.js?v=0404b3d4"></script>
+  <script src="/app/views-admin.js?v=58a2296f"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
       window.addEventListener('load', () => {

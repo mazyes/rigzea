@@ -257,6 +257,11 @@ img { max-width: 100%; display: block; }
 .section-bar { display: none; }
 .rail-foot { margin-top: auto; padding: 10px; font-size: 12px; color: var(--muted); border-top: 1px solid var(--line); }
 .main { min-width: 0; padding: 20px 24px 48px; }
+/* Saved data from the last visit is on screen while fresh data loads (see setStale in app.js) */
+.main.is-stale { cursor: progress; }
+.main.is-stale::before { content: ""; position: fixed; top: 0; left: 0; right: 0; height: 2px; z-index: 50; background: linear-gradient(90deg, transparent, var(--brand), transparent); background-size: 50% 100%; background-repeat: no-repeat; animation: staleBar 1s linear infinite; }
+@keyframes staleBar { from { background-position: -50% 0; } to { background-position: 150% 0; } }
+@media (prefers-reduced-motion: reduce) { .main.is-stale::before { animation: none; background: var(--brand); opacity: .5; } }
 
 .popover {
   position: absolute; right: 0; top: calc(100% + 6px); z-index: 50; width: 340px; max-width: calc(100vw - 24px);
