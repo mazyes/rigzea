@@ -530,7 +530,7 @@
 
       priceElements.forEach(priceEl => {
         const targetPrice = isYearly ? priceEl.dataset.yearly : priceEl.dataset.monthly;
-        priceEl.textContent = targetPrice;
+        if (window.lxRollPrice) window.lxRollPrice(priceEl, targetPrice); else priceEl.textContent = targetPrice;
       });
 
       // switch labels between month and year

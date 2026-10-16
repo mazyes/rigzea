@@ -3147,3 +3147,64 @@ html.lenis, html.lenis body { height: auto; }
 .lenis.lenis-smooth { scroll-behavior: auto !important; }
 .lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
 .lenis.lenis-stopped { overflow: hidden; }
+
+/* ==========================================================================
+   MOTION (landing-motion.js): one-time entrances, gated by html.lx-motion.
+   Without JS or with reduced motion everything below is simply at rest.
+   ========================================================================== */
+:root { --lx-ease-out: cubic-bezier(0.22, 1, 0.36, 1); }
+
+/* 7. Scroll progress */
+.lx-progress { position: fixed; top: 0; left: 0; right: 0; height: 2px; z-index: 200; background: #00DC8A; transform: scaleX(0); transform-origin: 0 50%; pointer-events: none; }
+:root[data-theme="light"] .lx-progress { background: #047857; }
+
+/* 1. Hero: copy lifts in, then the product window rises and settles */
+@keyframes lx-up { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes lx-rise { from { opacity: 0; transform: translateY(48px); } to { opacity: 1; transform: none; } }
+@keyframes lx-fade { from { opacity: 0; } to { opacity: 1; } }
+.lx-hero-play .lx-hero-copy > * { animation: lx-up .7s var(--lx-ease-out) backwards; }
+.lx-hero-play .lx-hero-copy > :nth-child(2) { animation-delay: .08s; }
+.lx-hero-play .lx-hero-copy > :nth-child(3) { animation-delay: .16s; }
+.lx-hero-play .lx-hero-copy > :nth-child(4) { animation-delay: .24s; }
+.lx-hero-play .lx-hero-copy > :nth-child(5) { animation-delay: .3s; }
+.lx-hero-play .lx-hero-shot { animation: lx-rise 1s var(--lx-ease-out) .35s backwards; }
+.lx-hero-play .lx-hero-glow { animation: lx-fade 1.6s ease-out .2s backwards; }
+
+/* 2. Steps in order */
+.lx-motion .lx-steps-grid-3 > .lx-step-card { opacity: 0; transform: translateY(16px); transition: opacity .6s var(--lx-ease-out), transform .6s var(--lx-ease-out); transition-delay: calc(var(--i, 0) * 140ms); }
+.lx-motion .lx-steps-grid-3.is-in > .lx-step-card { opacity: 1; transform: none; }
+
+/* 3. Feature demos play once */
+.lx-motion #features-grid .lx-import-url-text { clip-path: inset(0 100% 0 0); transition: clip-path .8s var(--lx-ease-out) .15s; }
+.lx-motion #features-grid .lx-import-result-card,
+.lx-motion #features-grid .lx-match-listing-row { opacity: 0; transform: translateY(10px); transition: opacity .5s var(--lx-ease-out) .8s, transform .5s var(--lx-ease-out) .8s; }
+.lx-motion #features-grid .lx-match-listing-row { transition-delay: .25s; }
+.lx-motion #features-grid .lx-mini-ok { opacity: 0; transition: opacity .4s ease 1.25s; }
+.lx-motion #features-grid .lx-clause-item { clip-path: inset(0 100% 0 0); transition: clip-path .7s var(--lx-ease-out) .2s; }
+.lx-motion #features-grid .lx-clause-item + .lx-clause-item { transition-delay: .7s; }
+.lx-motion #features-grid .lx-post-box { clip-path: inset(0 0 100% 0); transition: clip-path 1.1s var(--lx-ease-out) .2s; }
+.lx-motion #features-grid .is-in .lx-import-url-text,
+.lx-motion #features-grid .is-in .lx-clause-item,
+.lx-motion #features-grid .is-in .lx-post-box { clip-path: inset(0); }
+.lx-motion #features-grid .is-in .lx-import-result-card,
+.lx-motion #features-grid .is-in .lx-match-listing-row,
+.lx-motion #features-grid .is-in .lx-mini-ok { opacity: 1; transform: none; }
+
+/* 4. Old way crosses out, then the Rigzea way checks off */
+.lx-motion .lx-card-old-way .lx-points-list li > span:last-child {
+  text-decoration-line: line-through; text-decoration-thickness: 1.5px; text-decoration-color: transparent;
+  transition: text-decoration-color .5s ease calc(var(--i, 0) * 180ms + .2s);
+}
+.lx-motion .lx-comparison-grid.is-in .lx-card-old-way .lx-points-list li > span:last-child { text-decoration-color: rgba(239, 68, 68, .65); }
+.lx-motion .lx-card-rigzea-way .lx-point-icon-green { opacity: 0; transform: scale(.4); transition: opacity .35s ease, transform .45s var(--lx-ease-out); transition-delay: calc(var(--i, 0) * 180ms + 1s); }
+.lx-motion .lx-comparison-grid.is-in .lx-card-rigzea-way .lx-point-icon-green { opacity: 1; transform: none; }
+
+/* 6. FAQ answers slide (height animated in JS) */
+.lx-faq-item .lx-faq-answer { overflow: hidden; }
+
+/* 8. Final call to action: accent line under the heading */
+.lx-final-cta-box h2::after { content: ""; display: block; width: 72px; height: 3px; margin: 16px auto 0; border-radius: 3px; background: #00DC8A; transform-origin: 0 50%; }
+:root[data-theme="light"] .lx-final-cta-box h2::after { background: #047857; }
+@media (max-width: 560px) { .lx-final-cta-box h2::after { margin-left: 0; } }
+.lx-motion .lx-final-cta-box h2::after { transform: scaleX(0); transition: transform .9s var(--lx-ease-out) .25s; }
+.lx-motion .lx-final-cta-box.is-in h2::after { transform: scaleX(1); }

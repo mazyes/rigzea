@@ -122,6 +122,10 @@ async function runAudit() {
     });
 
 
+    const expectText = async (loc, want) => {
+      for (let i = 0; i < 30 && (await loc.innerText()) !== want; i++) await new Promise((r) => setTimeout(r, 50));
+      assert.strictEqual(await loc.innerText(), want);
+    };
     await step('7. Pricing 4-Tier: monthly/yearly billing interval switch updates prices', async () => {
       const page = await newPage(browser);
       await page.goto(testBase + '/#pricing');
@@ -134,12 +138,13 @@ async function runAudit() {
       assert.strictEqual(await proPrice.innerText(), '39 ₾');
 
       // Switch to yearly
+      // prices roll to the new value (about half a second), so wait for the final text
       await yearlyBtn.click();
-      assert.strictEqual(await proPrice.innerText(), '390 ₾');
+      await expectText(proPrice, '390 ₾');
 
       // Switch back to monthly
       await monthlyBtn.click();
-      assert.strictEqual(await proPrice.innerText(), '39 ₾');
+      await expectText(proPrice, '39 ₾');
 
       await page.close();
     });
