@@ -705,8 +705,25 @@
     renderLoading();
     await loadData();
     render();
+    checkPaymentReturn();
     // Generate overdue alerts for this org (deduplicated server-side); best-effort.
     if (isManager()) sb.rpc('scan_alerts', { p_org: S.org.id }).then(() => {}, () => {});
+  }
+
+  async function checkPaymentReturn() {
+    const search = location.search || '';
+    const hash = location.hash || '';
+    if (search.includes('payment=success') || hash.includes('payment=success')) {
+      const isSimulated = search.includes('simulated=true') || hash.includes('simulated=true');
+      const cleanUrl = location.pathname + (hash.replace(/[?&]payment=success[^&]*/g, '').replace(/[?&]simulated=true[^&]*/g, '').replace(/[?&]plan=[^&]*/g, '').replace(/[?&]payment_id=[^&]*/g, '') || '#/settings');
+      window.history.replaceState({}, document.title, cleanUrl);
+      if (isSimulated) {
+        toast('სატესტო გადახდა წარმატებით შესრულდა! (KISA რეჟიმი)', { type: 'success', timeout: 6000 });
+      } else {
+        toast('გადახდა მიღებულია! პაკეტი გააქტიურდა 30 დღით.', { type: 'success', timeout: 6000 });
+      }
+      await refresh({ quiet: false });
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -757,12 +774,47 @@
       return `<div class="plan-card ${rec ? 'is-rec' : ''} ${cur ? 'is-current' : ''}">
         ${rec ? '<span class="plan-tag">შენთვის შესაფერისი</span>' : cur ? '<span class="plan-tag plan-tag-cur">შენი პაკეტი</span>' : ''}
         <h3>${esc(p.name)}</h3>
-        <div class="plan-price">${p.price ? `${p.price} ₾<small> / თვე</small>` : '0 ₾<small> / უფასო</small>'}</div>
+        <div class="plan-price">${p.price ? `${p.price} ₾<small> / 30 დღე</small>` : '0 ₾<small> / უფასო</small>'}</div>
         <ul>${p.bullets.map(b => `<li>${esc(b)}</li>`).join('')}</ul>
-        ${cur ? '' : p.price ? `<a class="btn ${rec ? 'btn-primary' : 'btn-secondary'} btn-sm" href="${esc(waLink(p))}" target="_blank" rel="noopener">${icon('whatsapp', 16)} აირჩიე</a>` : ''}
+        ${cur ? '' : p.price ? `<div class="plan-card-actions" style="display:flex;flex-direction:column;gap:6px;margin-top:12px">
+          <button type="button" class="btn ${rec ? 'btn-primary' : 'btn-secondary'} btn-sm" data-kisa-checkout="${id}">${icon('card', 16)} ბარათით გადახდა</button>
+          <a class="link-btn small" href="${esc(waLink(p))}" target="_blank" rel="noopener" style="text-align:center;font-size:12px">${icon('whatsapp', 13)} WhatsApp-ით შეკვეთა</a>
+        </div>` : ''}
       </div>`;
     }).join('')}</div>`;
   }
+
+  async function startKisaCheckout(planId, btn) {
+    if (!S.org) return;
+    const p = PLANS[planId];
+    if (!p) return;
+    run(btn, async () => {
+      const { data: { session } } = await sb.auth.getSession();
+      const token = session?.access_token;
+      if (!token) throw new Error('გთხოვთ გაიაროთ ავტორიზაცია.');
+      const res = await fetch('/api/kisa-checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ orgId: S.org.id, plan: planId }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) {
+        throw new Error(data.message || 'გადახდის ინიციალიზაცია ვერ მოხერხდა.');
+      }
+      if (data.checkoutUrl) {
+        toast('გადამისამართება KISA-ს გადახდის გვერდზე...', { type: 'info', timeout: 3000 });
+        setTimeout(() => { window.location.href = data.checkoutUrl; }, 300);
+      }
+    });
+  }
+
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-kisa-checkout]');
+    if (btn) {
+      e.preventDefault();
+      startKisaCheckout(btn.dataset.kisaCheckout, btn);
+    }
+  });
 
   // reason: { kind: 'apartments'|'seats'|'feature'|'info', feature?, count? }
   function openUpgrade(reason = { kind: 'info' }) {
@@ -785,8 +837,8 @@
     return R.dialog({
       title, subtitle: text, wide: true,
       body: `${planCardsHtml(rec, st.trial ? null : st.eff)}
-        <p class="plan-contact">გააქტიურება მარტივია: მოგვწერე WhatsApp-ში ან დარეკე <a href="tel:${CONTACT.phone}">${CONTACT.phone}</a> და პაკეტს იმავე დღეს ჩავრთავთ.</p>
-        <div class="plan-cta"><a class="btn btn-primary" href="${esc(waLink(PLANS[rec]))}" target="_blank" rel="noopener">${icon('whatsapp', 16)} მოგვწერე WhatsApp-ში</a><button type="button" class="btn btn-ghost" data-close>მოგვიანებით</button></div>`,
+        <p class="plan-contact">გააქტიურება ავტომატურია ბარათით (KISA), ან მოგვწერე WhatsApp-ში / დარეკე <a href="tel:${CONTACT.phone}">${CONTACT.phone}</a> და დაგეხმარებით.</p>
+        <div class="plan-cta"><a class="btn btn-secondary" href="${esc(waLink(PLANS[rec]))}" target="_blank" rel="noopener">${icon('whatsapp', 16)} მოგვწერე WhatsApp-ში</a><button type="button" class="btn btn-ghost" data-close>მოგვიანებით</button></div>`,
     });
   }
 
@@ -861,7 +913,7 @@
   }
 
   window.App = { S, H, views, aptSection, contactSection, isManager, isAdmin, isAgent, refresh, render, renderShell, go, route, taskHref, closeTaskOverlay, upsertLocal, logEvent, loadMore,
-    PLANS, PLAN_ORDER, FEATURE_LABEL, CONTACT, planState, can, guardLimit, guardFeature, openUpgrade, planCardsHtml, waLink, activeApartments, pausedApartmentIds, seatsUsed };
+    PLANS, PLAN_ORDER, FEATURE_LABEL, CONTACT, planState, can, guardLimit, guardFeature, openUpgrade, planCardsHtml, waLink, activeApartments, pausedApartmentIds, seatsUsed, startKisaCheckout };
 
   document.addEventListener('DOMContentLoaded', () => {
     hydrateIcons();
