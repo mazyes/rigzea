@@ -102,9 +102,13 @@
   }
 
   // ---------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------
   // Auth forms
   // ---------------------------------------------------------------------------
+  let currentAuthView = 'signup';
+
   function showAuth(view) {
+    currentAuthView = view;
     showScreen('auth');
     ['signin', 'signup', 'reset', 'newpass'].forEach(v => {
       const f = $('#form-' + v);
@@ -164,7 +168,18 @@
   });
 
   bindForm($('#form-signup'), async (v) => {
-    const { data, error } = await sb.auth.signUp({ email: v.email.trim(), password: v.password, options: { data: { full_name: v.name.trim(), terms_accepted_at: new Date().toISOString() }, emailRedirectTo: location.origin + '/app/' } });
+    const { data, error } = await sb.auth.signUp({
+      email: v.email.trim(),
+      password: v.password,
+      options: {
+        data: {
+          full_name: v.name.trim(),
+          terms_accepted_at: new Date().toISOString(),
+          policies_accepted_version: '2026-10-16'
+        },
+        emailRedirectTo: location.origin + '/app/'
+      }
+    });
     if (error) throw error;
     if (!data.session) {
       showAuth('signin');
@@ -193,9 +208,32 @@
 
   $$('[data-auth]').forEach(b => b.addEventListener('click', () => showAuth(b.dataset.auth)));
 
+  $('#signup-agree')?.addEventListener('change', (e) => {
+    if (e.target.checked) {
+      const lbl = $('#signup-consent-label') || e.target.closest('label');
+      if (lbl) lbl.classList.remove('is-invalid');
+      const errBox = $('#form-signup .form-error');
+      if (errBox) errBox.hidden = true;
+    }
+  });
+
   $$('[data-oauth]').forEach(btn => {
     btn.addEventListener('click', async () => {
       const provider = btn.dataset.oauth;
+      if (provider === 'google' && currentAuthView === 'signup') {
+        const agree = $('#signup-agree');
+        if (agree && !agree.checked) {
+          const errBox = $('#form-signup .form-error');
+          if (errBox) {
+            errBox.textContent = 'რეგისტრაციისთვის ჯერ მონიშნე თანხმობა მომსახურების წესებსა და თანხის დაბრუნების (24 სთ) პოლიტიკაზე.';
+            errBox.hidden = false;
+          }
+          const lbl = $('#signup-consent-label') || agree.closest('label');
+          if (lbl) lbl.classList.add('is-invalid');
+          agree.focus();
+          return;
+        }
+      }
       if (btn.dataset.busy === '1') return;
       btn.dataset.busy = '1';
       btn.disabled = true;

@@ -554,6 +554,13 @@ button.row { width: 100%; border: 0; border-bottom: 1px solid var(--line); backg
 .auth-consent { display: flex; gap: 10px; align-items: flex-start; font-size: 13px; line-height: 1.5; color: var(--muted); cursor: pointer; }
 .auth-consent input { margin-top: 3px; width: 18px; height: 18px; flex: none; accent-color: var(--brand); }
 .auth-consent a { color: var(--brand); text-decoration: underline; }
+.auth-consent.is-invalid {
+  padding: 10px 12px;
+  border-radius: var(--r-sm, 8px);
+  border: 1px solid var(--danger, #ef4444);
+  background: rgba(239, 68, 68, 0.08);
+  color: var(--ink);
+}
 .auth-foot { margin-top: 16px; font-size: 13px; color: var(--muted); text-align: center; }
 .boot { min-height: 100vh; display: grid; place-items: center; color: var(--muted); }
 

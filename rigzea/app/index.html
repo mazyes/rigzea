@@ -79,7 +79,10 @@
         <label class="field"><span class="field-label">სახელი და გვარი</span><input type="text" name="name" required autocomplete="name" data-error="შეიყვანე სახელი." placeholder="მაგ.: გიორგი ბერიძე" /></label>
         <label class="field"><span class="field-label">ელფოსტა</span><input type="email" name="email" required autocomplete="email" data-error="შეიყვანე სწორი ელფოსტა." placeholder="name@example.com" /></label>
         <label class="field"><span class="field-label">პაროლი</span><input type="password" name="password" required minlength="8" autocomplete="new-password" data-error="პაროლი მინიმუმ 8 სიმბოლოს უნდა შეიცავდეს." /><span class="field-hint">მინიმუმ 8 სიმბოლო</span></label>
-        <label class="auth-consent"><input type="checkbox" name="agree" required data-error="რეგისტრაციისთვის დაეთანხმე წესებს და კონფიდენციალურობის პოლიტიკას." /><span>ვეთანხმები <a href="/legal/terms/" target="_blank" rel="noopener">მომსახურების წესებს</a> და გავეცანი <a href="/legal/privacy/" target="_blank" rel="noopener">კონფიდენციალურობის პოლიტიკას</a>.</span></label>
+        <label class="auth-consent" id="signup-consent-label">
+          <input type="checkbox" name="agree" id="signup-agree" required data-error="რეგისტრაციისთვის დაეთანხმე მომსახურების წესებს, კონფიდენციალურობის, ქუქიებისა და თანხის დაბრუნების (24 სთ) პოლიტიკას." />
+          <span>ვეთანხმები <a href="/legal/terms/" target="_blank" rel="noopener">მომსახურების წესებს</a>, <a href="/legal/privacy/" target="_blank" rel="noopener">კონფიდენციალურობის პოლიტიკას</a>, <a href="/legal/cookies/" target="_blank" rel="noopener">ქუქიების პოლიტიკას</a> და <a href="/legal/refund/" target="_blank" rel="noopener">თანხის დაბრუნების პოლიტიკას (24 სთ)</a>.</span>
+        </label>
         <button type="submit" class="btn btn-primary btn-block">რეგისტრაცია (14 დღე უფასოდ)</button>
         <div class="auth-demo-prompt">
           <a class="btn btn-secondary btn-block" href="/demo/"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:6px"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>სცადე დემო (რეგისტრაციის გარეშე)</a>
