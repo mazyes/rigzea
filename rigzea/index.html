@@ -47,7 +47,7 @@
   <script>try{var t=localStorage.getItem('rigzea_theme');if(t==='light'||(t==='system'&&matchMedia('(prefers-color-scheme: light)').matches))document.documentElement.dataset.theme='light'}catch(e){}document.addEventListener('click',function(e){if(!e.target.closest('#theme-toggle'))return;var n=document.documentElement.dataset.theme==='light'?'dark':'light';document.documentElement.dataset.theme=n;try{localStorage.setItem('rigzea_theme',n)}catch(x){}})</script>
   <!-- English dictionary loads only for English visitors; Georgian visitors only get the toggle -->
   <script>(function(){var en=false;try{en=localStorage.getItem('rigzea_lang')==='en'}catch(e){}window.RLang={lang:en?'en':'ka'};if(en){var s=document.createElement('script');s.src='/js/i18n.js';document.head.appendChild(s);return}document.addEventListener('click',function(e){if(!(e.target.closest&&e.target.closest('[data-lang-toggle]')))return;try{localStorage.setItem('rigzea_lang','en')}catch(x){}location.reload()})})()</script>
-  <link rel="stylesheet" href="landing-luxury.css?v=216a8f35" />
+  <link rel="stylesheet" href="landing-luxury.css?v=b7dd1637" />
 </head>
 <body class="luxury-theme">
 
@@ -103,10 +103,6 @@
         <div class="lx-hero-glow" aria-hidden="true"></div>
         <div class="lx-container">
           <div class="lx-hero-copy">
-            <div class="lx-hero-eyebrow">
-              <span class="lx-hero-eyebrow-dot" aria-hidden="true"></span>
-              <span>უძრავი ქონების აგენტის სამუშაო სივრცე</span>
-            </div>
 
             <h1 class="lx-hero-title">
               ყველაფერი რიგზეა.<br/>
@@ -373,7 +369,6 @@
             <!-- Old Way -->
             <div class="lx-card-old-way">
               <div class="lx-comparison-title-box">
-                <span class="lx-tag-old"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg> ძველი მეთოდი</span>
                 <h3>როგორ იყო აქამდე</h3>
               </div>
 
@@ -405,7 +400,6 @@
             <!-- Rigzea Way -->
             <div class="lx-card-rigzea-way lx-spotlight-card">
               <div class="lx-comparison-title-box">
-                <span class="lx-tag-rigzea"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg> Rigzea‑ს სტანდარტი</span>
                 <h3>როგორ მუშაობ Rigzea‑თი</h3>
               </div>
 
@@ -449,7 +443,6 @@
       <section class="lx-pricing-section" id="pricing">
         <div class="lx-container">
           <div class="lx-section-header">
-            <span class="lx-badge">ნაკრები</span>
             <h2>აირჩიე შენზე მორგებული ნაკრები</h2>
             <p>დაიწყე უფასოდ და გადადი უფრო დიდ ნაკრებზე, როცა შენი საქმე გაიზრდება.</p>
           </div>
@@ -775,7 +768,7 @@
 
   <!-- Luxury Motion & Interaction Scripts -->
   <script src="/vendor/lenis.min.js" defer></script>
-  <script src="landing-motion.js?v=216a8f35" defer></script>
-  <script src="landing-luxury.js?v=216a8f35" defer></script>
+  <script src="landing-motion.js?v=b7dd1637" defer></script>
+  <script src="landing-luxury.js?v=b7dd1637" defer></script>
 </body>
 </html>
