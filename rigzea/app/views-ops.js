@@ -304,10 +304,10 @@
     const hasLease = localStorage.getItem('rigzea_lease_done') === '1' || (d.deals || []).some(x => x.stage === 'closed' || x.stage === 'deposit');
 
     return [
-      { id: 'apt', done: hasApt, title: '1. დაამატე პირველი ბინა', desc: 'MyHome / SS.ge ლინკით 1 წამში ან ხელით', action: `<button class="btn btn-primary btn-sm" data-setup="apartment">⚡ ბინის შემოტანა</button>` },
-      { id: 'wm', done: hasWatermark, title: '2. დაადე Watermark ფოტოს', desc: 'დაიცავი ფოტოები მოპარვისგან შენი ლოგოთი და ნომრით', action: `<button class="btn btn-secondary btn-sm" data-setup="watermark">🛡️ Watermark</button>` },
-      { id: 'col', done: hasCollection, title: '3. გააზიარე კოლექცია WhatsApp-ში', desc: 'მრავალბინიანი პრემიუმ კატალოგი კლიენტისთვის', action: `<button class="btn btn-secondary btn-sm" data-setup="collection">✨ კოლექციის შექმნა</button>` },
-      { id: 'lease', done: hasLease, title: '4. შექმენი ქირავნობის ხელშეკრულება', desc: 'სსკ 531–575 მუხლების 11-მუხლიანი იურიდიული აქტი', action: `<button class="btn btn-secondary btn-sm" data-setup="lease">📄 ხელშეკრულება</button>` },
+      { id: 'apt', done: hasApt, title: '1. დაამატე პირველი ბინა', desc: 'MyHome / SS.ge ლინკით 1 წამში ან ხელით', action: `<button class="btn btn-primary btn-sm" data-setup="apartment">${icon('spark', 14)} ბინის შემოტანა</button>` },
+      { id: 'wm', done: hasWatermark, title: '2. დაადე Watermark ფოტოს', desc: 'დაიცავი ფოტოები მოპარვისგან შენი ლოგოთი და ნომრით', action: `<button class="btn btn-secondary btn-sm" data-setup="watermark">${icon('shield', 14)} Watermark</button>` },
+      { id: 'col', done: hasCollection, title: '3. გააზიარე კოლექცია WhatsApp-ში', desc: 'მრავალბინიანი პრემიუმ კატალოგი კლიენტისთვის', action: `<button class="btn btn-secondary btn-sm" data-setup="collection">${icon('sparkle', 14)} კოლექციის შექმნა</button>` },
+      { id: 'lease', done: hasLease, title: '4. შექმენი ქირავნობის ხელშეკრულება', desc: 'სსკ 531–575 მუხლების 11-მუხლიანი იურიდიული აქტი', action: `<button class="btn btn-secondary btn-sm" data-setup="lease">${icon('file', 14)} ხელშეკრულება</button>` },
     ];
   }
 
@@ -321,14 +321,14 @@
     const hot = S.data.apartments.filter(a => a.badge === 'hot' && a.status === 'active');
     const overdue = S.data.tasks.filter(H.isOverdue).length;
     return [
-      `☀️ დილა მშვიდობისა! ${R.WEEKDAYS[now.getDay()]}, ${now.getDate()} ${R.MONTHS[now.getMonth()]}`,
+      `დილა მშვიდობისა! ${R.WEEKDAYS[now.getDay()]}, ${now.getDate()} ${R.MONTHS[now.getMonth()]}`,
       '',
-      `🗓 დღევანდელი ნახვები: ${viewings.length}`,
+      `დღევანდელი ნახვები: ${viewings.length}`,
       ...viewings.map(t => `• ${R.time(H.taskTime(t))} · ${H.aptName(t.apartment_id)}${t.assigned_to ? ' · ' + H.memberName(t.assigned_to) : ''}`),
       '',
-      `🔥 ცხელი ობიექტები: ${hot.length}`,
+      `ცხელი ობიექტები: ${hot.length}`,
       ...hot.map(a => `• ${a.name} · ${price(a)}`),
-      ...(overdue ? ['', `⏰ ვადაგადაცილებული საქმე: ${overdue}`] : []),
+      ...(overdue ? ['', `ვადაგადაცილებული საქმე: ${overdue}`] : []),
     ].join('\n');
   }
 
@@ -446,18 +446,18 @@
       <section class="card onboarding-hero-card" style="margin-bottom:16px;background:linear-gradient(135deg, rgba(4, 120, 87, 0.08) 0%, rgba(4, 120, 87, 0.12) 100%);border:1px solid rgba(4, 120, 87, 0.35);padding:24px;border-radius:var(--r)">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:16px">
           <div style="max-width:560px">
-            <span class="badge" style="background:rgba(4, 120, 87, 0.18);color:#047857;font-weight:700;padding:3px 10px;border-radius:99px;font-size:11.5px">⚡ პირველი ნაბიჯი</span>
+            <span class="badge" style="background:rgba(4, 120, 87, 0.18);color:#047857;font-weight:700;padding:3px 10px;border-radius:99px;font-size:11.5px">პირველი ნაბიჯი</span>
             <h2 style="font-size:22px;margin:8px 0 6px 0">შემოიტანე შენი პირველი ბინა 1 წამში</h2>
             <p style="color:var(--muted);font-size:13.5px;line-height:1.5;margin:0 0 14px 0">
               ჩასვი MyHome.ge ან SS.ge განცხადების ბმული. სისტემა წამებში გადმოიტანს HD ფოტოებს, ფართობს, ფასს და შექმნის შენს პირად VIP ბმულს.
             </p>
             <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-              <button type="button" class="btn btn-primary" id="btn-quick-import-hero">${icon('sparkle', 16)} ⚡ ბინის შემოტანა ლინკით</button>
+              <button type="button" class="btn btn-primary" id="btn-quick-import-hero">${icon('sparkle', 16)} ბინის შემოტანა ლინკით</button>
               <button type="button" class="btn btn-secondary" id="btn-quick-manual-hero">+ ხელით დამატება</button>
             </div>
           </div>
           <div style="background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 16px;font-size:12px;color:var(--muted);max-width:240px;line-height:1.4">
-            <strong style="color:var(--ink);display:block;margin-bottom:4px">✨ შენი პირადი ვიტრინა</strong>
+            <strong style="color:var(--ink);display:block;margin-bottom:4px">შენი პირადი ვიტრინა</strong>
             საჯარო ბმულზე ჩანს მხოლოდ შენი სახელი, ლოგო და საკონტაქტო WhatsApp.
           </div>
         </div>
@@ -490,7 +490,7 @@
             <div style="background:var(--line);height:6px;border-radius:99px;margin:8px 0 16px 0;overflow:hidden">
               <div style="background:#047857;height:100%;width:${(steps.filter(s => s.done).length / steps.length) * 100}%;border-radius:99px;transition:width 0.3s"></div>
             </div>
-            <ol class="setup">${steps.map(s => `<li class="${s.done ? 'done' : ''}"><div><div class="step-title">${esc(s.title)}</div><div class="step-desc">${esc(s.desc)}</div></div><div>${s.done ? '<span class="t-ok" style="font-weight:700">შესრულებულია ✓</span>' : s.action || ''}</div></li>`).join('')}</ol>
+            <ol class="setup">${steps.map(s => `<li class="${s.done ? 'done' : ''}"><div><div class="step-title">${esc(s.title)}</div><div class="step-desc">${esc(s.desc)}</div></div><div>${s.done ? `<span class="t-ok" style="font-weight:700;display:inline-flex;align-items:center;gap:4px">${icon('check', 14)} შესრულებულია</span>` : s.action || ''}</div></li>`).join('')}</ol>
           </section>` : ''}
           ${focus || `
           <section class="card ${att.some(a => a.sev === 'danger') ? 'card-alert' : ''}">

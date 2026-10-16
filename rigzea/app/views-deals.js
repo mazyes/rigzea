@@ -181,8 +181,8 @@
       <div class="toolbar" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
         ${curToggle(cur)}
         <div class="seg" role="radiogroup" aria-label="ხედი">
-          <label><input type="radio" name="deals-view-mode" value="board" ${dealViewMode === 'board' ? 'checked' : ''} /><span>📋 დაფა</span></label>
-          <label><input type="radio" name="deals-view-mode" value="table" ${dealViewMode === 'table' ? 'checked' : ''} /><span>📊 ცხრილი</span></label>
+          <label><input type="radio" name="deals-view-mode" value="board" ${dealViewMode === 'board' ? 'checked' : ''} /><span>${icon('list', 14)} დაფა</span></label>
+          <label><input type="radio" name="deals-view-mode" value="table" ${dealViewMode === 'table' ? 'checked' : ''} /><span>${icon('chart', 14)} ცხრილი</span></label>
         </div>
         <span class="grow"></span>
         <button type="button" class="btn btn-ghost btn-sm" data-export="csv">${icon('file', 14)} CSV</button>
@@ -476,7 +476,7 @@
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
               <label style="display:flex;align-items:center;gap:8px;font-weight:700;cursor:pointer;margin:0">
                 <input type="checkbox" id="deal-cobroker-toggle" ${hasPartner ? 'checked' : ''} />
-                <span>🤝 პარტნიორ აგენტთან გარიგება (Co-Broking)</span>
+                <span>${icon('handshake', 14)} პარტნიორ აგენტთან გარიგება (Co-Broking)</span>
               </label>
               <div class="seg" id="cb-quick-split" style="margin:0">
                 <button type="button" class="btn btn-ghost btn-sm" data-cb-set="50">50/50</button>
@@ -496,7 +496,7 @@
 
           <!-- Progressive disclosure: Team split, dates -->
           <details class="form-more span-2" ${hasMore ? 'open' : ''}>
-            <summary>⚙️ დამატებითი: გუნდის წილები და თარიღები</summary>
+            <summary>დამატებითი: გუნდის წილები და თარიღები</summary>
             <div class="form-grid" style="margin-top:12px">
 
               <div class="form-section span-2" id="deal-split-section">
@@ -1214,7 +1214,7 @@
     matches.sort((a, b) => (b.score - a.score));
 
     return R.dialog({
-      title: '🎯 კლიენტების მოძიება (Reverse Matchmaker)',
+      title: 'კლიენტების მოძიება (Reverse Matchmaker)',
       subtitle: `${apt.name}: ვინ ეძებს ამ ტიპის ბინას?`,
       wide: true,
       body: `
@@ -1238,7 +1238,7 @@
             ${matches.length ? matches.map(({ deal: d, score }) => {
               const tone = score >= 80 ? 't-ok' : score >= 50 ? 't-warn' : 'muted';
               const cleanPhone = (d.client_phone || '').replace(/[^\d+]/g, '').replace(/^0/, '+995');
-              const waText = `გამარჯობა, ${d.client_name || ''}! თქვენი მოთხოვნის შესაბამისად გამოგიგზავნეთ ახალი ვარიანტი:\n📍 ${apt.name} (${aptPrice ? fmtMoney(aptPrice, cur) : ''})\n🔗 ნახეთ დეტალები და ფოტოები: ${pUrl}`;
+              const waText = `გამარჯობა, ${d.client_name || ''}! თქვენი მოთხოვნის შესაბამისად გამოგიგზავნეთ ახალი ვარიანტი:\n${apt.name} (${aptPrice ? fmtMoney(aptPrice, cur) : ''})\nნახეთ დეტალები და ფოტოები: ${pUrl}`;
 
               return `<div class="card" style="padding:12px 16px;border:1px solid var(--line);border-radius:8px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
                 <div style="flex:1;min-width:200px">
@@ -1282,7 +1282,7 @@
             const row = await q(sb.from('deals').update({ apartment_id: apt.id, updated_at: new Date().toISOString() }).eq('id', d.id).select().single());
             App.upsertLocal('deals', row);
             toast(`ბინა წარმატებით მიება კლიენტს: ${d.client_name}`, { type: 'success' });
-            b.textContent = 'მიბმულია ✓';
+            b.textContent = 'მიბმულია';
             b.classList.add('t-ok');
           } catch (err) {
             toast('შეცდომა მიბმისას', { type: 'error' });
@@ -1336,48 +1336,48 @@
     const lines = (...xs) => xs.filter(x => x !== null && x !== undefined && x !== false && x !== '').join('\n');
 
     const postKA = lines(
-      isSale ? `✨ იყიდება ბინა${place ? ' · ' + place : ''}` : `✨ ქირავდება ბინა${place ? ' · ' + place : ''}`,
-      `🏠 ${a.name}`,
-      a.address && `📍 მისამართი: ${a.address}`,
-      `💰 ფასი: ${priceKA}`,
-      specsKA && `🚪 ${specsKA}`,
-      !isSale && (a.pets_allowed ? '🐾 შინაური ცხოველი: დასაშვებია' : '🚫 შინაური ცხოველი: დაუშვებელია'),
-      !isSale && a.utilities_estimate && `💡 კომუნალური: ~${a.utilities_estimate} ₾ / თვე`,
-      !isSale && a.prepayment_terms && `🔑 პირობები: ${a.prepayment_terms}`,
-      amKA.length && `\n✅ კეთილმოწყობა: ${amKA.join(', ')}`,
+      isSale ? `იყიდება ბინა${place ? ' · ' + place : ''}` : `ქირავდება ბინა${place ? ' · ' + place : ''}`,
+      `${a.name}`,
+      a.address && `მისამართი: ${a.address}`,
+      `ფასი: ${priceKA}`,
+      specsKA && `${specsKA}`,
+      !isSale && (a.pets_allowed ? 'შინაური ცხოველი: დასაშვებია' : 'შინაური ცხოველი: დაუშვებელია'),
+      !isSale && a.utilities_estimate && `კომუნალური: ~${a.utilities_estimate} ₾ / თვე`,
+      !isSale && a.prepayment_terms && `პირობები: ${a.prepayment_terms}`,
+      amKA.length && `\nკეთილმოწყობა: ${amKA.join(', ')}`,
       a.description && `\n${String(a.description).trim()}`,
       '',
-      '📸 ფოტოები და დეტალები:',
-      `👉 ${publicUrl}`,
+      'ფოტოები და დეტალები:',
+      `${publicUrl}`,
       '',
-      phone ? `📲 ნახვის დასაჯავშნად მოგვწერეთ WhatsApp-ში ან დაგვირეკეთ:\n☎️ ${phone}` : '📲 ნახვის დასაჯავშნად მოგვწერეთ პირად შეტყობინებაში.',
+      phone ? `ნახვის დასაჯავშნად მოგვწერეთ WhatsApp-ში ან დაგვირეკეთ:\n${phone}` : 'ნახვის დასაჯავშნად მოგვწერეთ პირად შეტყობინებაში.',
       [isSale ? '#იყიდება' : '#ქირავდება', '#ბინა', tag(a.city), tag(a.district)].filter(Boolean).join(' '),
     );
 
     const postEN = lines(
-      isSale ? `✨ Apartment for sale${place ? ' · ' + place : ''}` : `✨ Apartment for rent${place ? ' · ' + place : ''}`,
-      `🏠 ${a.name}`,
-      a.address && `📍 Address: ${a.address}`,
-      isSale ? `💰 Price: ${priceEN}` : `💰 Rent: ${priceEN}`,
-      specsEN && `🚪 ${specsEN}`,
-      !isSale && (a.pets_allowed ? '🐾 Pets: allowed' : '🚫 Pets: not allowed'),
-      !isSale && a.utilities_estimate && `💡 Utilities: ~${a.utilities_estimate} GEL / month`,
-      !isSale && a.prepayment_terms && `🔑 Terms: ${a.prepayment_terms}`,
-      amEN.length && `\n✅ Amenities: ${amEN.join(', ')}`,
+      isSale ? `Apartment for sale${place ? ' · ' + place : ''}` : `Apartment for rent${place ? ' · ' + place : ''}`,
+      `${a.name}`,
+      a.address && `Address: ${a.address}`,
+      isSale ? `Price: ${priceEN}` : `Rent: ${priceEN}`,
+      specsEN && `${specsEN}`,
+      !isSale && (a.pets_allowed ? 'Pets: allowed' : 'Pets: not allowed'),
+      !isSale && a.utilities_estimate && `Utilities: ~${a.utilities_estimate} GEL / month`,
+      !isSale && a.prepayment_terms && `Terms: ${a.prepayment_terms}`,
+      amEN.length && `\nAmenities: ${amEN.join(', ')}`,
       a.description_en && `\n${String(a.description_en).trim()}`,
       '',
-      '📸 Photos and details:',
-      `👉 ${publicUrl}`,
+      'Photos and details:',
+      `${publicUrl}`,
       '',
-      phone ? `📲 To book a viewing, message on WhatsApp or call:\n☎️ ${phone}` : '📲 To book a viewing, send us a private message.',
+      phone ? `To book a viewing, message on WhatsApp or call:\n${phone}` : 'To book a viewing, send us a private message.',
       isSale ? ['#ApartmentForSale', '#BuyPropertyGeorgia', '#RealEstateGeorgia'].join(' ') : ['#ApartmentForRent', '#RentGeorgia', '#Expats'].join(' '),
     );
 
     const postWA = lines(
       'გამარჯობა! გიგზავნით ბინის ვარიანტს:',
-      `🏠 ${a.name}${place ? ' · ' + place : ''}`,
-      `💰 ${priceKA}`,
-      [specsKA, !isSale && a.pets_allowed ? '🐾 ცხოველი დასაშვებია' : ''].filter(Boolean).join(' · '),
+      `${a.name}${place ? ' · ' + place : ''}`,
+      `${priceKA}`,
+      [specsKA, !isSale && a.pets_allowed ? 'ცხოველი დასაშვებია' : ''].filter(Boolean).join(' · '),
       '',
       'ფოტოები და ყველა დეტალი:',
       publicUrl,
@@ -1389,17 +1389,17 @@
     const commPct = Number(a.agent_commission_percent ?? (isSale ? 3 : 50));
     const commAmount = priceAmount ? (priceAmount * commPct) / 100 + Number(a.owner_bonus || 0) : 0;
     const postCB = lines(
-      `🤝 Co-Brokering ${split}/${100 - split} · ${isSale ? 'იყიდება ბინა' : 'ქირავდება ბინა'}`,
-      `🏠 ${a.name}${place ? ' · ' + place : ''}`,
-      `💰 ${isSale ? 'ფასი' : 'ქირა'}: ${priceKA}`,
-      specsKA && `🚪 ${specsKA}`,
-      !isSale && (a.pets_allowed ? '🐾 ცხოველი დასაშვებია' : '🚫 ცხოველი დაუშვებელია'),
-      priceAmount ? `💼 საკომისიო: ${commPct}% ${isSale ? 'გაყიდვის ფასიდან' : 'პირველი თვის ქირიდან'}${Number(a.owner_bonus) ? ' + მესაკუთრის ბონუსი' : ''} (${fmtMoney(commAmount, cur)}), ვიყოფთ ${split}/${100 - split}` : `💼 საკომისიოს ვიყოფთ ${split}/${100 - split}`,
+      `Co-Brokering ${split}/${100 - split} · ${isSale ? 'იყიდება ბინა' : 'ქირავდება ბინა'}`,
+      `${a.name}${place ? ' · ' + place : ''}`,
+      `${isSale ? 'ფასი' : 'ქირა'}: ${priceKA}`,
+      specsKA && `${specsKA}`,
+      !isSale && (a.pets_allowed ? 'ცხოველი დასაშვებია' : 'ცხოველი დაუშვებელია'),
+      priceAmount ? `საკომისიო: ${commPct}% ${isSale ? 'გაყიდვის ფასიდან' : 'პირველი თვის ქირიდან'}${Number(a.owner_bonus) ? ' + მესაკუთრის ბონუსი' : ''} (${fmtMoney(commAmount, cur)}), ვიყოფთ ${split}/${100 - split}` : `საკომისიოს ვიყოფთ ${split}/${100 - split}`,
       '',
-      '📸 ბმული კლიენტისთვის (ჩემი კონტაქტის გარეშე):',
-      `👉 ${wlUrl}`,
+      'ბმული კლიენტისთვის (ჩემი კონტაქტის გარეშე):',
+      `${wlUrl}`,
       '',
-      phone ? `📲 თუ შესაფერისი კლიენტი გყავთ, მომწერეთ: ${phone}` : '📲 თუ შესაფერისი კლიენტი გყავთ, მომწერეთ პირად შეტყობინებაში.',
+      phone ? `თუ შესაფერისი კლიენტი გყავთ, მომწერეთ: ${phone}` : 'თუ შესაფერისი კლიენტი გყავთ, მომწერეთ პირად შეტყობინებაში.',
     );
 
     const posts = { ka: postKA, en: postEN, wa: postWA, cb: postCB };
@@ -1465,17 +1465,17 @@
     // The public page shows the real price, so the link is left out when a margin is added.
     const link = Number(o.margin) > 0 ? '' : listingUrl(a, true);
     const rows = [
-      `🤝 ${isSale ? 'იყიდება' : 'ქირავდება'} · თანამშრომლობა კოლეგებთან`,
-      `📍 ლოკაცია: ${where || 'დაზუსტებით'}`,
-      a.area_sqm && `📐 ფართი: ${a.area_sqm} მ²${a.floor ? ` · სართული ${a.floor}${a.total_floors ? '/' + a.total_floors : ''}` : ''}`,
-      a.rooms && `🛏️ ოთახები: ${a.rooms}${a.bedrooms ? ` (საძინებელი: ${a.bedrooms})` : ''}`,
-      `💰 ფასი: ${priceText}`,
-      `🤝 პირობა: ${CB_TERM_TEXT[o.terms] || CB_TERM_TEXT.split}`,
-      !o.hideOwner && owner && `👤 მეპატრონე: ${owner.name}${owner.phone ? ', ' + owner.phone : ''}`,
-      !o.hideOwner && a.cadastral_code && `🗂 საკადასტრო კოდი: ${a.cadastral_code}`,
-      link && '\n📸 ფოტოები და დეტალები (შეგიძლია კლიენტს გადაუგზავნო):',
-      link && `👉 ${link}`,
-      phone ? `\n📲 კლიენტი თუ გყავს, მომწერე ან დამირეკე: ${phone}` : '\n📲 კლიენტი თუ გყავს, მომწერე პირადში.',
+      `${isSale ? 'იყიდება' : 'ქირავდება'} · თანამშრომლობა კოლეგებთან`,
+      `ლოკაცია: ${where || 'დაზუსტებით'}`,
+      a.area_sqm && `ფართი: ${a.area_sqm} მ²${a.floor ? ` · სართული ${a.floor}${a.total_floors ? '/' + a.total_floors : ''}` : ''}`,
+      a.rooms && `ოთახები: ${a.rooms}${a.bedrooms ? ` (საძინებელი: ${a.bedrooms})` : ''}`,
+      `ფასი: ${priceText}`,
+      `პირობა: ${CB_TERM_TEXT[o.terms] || CB_TERM_TEXT.split}`,
+      !o.hideOwner && owner && `მეპატრონე: ${owner.name}${owner.phone ? ', ' + owner.phone : ''}`,
+      !o.hideOwner && a.cadastral_code && `საკადასტრო კოდი: ${a.cadastral_code}`,
+      link && '\nფოტოები და დეტალები (შეგიძლია კლიენტს გადაუგზავნო):',
+      link && `${link}`,
+      phone ? `\nკლიენტი თუ გყავს, მომწერე ან დამირეკე: ${phone}` : '\nკლიენტი თუ გყავს, მომწერე პირადში.',
     ];
     return rows.filter(x => typeof x === 'string' && x).join('\n');
   }

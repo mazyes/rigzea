@@ -784,7 +784,7 @@
       const isAgency = id === 'agency';
       return `<div class="plan-card ${isAgency ? 'plan-card-agency' : ''} ${rec ? 'is-rec' : ''} ${cur ? 'is-current' : ''}">
         <div class="plan-card-main">
-          ${isAgency ? '<span class="plan-tag plan-tag-unlimited">♾️ სრულიად ულიმიტო პაკეტი</span>' : rec ? '<span class="plan-tag">შენთვის შესაფერისი</span>' : cur ? '<span class="plan-tag plan-tag-cur">შენი პაკეტი</span>' : ''}
+          ${isAgency ? '<span class="plan-tag plan-tag-unlimited"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:5px"><path d="M18.178 8c5.096 0 5.096 8 0 8-2.678 0-4.678-2.667-6.178-5.333C10.5 8 8.5 8 5.822 8c-5.096 0-5.096 8 0 8 2.678 0 4.678-2.667 6.178-5.333C13.5 16 15.5 16 18.178 16z"/></svg>სრულიად ულიმიტო პაკეტი</span>' : rec ? '<span class="plan-tag">შენთვის შესაფერისი</span>' : cur ? '<span class="plan-tag plan-tag-cur">შენი პაკეტი</span>' : ''}
           <h3>${esc(p.name)}</h3>
           ${p.desc ? `<p class="plan-desc" style="font-size:12px;color:var(--muted);margin:4px 0 0">${esc(p.desc)}</p>` : ''}
           <div class="plan-price">${p.price ? `${p.price} ₾<small> / 30 დღე</small>` : '0 ₾<small> / უფასო</small>'}</div>
@@ -838,7 +838,7 @@
           </div>
           <div class="kisa-view kisa-done-view" hidden>
             <svg class="kisa-check" viewBox="0 0 52 52" aria-hidden="true"><circle cx="26" cy="26" r="24"/><path d="M15 27l8 8 14-16"/></svg>
-            <h3>🎉 გადახდა მიღებულია!</h3>
+            <h3>გადახდა მიღებულია!</h3>
             <p>პაკეტი „${esc(p.name)}“ გააქტიურდა 30 დღით.</p>
             <button type="button" class="btn btn-primary" data-close>დახურვა</button>
           </div>

@@ -231,7 +231,7 @@
       <p style="margin:0">${status}</p>
       ${paused ? `<div class="notice notice-warn" id="plan-paused"><span>აქტიური ობიექტი პაკეტის ლიმიტს აღემატება: ${st.plan.apartments} ყველაზე ძველი ობიექტის საჯარო ბმული მუშაობს, დანარჩენი ${paused} შეჩერებულია. ობიექტები არ წაშლილა: ბმულები დაბრუნდება, როცა უფრო დიდ პაკეტს აირჩევ ან ზედმეტ ობიექტებს დაარქივებ.</span></div>` : ''}
       <div class="form-grid">${meter('აქტიური ობიექტი', apts, st.plan.apartments)}${meter('სამუშაო ადგილი', seats, st.plan.seats)}</div>
-      <div><span class="field-label">ფუნქციები</span><ul class="plan-features" style="list-style:none;padding:0;margin:6px 0 0;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:6px;font-size:13px">${Object.entries(App.FEATURE_LABEL).map(([k, l]) => App.can(k) ? `<li class="t-ok">✓ ${esc(l)}</li>` : `<li class="muted">🔒 ${esc(l)}</li>`).join('')}</ul></div>
+      <div><span class="field-label">ფუნქციები</span><ul class="plan-features" style="list-style:none;padding:0;margin:6px 0 0;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:6px;font-size:13px">${Object.entries(App.FEATURE_LABEL).map(([k, l]) => App.can(k) ? `<li class="t-ok">${esc(l)}</li>` : `<li class="muted">${esc(l)}</li>`).join('')}</ul></div>
     </div></section>
     <section class="card" style="max-width:900px"><div class="card-head"><h2>პაკეტები</h2></div><div class="card-body">
       ${App.planCardsHtml(st.key === 'trial' ? 'pro' : null, st.trial || st.noTrial ? null : st.eff)}
@@ -394,7 +394,7 @@
     const items = [['apartments', 'ბინები', d.apartments.length], ['owners', 'მფლობელები', d.owners.length], ['deals', 'გარიგებები', (d.deals || []).length], ['expenses', 'ხარჯები', d.expenses.length], ['income', 'შემოსავალი', d.income.length]];
     root.innerHTML = `<section class="card" style="max-width:640px"><div class="card-body form-stack">
       <p class="muted" style="margin:0">ჩამოტვირთე შენი მონაცემები Excel-ში ან CSV-ში: სარეზერვო ასლისთვის, ბუღალტრისთვის ან სხვა სისტემაში გადასატანად.${App.can('export') ? '' : ` ექსპორტი ხელმისაწვდომია „${esc(App.PLANS.top.name)}“ პაკეტიდან.`}</p>
-      <div class="rows">${items.map(([k, label, n]) => `<div class="row" style="--cols:minmax(0,1fr) auto"><span class="cell-main"><strong>${label}</strong><span>${n} ჩანაწერი</span></span><span class="cell-actions"><button type="button" class="btn btn-secondary btn-sm" data-export="${k}" ${n ? '' : 'disabled'}>${App.can('export') ? 'ჩამოტვირთვა' : '🔒 ჩამოტვირთვა'}</button></span></div>`).join('')}</div>
+      <div class="rows">${items.map(([k, label, n]) => `<div class="row" style="--cols:minmax(0,1fr) auto"><span class="cell-main"><strong>${label}</strong><span>${n} ჩანაწერი</span></span><span class="cell-actions"><button type="button" class="btn btn-secondary btn-sm" data-export="${k}" ${n ? '' : 'disabled'}>${App.can('export') ? 'ჩამოტვირთვა' : 'ჩამოტვირთვა'}</button></span></div>`).join('')}</div>
       <div><button type="button" class="btn btn-primary" id="x-all">${icon('file', 16)} ყველაფრის ჩამოტვირთვა (Excel)</button></div>
     </div></section>`;
     $$('[data-export]', root).forEach(b => b.addEventListener('click', () => exportDialog({ title: 'ექსპორტი', base: 'rigzea-' + b.dataset.export, sets: [exportSets[b.dataset.export]()] })));

@@ -179,7 +179,7 @@
     if (!a || !App.guardFeature('presentation')) return undefined;
     const url = listingUrl(a);
     const state = { template: 'catalog', watermark: false, qr: '', url };
-    const waText = `გამარჯობა! გიგზავნით ობიექტის პრეზენტაციას:\n🏠 ${a.name}\n\nფოტოები და ყველა დეტალი:\n${url}`;
+    const waText = `გამარჯობა! გიგზავნით ობიექტის პრეზენტაციას:\n${a.name}\n\nფოტოები და ყველა დეტალი:\n${url}`;
     return R.dialog({
       title: 'PDF პრეზენტაცია',
       subtitle: a.name,

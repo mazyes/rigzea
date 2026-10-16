@@ -162,7 +162,7 @@
     let activeImageObj = null;
 
     return R.dialog({
-      title: '🛡️ ფოტოების დაცვა: Watermark & ლოგო',
+      title: 'ფოტოების დაცვა: Watermark & ლოგო',
       subtitle: `${a.name} · ${photos.length} ფოტო`,
       wide: true,
       body: `
@@ -471,20 +471,20 @@
     ];
 
     const generateText = (rec) => {
-      const salutation = owner?.name ? `გამარჯობა, ${owner.name}! 🤝` : 'გამარჯობა! 🤝';
+      const salutation = owner?.name ? `გამარჯობა, ${owner.name}!` : 'გამარჯობა!';
       return `${salutation}
 ეს არის Rigzea-ს ყოველკვირეული რეპორტი თქვენს ბინაზე:
-📍 ${apt.name || apt.address || 'ბინა'} (${priceStr})
+${apt.name || apt.address || 'ბინა'} (${priceStr})
 
-📊 გასული 7 დღის აქტივობა:
-• 👁️ ონლაინ ნახვები: ${views}
-• 📞 ახალი მოთხოვნები: ${inquiries}
-• 🔑 ბინის ჩვენებები: ${viewings}
+გასული 7 დღის აქტივობა:
+• ონლაინ ნახვები: ${views}
+• ახალი მოთხოვნები: ${inquiries}
+• ბინის ჩვენებები: ${viewings}
 
-💡 აგენტის რეკომენდაცია:
+აგენტის რეკომენდაცია:
 ${rec || recOptions[0]}
 
-🔗 განცხადების VIP ბმული:
+განცხადების VIP ბმული:
 ${publicUrl}
 
 პატივისცემით,
@@ -496,7 +496,7 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
     const cleanPhone = phoneRaw.replace(/[^\d+]/g, '').replace(/^0/, '+995');
 
     return R.dialog({
-      title: '📊 მესაკუთრის ყოველკვირეული რეპორტი',
+      title: 'მესაკუთრის ყოველკვირეული რეპორტი',
       subtitle: 'მოამზადე და 1 კლიკით გაუგზავნე მესაკუთრეს WhatsApp-ში ბინის სტატუსი',
       wide: true,
       body: `
@@ -717,7 +717,7 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
       return;
     }
     return R.dialog({
-      title: '✨ მრავალბინიანი კოლექციის შექმნა',
+      title: 'მრავალბინიანი კოლექციის შექმნა',
       subtitle: 'კლიენტისთვის გაგზავნილი პირადი პრემიუმ კატალოგი',
       wide: true,
       body: `
@@ -750,7 +750,7 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
             ${icon('check', 16)} <span>კოლექციის ბმულზე განთავსებულია შენი საკონტაქტო მონაცემები, ბრენდინგი და WhatsApp-ის ღილაკი.</span>
           </div>
         </div>`,
-      submitLabel: '⚡ კოლექციის ბმულის შექმნა',
+      submitLabel: 'კოლექციის ბმულის შექმნა',
       onOpen: (dialogEl) => {
         const updateRows = () => {
           const list = $('#col-apts-list', dialogEl);
@@ -811,7 +811,7 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
 
         // Close this form first, then show the link.
         setTimeout(() => R.dialog({
-          title: '🎉 კოლექციის ბმული მზადაა!',
+          title: 'კოლექციის ბმული მზადაა!',
           subtitle: `${sel.apartment_ids.length} ბინა მზადაა კლიენტთან გასაგზავნად`,
           body: `
             <div class="share-dialog-content">
@@ -875,7 +875,7 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
       <div class="page-head"><div><h1>${title}</h1><p class="page-sub">${inScope} ობიექტი ${sec ? 'ამ სექციაში' : 'პორტფოლიოში'}</p></div>
         <div class="page-actions">
           <button type="button" class="btn ${colMode ? 'btn-primary' : 'btn-secondary'}" id="btn-col-toggle">${icon('link', 16)} ${colMode ? '✓ მონიშვნა' : 'კოლექციის შექმნა'}</button>
-          <button type="button" class="btn btn-secondary" id="btn-quick-import">${icon('sparkle', 16)} ⚡ ლინკით შემოტანა</button>
+          <button type="button" class="btn btn-secondary" id="btn-quick-import">${icon('sparkle', 16)} ლინკით შემოტანა</button>
           <a class="btn btn-secondary" href="#/settings/import">${icon('upload', 16)} იმპორტი</a>
           <button type="button" class="btn btn-primary" id="btn-apt-new">${icon('plus', 16)} ობიექტის დამატება</button>
         </div></div>
@@ -919,7 +919,7 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
       ${colMode ? `
         <div class="col-floating-bar" id="col-floating-bar">
           <span class="col-bar-count">${icon('link', 16)} მონიშნულია <strong>${colPicked.size}</strong> ბინა</span>
-          <button type="button" class="btn btn-primary btn-sm" id="btn-col-build" ${colPicked.size ? '' : 'disabled'}>⚡ კოლექციის ბმული</button>
+          <button type="button" class="btn btn-primary btn-sm" id="btn-col-build" ${colPicked.size ? '' : 'disabled'}>${icon('link', 14)} კოლექციის ბმული</button>
           ${colPicked.size ? '<button type="button" class="btn btn-ghost btn-sm" id="btn-col-clear" style="color:#cbd5e1">გასუფთავება</button>' : ''}
           <button type="button" class="btn btn-ghost btn-sm" id="btn-col-cancel" style="color:#cbd5e1">დახურვა</button>
         </div>` : ''}`;
@@ -1344,14 +1344,14 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
 
         <!-- Progressive disclosure: Advanced details -->
         <details class="form-more span-2" ${hasMore ? 'open' : ''}>
-          <summary>⚙️ დამატებითი დეტალები (საკადასტრო, კოდები, საკომისიოს წილები)</summary>
+          <summary>დამატებითი დეტალები (საკადასტრო, კოდები, საკომისიოს წილები)</summary>
           <div class="form-grid" style="margin-top:12px">
             <label class="field"><span class="field-label">საკადასტრო კოდი</span><input name="cadastral_code" id="apt-cadastral" value="${esc(v.cadastral_code || '')}" placeholder="01.10.14.009.011" inputmode="numeric" autocomplete="off" /><span class="field-hint">წერტილები თავისით ჩაისმება. დუბლიკატს ბაზაში ავტომატურად ვამოწმებთ.</span></label>
             <div class="span-2" id="apt-dup" hidden></div>
             <label class="field"><span class="field-label">შინაური ცხოველები</span>
               <select name="pets_allowed">
-                <option value="true" ${v.pets_allowed ? 'selected' : ''}>🐾 ნებადართულია (Pet Friendly)</option>
-                <option value="false" ${!v.pets_allowed ? 'selected' : ''}>🚫 ცხოველების გარეშე</option>
+                <option value="true" ${v.pets_allowed ? 'selected' : ''}>ნებადართულია (Pet Friendly)</option>
+                <option value="false" ${!v.pets_allowed ? 'selected' : ''}>ცხოველების გარეშე</option>
               </select>
             </label>
             <label class="field"><span class="field-label">კომუნალური ხარჯი (~₾)</span><input type="number" name="utilities_estimate" min="0" step="10" value="${esc(v.utilities_estimate || '')}" placeholder="220" /><span class="field-hint">გაზი, დენი, წყალი, ინტერნეტი</span></label>

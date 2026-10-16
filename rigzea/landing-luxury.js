@@ -339,18 +339,18 @@
   // 12. BENTO FEATURE 1: SOCIAL POST GENERATOR TABS
   // =========================================================================
   const postTemplates = {
-    facebook: `🔥 ქირავდება ბინა ვაკეში, ჭავჭავაძის გამზ.
-📐 85 მ² | 2 ოთახი | $950/თვე
-📸 ფოტოები: rigzea.com/p/vake-loft-42
-📞 WhatsApp: +995 599 12 34 56`,
+    facebook: `ქირავდება ბინა ვაკეში, ჭავჭავაძის გამზ.
+85 მ² | 2 ოთახი | $950/თვე
+ფოტოები: rigzea.com/p/vake-loft-42
+WhatsApp: +995 599 12 34 56`,
 
-    whatsapp: `მოგესალმებით, მარიამ! 🌿
-📍 ვაკე · 85 მ² · $950/თვე
-👉 ფოტოები და პირობები: rigzea.com/p/vake-loft-42`,
+    whatsapp: `მოგესალმებით, მარიამ!
+ვაკე · 85 მ² · $950/თვე
+ფოტოები და პირობები: rigzea.com/p/vake-loft-42`,
 
-    cobroker: `სალამი, კოლეგა! 🤝 საკომისიო 50/50:
-📍 ვაკე · 2 ოთახი · $950/თვე
-👉 rigzea.com/p/vake-loft-42`
+    cobroker: `სალამი, კოლეგა! საკომისიო 50/50:
+ვაკე · 2 ოთახი · $950/თვე
+rigzea.com/p/vake-loft-42`
   };
 
   const postTabBtns = document.querySelectorAll('.lx-post-tab-btn');
@@ -551,10 +551,10 @@
 
   if (dynamicIsland && diLiveText) {
     const islandAlerts = [
-      '⚡ WhatsApp: ახალი ჯავშანი ვაკეში $950',
-      '🎉 საკომისიო: +₾1,292 დაფიქსირდა',
-      '📄 KA/EN ხელშეკრულება ხელმოსაწერად მზადაა',
-      '👀 კლიენტმა გახსნა ჭკვიანი ბმული'
+      'WhatsApp: ახალი ჯავშანი ვაკეში $950',
+      'საკომისიო: +₾1,292 დაფიქსირდა',
+      'KA/EN ხელშეკრულება ხელმოსაწერად მზადაა',
+      'კლიენტმა გახსნა ჭკვიანი ბმული'
     ];
 
     let islandIdx = 0;
@@ -803,7 +803,7 @@
         const rect = modalConfirmBtn.getBoundingClientRect();
         createParticleBurst(rect.left + rect.width / 2, rect.top + rect.height / 2, 36);
         
-        window.showLuxuryToast('✓ ვიზიტი დაჯავშნილია (' + slotText + ')! აგენტი დაგიკავშირდებათ.');
+        window.showLuxuryToast('ვიზიტი დაჯავშნილია (' + slotText + ')! აგენტი დაგიკავშირდებათ.');
       });
     }
   }
