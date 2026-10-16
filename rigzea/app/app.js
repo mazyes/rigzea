@@ -734,6 +734,15 @@
   // The database mirrors the limits in plan_limit() and plan_has_feature(); see that file's header.
   const { ALL_FEATURES, PLANS, PLAN_ORDER, FEATURE_LABEL } = window.RIGZEA_PLANS;
 
+  // Test switch: every trial workspace counts as an ended trial, so limits apply at once and the upgrade
+  // dialog opens on gated actions. Client-side only (the database still counts the trial); set to false
+  // before launch. Tests that need a live trial set window.RIGZEA_FORCE_NO_TRIAL = false.
+  const FORCE_NO_TRIAL = window.RIGZEA_FORCE_NO_TRIAL ?? true;
+  if (FORCE_NO_TRIAL) {
+    const sub = document.querySelector('#form-signup .page-sub');
+    if (sub) sub.innerHTML = '<strong>აირჩიე პაკეტი რეგისტრაციის შემდეგ</strong> · დამწყები: 9.87 ₾ / 30 დღე.';
+  }
+
   function planState() {
     const o = S.org || {};
     const key = PLANS[o.plan] ? o.plan : 'trial';
@@ -745,7 +754,8 @@
       // An ended trial or paid plan falls back to the free plan; nothing is deleted.
       if (ms < 0) { eff = 'starter'; if (key === 'trial') trialEnded = true; else lapsed = true; }
     }
-    return { key, eff, plan: PLANS[eff], daysLeft, end, lapsed, trialEnded, trial: key === 'trial' && !trialEnded };
+    if (key === 'trial' && FORCE_NO_TRIAL) { eff = 'starter'; trialEnded = true; daysLeft = 0; }
+    return { key, eff, plan: PLANS[eff], daysLeft, end, lapsed, trialEnded, trial: key === 'trial' && !trialEnded, noTrial: key === 'trial' && FORCE_NO_TRIAL };
   }
   const isActiveApt = (a) => a.status !== 'archived' && !a.is_archived;
   const activeApartments = () => (S.data?.apartments || []).filter(isActiveApt).length;
@@ -776,43 +786,154 @@
         <h3>${esc(p.name)}</h3>
         <div class="plan-price">${p.price ? `${p.price} ₾<small> / 30 დღე</small>` : '0 ₾<small> / უფასო</small>'}</div>
         <ul>${p.bullets.map(b => `<li>${esc(b)}</li>`).join('')}</ul>
-        ${cur ? '' : p.price ? `<div class="plan-card-actions" style="display:flex;flex-direction:column;gap:6px;margin-top:12px">
+        ${cur ? '' : p.price ? `<div class="plan-card-actions">
           <button type="button" class="btn ${rec ? 'btn-primary' : 'btn-secondary'} btn-sm" data-kisa-checkout="${id}">${icon('card', 16)} ბარათით გადახდა</button>
-          <a class="link-btn small" href="${esc(waLink(p))}" target="_blank" rel="noopener" style="text-align:center;font-size:12px">${icon('whatsapp', 13)} WhatsApp-ით შეკვეთა</a>
+          <a class="plan-wa" href="${esc(waLink(p))}" target="_blank" rel="noopener">${icon('whatsapp', 13)} WhatsApp-ით შეკვეთა</a>
         </div>` : ''}
       </div>`;
     }).join('')}</div>`;
   }
 
-  async function startKisaCheckout(planId, btn) {
+  const KISA_DONATE_URL = 'https://www.kisa.ge/donate/k45gb9yawv';
+  const KISA_STREAM_ID = '6ad1f68d02e62c8c663fc77b';
+
+  function openKisaCheckoutModal(planId) {
     if (!S.org) return;
     const p = PLANS[planId];
     if (!p) return;
-    run(btn, async () => {
-      const { data: { session } } = await sb.auth.getSession();
-      const token = session?.access_token;
-      if (!token) throw new Error('გთხოვთ გაიაროთ ავტორიზაცია.');
-      const res = await fetch('/api/kisa-checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ orgId: S.org.id, plan: planId }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok || !data.ok) {
-        throw new Error(data.message || 'გადახდის ინიციალიზაცია ვერ მოხერხდა.');
-      }
-      if (data.checkoutUrl) {
-        toast('გადამისამართება KISA-ს გადახდის გვერდზე...', { type: 'info', timeout: 3000 });
-        setTimeout(() => { window.location.href = data.checkoutUrl; }, 300);
-      }
+
+    const code = `RZ-${Math.floor(1000 + Math.random() * 9000)}`;
+    let ws = null;
+    let isDone = false;
+    const root = () => document.querySelector('dialog[open] .kisa');
+
+    const dlg = R.dialog({
+      title: `პაკეტი: ${p.name}`,
+      subtitle: `${p.price} ₾ / 30 დღე`,
+      body: `
+        <div class="kisa" data-state="wait">
+          <div class="kisa-view kisa-pay-view">
+            <div class="kisa-code">
+              <span class="kisa-code-label">შენი გადახდის კოდი</span>
+              <div class="kisa-code-row">
+                <strong id="kisa-code-val" aria-label="გადახდის კოდი">${esc(code)}</strong>
+                <button type="button" class="kisa-copy" id="btn-copy-kisa-code">${icon('copy', 16)}<span>კოპირება</span></button>
+              </div>
+              <span class="kisa-code-hint">დააკოპირეთ და ჩაწერეთ Kisa-ს კომენტარში (Message). მხოლოდ ეს კოდი.</span>
+            </div>
+            <a href="${KISA_DONATE_URL}" target="_blank" rel="noopener" class="kisa-pay" id="btn-open-kisa">
+              <span class="kisa-pay-main">${icon('card', 18)} Kisa-ზე გადახდა: ${p.price} ₾</span>
+              <span class="kisa-badges" aria-label="Apple Pay, Google Pay, Visa, Mastercard">
+                <i>Apple Pay</i><i>Google Pay</i><i>Visa</i><i>Mastercard</i>
+              </span>
+            </a>
+            <div class="kisa-live" role="status" aria-live="polite">
+              <span class="kisa-pulse" aria-hidden="true"></span>
+              <span id="kisa-status-msg">სისტემა რეალურ დროში ელოდება თქვენს გადახდას...</span>
+            </div>
+          </div>
+          <div class="kisa-view kisa-done-view" hidden>
+            <svg class="kisa-check" viewBox="0 0 52 52" aria-hidden="true"><circle cx="26" cy="26" r="24"/><path d="M15 27l8 8 14-16"/></svg>
+            <h3>🎉 გადახდა მიღებულია!</h3>
+            <p>პაკეტი „${esc(p.name)}“ გააქტიურდა 30 დღით.</p>
+            <button type="button" class="btn btn-primary" data-close>დახურვა</button>
+          </div>
+        </div>`,
     });
+
+    const copyBtn = document.getElementById('btn-copy-kisa-code');
+    copyBtn?.addEventListener('click', async () => {
+      try { await navigator.clipboard.writeText(code); } catch { /* the code stays selectable */ }
+      copyBtn.classList.add('is-copied');
+      copyBtn.querySelector('span').textContent = 'დაკოპირდა';
+      setTimeout(() => { copyBtn.classList.remove('is-copied'); copyBtn.querySelector('span').textContent = 'კოპირება'; }, 2000);
+    });
+
+    const setStatus = (html, state) => {
+      const msg = document.getElementById('kisa-status-msg');
+      if (msg) msg.innerHTML = html;
+      if (state && root()) root().dataset.state = state;
+    };
+    const closeSocket = () => { if (ws) { try { ws.close(); } catch { /* already closed */ } ws = null; } };
+    dlg.then(closeSocket); // the dialog promise resolves when it closes
+
+    async function handlePaymentSuccess(donation) {
+      if (isDone) return;
+      isDone = true;
+      setStatus('გადახდა დაფიქსირდა, პაკეტი აქტიურდება...', 'busy');
+
+      try {
+        const { data: { session } } = await sb.auth.getSession();
+        const token = session?.access_token;
+        if (!token) throw new Error('ავტორიზაციის შეცდომა');
+
+        const res = await fetch('/api/kisa-stream-confirm', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ orgId: S.org.id, plan: planId, code, donation }),
+        });
+        const result = await res.json().catch(() => ({}));
+
+        if (!res.ok || !result.ok) {
+          throw new Error(result.message || 'გააქტიურება ვერ მოხერხდა.');
+        }
+
+        closeSocket();
+        const r = root();
+        if (r) {
+          r.dataset.state = 'done';
+          r.querySelector('.kisa-pay-view').hidden = true;
+          r.querySelector('.kisa-done-view').hidden = false;
+        }
+        await refresh({ quiet: false });
+      } catch (err) {
+        console.error('kisa payment activation error', err);
+        setStatus(`შეცდომა: ${esc(err.message)}. თუ გადაიხადე, მოგვწერე WhatsApp-ში კოდით ${esc(code)}.`, 'error');
+        isDone = false;
+      }
+    }
+
+    // Connect to KISA Real-Time Socket
+    try {
+      ws = new WebSocket('wss://www.kisa.ge/socket.io/?EIO=4&transport=websocket');
+      ws.onmessage = (event) => {
+        if (typeof event.data !== 'string') return;
+        if (event.data.startsWith('0{')) {
+          ws.send('40'); // Socket.IO handshake
+        } else if (event.data.startsWith('42[')) {
+          try {
+            const parsed = JSON.parse(event.data.slice(2));
+            const evtType = parsed[0];
+            const data = parsed[1];
+            if ((evtType === 'donation' || evtType === 'donation-fake') && data) {
+              const msg = String(data.message || '').toUpperCase();
+              const donationValidation = String(data.validation || '');
+              const amount = Number(data.amount || 0);
+
+              if (donationValidation === KISA_STREAM_ID && msg.includes(code) && amount >= p.price) {
+                handlePaymentSuccess(data);
+              }
+            }
+          } catch (e) {
+            console.error('kisa ws parse error', e);
+          }
+        }
+      };
+
+      ws.onerror = (e) => console.warn('KISA socket error:', e);
+      ws.onclose = () => {
+        if (!isDone && root()) setStatus('კავშირი შეწყდა. გადახდის შემდეგ დაელოდე რამდენიმე წამს ან მოგვწერე WhatsApp-ში.', 'idle');
+      };
+    } catch (e) {
+      console.warn('Could not connect to KISA socket:', e);
+    }
   }
 
   document.addEventListener('click', (e) => {
     const btn = e.target.closest('[data-kisa-checkout]');
     if (btn) {
       e.preventDefault();
-      startKisaCheckout(btn.dataset.kisaCheckout, btn);
+      openKisaCheckoutModal(btn.dataset.kisaCheckout);
     }
   });
 
@@ -836,7 +957,7 @@
     }
     return R.dialog({
       title, subtitle: text, wide: true,
-      body: `${planCardsHtml(rec, st.trial ? null : st.eff)}
+      body: `${planCardsHtml(rec, st.trial || st.noTrial ? null : st.eff)}
         <p class="plan-contact">გააქტიურება ავტომატურია ბარათით (KISA), ან მოგვწერე WhatsApp-ში / დარეკე <a href="tel:${CONTACT.phone}">${CONTACT.phone}</a> და დაგეხმარებით.</p>
         <div class="plan-cta"><a class="btn btn-secondary" href="${esc(waLink(PLANS[rec]))}" target="_blank" rel="noopener">${icon('whatsapp', 16)} მოგვწერე WhatsApp-ში</a><button type="button" class="btn btn-ghost" data-close>მოგვიანებით</button></div>`,
     });
@@ -873,7 +994,8 @@
     let tone = null, msg = '', cta = 'პაკეტის არჩევა';
     const paused = pausedApartmentIds().size;
     const pausedMsg = paused ? ` ${st.plan.apartments} ყველაზე ძველი ობიექტის ბმული მუშაობს, დანარჩენი ${paused} შეჩერებულია, სანამ პაკეტს არ აირჩევ.` : '';
-    if (st.trialEnded) { tone = 'warn'; msg = `საცდელი პერიოდი დასრულდა და ანგარიში უფასო პაკეტზე გადავიდა. შენი მონაცემები ადგილზეა.${pausedMsg}`; }
+    if (st.noTrial) { tone = 'warn'; msg = `საცდელი პერიოდი გამორთულია. აირჩიე პაკეტი, რომ გააგრძელო: ახლა ${st.plan.apartments} ობიექტამდე გაქვს ხელმისაწვდომი.${pausedMsg}`; }
+    else if (st.trialEnded) { tone = 'warn'; msg = `საცდელი პერიოდი დასრულდა და ანგარიში უფასო პაკეტზე გადავიდა. შენი მონაცემები ადგილზეა.${pausedMsg}`; }
     else if (st.lapsed) { tone = 'warn'; msg = `„${PLANS[st.key].name}“ პაკეტის ვადა ამოიწურა და ანგარიში უფასო პაკეტზე გადავიდა. შენი მონაცემები ადგილზეა.${pausedMsg}`; cta = 'განახლება'; }
     else if (st.trial) {
       tone = st.daysLeft !== null && st.daysLeft <= 3 ? 'warn' : 'info';
@@ -913,7 +1035,7 @@
   }
 
   window.App = { S, H, views, aptSection, contactSection, isManager, isAdmin, isAgent, refresh, render, renderShell, go, route, taskHref, closeTaskOverlay, upsertLocal, logEvent, loadMore,
-    PLANS, PLAN_ORDER, FEATURE_LABEL, CONTACT, planState, can, guardLimit, guardFeature, openUpgrade, planCardsHtml, waLink, activeApartments, pausedApartmentIds, seatsUsed, startKisaCheckout };
+    PLANS, PLAN_ORDER, FEATURE_LABEL, CONTACT, planState, can, guardLimit, guardFeature, openUpgrade, planCardsHtml, waLink, activeApartments, pausedApartmentIds, seatsUsed, openKisaCheckoutModal, startKisaCheckout: openKisaCheckoutModal };
 
   document.addEventListener('DOMContentLoaded', () => {
     hydrateIcons();

@@ -29,6 +29,8 @@ async function newPage(browser, { viewport = { width: 1366, height: 860 }, login
   await context.route('**/js/supabase.js', route => route.fulfill({ contentType: 'text/javascript', body: fs.readFileSync(path.join(__dirname, 'mock-supabase.js'), 'utf8') }));
   await context.route(/^https?:\/\/(?!localhost)/, route => route.fulfill({ status: 200, contentType: 'text/javascript', body: '' }));
   await context.addInitScript({ content: fs.readFileSync(path.join(__dirname, 'seed.js'), 'utf8') });
+  // The app's FORCE_NO_TRIAL test switch defaults to on; tests exercise the real trial unless they opt in.
+  await context.addInitScript(() => { window.RIGZEA_FORCE_NO_TRIAL = false; });
   if (login) {
     await context.addInitScript(({ id, email, name }) => {
       if (!localStorage.getItem('rigzea_mock_session')) localStorage.setItem('rigzea_mock_session', JSON.stringify({ access_token: 'mock', user: { id, email, user_metadata: { full_name: name } } }));

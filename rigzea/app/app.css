@@ -692,6 +692,43 @@ button.row { width: 100%; border: 0; border-bottom: 1px solid var(--line); backg
 .plan-price small { font-size: 12px; font-weight: 400; color: var(--muted); }
 .plan-tag { align-self: flex-start; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--brand-soft); color: var(--brand); }
 .plan-tag-cur { background: var(--neutral-bg); color: var(--neutral); }
+.plan-card-actions { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
+.plan-wa { text-align: center; font-size: 12px; color: var(--muted); }
+.plan-wa .icon { vertical-align: -2px; }
+
+/* KISA checkout dialog */
+.kisa { display: grid; }
+.kisa-view { display: grid; gap: 14px; }
+.kisa-view[hidden] { display: none; }
+.kisa-code { display: grid; gap: 8px; padding: 14px; border-radius: var(--r); background: var(--ink); color: var(--surface); }
+.kisa-code-label { font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; opacity: .7; }
+.kisa-code-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.kisa-code-row strong { font-size: 34px; line-height: 1.1; font-weight: 700; letter-spacing: .08em; user-select: all; }
+.kisa-code-hint { font-size: 12.5px; opacity: .8; }
+.kisa-copy { display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; border: 0; border-radius: var(--r-sm); background: var(--surface); color: var(--ink); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; transition: transform .15s ease, background .2s ease, color .2s ease; }
+.kisa-copy:active { transform: scale(.95); }
+.kisa-copy.is-copied { background: var(--ok); color: #fff; animation: kisaPop .35s ease; }
+.kisa-pay { display: grid; gap: 8px; justify-items: center; padding: 14px; border-radius: var(--r); background: var(--brand); color: #fff; text-decoration: none; transition: background .2s ease; }
+.kisa-pay:hover { background: var(--brand-hover); }
+.kisa-pay-main { display: inline-flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 700; }
+.kisa-badges { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+.kisa-badges i { font-style: normal; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: rgba(255, 255, 255, .18); }
+.kisa-live { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: var(--r-sm); background: var(--info-bg); color: var(--info); font-size: 13px; }
+.kisa-pulse { position: relative; flex: none; width: 10px; height: 10px; margin: 0 4px; border-radius: 50%; background: currentColor; animation: kisaPulse 1.8s ease-out infinite; }
+.kisa[data-state="busy"] .kisa-live { background: var(--warn-bg); color: var(--warn); }
+.kisa[data-state="error"] .kisa-live { background: var(--danger-bg); color: var(--danger); }
+.kisa[data-state="error"] .kisa-pulse, .kisa[data-state="idle"] .kisa-pulse { animation: none; }
+.kisa-done-view { justify-items: center; text-align: center; padding: 8px 0; animation: kisaPop .45s ease; }
+.kisa-done-view h3 { margin: 0; font-size: 20px; }
+.kisa-done-view p { margin: 0; color: var(--ink-2); }
+.kisa-check { width: 72px; height: 72px; fill: none; stroke: var(--ok); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.kisa-check circle { fill: var(--ok-bg); stroke-dasharray: 151; stroke-dashoffset: 151; animation: kisaDraw .6s ease forwards; }
+.kisa-check path { stroke-dasharray: 40; stroke-dashoffset: 40; animation: kisaDraw .4s .45s ease forwards; }
+@keyframes kisaPulse { 0% { box-shadow: 0 0 0 0 currentColor; } 70% { box-shadow: 0 0 0 10px transparent; } 100% { box-shadow: 0 0 0 0 transparent; } }
+@keyframes kisaDraw { to { stroke-dashoffset: 0; } }
+@keyframes kisaPop { 0% { transform: scale(.94); opacity: .4; } 60% { transform: scale(1.03); } 100% { transform: scale(1); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .kisa-pulse, .kisa-check circle, .kisa-check path, .kisa-done-view, .kisa-copy.is-copied { animation: none; stroke-dashoffset: 0; } }
+
 .plan-contact { font-size: 13px; color: var(--ink-2); margin: 14px 0 0; }
 .plan-cta { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
 .meter { height: 8px; border-radius: 999px; background: var(--neutral-bg); overflow: hidden; }

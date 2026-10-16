@@ -1120,6 +1120,22 @@ test('29. the portal button hands public listing data to the extension and warns
   return page;
 });
 
+test('30. with FORCE_NO_TRIAL a trial workspace is limited at once and the KISA checkout shows the code and pay link', async (browser) => {
+  const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
+  await page.addInitScript(() => { window.RIGZEA_FORCE_NO_TRIAL = true; });
+  await page.goto(BASE + '/app/');
+  await page.waitForFunction(() => window.App && App.S.data && App.S.org);
+  const st = await page.evaluate(() => { App.S.org.plan = 'trial'; App.S.org.trial_ends_at = new Date(Date.now() + 20 * 864e5).toISOString(); const s = App.planState(); return { eff: s.eff, trial: s.trial, ended: s.trialEnded }; });
+  assert.deepStrictEqual([st.eff, st.trial, st.ended], ['starter', false, true]);
+  await page.evaluate(() => { App.openUpgrade({ kind: 'info' }); }); // the dialog promise only settles on close
+  await page.locator('dialog[open] .plan-card', { hasText: 'დამწყები' }).locator('[data-kisa-checkout="starter"]').click();
+  const code = await page.locator('dialog[open] #kisa-code-val').innerText();
+  assert(/^RZ-\d{4}$/.test(code), 'unique code shown: ' + code);
+  await page.locator('dialog[open] #btn-open-kisa').waitFor();
+  assert(await page.locator('dialog[open] .kisa-live').isVisible(), 'live waiting status is visible');
+  return page;
+});
+
 test('28. the service worker precaches the app shell under a content-named cache', async (browser) => {
   const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
   await page.goto(BASE + '/app/');

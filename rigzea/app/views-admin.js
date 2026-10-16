@@ -222,7 +222,8 @@
     const planName = st.trial ? 'საცდელი პერიოდი' : App.PLANS[st.eff].name;
     let status;
     const paused = App.pausedApartmentIds().size;
-    if (st.trialEnded) status = `<span class="t-warn">საცდელი პერიოდი დასრულდა ${esc(R.date(st.end))}-ს. ანგარიში უფასო პაკეტზეა, შენი მონაცემები ადგილზეა.</span>`;
+    if (st.noTrial) status = '<span class="t-warn">საცდელი პერიოდი გამორთულია. აირჩიე პაკეტი სრული წვდომისთვის.</span>';
+    else if (st.trialEnded) status =`<span class="t-warn">საცდელი პერიოდი დასრულდა ${esc(R.date(st.end))}-ს. ანგარიში უფასო პაკეტზეა, შენი მონაცემები ადგილზეა.</span>`;
     else if (st.lapsed) status = `<span class="t-warn">პაკეტის ვადა ამოიწურა ${esc(R.date(st.end))}-ს. ანგარიში უფასო პაკეტზეა, შენი მონაცემები ადგილზეა.</span>`;
     else if (st.trial) status = st.end ? `ყველა ფუნქცია ღიაა ${esc(R.date(st.end))}-მდე (დარჩენილია ${st.daysLeft} დღე).` : 'ყველა ფუნქცია ღიაა.';
     else status = st.end ? `აქტიურია ${esc(R.date(st.end))}-მდე (დარჩენილია ${st.daysLeft} დღე).` : 'აქტიურია.';
@@ -233,7 +234,7 @@
       <div><span class="field-label">ფუნქციები</span><ul class="plan-features" style="list-style:none;padding:0;margin:6px 0 0;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:6px;font-size:13px">${Object.entries(App.FEATURE_LABEL).map(([k, l]) => App.can(k) ? `<li class="t-ok">✓ ${esc(l)}</li>` : `<li class="muted">🔒 ${esc(l)}</li>`).join('')}</ul></div>
     </div></section>
     <section class="card" style="max-width:900px"><div class="card-head"><h2>პაკეტები</h2></div><div class="card-body">
-      ${App.planCardsHtml(st.key === 'trial' ? 'pro' : null, st.trial ? null : st.eff)}
+      ${App.planCardsHtml(st.key === 'trial' ? 'pro' : null, st.trial || st.noTrial ? null : st.eff)}
       <p class="plan-contact">პაკეტის გასააქტიურებლად მოგვწერე WhatsApp-ში ან დარეკე <a href="tel:${App.CONTACT.phone}">${App.CONTACT.phone}</a>. გადახდის შემდეგ პაკეტს იმავე დღეს ჩავრთავთ.</p>
       <div class="plan-cta"><a class="btn btn-primary" href="${esc(App.waLink())}" target="_blank" rel="noopener">${icon('whatsapp', 16)} მოგვწერე WhatsApp-ში</a></div>
     </div></section>`;
