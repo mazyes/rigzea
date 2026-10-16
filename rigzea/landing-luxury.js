@@ -924,11 +924,15 @@
         priceEl.textContent = targetPrice;
       });
 
-      // the free plan keeps its own label; paid plans switch between month and year
+      // switch labels between month and year
       document.querySelectorAll('.lx-plan-period[data-monthly-period]').forEach(label => {
         if (!label.dataset.monthlyText) label.dataset.monthlyText = label.textContent;
-        const isFree = label.previousElementSibling && label.previousElementSibling.dataset.yearly === label.previousElementSibling.dataset.monthly;
-        label.textContent = isYearly && !isFree ? '/ წელი' : label.dataset.monthlyText;
+        label.textContent = isYearly ? '/ წელი' : label.dataset.monthlyText;
+      });
+
+      // hide free trial notice on yearly billing
+      document.querySelectorAll('.lx-plan-trial').forEach(trial => {
+        trial.style.display = isYearly ? 'none' : '';
       });
     });
   });

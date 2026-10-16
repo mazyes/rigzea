@@ -59,7 +59,7 @@ declare
   v_owner_email text;
   v_plan_name text;
 begin
-  if p_plan not in ('pro', 'top', 'agency') then
+  if p_plan not in ('starter', 'pro', 'top', 'agency') then
     raise exception 'არასწორი პაკეტი: %', p_plan using errcode = 'P0001';
   end if;
 
@@ -98,6 +98,7 @@ begin
    order by m.created_at limit 1;
 
   v_plan_name := case p_plan
+    when 'starter' then 'დამწყები'
     when 'pro' then 'პრო აგენტი'
     when 'top' then 'გუნდი'
     when 'agency' then 'სააგენტო'

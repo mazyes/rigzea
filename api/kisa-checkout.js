@@ -25,7 +25,7 @@ export default async function handler(req, res) {
 
   if (!UUID_RE.test(orgId)) return res.status(400).json({ ok: false, error: 'invalid_org' });
   const plan = PLANS[planId];
-  if (!plan || !['pro', 'top', 'agency'].includes(planId)) {
+  if (!plan || !['starter', 'pro', 'top', 'agency'].includes(planId)) {
     return res.status(400).json({ ok: false, error: 'invalid_plan' });
   }
 

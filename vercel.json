@@ -28,6 +28,9 @@
     },
     "api/kisa-webhook.js": {
       "includeFiles": "rigzea/js/config.js"
+    },
+    "api/kisa-stream-confirm.js": {
+      "includeFiles": "rigzea/js/config.js"
     }
   },
   "redirects": [

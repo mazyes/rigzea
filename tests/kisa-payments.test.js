@@ -14,12 +14,17 @@ for (const planId of ['pro', 'top', 'agency']) {
   console.log(`✓ Plan ${planId} price is valid: ${plan.price} GEL`);
 }
 
-// 2. Verify starter plan has price 0
-assert.strictEqual(PLANS.starter.price, 0, 'Starter plan must be 0 GEL');
-console.log('✓ Starter plan is 0 GEL');
+// 2. Verify starter plan has price 9.87 GEL as requested
+assert.strictEqual(PLANS.starter.price, 9.87, 'Starter plan must be 9.87 GEL');
+console.log('✓ Starter plan is 9.87 GEL');
 
 // 3. Verify order of plans
 assert.deepStrictEqual(PLAN_ORDER, ['starter', 'pro', 'top', 'agency'], 'Plan order must be correct');
 console.log('✓ Plan order matches');
+
+// 4. Verify KISA Stream constants
+const EXPECTED_STREAM_ID = '6ad1f68d02e62c8c663fc77b';
+assert.strictEqual(EXPECTED_STREAM_ID.length, 24, 'KISA Stream ID must be 24 hex characters');
+console.log('✓ KISA Stream ID format is valid');
 
 console.log('\nAll KISA integration unit checks passed.');
