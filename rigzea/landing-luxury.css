@@ -4431,3 +4431,93 @@ h1, h2, h3 { line-height: 1.12; letter-spacing: -0.02em; }
 .lx-hero-grid { grid-template-columns: minmax(0, 1fr); }
 .lx-hero-copy { max-width: 860px; }
 .lx-hero-title { max-width: 16em; }
+
+/* ==========================================================================
+   HERO v4: centered headline + real product window under an emerald glow
+   ========================================================================== */
+.lx-hero--center { position: relative; isolation: isolate; overflow: hidden; padding: clamp(44px, 5vw, 72px) 0 0; }
+.lx-hero--center .lx-container { position: relative; z-index: 1; }
+.lx-hero--center .lx-hero-copy { max-width: 900px; margin: 0 auto; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 22px; }
+.lx-hero--center .lx-hero-title { max-width: 24em; margin: 0 auto; font-size: clamp(30px, 3.5vw, 50px); line-height: 1.08; letter-spacing: -0.02em; }
+.lx-hero--center .lx-hero-desc { max-width: 40em; margin: 0 auto; font-size: clamp(15px, 1.25vw, 17px); }
+.lx-hero--center .lx-hero-actions { justify-content: center; margin: 4px 0 0; }
+.lx-hero--center .lx-social-proof { border-top: 0; padding-top: 0; margin-top: -4px; justify-content: center; }
+.lx-hero--center .lx-social-proof-text strong { text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 1px; }
+
+/* Eyebrow: pill with a filled year tag */
+.lx-hero-eyebrow {
+  display: inline-flex; align-items: center; gap: 10px; padding: 7px 16px 7px 12px; border-radius: 9999px;
+  font-size: 13px; font-weight: 600; font-feature-settings: "case" 1;
+  border: 1px solid var(--lx-border-medium); background: rgba(255, 255, 255, .04); color: var(--lx-text-silver);
+}
+.lx-hero-eyebrow-dot { width: 8px; height: 8px; border-radius: 50%; background: #10B981; box-shadow: 0 0 0 4px rgba(16, 185, 129, .18); }
+.lx-hero-eyebrow-tag { background: #10B981; color: #fff; border-radius: 9999px; padding: 3px 10px; font-size: 12px; font-weight: 700; letter-spacing: .02em; }
+
+/* Glow: a soft core at the top and a wide emerald band sweeping behind the product window */
+.lx-hero-glow { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+.lx-hero-glow::before {
+  content: ""; position: absolute; left: 50%; top: -30%; width: 120%; height: 80%; transform: translateX(-50%);
+  background: radial-gradient(closest-side, rgba(16, 185, 129, .22), transparent 70%);
+}
+.lx-hero-glow::after {
+  content: ""; position: absolute; left: -20%; right: -20%; top: 58%; height: 46%;
+  background: radial-gradient(60% 50% at 50% 50%, rgba(16, 185, 129, .55), rgba(5, 150, 105, .18) 45%, transparent 75%);
+  transform: rotate(-8deg); filter: blur(30px);
+}
+
+/* Product window */
+.lx-hero-shot { position: relative; margin: clamp(40px, 5vw, 64px) auto 0; max-width: 1080px; }
+.lx-hero-window {
+  position: relative; border-radius: 16px 16px 0 0; overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, .12); border-bottom: 0; background: #0C1014;
+  box-shadow: 0 -1px 0 rgba(255, 255, 255, .06) inset, 0 40px 80px -30px rgba(0, 0, 0, .7), 0 0 0 8px rgba(255, 255, 255, .03);
+}
+.lx-hero-window-bar { display: flex; align-items: center; gap: 7px; height: 38px; padding: 0 14px; border-bottom: 1px solid rgba(255, 255, 255, .07); background: #0C1014; }
+.lx-hero-window-bar i { width: 10px; height: 10px; border-radius: 50%; background: rgba(255, 255, 255, .18); }
+.lx-hero-window-bar span {
+  margin: 0 auto; transform: translateX(-20px); font: 500 12px/1 ui-monospace, Menlo, Consolas, monospace;
+  color: #82988c; background: rgba(255, 255, 255, .05); padding: 6px 14px; border-radius: 8px;
+}
+.lx-shot { display: block; width: 100%; height: auto; aspect-ratio: 1440 / 900; object-fit: cover; object-position: top; max-height: 560px; }
+.lx-shot-light { display: none; }
+.lx-hero-play {
+  position: absolute; left: 50%; top: 52%; transform: translate(-50%, -50%); width: 68px; height: 68px; border-radius: 50%;
+  display: grid; place-items: center; color: #fff; background: #10B981; padding-left: 3px;
+  box-shadow: 0 0 0 10px rgba(16, 185, 129, .18), 0 16px 32px -8px rgba(5, 150, 105, .6);
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+.lx-hero-play:hover { transform: translate(-50%, -50%) scale(1.06); box-shadow: 0 0 0 14px rgba(16, 185, 129, .2), 0 16px 32px -8px rgba(5, 150, 105, .7); }
+
+/* Dark default */
+:root:not([data-theme="light"]) .lx-hero--center .lx-hero-title { color: #fff; }
+:root:not([data-theme="light"]) .lx-hero--center .lx-hero-title span { color: #6EE7B7; }
+:root:not([data-theme="light"]) .lx-hero--center .lx-hero-desc { color: #A3B8AD; }
+:root:not([data-theme="light"]) .lx-hero--center .lx-social-proof-text { color: #A3B8AD; }
+
+/* Light */
+:root[data-theme="light"] .lx-shot-light { display: block; }
+:root[data-theme="light"] .lx-shot-dark { display: none; }
+:root[data-theme="light"] .lx-hero-eyebrow { background: #fff; border-color: #E2E8F0; color: #334155; box-shadow: 0 1px 2px rgba(15, 23, 42, .04); }
+:root[data-theme="light"] .lx-hero-glow::before { background: radial-gradient(closest-side, rgba(16, 185, 129, .14), transparent 70%); }
+:root[data-theme="light"] .lx-hero-glow::after { background: radial-gradient(60% 50% at 50% 50%, rgba(16, 185, 129, .32), rgba(167, 243, 208, .25) 45%, transparent 75%); }
+:root[data-theme="light"] .lx-hero-window {
+  background: #fff; border-color: #E2E8F0;
+  box-shadow: 0 40px 80px -30px rgba(15, 23, 42, .25), 0 0 0 8px rgba(255, 255, 255, .6);
+}
+:root[data-theme="light"] .lx-hero-window-bar { background: #F8FAFC; border-bottom-color: #E2E8F0; }
+:root[data-theme="light"] .lx-hero-window-bar i { background: #CBD5E1; }
+:root[data-theme="light"] .lx-hero-window-bar span { background: #fff; border: 1px solid #E2E8F0; color: #64748B; }
+
+/* The section after the hero starts on a clean hairline */
+.lx-hero--center + * { position: relative; z-index: 1; }
+
+@media (max-width: 700px) {
+  .lx-hero--center .lx-hero-title br { display: none; }
+  .lx-hero-shot { margin-left: -8px; margin-right: -8px; }
+  .lx-hero-window { border-radius: 12px 12px 0 0; }
+  .lx-hero-window-bar { height: 30px; }
+  .lx-hero-window-bar span { font-size: 10.5px; padding: 4px 10px; }
+  .lx-hero-play { width: 54px; height: 54px; }
+  .lx-hero-glow::after { top: 62%; }
+}
+@media (max-width: 700px) { .lx-hero-eyebrow { font-size: 11px; gap: 8px; padding: 6px 12px 6px 10px; white-space: nowrap; } }

@@ -22,3 +22,6 @@ tests/fixture-receipt.png
 screenshots/
 supabase/.temp/
 videos/
+
+# Superdesign scratch files
+.superdesign/tmp/
