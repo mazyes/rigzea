@@ -607,10 +607,12 @@
 
   const syncThemeBtn = () => {
     const dark = document.documentElement.dataset.theme === 'dark';
-    $('#btn-theme').innerHTML = icon(dark ? 'sun' : 'moon');
-    $('#btn-theme').setAttribute('aria-label', dark ? 'ღია თემა' : 'მუქი თემა');
+    const b = $('#btn-theme');
+    if (!b) return; // the demo shell has no theme button
+    b.innerHTML = icon(dark ? 'sun' : 'moon');
+    b.setAttribute('aria-label', dark ? 'ღია თემა' : 'მუქი თემა');
   };
-  $('#btn-theme').addEventListener('click', () => {
+  $('#btn-theme')?.addEventListener('click', () => {
     const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
     localStorage.setItem('rigzea_theme', next);
     R.applyTheme(next);
