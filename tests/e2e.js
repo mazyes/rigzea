@@ -1095,10 +1095,13 @@ test('29. the portal button hands public listing data to the extension and warns
   const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
   await page.goto(BASE + '/app/#/apartments/dddddddd-0000-4000-8000-000000000001');
   await page.locator('#btn-post-portals').waitFor();
-  // No extension answers: an error toast, the dialog stays open
+  // No extension answers: the install guide opens with the download link
   await page.locator('#btn-post-portals').click();
   await page.locator('dialog[open] [data-submit]').click();
-  await page.locator('.toast', { hasText: 'გაფართოება ვერ მოიძებნა' }).waitFor();
+  await page.locator('dialog[open] a[href="/downloads/rigzea-extension.zip"]').waitFor();
+  await page.keyboard.press('Escape');
+  await page.locator('dialog[open]').waitFor({ state: 'detached' });
+  await page.locator('#btn-post-portals').click();
   // A stand-in extension acknowledges and records the payload
   await page.evaluate(() => {
     window.__posted = null;

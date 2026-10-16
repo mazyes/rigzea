@@ -855,6 +855,8 @@
 "პოსტი WhatsApp-ისა და Facebook-ისთვის": "Post for WhatsApp and Facebook",
 "გამოქვეყნება SS.ge / MyHome.ge-ზე": "Post to SS.ge / MyHome.ge",
 "ფორმის შევსება": "Fill the form",
+"დააყენე Rigzea-ს გაფართოება": "Install the Rigzea extension",
+"ჩამოტვირთე გაფართოება (ZIP)": "Download the extension (ZIP)",
 "სად გამოქვეყნდეს": "Where to publish",
 "SS.ge და MyHome.ge": "SS.ge and MyHome.ge",
 "მხოლოდ SS.ge": "SS.ge only",

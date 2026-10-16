@@ -626,6 +626,23 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
     });
   }
 
+  function openExtensionGuide() {
+    return R.dialog({
+      title: 'დააყენე Rigzea-ს გაფართოება',
+      subtitle: 'ერთხელ დასაყენებელია, მხოლოდ კომპიუტერის Chrome-ში',
+      body: `
+        <ol class="ext-guide" style="margin:0;padding-left:20px;display:grid;gap:10px">
+          <li><a class="btn btn-primary btn-sm" href="/downloads/rigzea-extension.zip" download>ჩამოტვირთე გაფართოება (ZIP)</a></li>
+          <li>გახსენი ZIP ფაილი (მარჯვენა ღილაკი, „Extract All“) და დატოვე საქაღალდე ისეთ ადგილას, საიდანაც არ წაშლი.</li>
+          <li>Chrome-ის მისამართის ველში ჩაწერე <code>chrome://extensions</code> და დააჭირე Enter.</li>
+          <li>ზედა მარჯვნივ ჩართე „Developer mode“.</li>
+          <li>დააჭირე „Load unpacked“ და აირჩიე გახსნილი საქაღალდე.</li>
+          <li>შედი შენს ანგარიშზე SS.ge-ზე და MyHome.ge-ზე, დაბრუნდი აქ და სცადე თავიდან.</li>
+        </ol>
+        <p class="field-hint">გაფართოება ავსებს ფორმას. სტატუსს და მდგომარეობას შენ აირჩევ და გამოქვეყნებას თვითონ დააჭერ. თუ საიტი კაპჩას გკითხავს, ის შენ უნდა გაიარო.</p>`,
+    });
+  }
+
   function openPortalPostDialog(a) {
     return R.dialog({
       title: 'გამოქვეყნება SS.ge / MyHome.ge-ზე',
@@ -642,10 +659,7 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
       onSubmit: async (_f, v) => {
         const targets = v.target === 'both' ? ['ss', 'myhome'] : [v.target];
         const ok = await sendToPortals(a, targets);
-        if (!ok) {
-          toast('გაფართოება ვერ მოიძებნა. დააყენე Rigzea-ს გაფართოება Chrome-ში და სცადე თავიდან.', { type: 'error' });
-          return false;
-        }
+        if (!ok) { setTimeout(() => openExtensionGuide(), 0); return; }
         toast('გაფართოებას გადაეცა. ახალ ფანჯარაში იხილავ შევსებას.');
       },
     });
