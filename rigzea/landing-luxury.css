@@ -3227,3 +3227,92 @@ html.lenis, html.lenis body { height: auto; }
 .lx-btn-primary:focus-visible { box-shadow: var(--lx-focus-ring); }
 .lx-video-btn, .lx-video-btn:hover { box-shadow: none; }
 .lx-mobile-thumb-bar { box-shadow: none; }
+
+/* ==========================================================================
+   MOBILE APP UI (≤700px): compact header, phone-frame hero, step rows,
+   swipe carousels with dots, comparison tabs, floating bottom pill.
+   ========================================================================== */
+.lx-cmp-seg, .lx-dots { display: none; }
+
+@media (max-width: 700px) {
+  /* Spacing + type scale */
+  :root main section:not(.lx-hero) { padding-top: 56px; padding-bottom: 56px; }
+  :root main .lx-section-header { margin-bottom: 24px; gap: 10px; }
+  :root main h2 { font-size: 26px; line-height: 1.18; text-wrap: balance; }
+  :root main .lx-section-header p { font-size: 15px; }
+
+  /* 1. Header: 56px glass bar */
+  :root .lx-header { padding: 6px 0; background: rgba(8, 12, 10, .72); -webkit-backdrop-filter: blur(16px) saturate(160%); backdrop-filter: blur(16px) saturate(160%); border-bottom: 1px solid var(--lx-border-subtle); }
+  :root[data-theme="light"] .lx-header { background: rgba(255, 255, 255, .8); }
+  :root .lx-nav-links { top: 62px; left: 8px; right: 8px; border-radius: 20px; }
+  :root .lx-header-inner { height: 44px; min-height: 0; }
+  :root .lx-mobile-toggle { width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; border: 1px solid var(--lx-border-medium); }
+  :root[data-theme="light"] .lx-mobile-toggle { border-color: #CBD5E1; background: #fff; }
+
+  /* 2. Hero: tighter copy, real mobile app in a phone frame */
+  :root .lx-hero--center { padding-top: 28px; }
+  :root .lx-hero--center .lx-hero-copy { gap: 16px; }
+  :root .lx-hero--center .lx-hero-title { font-size: 28px; line-height: 1.16; text-wrap: balance; }
+  :root .lx-hero--center .lx-hero-desc { font-size: 15px; line-height: 1.6; }
+  :root .lx-hero--center .lx-hero-actions { width: 100%; }
+  :root .lx-video-btn { width: 100%; justify-content: center; }
+  :root .lx-hero-shot { max-width: 264px; margin: 28px auto 0; }
+  :root .lx-hero-window { border-radius: 34px 34px 0 0; border: 7px solid #1C2622; border-bottom: 0; background: #0C1014; }
+  :root[data-theme="light"] .lx-hero-window { border-color: #E2E8F0; background: #fff; }
+  :root .lx-hero-window-bar { display: none; }
+  :root .lx-shot { aspect-ratio: 780 / 1688; max-height: 400px; object-fit: cover; object-position: top; -webkit-mask-image: linear-gradient(#000 72%, transparent); mask-image: linear-gradient(#000 72%, transparent); }
+
+  /* 3. Steps: compact rows with a number chip */
+  :root .lx-steps-grid-3 > .lx-step-card { display: grid; grid-template-columns: 40px 1fr; column-gap: 14px; align-items: start; padding: 16px 0; }
+  :root .lx-steps-grid-3 .lx-step-num-badge { grid-row: span 2; width: 40px; height: 40px; margin: 0; border-radius: 12px; display: grid; place-items: center; font-size: 15px; background: rgba(16, 185, 129, .12); color: #34D399; }
+  :root[data-theme="light"] .lx-steps-grid-3 .lx-step-num-badge { background: #ECFDF5; color: #047857; }
+  :root .lx-steps-grid-3 .lx-step-card h3 { font-size: 16px; margin: 0 0 4px; }
+  :root .lx-steps-grid-3 .lx-step-card p { font-size: 14px; margin: 0; }
+
+  /* 4 + 6. Swipe carousels */
+  :root #features-grid, :root #pricing-grid {
+    display: flex; flex-direction: row; gap: 12px; overflow-x: auto; overflow-y: visible;
+    scroll-snap-type: x mandatory; scroll-padding-inline: 20px; overscroll-behavior-x: contain;
+    margin-inline: -20px; padding: 4px 20px 8px; scrollbar-width: none;
+  }
+  :root #features-grid::-webkit-scrollbar, :root #pricing-grid::-webkit-scrollbar { display: none; }
+  :root #features-grid > .lx-stack-item { flex: 0 0 86%; scroll-snap-align: start; margin: 0; }
+  :root #features-grid > .lx-stack-item > .lx-bento-card { height: 100%; }
+  :root #pricing-grid { padding-top: 20px; align-items: stretch; }
+  :root #pricing-grid > .lx-pricing-card { flex: 0 0 84%; scroll-snap-align: start; }
+  #features-grid .lx-match-pill { flex: 1 1 0; min-width: 0; font-size: 12px; padding: 6px 6px; white-space: normal; }
+  #features-grid .lx-btn, #pricing-grid .lx-btn { max-width: 100%; white-space: normal; text-align: center; }
+  #features-grid :has(> .lx-btn) { flex-wrap: wrap; row-gap: 10px; }
+  #features-grid .lx-match-listing-row { flex-wrap: wrap; gap: 8px; }
+
+  .lx-dots { display: flex; justify-content: center; gap: 2px; margin-top: 10px; }
+  .lx-dots button { width: 22px; height: 22px; padding: 0; border: 0; background: none; display: grid; place-items: center; cursor: pointer; }
+  .lx-dots button::before { content: ""; width: 6px; height: 6px; border-radius: 99px; background: var(--lx-border-medium); transition: width .3s var(--lx-ease-out), background-color .3s; }
+  .lx-dots button.is-active::before { width: 18px; background: #10B981; }
+  :root[data-theme="light"] .lx-dots button::before { background: #CBD5E1; }
+  :root[data-theme="light"] .lx-dots button.is-active::before { background: #047857; }
+
+  /* Pricing: room between the billing switch and the popular badge */
+  :root .lx-billing-toggle-container { margin-bottom: 14px; }
+
+  /* 5. Old way vs Rigzea: segmented control */
+  .lx-cmp-seg { display: flex; gap: 4px; padding: 4px; margin: 0 0 16px; border-radius: 999px; background: rgba(255, 255, 255, .05); border: 1px solid var(--lx-border-subtle); }
+  .lx-cmp-seg button { flex: 1; min-height: 44px; border: 0; border-radius: 999px; background: transparent; color: var(--lx-text-silver); font: 600 14px/1.2 var(--lx-font); cursor: pointer; transition: background-color .25s, color .25s; }
+  .lx-cmp-seg button.is-active { background: #047857; color: #fff; }
+  :root[data-theme="light"] .lx-cmp-seg { background: #F1F5F9; border-color: #E2E8F0; }
+  :root[data-theme="light"] .lx-cmp-seg button { color: #334155; }
+  :root[data-theme="light"] .lx-cmp-seg button.is-active { color: #fff; }
+  .lx-comparison-grid[data-cmp-show="old"] .lx-card-rigzea-way,
+  .lx-comparison-grid[data-cmp-show="new"] .lx-card-old-way { display: none; }
+
+  /* 7. FAQ + final call to action */
+  :root .lx-faq-question { font-size: 16px; font-weight: 600; padding: 16px; }
+  :root .lx-final-cta-box { padding: 32px 20px; }
+
+  /* 8. Bottom bar: floating pill */
+  :root .lx-mobile-thumb-bar {
+    left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    padding: 6px; gap: 6px; border-radius: 999px; border: 1px solid var(--lx-border-subtle); box-shadow: none;
+  }
+  :root .lx-thumb-btn { border-radius: 999px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+}

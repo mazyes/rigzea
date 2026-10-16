@@ -134,8 +134,8 @@
           <div class="lx-hero-shot">
             <div class="lx-hero-window">
               <div class="lx-hero-window-bar" aria-hidden="true"><i></i><i></i><i></i><span>rigzea.com/app</span></div>
-              <img class="lx-shot lx-shot-dark" src="/img/hero-dashboard-dark.webp" width="1440" height="900" alt="Rigzea სამუშაო სივრცე: დღის დაფა ბინებით, კლიენტებით და საკომისიოთი" fetchpriority="high" />
-              <img class="lx-shot lx-shot-light" src="/img/hero-dashboard-light.webp" width="1440" height="900" alt="Rigzea სამუშაო სივრცე: დღის დაფა ბინებით, კლიენტებით და საკომისიოთი" loading="lazy" />
+              <picture><source media="(max-width: 700px)" srcset="/img/hero-mobile-dark.webp" width="780" height="1688" /><img class="lx-shot lx-shot-dark" src="/img/hero-dashboard-dark.webp" width="1440" height="900" alt="Rigzea სამუშაო სივრცე: დღის დაფა ბინებით, კლიენტებით და საკომისიოთი" fetchpriority="high" /></picture>
+              <picture><source media="(max-width: 700px)" srcset="/img/hero-mobile-light.webp" width="780" height="1688" /><img class="lx-shot lx-shot-light" src="/img/hero-dashboard-light.webp" width="1440" height="900" alt="Rigzea სამუშაო სივრცე: დღის დაფა ბინებით, კლიენტებით და საკომისიოთი" loading="lazy" /></picture>
             </div>
           </div>
         </div>
@@ -360,6 +360,7 @@
             </div>
 
           </div>
+          <div class="lx-dots" data-dots-for="features-grid" aria-hidden="true"></div>
         </div>
       </section>
 
@@ -371,7 +372,11 @@
             <p>პირველი შთაბეჭდილება და მესაკუთრის დაცულობა გადამწყვეტია. ნახე განსხვავება:</p>
           </div>
 
-          <div class="lx-comparison-grid">
+          <div class="lx-seg lx-cmp-seg" role="tablist" aria-label="შედარება">
+            <button type="button" role="tab" class="is-active" data-cmp="old" aria-selected="true">ძველი მეთოდი</button>
+            <button type="button" role="tab" data-cmp="new" aria-selected="false">Rigzea‑ს სტანდარტი</button>
+          </div>
+          <div class="lx-comparison-grid" data-cmp-show="old">
             <!-- Old Way -->
             <div class="lx-card-old-way">
               <div class="lx-comparison-title-box">
@@ -466,7 +471,7 @@
           </div>
 
           <!-- 4 Pricing Cards -->
-          <div class="lx-pricing-grid-4">
+          <div class="lx-pricing-grid-4" id="pricing-grid">
             
             <!-- Tier 1: Starter -->
             <div class="lx-pricing-card lx-spotlight-card">
@@ -563,6 +568,7 @@
             </div>
 
           </div>
+          <div class="lx-dots" data-dots-for="pricing-grid" aria-hidden="true"></div>
 
           <!-- Collapsible Plan Comparison Table -->
           <details class="lx-cmp-details" id="plans-compare">
@@ -744,7 +750,7 @@
   <!-- Sticky Mobile Thumb Bar (shows when scrolled past Hero on mobile) -->
   <aside class="lx-mobile-thumb-bar" id="mobile-thumb-bar" aria-label="სწრაფი მოქმედებები">
     <a class="lx-thumb-btn lx-thumb-btn-primary" href="/app/#signup">გამოცადე უფასოდ</a>
-    <a class="lx-thumb-btn lx-thumb-btn-secondary" href="/demo/">👁 დემო</a>
+    <a class="lx-thumb-btn lx-thumb-btn-secondary" href="/demo/"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg> დემო</a>
   </aside>
 
   <!-- ShadcnSpace hero-02: Interactive Tour Modal -->
