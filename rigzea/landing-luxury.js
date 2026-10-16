@@ -6,7 +6,7 @@
  * Features:
  * 1. Lenis 1.1 + GSAP ScrollTrigger Integration with Hardware rAF Synced Ticker
  * 2. Magnetic Button Physics with 2.5D Multilayer Depth (.lx-btn-primary, .lx-btn-secondary)
- * 3. Dynamic 3D Perspective Card Tilt on Bento Cards, Pricing Cards, and Phone Mockup
+ * 3. Dynamic 3D Perspective Tilt on the Phone Mockup (cards stay still)
  * 4. Specular Diamond Glass Shine Ray Sweep on Hover
  * 5. Interactive Cursor Ripple & Animated SVG Checkmark on Copy CTAs
  * 6. Fluid Numeric Odometer / Count-Up Spring Ticker on ROI Calculator
@@ -223,7 +223,7 @@
   // =========================================================================
   // 4. RADIAL MOUSE SPOTLIGHT (HARDWARE-ACCELERATED VIA rAF THROTTLE)
   // =========================================================================
-  const spotlightCards = document.querySelectorAll('.lx-spotlight-card, .lx-bento-card, .lx-pricing-card, .lx-card-rigzea-way');
+  const spotlightCards = document.querySelectorAll('.lx-pricing-card.featured'); // the only card that reacts to the pointer
 
   spotlightCards.forEach(card => {
     let rect = null;
@@ -431,60 +431,6 @@
         targetTransY = restTransY;
       });
     }
-
-    // 7B. Bento Feature Cards 3D Perspective Tilt
-    const bentoTiltCards = document.querySelectorAll('.lx-bento-card, .lx-pricing-card, .lx-card-rigzea-way');
-
-    bentoTiltCards.forEach(card => {
-      let rect = null;
-      let targetRotX = 0, targetRotY = 0;
-      let currRotX = 0, currRotY = 0;
-      let isHovered = false;
-      let tiltAnimId = null;
-      const maxTilt = card.classList.contains('lx-bento-card') ? 6.5 : 4.5;
-
-      function updateCardTilt() {
-        currRotX += (targetRotX - currRotX) * 0.12;
-        currRotY += (targetRotY - currRotY) * 0.12;
-
-        const baseScale = card._bentoScale || 1.0;
-        card.style.transform = `perspective(1000px) rotateX(${currRotX.toFixed(2)}deg) rotateY(${currRotY.toFixed(2)}deg) scale(${baseScale})`;
-
-        const delta = Math.abs(targetRotX - currRotX) + Math.abs(targetRotY - currRotY);
-        if (isHovered || delta > 0.04) {
-          tiltAnimId = requestAnimationFrame(updateCardTilt);
-        } else {
-          currRotX = 0;
-          currRotY = 0;
-          card.style.transform = baseScale !== 1.0 ? `scale(${baseScale})` : '';
-          tiltAnimId = null;
-        }
-      }
-
-      card.addEventListener('pointerenter', () => {
-        rect = card.getBoundingClientRect();
-        isHovered = true;
-        if (!tiltAnimId) tiltAnimId = requestAnimationFrame(updateCardTilt);
-      });
-
-      card.addEventListener('pointermove', (e) => {
-        if (!rect) rect = card.getBoundingClientRect();
-        const normX = (e.clientX - rect.left - rect.width / 2) / (rect.width / 2);
-        const normY = (e.clientY - rect.top - rect.height / 2) / (rect.height / 2);
-
-        targetRotX = -normY * maxTilt;
-        targetRotY = normX * maxTilt;
-
-        if (!tiltAnimId) tiltAnimId = requestAnimationFrame(updateCardTilt);
-      });
-
-      card.addEventListener('pointerleave', () => {
-        isHovered = false;
-        targetRotX = 0;
-        targetRotY = 0;
-        rect = null;
-      });
-    });
   }
 
   // =========================================================================
