@@ -524,6 +524,23 @@
   function renderShell() {
     const key = S.data ? navKey() : route().name;
     const counts = navCounts();
+    const topNav = $('#topbar-nav');
+    if (topNav) {
+      const topItems = [
+        { id: 'today', label: 'მთავარი', icon: 'today', href: '#/today' },
+        { id: 'apartments', label: 'ბინები', icon: 'building', href: '#/apartments' },
+        { id: 'deals', label: 'გარიგებები', icon: 'wallet', href: '#/deals', count: counts.deals },
+        { id: 'contacts', label: 'კონტაქტები', icon: 'user', href: '#/owners', count: counts.contacts },
+        { id: 'tasks', label: 'საქმეები', icon: 'tasks', href: '#/tasks', count: counts.tasks },
+        { id: 'finance', label: 'ფინანსები', icon: 'wallet', href: '#/finance' },
+      ];
+      topNav.innerHTML = topItems.map(item => {
+        const active = key === item.id;
+        const c = item.count;
+        const badge = c ? `<span class="topbar-tab-count ${c.danger ? 'count-danger' : ''}" title="${esc(c.label)}">${c.n}</span>` : '';
+        return `<a class="topbar-tab ${active ? 'is-active' : ''}" href="${item.href}" ${active ? 'aria-current="page"' : ''}>${icon(item.icon, 15)}<span>${item.label}</span>${badge}</a>`;
+      }).join('');
+    }
     $('#rail').innerHTML = navGroups().map(g => `${g.label ? `<div class="nav-group">${g.label}</div>` : ''}${navLinks(g, key, counts)}`).join('')
       + `<div class="rail-foot">${S.data ? `${S.data.apartments.filter(a => a.status !== 'archived').length} ბინა · ${S.data.owners.length} კონტაქტი · ${S.data.members.length} წევრი` : ''}</div>`;
 
@@ -770,12 +787,57 @@
   const qaWrap = $('#quick-add-wrap');
   const qaBtn = $('#btn-new-task');
   const qaPanel = $('#quick-add-panel');
+  const qtWrap = $('#quick-tools-wrap');
+  const qtBtn = $('#btn-tools');
+  const qtPanel = $('#tools-panel');
+
+  if (qtBtn && qtPanel) {
+    qtBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const open = !qtPanel.hidden;
+      qtPanel.hidden = open;
+      qtBtn.setAttribute('aria-expanded', String(!open));
+      if (qaPanel) { qaPanel.hidden = true; qaBtn?.setAttribute('aria-expanded', 'false'); }
+    });
+    qtPanel.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-tool]');
+      if (!b) return;
+      qtPanel.hidden = true;
+      qtBtn.setAttribute('aria-expanded', 'false');
+      const tool = b.dataset.tool;
+      if (tool === 'calculator') App.openCommissionCalculator();
+      else if (tool === 'matchmaker') {
+        if (typeof App.openMatchmakerModal === 'function') App.openMatchmakerModal();
+        else App.openMatchmaker();
+      }
+      else if (tool === 'social-post') App.openSocialPostGenerator();
+      else if (tool === 'templates') {
+        if (typeof App.openDocChooser === 'function') App.openDocChooser();
+        else go('#/settings');
+      }
+    });
+    document.addEventListener('click', (e) => {
+      if (qtWrap && !qtWrap.contains(e.target)) {
+        qtPanel.hidden = true;
+        qtBtn.setAttribute('aria-expanded', 'false');
+      }
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && qtPanel && !qtPanel.hidden) {
+        qtPanel.hidden = true;
+        qtBtn.setAttribute('aria-expanded', 'false');
+        qtBtn.focus();
+      }
+    });
+  }
+
   if (qaBtn && qaPanel) {
     qaBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       const open = !qaPanel.hidden;
       qaPanel.hidden = open;
       qaBtn.setAttribute('aria-expanded', String(!open));
+      if (qtPanel) { qtPanel.hidden = true; qtBtn?.setAttribute('aria-expanded', 'false'); }
     });
     qaPanel.addEventListener('click', (e) => {
       const b = e.target.closest('[data-qa]');
@@ -1163,7 +1225,366 @@
     $$('#data-notice [data-load-more]').forEach(b => { b.onclick = () => loadMore(b.dataset.loadMore); });
   }
 
+  // ---------------------------------------------------------------------------
+  // Broker Quick Tools (Topbar / Direct Access)
+  // ---------------------------------------------------------------------------
+  function openCommissionCalculator() {
+    R.dialog({
+      title: 'საკომისიოს კალკულატორი',
+      subtitle: 'გარიგების, სააგენტოსა და აგენტის წილის სწრაფი გაანგარიშება',
+      wide: true,
+      body: `
+        <div class="calc-dialog-grid">
+          <div class="calc-inputs">
+            <label class="field"><span class="field-label">გარიგების ტიპი</span>
+              <select id="qc-deal-type">
+                <option value="sale" selected>იყიდება (გაყიდვა)</option>
+                <option value="rent">ქირავდება (გაქირავება)</option>
+              </select>
+            </label>
+            <div class="calc-fields-row">
+              <label class="field" style="flex:2"><span class="field-label">ობიექტის ფასი</span>
+                <input type="number" id="qc-price" value="100000" min="0" step="1000" />
+              </label>
+              <label class="field" style="flex:1"><span class="field-label">ვალუტა</span>
+                <select id="qc-currency">
+                  <option value="$" selected>$ (აშშ დოლარი)</option>
+                  <option value="₾">₾ (ლარი)</option>
+                  <option value="€">€ (ევრო)</option>
+                </select>
+              </label>
+            </div>
+            <div class="calc-fields-row">
+              <label class="field"><span class="field-label" id="qc-comm-label">საკომისიო (%)</span>
+                <input type="number" id="qc-comm-pct" value="3" min="0" max="100" step="0.5" />
+              </label>
+              <label class="field"><span class="field-label">აგენტის წილი (%)</span>
+                <input type="number" id="qc-agent-split" value="50" min="0" max="100" step="5" />
+              </label>
+            </div>
+            <label class="field"><span class="field-label">საგადასახადო რეჟიმი</span>
+              <select id="qc-tax-mode">
+                <option value="1" selected>1% (მცირე ბიზნესი)</option>
+                <option value="20">20% (საშემოსავლო გადასახადი)</option>
+                <option value="0">0% (გადასახადის გარეშე)</option>
+              </select>
+            </label>
+            <label class="calc-cobroker-toggle">
+              <input type="checkbox" id="qc-has-cobroker" />
+              <span>თანაბროკერი (Co-Broking 50/50 გაყოფა)</span>
+            </label>
+          </div>
+
+          <div class="calc-results-card">
+            <div>
+              <div class="calc-results-title">გაანგარიშების შედეგი</div>
+              <div class="calc-rows">
+                <div class="calc-row">
+                  <span class="muted">მთლიანი საკომისიო:</span>
+                  <strong id="qc-out-gross">$3 000</strong>
+                </div>
+                <div class="calc-row" id="qc-cobroker-row" style="display:none">
+                  <span class="muted">პარტნიორი აგენტის წილი (50%):</span>
+                  <span id="qc-out-cobroker">$1 500</span>
+                </div>
+                <div class="calc-row">
+                  <span class="muted">სააგენტოს წილი:</span>
+                  <span id="qc-out-agency">$1 500</span>
+                </div>
+                <div class="calc-row">
+                  <span class="muted">აგენტის დარიცხული წილი:</span>
+                  <span id="qc-out-agent-gross">$1 500</span>
+                </div>
+                <div class="calc-row calc-tax-row">
+                  <span class="muted">გადასახადი:</span>
+                  <span id="qc-out-tax">-$15 (1%)</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="calc-net-box">
+              <div class="calc-net-label">სუფთა თანხა ხელზე (Net):</div>
+              <div id="qc-out-net" class="calc-net-val">$1 485</div>
+              <button type="button" class="btn btn-outline btn-sm" id="qc-btn-copy" style="width:100%;margin-top:12px">
+                ${icon('copy', 14)} <span>გაანგარიშების კოპირება</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      `,
+      onOpen: (form) => {
+        const typeEl = $('#qc-deal-type', form);
+        const priceEl = $('#qc-price', form);
+        const curEl = $('#qc-currency', form);
+        const commEl = $('#qc-comm-pct', form);
+        const splitEl = $('#qc-agent-split', form);
+        const taxEl = $('#qc-tax-mode', form);
+        const cbEl = $('#qc-has-cobroker', form);
+
+        const outGross = $('#qc-out-gross', form);
+        const outCb = $('#qc-out-cobroker', form);
+        const cbRow = $('#qc-cobroker-row', form);
+        const outAgency = $('#qc-out-agency', form);
+        const outAgentGross = $('#qc-out-agent-gross', form);
+        const outTax = $('#qc-out-tax', form);
+        const outNet = $('#qc-out-net', form);
+        const copyBtn = $('#qc-btn-copy', form);
+
+        const fmt = (num, c) => `${c} ${Math.round(num).toLocaleString('en-US').replace(/,/g, ' ')}`;
+
+        const calc = () => {
+          const cur = curEl.value;
+          const price = Math.max(0, Number(priceEl.value) || 0);
+          const commPct = Math.max(0, Number(commEl.value) || 0);
+          const splitPct = Math.max(0, Math.min(100, Number(splitEl.value) || 50));
+          const taxPct = Number(taxEl.value) || 0;
+          const hasCb = cbEl.checked;
+
+          const gross = (price * commPct) / 100;
+          const agencyPool = hasCb ? gross / 2 : gross;
+          const cbAmount = hasCb ? gross / 2 : 0;
+          const agentGross = (agencyPool * splitPct) / 100;
+          const agencyAmount = agencyPool - agentGross;
+          const taxAmount = (agentGross * taxPct) / 100;
+          const net = agentGross - taxAmount;
+
+          cbRow.style.display = hasCb ? 'flex' : 'none';
+          outGross.textContent = fmt(gross, cur);
+          outCb.textContent = fmt(cbAmount, cur);
+          outAgency.textContent = fmt(agencyAmount, cur);
+          outAgentGross.textContent = fmt(agentGross, cur);
+          outTax.textContent = taxAmount > 0 ? `-${fmt(taxAmount, cur)} (${taxPct}%)` : `0 (${taxPct}%)`;
+          outNet.textContent = fmt(net, cur);
+        };
+
+        typeEl.addEventListener('change', () => {
+          if (typeEl.value === 'rent') {
+            if (Number(priceEl.value) > 10000) priceEl.value = '1500';
+            commEl.value = '100';
+            $('#qc-comm-label', form).textContent = 'საკომისიო (% 1 თვის)';
+          } else {
+            if (Number(priceEl.value) < 10000) priceEl.value = '100000';
+            commEl.value = '3';
+            $('#qc-comm-label', form).textContent = 'საკომისიო (%)';
+          }
+          calc();
+        });
+
+        [priceEl, curEl, commEl, splitEl, taxEl].forEach(el => el.addEventListener('input', calc));
+        cbEl.addEventListener('change', calc);
+
+        copyBtn.addEventListener('click', () => {
+          const isSale = typeEl.value === 'sale';
+          const cur = curEl.value;
+          const price = Math.max(0, Number(priceEl.value) || 0);
+          const commPct = Number(commEl.value) || 0;
+          const splitPct = Number(splitEl.value) || 50;
+          const taxPct = Number(taxEl.value) || 0;
+          const text = [
+            'რიგზეა: საკომისიოს გაანგარიშება',
+            `გარიგება: ${isSale ? 'გაყიდვა' : 'გაქირავება'}`,
+            `ობიექტის ფასი: ${fmt(price, cur)}`,
+            `საკომისიო (${commPct}%): ${outGross.textContent}`,
+            cbEl.checked ? `თანაბროკერი (50%): ${outCb.textContent}` : null,
+            `სააგენტოს წილი: ${outAgency.textContent}`,
+            `აგენტის დარიცხვა (${splitPct}%): ${outAgentGross.textContent}`,
+            taxPct > 0 ? `გადასახადი (${taxPct}%): ${outTax.textContent}` : null,
+            `ხელზე სუფთა (Net): ${outNet.textContent}`
+          ].filter(Boolean).join('\n');
+          R.copyText(text, 'გაანგარიშება დაკოპირდა.');
+        });
+
+        calc();
+      }
+    });
+  }
+
+  function openMatchmaker() {
+    if (!S.data) return;
+    const apts = (S.data.apartments || []).filter(a => a.status !== 'archived');
+    R.dialog({
+      title: 'კლიენტის სელექცია (Matchmaker)',
+      subtitle: 'მოთხოვნის მიხედვით ბინების სწრაფი შერჩევა ბაზიდან',
+      wide: true,
+      body: `
+        <div class="matchmaker-wrap">
+          <div class="form-grid" style="margin-bottom:14px">
+            <label class="field"><span class="field-label">გარიგების ტიპი</span>
+              <select id="mm-type">
+                <option value="">ყველა ტიპი</option>
+                <option value="sale">იყიდება</option>
+                <option value="rent">ქირავდება</option>
+              </select>
+            </label>
+            <label class="field"><span class="field-label">მაქსიმალური ბიუჯეტი</span>
+              <input type="number" id="mm-budget" placeholder="მაგ. 120000 ან 1500" min="0" step="500" />
+            </label>
+            <label class="field"><span class="field-label">ოთახები</span>
+              <select id="mm-rooms">
+                <option value="">ნებისმიერი</option>
+                <option value="1">1 ოთახიანი</option>
+                <option value="2">2 ოთახიანი</option>
+                <option value="3">3 ოთახიანი</option>
+                <option value="4">4+ ოთახიანი</option>
+              </select>
+            </label>
+            <label class="field"><span class="field-label">უბანი ან ქუჩა</span>
+              <input type="text" id="mm-search" placeholder="ვაკე, საბურთალო, ჭავჭავაძე…" />
+            </label>
+          </div>
+          <div class="matchmaker-header" style="display:flex;justify-content:space-between;align-items:center;padding-bottom:8px;border-bottom:1px solid var(--line)">
+            <strong id="mm-count" style="font-size:13px;color:var(--ink-2)">შერჩეულია 0 ობიექტი</strong>
+          </div>
+          <div id="mm-results" class="rows" style="max-height:360px;overflow-y:auto;margin-top:10px"></div>
+        </div>
+      `,
+      onOpen: (form, dlg) => {
+        const typeEl = $('#mm-type', form);
+        const budgetEl = $('#mm-budget', form);
+        const roomsEl = $('#mm-rooms', form);
+        const searchEl = $('#mm-search', form);
+        const countEl = $('#mm-count', form);
+        const resultsEl = $('#mm-results', form);
+
+        const draw = () => {
+          const type = typeEl.value;
+          const maxBudget = Number(budgetEl.value) || 0;
+          const rooms = roomsEl.value;
+          const q = searchEl.value.trim().toLowerCase();
+
+          const matches = apts.filter(a => {
+            if (type && a.transaction_type !== type) return false;
+            const price = Number(a.transaction_type === 'sale' ? a.sale_price : a.monthly_rent) || 0;
+            if (maxBudget > 0 && price > maxBudget) return false;
+            if (rooms) {
+              const r = Number(a.rooms) || 0;
+              if (rooms === '4' ? r < 4 : r !== Number(rooms)) return false;
+            }
+            if (q) {
+              const text = [a.name, a.address, a.district, a.city].filter(Boolean).join(' ').toLowerCase();
+              if (!text.includes(q)) return false;
+            }
+            return true;
+          });
+
+          countEl.textContent = `ნაპოვნია ${matches.length} შესაფერისი ობიექტი`;
+
+          if (!matches.length) {
+            resultsEl.innerHTML = '<p class="empty-inline" style="padding:20px;text-align:center">მითითებული პარამეტრებით ბინა ვერ მოიძებნა.</p>';
+            return;
+          }
+
+          resultsEl.innerHTML = matches.map(a => {
+            const isSale = a.transaction_type === 'sale';
+            const price = Number(isSale ? a.sale_price : a.monthly_rent) || 0;
+            const cur = a.currency || '$';
+            const priceStr = price ? `${cur} ${price.toLocaleString('en-US')}${isSale ? '' : ' / თვე'}` : 'ფასი შეთანხმებით';
+            const loc = [a.district, a.address].filter(Boolean).join(', ') || a.city || 'თბილისი';
+            const roomsStr = a.rooms ? `${a.rooms} ოთახი` : '';
+            const areaStr = a.area_sqm ? `${a.area_sqm} მ²` : '';
+            const meta = [loc, roomsStr, areaStr].filter(Boolean).join(' · ');
+
+            return `
+              <div class="row mm-item-row" style="--cols:1fr auto;gap:12px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--line)">
+                <div class="cell-main">
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <span class="badge ${isSale ? 'badge-ok' : 'badge-info'}" style="font-size:11px">${isSale ? 'იყიდება' : 'ქირავდება'}</span>
+                    <strong>${esc(a.name)}</strong>
+                  </div>
+                  <div style="font-size:12.5px;color:var(--muted);margin-top:2px">${esc(meta)}</div>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px">
+                  <strong style="color:var(--brand);font-size:14px;white-space:nowrap">${esc(priceStr)}</strong>
+                  <a href="#/apartments/${a.id}" class="btn btn-ghost btn-sm mm-link-btn" title="ბინის გვერდი">${icon('external', 14)}</a>
+                </div>
+              </div>
+            `;
+          }).join('');
+
+          $$('.mm-link-btn', resultsEl).forEach(btn => {
+            btn.addEventListener('click', () => dlg.close());
+          });
+        };
+
+        [typeEl, budgetEl, roomsEl, searchEl].forEach(el => el.addEventListener('input', draw));
+        draw();
+      }
+    });
+  }
+
+  function openSocialPostGenerator() {
+    if (!S.data) return;
+    const apts = (S.data.apartments || []).filter(a => a.status !== 'archived');
+    if (!apts.length) {
+      toast('ჯერ დაამატე ბინა, რათა მისთვის პოსტის ტექსტი დაგენერირდეს.', { type: 'warn' });
+      return;
+    }
+    R.dialog({
+      title: 'სოციალური პოსტის გენერატორი',
+      subtitle: 'Facebook და Instagram პოსტის ტექსტი და ჰეშთეგები',
+      wide: true,
+      body: `
+        <div class="post-gen-wrap">
+          <label class="field" style="margin-bottom:14px"><span class="field-label">აირჩიე ობიექტი</span>
+            <select id="pg-apt-select">
+              ${apts.map(a => `<option value="${a.id}">${esc(a.name)}${a.district ? ' (' + esc(a.district) + ')' : ''}</option>`).join('')}
+            </select>
+          </label>
+          <label class="field"><span class="field-label">მზა პოსტის ტექსტი (შეგიძლია ჩაასწორო)</span>
+            <textarea id="pg-output" rows="10" class="input" style="font-family:inherit;line-height:1.6;padding:12px"></textarea>
+          </label>
+          <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:14px">
+            <button type="button" class="btn btn-primary" id="pg-btn-copy">${icon('copy', 16)} <span>ტექსტის კოპირება</span></button>
+          </div>
+        </div>
+      `,
+      onOpen: (form) => {
+        const select = $('#pg-apt-select', form);
+        const output = $('#pg-output', form);
+        const copyBtn = $('#pg-btn-copy', form);
+
+        const generate = () => {
+          const apt = H.apt(select.value);
+          if (!apt) return;
+          const isSale = apt.transaction_type === 'sale';
+          const price = Number(isSale ? apt.sale_price : apt.monthly_rent) || 0;
+          const cur = apt.currency || '$';
+          const priceStr = price ? `${cur} ${price.toLocaleString('en-US')}${isSale ? '' : ' თვეში'}` : 'ფასი შეთანხმებით';
+          const agentName = S.member?.display_name || S.org?.name || 'აგენტი';
+          const phone = S.member?.phone || S.org?.contact_phone || '';
+
+          const lines = [
+            `${isSale ? 'იყიდება' : 'ქირავდება'} ${apt.rooms ? apt.rooms + '-ოთახიანი ' : ''}ბინა ${apt.district ? apt.district + '-ში' : ''}:`,
+            '',
+            `მისამართი: ${[apt.city, apt.district, apt.address].filter(Boolean).join(', ')}`,
+            apt.area_sqm ? `ფართობი: ${apt.area_sqm} მ²` : null,
+            apt.floor ? `სართული: ${apt.floor}${apt.total_floors ? '/' + apt.total_floors : ''}` : null,
+            apt.rooms ? `ოთახების რაოდენობა: ${apt.rooms}` : null,
+            apt.bedrooms ? `საძინებელი: ${apt.bedrooms}` : null,
+            `ფასი: ${priceStr}`,
+            '',
+            apt.description ? `დამატებითი დეტალები:\n${apt.description.trim()}\n` : null,
+            'დაგვიკავშირდით დეტალებისთვის:',
+            phone ? `ტელ: ${phone}` : null,
+            agentName ? `საკონტაქტო პირი: ${agentName}` : null,
+            '',
+            '#უძრავიქონება #თბილისი #ბინა #იყიდება #ქირავდება #realestate #tbilisi #rigzea'
+          ].filter(x => x !== null);
+
+          output.value = lines.join('\n');
+        };
+
+        select.addEventListener('change', generate);
+        copyBtn.addEventListener('click', () => {
+          R.copyText(output.value, 'პოსტის ტექსტი დაკოპირდა.');
+        });
+        generate();
+      }
+    });
+  }
+
   window.App = { S, H, views, aptSection, contactSection, isManager, isAdmin, isAgent, refresh, render, renderShell, go, route, taskHref, closeTaskOverlay, upsertLocal, logEvent, loadMore,
+    openCommissionCalculator, openMatchmaker, openSocialPostGenerator,
     PLANS, PLAN_ORDER, FEATURE_LABEL, CONTACT, planState, can, guardLimit, guardFeature, openUpgrade, planCardsHtml, waLink, activeApartments, pausedApartmentIds, seatsUsed, openKisaCheckoutModal, startKisaCheckout: openKisaCheckoutModal };
 
   document.addEventListener('DOMContentLoaded', () => {
