@@ -48,7 +48,8 @@ assert(privacyHtml.includes('@Rigzeabot'), 'privacy must mention @Rigzeabot');
 assert(privacyHtml.includes('Resend'), 'privacy must mention Resend');
 assert(privacyHtml.includes('Google OAuth'), 'privacy must mention Google OAuth');
 assert(privacyHtml.includes('Telegram'), 'privacy must mention Telegram');
-console.log('✓ 5. Privacy page includes terms_accepted_at, Telegram, and supplier rows');
+assert(privacyHtml.includes('sao.ge'), 'privacy must mention State Audit Office sao.ge');
+console.log('✓ 5. Privacy page includes terms_accepted_at, Telegram, supplier rows, and sao.ge');
 
 // 6. Check cookies page specifics
 const cookiesHtml = fs.readFileSync(path.join(baseDir, 'legal', 'cookies', 'index.html'), 'utf8');
