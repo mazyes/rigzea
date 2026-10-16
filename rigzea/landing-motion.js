@@ -86,6 +86,29 @@
     }
   }
 
+  // Phones: the Dynamic Island in the hero mockup turns into a live notification (tap the phone to replay)
+  const island = document.querySelector('.lx-phone-island');
+  if (island && phone.matches && !reduce) {
+    const ic = island.querySelector('.lx-island-ic'), msg = island.querySelector('.lx-island-msg');
+    const EYE = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+    const DOC = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="9 15 11 17 15 13"/></svg>';
+    const steps = [[EYE, 'კლიენტმა გახსნა ბმული'], [DOC, 'ხელშეკრულება მზადაა']];
+    let running = false;
+    const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+    const play = async () => {
+      if (running) return; running = true;
+      for (const [svg, text] of steps) {
+        ic.innerHTML = svg; msg.textContent = text;
+        island.classList.add('is-open'); await wait(2600);
+        island.classList.remove('is-open'); await wait(900);
+      }
+      running = false;
+    };
+    setTimeout(play, 1700);
+    const shot = document.querySelector('.lx-hero-shot');
+    if (shot) shot.addEventListener('click', play);
+  }
+
   if (reduce) return;
   root.classList.add('lx-motion');
 

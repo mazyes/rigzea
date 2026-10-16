@@ -3232,7 +3232,7 @@ html.lenis, html.lenis body { height: auto; }
    MOBILE APP UI (≤700px): compact header, phone-frame hero, step rows,
    swipe carousels with dots, comparison tabs, floating bottom pill.
    ========================================================================== */
-.lx-cmp-seg, .lx-dots, .lx-phone-status, .lx-phone-home { display: none; }
+.lx-cmp-seg, .lx-dots, .lx-phone-status, .lx-phone-home, .lx-phone-island { display: none; }
 
 @media (max-width: 700px) {
   /* Spacing + type scale */
@@ -3258,16 +3258,30 @@ html.lenis, html.lenis body { height: auto; }
   :root .lx-video-btn { width: 100%; justify-content: center; }
   :root .lx-hero-window-bar { display: none; }
   /* Modern iPhone-style device: even black bezel, titanium edge, Dynamic Island, side buttons */
-  :root .lx-hero-shot { position: relative; max-width: 244px; margin: 32px auto 8px; }
+  /* shorter: the phone rises out of the page and fades into the next section */
+  :root .lx-hero-shot {
+    position: relative; max-width: 260px; margin: 32px auto 0; padding: 4px 8px 0; max-height: 400px; overflow: hidden;
+    -webkit-mask-image: linear-gradient(#000 66%, transparent 100%); mask-image: linear-gradient(#000 66%, transparent 100%);
+  }
+  /* Dynamic Island that expands into a live notification (landing-motion.js) */
+  .lx-phone-island {
+    display: flex; position: absolute; z-index: 4; top: 19px; left: 50%; transform: translateX(-50%);
+    width: 64px; height: 20px; border-radius: 20px; background: #000; overflow: hidden;
+    align-items: center; gap: 8px; padding: 0 12px; box-sizing: border-box;
+    transition: width .55s cubic-bezier(.32, 1.2, .5, 1), height .55s cubic-bezier(.32, 1.2, .5, 1), border-radius .55s ease;
+  }
+  .lx-phone-island.is-open { width: 200px; height: 38px; border-radius: 22px; }
+  .lx-island-ic { flex: 0 0 22px; height: 22px; border-radius: 50%; background: #047857; display: grid; place-items: center; color: #fff; opacity: 0; transform: scale(.6); transition: opacity .25s ease .2s, transform .35s ease .2s; }
+  .lx-island-msg { flex: 1; min-width: 0; color: #fff; font: 600 11.5px/1.2 var(--lx-font); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: 0; transition: opacity .25s ease .25s; }
+  .lx-phone-island.is-open .lx-island-ic, .lx-phone-island.is-open .lx-island-msg { opacity: 1; transform: none; }
   :root .lx-hero-window {
     position: relative; display: flex; flex-direction: column; border: 0; border-radius: 46px; padding: 9px; background: #050506; overflow: visible;
     box-shadow: 0 0 0 1.5px #3B3F44, 0 0 0 3px #1A1C1E;
   }
   :root[data-theme="light"] .lx-hero-window { background: #050506; box-shadow: 0 0 0 1.5px #C4C8CD, 0 0 0 3px #E4E7EA; }
-  :root .lx-hero-window::before { content: ""; position: absolute; z-index: 3; top: 19px; left: 50%; width: 64px; height: 20px; transform: translateX(-50%); border-radius: 20px; background: #000; }
   :root .lx-hero-shot::before, :root .lx-hero-shot::after { content: ""; position: absolute; width: 3px; }
-  :root .lx-hero-shot::before { left: -6px; top: 92px; height: 132px; border-radius: 2px 0 0 2px; background: linear-gradient(#3B3F44 0 20px, transparent 20px 36px, #3B3F44 36px 80px, transparent 80px 88px, #3B3F44 88px 132px); }
-  :root .lx-hero-shot::after { right: -6px; top: 132px; height: 66px; border-radius: 0 2px 2px 0; background: #3B3F44; }
+  :root .lx-hero-shot::before { left: 2px; top: 96px; height: 132px; border-radius: 2px 0 0 2px; background: linear-gradient(#3B3F44 0 20px, transparent 20px 36px, #3B3F44 36px 80px, transparent 80px 88px, #3B3F44 88px 132px); }
+  :root .lx-hero-shot::after { right: 2px; top: 136px; height: 66px; border-radius: 0 2px 2px 0; background: #3B3F44; }
   :root[data-theme="light"] .lx-hero-shot::before { background: linear-gradient(#B9BDC3 0 20px, transparent 20px 36px, #B9BDC3 36px 80px, transparent 80px 88px, #B9BDC3 88px 132px); }
   :root[data-theme="light"] .lx-hero-shot::after { background: #B9BDC3; }
   .lx-phone-status { display: flex; align-items: center; justify-content: space-between; height: 40px; padding: 4px 16px 0 26px; border-radius: 37px 37px 0 0; background: #181C1F; color: #fff; font: 600 13px/1 var(--lx-font); font-variant-numeric: tabular-nums; }

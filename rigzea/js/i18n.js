@@ -1748,6 +1748,8 @@
 "14 დღის გასვლის შემდეგ შენი ანგარიში თავისით გადადის სამუდამოდ უფასო „დამწყები“ ნაკრებზე. შენი ბაზა, კონტაქტები და ისტორია უსაფრთხოდ ინახება და მუშაობას ნებისმიერ დროს გააგრძელებ.": "After 14 days your account moves to the free-forever \"Starter\" plan on its own. Your base, contacts and history stay safe, and you can carry on any time.",
 "Rigzea სამუშაო სივრცე: დღის დაფა ბინებით, კლიენტებით და საკომისიოთი": "Rigzea workspace: the day board with apartments, clients and commission",
 "გადმოტანა": "Import",
+"კლიენტმა გახსნა ბმული": "Your client opened the link",
+"ხელშეკრულება მზადაა": "Contract is ready",
 };
   var WD = ['კვირა', 'ორშაბათი', 'სამშაბათი', 'ოთხშაბათი', 'ხუთშაბათი', 'პარასკევი', 'შაბათი'];
   var WE = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
