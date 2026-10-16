@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
   <defs>
     <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#047857"/>
+      <stop offset="0%" stop-color="#0a5c44"/>
       <stop offset="50%" stop-color="#0e684e"/>
       <stop offset="100%" stop-color="#127a5b"/>
     </linearGradient>
@@ -9,6 +9,6 @@
       <feDropShadow dx="0" dy="6" stdDeviation="12" flood-color="#000000" flood-opacity="0.3"/>
     </filter>
   </defs>
-  <rect x="24" y="24" width="464" height="464" rx="124" fill="url(#bgGrad)" stroke="#047857" stroke-opacity="0.35" stroke-width="8" filter="url(#glow)"/>
-  <g transform="translate(40.24 49.23) scale(17.980)" fill="none" stroke="#047857" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12L12 5L16.5 9"/><path d="M6.5 6.5V9.8"/><path d="M8.5 14.5L12 18L20 10"/></g>
+  <rect x="24" y="24" width="464" height="464" rx="124" fill="url(#bgGrad)" stroke="#00f59b" stroke-opacity="0.35" stroke-width="8" filter="url(#glow)"/>
+  <g transform="translate(40.24 49.23) scale(17.980)" fill="none" stroke="#00f59b" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12L12 5L16.5 9"/><path d="M6.5 6.5V9.8"/><path d="M8.5 14.5L12 18L20 10"/></g>
 </svg>

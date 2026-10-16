@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 100" width="420" height="100" fill="none">
   <defs>
     <linearGradient id="logoBgGradLight" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#047857"/>
+      <stop offset="0%" stop-color="#0a5c44"/>
       <stop offset="50%" stop-color="#0e684e"/>
       <stop offset="100%" stop-color="#127a5b"/>
     </linearGradient>
@@ -19,14 +19,14 @@
         fill: #0c1813;
       }
       .logo-dot-light {
-        fill: #047857;
+        fill: #00f59b;
       }
     </style>
   </defs>
   <!-- Icon Mark (80x80) -->
   <g transform="translate(10, 10)">
-    <rect x="0" y="0" width="80" height="80" rx="22" fill="url(#logoBgGradLight)" stroke="#047857" stroke-opacity="0.3" stroke-width="2"/>
-    <g transform="translate(-1.40 0.33) scale(3.450)" fill="none" stroke="#047857" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12L12 5L16.5 9"/><path d="M6.5 6.5V9.8"/><path d="M8.5 14.5L12 18L20 10"/></g>
+    <rect x="0" y="0" width="80" height="80" rx="22" fill="url(#logoBgGradLight)" stroke="#00f59b" stroke-opacity="0.3" stroke-width="2"/>
+    <g transform="translate(-1.40 0.33) scale(3.450)" fill="none" stroke="#00f59b" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12L12 5L16.5 9"/><path d="M6.5 6.5V9.8"/><path d="M8.5 14.5L12 18L20 10"/></g>
   </g>
   <!-- Wordmark -->
   <text x="108" y="69" class="logo-txt-light">რიგზეა<tspan class="logo-dot-light">.</tspan></text>
