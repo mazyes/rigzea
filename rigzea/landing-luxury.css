@@ -3141,3 +3141,9 @@ pre, code, kbd, samp, textarea, input, select, button { font-family: var(--lx-fo
 .lx-footer-legal a { display: inline-flex; align-items: center; min-height: 44px; }
 .lx-tour-modal-close { width: 44px; height: 44px; }
 .lx-time-slot-btn, .lx-lang-btn, .lx-post-tab-btn, .lx-copy-btn { min-height: 44px; }
+
+/* Lenis smooth scroll */
+html.lenis, html.lenis body { height: auto; }
+.lenis.lenis-smooth { scroll-behavior: auto !important; }
+.lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
+.lenis.lenis-stopped { overflow: hidden; }
