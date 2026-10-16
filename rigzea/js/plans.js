@@ -18,7 +18,7 @@
   // apartments / seats: null = unlimited. A seat is an owner/admin/manager member; field staff are free.
   const PLANS = {
     trial:   { id: 'trial', name: 'საცდელი', price: 0, apartments: 50, seats: 3, features: ALL_FEATURES },
-    starter: { id: 'starter', name: 'დამწყები', price: 9.87, apartments: 3, seats: 1, features: [],
+    starter: { id: 'starter', name: 'დამწყები', price: 9.99, apartments: 3, seats: 1, features: [],
       bullets: ['3 აქტიური ობიექტი', 'ჭკვიანი ბმულები', 'საკომისიოს კალკულატორი'] },
     pro:     { id: 'pro', name: 'პრო აგენტი', price: 39, apartments: 50, seats: 1, features: ['profile', 'contracts', 'matchmaker', 'reminders', 'import', 'presentation'],
       bullets: ['50 აქტიური ობიექტი', 'შევსება განცხადების ბმულით', 'PDF პრეზენტაცია', 'ორენოვანი ხელშეკრულებები', 'ბინის შერჩევა კლიენტის მოთხოვნით', 'ვადის გასვლის შეხსენებები'] },

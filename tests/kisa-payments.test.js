@@ -14,9 +14,9 @@ for (const planId of ['pro', 'top', 'agency']) {
   console.log(`✓ Plan ${planId} price is valid: ${plan.price} GEL`);
 }
 
-// 2. Verify starter plan has price 9.87 GEL as requested
-assert.strictEqual(PLANS.starter.price, 9.87, 'Starter plan must be 9.87 GEL');
-console.log('✓ Starter plan is 9.87 GEL');
+// 2. Verify starter plan has price 9.99 GEL as requested
+assert.strictEqual(PLANS.starter.price, 9.99, 'Starter plan must be 9.99 GEL');
+console.log('✓ Starter plan is 9.99 GEL');
 
 // 3. Verify order of plans
 assert.deepStrictEqual(PLAN_ORDER, ['starter', 'pro', 'top', 'agency'], 'Plan order must be correct');

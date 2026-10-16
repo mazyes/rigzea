@@ -734,13 +734,13 @@
   // The database mirrors the limits in plan_limit() and plan_has_feature(); see that file's header.
   const { ALL_FEATURES, PLANS, PLAN_ORDER, FEATURE_LABEL } = window.RIGZEA_PLANS;
 
-  // Test switch: every trial workspace counts as an ended trial, so limits apply at once and the upgrade
-  // dialog opens on gated actions. Client-side only (the database still counts the trial); set to false
-  // before launch. Tests that need a live trial set window.RIGZEA_FORCE_NO_TRIAL = false.
-  const FORCE_NO_TRIAL = window.RIGZEA_FORCE_NO_TRIAL ?? true;
+  // Test switch, off in production: when true every trial workspace counts as an ended trial, so limits
+  // apply at once and the upgrade dialog opens on gated actions. Client-side only (the database still
+  // counts the trial). Enable with window.RIGZEA_FORCE_NO_TRIAL = true (tests do).
+  const FORCE_NO_TRIAL = window.RIGZEA_FORCE_NO_TRIAL ?? false;
   if (FORCE_NO_TRIAL) {
     const sub = document.querySelector('#form-signup .page-sub');
-    if (sub) sub.innerHTML = '<strong>აირჩიე პაკეტი რეგისტრაციის შემდეგ</strong> · დამწყები: 9.87 ₾ / 30 დღე.';
+    if (sub) sub.innerHTML = '<strong>აირჩიე პაკეტი რეგისტრაციის შემდეგ</strong> · დამწყები: 9.99 ₾ / 30 დღე.';
   }
 
   function planState() {
