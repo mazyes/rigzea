@@ -794,6 +794,13 @@
         qaBtn.setAttribute('aria-expanded', 'false');
       }
     });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && qaPanel && !qaPanel.hidden) {
+        qaPanel.hidden = true;
+        qaBtn.setAttribute('aria-expanded', 'false');
+        qaBtn.focus();
+      }
+    });
   }
 
   // ---------------------------------------------------------------------------
@@ -950,7 +957,7 @@
               </span>
             </a>
             <div class="kisa-live" role="status" aria-live="polite">
-              <span class="kisa-pulse" aria-hidden="true"></span>
+              <span class="kisa-status-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg></span>
               <span id="kisa-status-msg">სისტემა რეალურ დროში ელოდება თქვენს გადახდას...</span>
             </div>
           </div>

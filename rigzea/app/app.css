@@ -49,7 +49,7 @@
   --ink-2: #a1a1aa;
   --muted: #71717a;
   --brand: #047857;
-  --brand-hover: #047857;
+  --brand-hover: #059669;
   --brand-soft: rgba(4, 120, 87, 0.16);
   --ok: #047857;      --ok-bg: rgba(4, 120, 87, 0.16);
   --warn: #e7ab4f;    --warn-bg: #352812;
@@ -95,7 +95,12 @@ img { max-width: 100%; display: block; }
 :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 4px; }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* ------------------------------------------------------------------ buttons */
@@ -752,20 +757,20 @@ button.row { width: 100%; border: 0; border-bottom: 1px solid var(--line); backg
 .kisa-badges { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
 .kisa-badges i { font-style: normal; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: rgba(255, 255, 255, .18); }
 .kisa-live { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: var(--r-sm); background: var(--info-bg); color: var(--info); font-size: 13px; }
-.kisa-pulse { position: relative; flex: none; width: 10px; height: 10px; margin: 0 4px; border-radius: 50%; background: currentColor; animation: kisaPulse 1.8s ease-out infinite; }
+.kisa-status-icon { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 16px; height: 16px; color: currentColor; }
+.kisa-status-icon svg { width: 16px; height: 16px; animation: spin 1s linear infinite; }
 .kisa[data-state="busy"] .kisa-live { background: var(--warn-bg); color: var(--warn); }
 .kisa[data-state="error"] .kisa-live { background: var(--danger-bg); color: var(--danger); }
-.kisa[data-state="error"] .kisa-pulse, .kisa[data-state="idle"] .kisa-pulse { animation: none; }
+.kisa[data-state="error"] .kisa-status-icon svg, .kisa[data-state="idle"] .kisa-status-icon svg { animation: none; }
 .kisa-done-view { justify-items: center; text-align: center; padding: 8px 0; animation: kisaPop .45s ease; }
 .kisa-done-view h3 { margin: 0; font-size: 20px; }
 .kisa-done-view p { margin: 0; color: var(--ink-2); }
 .kisa-check { width: 72px; height: 72px; fill: none; stroke: var(--ok); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
 .kisa-check circle { fill: var(--ok-bg); stroke-dasharray: 151; stroke-dashoffset: 151; animation: kisaDraw .6s ease forwards; }
 .kisa-check path { stroke-dasharray: 40; stroke-dashoffset: 40; animation: kisaDraw .4s .45s ease forwards; }
-@keyframes kisaPulse { 0% { box-shadow: 0 0 0 0 currentColor; } 70% { box-shadow: 0 0 0 10px transparent; } 100% { box-shadow: 0 0 0 0 transparent; } }
 @keyframes kisaDraw { to { stroke-dashoffset: 0; } }
 @keyframes kisaPop { 0% { transform: scale(.94); opacity: .4; } 60% { transform: scale(1.03); } 100% { transform: scale(1); opacity: 1; } }
-@media (prefers-reduced-motion: reduce) { .kisa-pulse, .kisa-check circle, .kisa-check path, .kisa-done-view, .kisa-copy.is-copied { animation: none; stroke-dashoffset: 0; } }
+@media (prefers-reduced-motion: reduce) { .kisa-status-icon svg, .kisa-check circle, .kisa-check path, .kisa-done-view, .kisa-copy.is-copied { animation: none; stroke-dashoffset: 0; } }
 
 .plan-contact { font-size: 13px; color: var(--ink-2); margin: 14px 0 0; }
 .plan-cta { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }

@@ -748,7 +748,25 @@
       document.body.appendChild(drawerEl);
       document.body.style.overflow = 'hidden';
       $('.drawer-backdrop', drawerEl).onclick = () => App.closeTaskDrawer();
-      drawerEl.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !document.querySelector('dialog[open]')) App.closeTaskDrawer(); });
+      drawerEl.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !document.querySelector('dialog[open]')) {
+          App.closeTaskDrawer();
+          return;
+        }
+        if (e.key === 'Tab') {
+          const focusables = $$('button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])', drawerEl);
+          if (!focusables.length) return;
+          const first = focusables[0];
+          const last = focusables[focusables.length - 1];
+          if (e.shiftKey && document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+          } else if (!e.shiftKey && document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+          }
+        }
+      });
     }
     const keepScroll = drawerTaskId === id ? $('.drawer-body', drawerEl)?.scrollTop : 0;
     drawerTaskId = id;

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#0a5c44" />
+  <meta name="theme-color" content="#047857" />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=4" />
   <link rel="icon" href="/favicon.ico?v=4" sizes="48x48" />
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=4" />
@@ -78,7 +78,7 @@
         <div class="form-error" role="alert" hidden></div>
         <label class="field"><span class="field-label">სახელი და გვარი</span><input type="text" name="name" required autocomplete="name" data-error="შეიყვანე სახელი." placeholder="მაგ.: გიორგი ბერიძე" /></label>
         <label class="field"><span class="field-label">ელფოსტა</span><input type="email" name="email" required autocomplete="email" data-error="შეიყვანე სწორი ელფოსტა." placeholder="name@example.com" /></label>
-        <label class="field"><span class="field-label">პაროლი</span><input type="password" name="password" required minlength="8" autocomplete="new-password" data-error="პაროლი მინიმუმ 8 სიმბოლოს უნდა შეიცავდეს." /><span class="field-hint">მინიმუმ 8 სიმბოლო</span></label>
+        <label class="field"><span class="field-label">პაროლი</span><input type="password" name="password" required minlength="8" autocomplete="new-password" data-error="პაროლი მინიმუმ 8 სიმბოლოს უნდა შეიცავდეს." aria-describedby="signup-pass-hint" /><span class="field-hint" id="signup-pass-hint">მინიმუმ 8 სიმბოლო</span></label>
         <label class="auth-consent" id="signup-consent-label">
           <input type="checkbox" name="agree" id="signup-agree" required data-error="რეგისტრაციისთვის დაეთანხმე მომსახურების წესებს, კონფიდენციალურობის, ქუქიებისა და თანხის დაბრუნების (24 სთ) პოლიტიკას." />
           <span>ვეთანხმები <a href="/legal/terms/" target="_blank" rel="noopener">მომსახურების წესებს</a>, <a href="/legal/privacy/" target="_blank" rel="noopener">კონფიდენციალურობის პოლიტიკას</a>, <a href="/legal/cookies/" target="_blank" rel="noopener">ქუქიების პოლიტიკას</a> და <a href="/legal/refund/" target="_blank" rel="noopener">თანხის დაბრუნების პოლიტიკას (24 სთ)</a>.</span>
@@ -101,7 +101,7 @@
       <form id="form-newpass" class="form-stack" novalidate hidden>
         <div><h1>ახალი პაროლი</h1><p class="page-sub">ჩაწერე ახალი პაროლი. შენახვის შემდეგ პირდაპირ შეხვალ ანგარიშში.</p></div>
         <div class="form-error" role="alert" hidden></div>
-        <label class="field"><span class="field-label">ახალი პაროლი</span><input type="password" name="password" required minlength="8" autocomplete="new-password" data-error="პაროლი მინიმუმ 8 სიმბოლოს უნდა შეიცავდეს." /><span class="field-hint">მინიმუმ 8 სიმბოლო</span></label>
+        <label class="field"><span class="field-label">ახალი პაროლი</span><input type="password" name="password" required minlength="8" autocomplete="new-password" data-error="პაროლი მინიმუმ 8 სიმბოლოს უნდა შეიცავდეს." aria-describedby="newpass-hint" /><span class="field-hint" id="newpass-hint">მინიმუმ 8 სიმბოლო</span></label>
         <label class="field"><span class="field-label">გაიმეორე პაროლი</span><input type="password" name="password2" required minlength="8" autocomplete="new-password" data-error="გაიმეორე ახალი პაროლი." /></label>
         <button type="submit" class="btn btn-primary btn-block">პაროლის შენახვა</button>
       </form>
