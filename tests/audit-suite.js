@@ -42,27 +42,6 @@ async function runAudit() {
       await page.close();
     });
 
-    await step('2. Hero mobile mockup switches between Renter View and Agent Analytics', async () => {
-      const page = await newPage(browser);
-      await page.goto(testBase + '/');
-
-      const renterView = page.locator('#phone-renter-view');
-      const agentView = page.locator('#phone-agent-view');
-      const agentPill = page.locator('[data-phone-mode="agent"]');
-      const renterPill = page.locator('[data-phone-mode="rent"], [data-phone-mode="renter"]');
-
-      await renterPill.dispatchEvent('click');
-      await renterView.waitFor({ state: 'visible' });
-      await agentPill.dispatchEvent('click');
-      await agentView.waitFor({ state: 'visible' });
-      assert(await agentPill.getAttribute('class').then(c => c.includes('active')));
-
-      await renterPill.dispatchEvent('click');
-      await renterView.waitFor({ state: 'visible' });
-      assert(await renterPill.getAttribute('class').then(c => c.includes('active')));
-      await page.close();
-    });
-
     await step('3. Bento Feature 1: Social Post Generator tabs & copy button work cleanly', async () => {
       const page = await newPage(browser);
       await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);

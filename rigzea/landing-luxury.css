@@ -4426,3 +4426,8 @@ h1, h2, h3 { line-height: 1.12; letter-spacing: -0.02em; }
 :root[data-theme="light"] .lx-mobile-thumb-bar { background: rgba(255, 255, 255, .92); border-top: 1px solid #E2E8F0; }
 :root[data-theme="light"] .lx-thumb-btn-secondary { color: #0F172A; border-color: #CBD5E1; background: #fff; }
 :root[data-theme="light"] .lx-final-cta-box { background-size: auto !important; }
+
+/* Hero without the phone: one wide text column */
+.lx-hero-grid { grid-template-columns: minmax(0, 1fr); }
+.lx-hero-copy { max-width: 860px; }
+.lx-hero-title { max-width: 16em; }
