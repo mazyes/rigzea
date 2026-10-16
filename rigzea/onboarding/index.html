@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="ka">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0a5c44" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=4" />
+  <link rel="icon" href="/favicon.ico?v=4" sizes="48x48" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=4" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=4" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+
+  <title>სამუშაო კაბინეტის შექმნა · Rigzea</title>
+
+  <link rel="stylesheet" href="/app/app.css" />
+</head>
+<body style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg)">
+  <main id="onboarding" class="auth" style="display:flex;width:100%;justify-content:center;padding:20px">
+    <div class="auth-card auth-card-wide">
+      <a class="brand" href="/" aria-label="Rigzea: მთავარი გვერდი"><span class="brand-mark" data-icon="logo"></span><span class="brand-text">რიგზეა<i>.</i></span></a>
+      <form id="form-org" class="form-stack" novalidate>
+        <div>
+          <h1>შექმენი სამუშაო კაბინეტი</h1>
+          <p class="page-sub">ეს შენი პირადი ან სააგენტოს სივრცეა. თუ დამოუკიდებელი აგენტი ხარ, შეგიძლია უბრალოდ შენი სახელი ჩაწერო (მაგ.: გიორგი ბროკერი).</p>
+        </div>
+        <div class="form-error" role="alert" hidden></div>
+        <label class="field"><span class="field-label">კომპანიის ან აგენტის სახელი</span><input type="text" name="name" required placeholder="მაგ.: Apex Real Estate ან გიორგი ბროკერი" data-error="შეიყვანე სახელი." /></label>
+        <div class="form-grid">
+          <label class="field"><span class="field-label">ძირითადი ქალაქი</span>
+            <select name="city"><option selected>თბილისი</option><option>ბათუმი</option><option>ქუთაისი</option><option>სხვა</option></select>
+          </label>
+          <label class="field"><span class="field-label">ბინების რაოდენობა</span>
+            <select name="size"><option value="1-5" selected>1–5</option><option value="6-20">6–20</option><option value="21-50">21–50</option><option value="50+">50+</option></select>
+          </label>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">სამუშაო სივრცის შექმნა →</button>
+        <p class="auth-foot"><button type="button" class="link-btn" data-action="signout">სხვა ანგარიშით შესვლა</button></p>
+      </form>
+    </div>
+  </main>
+
+  <script src="/js/supabase.js"></script>
+  <script src="/js/config.js"></script>
+  <script src="/js/core.js"></script>
+  <script>
+    (async () => {
+      'use strict';
+      const { sb, $, $$, icon, q } = R;
+
+      $$('[data-icon]').forEach(el => { if (!el.firstChild) el.innerHTML = icon(el.dataset.icon, el.classList.contains('brand-mark') ? 16 : 18); });
+
+      const { data: { session } } = await sb.auth.getSession();
+      if (!session?.user) {
+        location.replace('/signin/');
+        return;
+      }
+
+      const form = $('#form-org');
+      const errBox = form.querySelector('.form-error');
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        errBox.hidden = true;
+        const invalid = $$('input, select', form).find(el => !el.checkValidity());
+        if (invalid) {
+          errBox.textContent = invalid.dataset.error || 'შეავსე სავალდებულო ველები.';
+          errBox.hidden = false;
+          invalid.focus();
+          return;
+        }
+        const btn = form.querySelector('[type=submit]');
+        btn.disabled = true;
+
+        try {
+          const name = form.name.value.trim();
+          const city = form.city.value;
+          const size = form.size.value;
+          const orgId = await q(sb.rpc('create_user_organization', { p_org_name: name, p_city: city, p_portfolio_size: size }));
+          localStorage.setItem('rigzea_selected_org_id', orgId);
+          location.replace('/app/#/today');
+        } catch (err) {
+          console.error(err);
+          errBox.textContent = R.friendlyError(err);
+          errBox.hidden = false;
+        } finally {
+          btn.disabled = false;
+        }
+      });
+
+      $('[data-action="signout"]')?.addEventListener('click', async () => {
+        await sb.auth.signOut();
+        localStorage.removeItem('rigzea_selected_org_id');
+        location.replace('/signin/');
+      });
+    })();
+  </script>
+</body>
+</html>

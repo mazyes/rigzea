@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="ka">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0a5c44" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=4" />
+  <link rel="icon" href="/favicon.ico?v=4" sizes="48x48" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=4" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=4" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+
+  <title>შესვლა · Rigzea</title>
+
+  <link rel="stylesheet" href="/app/app.css" />
+</head>
+<body style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg)">
+  <main id="auth" class="auth" style="display:flex;width:100%;justify-content:center;padding:20px">
+    <div class="auth-card">
+      <a class="brand" href="/" aria-label="Rigzea: მთავარი გვერდი"><span class="brand-mark" data-icon="logo"></span><span class="brand-text">რიგზეა<i>.</i></span></a>
+
+      <div class="auth-tabs" id="auth-tabs" role="tablist">
+        <a class="auth-tab" href="/signup/" id="tab-auth-signup">⚡ რეგისტრაცია (14 დღე უფასოდ)</a>
+        <button type="button" class="auth-tab active" id="tab-auth-signin">შესვლა</button>
+      </div>
+
+      <div class="oauth-stack" id="auth-oauth-stack">
+        <button type="button" class="btn btn-oauth btn-google" data-oauth="google">
+          <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+            <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
+            <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"/>
+            <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.98 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
+            <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
+          </svg>
+          <span id="oauth-google-label">Google-ით შესვლა</span>
+        </button>
+      </div>
+
+      <div class="auth-divider" id="auth-divider">
+        <span>ან ელფოსტით</span>
+      </div>
+
+      <form id="form-signin" class="form-stack" novalidate>
+        <div><h1>შესვლა</h1><p class="page-sub">შეიყვანე სამუშაო ელფოსტა და პაროლი.</p></div>
+        <div class="form-error" role="alert" hidden></div>
+        <label class="field"><span class="field-label">ელფოსტა</span><input type="email" name="email" required autocomplete="email" data-error="შეიყვანე სწორი ელფოსტა." /></label>
+        <label class="field"><span class="field-label">პაროლი</span><input type="password" name="password" required autocomplete="current-password" data-error="შეიყვანე პაროლი." /></label>
+        <button type="submit" class="btn btn-primary btn-block">შესვლა</button>
+        <div class="auth-demo-prompt">
+          <a class="btn btn-secondary btn-block" href="/demo/">👁 სცადე დემო (რეგისტრაციის გარეშე)</a>
+        </div>
+        <p class="auth-foot"><a class="link-btn" href="/reset-password/">დაგავიწყდა პაროლი?</a> · <a class="link-btn" href="/signup/">ახალი ანგარიში (14 დღე უფასოდ)</a></p>
+      </form>
+    </div>
+  </main>
+
+  <script src="/js/supabase.js"></script>
+  <script src="/js/config.js"></script>
+  <script src="/js/core.js"></script>
+  <script>
+    (async () => {
+      'use strict';
+      const { sb, $, $$, icon } = R;
+
+      // Hydrate icons
+      $$('[data-icon]').forEach(el => { if (!el.firstChild) el.innerHTML = icon(el.dataset.icon, el.classList.contains('brand-mark') ? 16 : 18); });
+
+      // Check if already signed in
+      try {
+        const { data: { session } } = await sb.auth.getSession();
+        if (session?.user) {
+          location.replace('/app/#/today');
+          return;
+        }
+      } catch (e) {}
+
+      const form = $('#form-signin');
+      const errBox = form.querySelector('.form-error');
+
+      function authError(err) {
+        const m = String(err?.message || '');
+        if (/Invalid login/i.test(m)) return 'ელფოსტა ან პაროლი არასწორია.';
+        if (/already registered/i.test(m)) return 'ეს ელფოსტა უკვე რეგისტრირებულია. სცადე შესვლა.';
+        if (/Email not confirmed/i.test(m)) return 'ელფოსტა ჯერ არ არის დადასტურებული. შეამოწმე შემოსული წერილები.';
+        return R.friendlyError(err);
+      }
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        errBox.hidden = true;
+        const invalid = $$('input', form).find(el => !el.checkValidity());
+        if (invalid) {
+          errBox.textContent = invalid.dataset.error || 'შეავსე სავალდებულო ველები.';
+          errBox.hidden = false;
+          invalid.focus();
+          return;
+        }
+        const btn = form.querySelector('[type=submit]');
+        if (btn.dataset.busy === '1') return;
+        btn.dataset.busy = '1'; btn.disabled = true; btn.classList.add('is-busy');
+
+        try {
+          const email = form.email.value.trim();
+          const password = form.password.value;
+          const { error } = await sb.auth.signInWithPassword({ email, password });
+          if (error) throw error;
+          location.replace('/app/#/today');
+        } catch (err) {
+          errBox.textContent = authError(err);
+          errBox.hidden = false;
+        } finally {
+          btn.dataset.busy = ''; btn.disabled = false; btn.classList.remove('is-busy');
+        }
+      });
+
+      // Google OAuth
+      const googleBtn = $('[data-oauth="google"]');
+      if (googleBtn) {
+        googleBtn.addEventListener('click', async () => {
+          if (googleBtn.dataset.busy === '1') return;
+          googleBtn.dataset.busy = '1'; googleBtn.disabled = true;
+          try {
+            const { error } = await sb.auth.signInWithOAuth({
+              provider: 'google',
+              options: { redirectTo: location.origin + '/app/' }
+            });
+            if (error) throw error;
+          } catch (err) {
+            console.error('OAuth error:', err);
+            R.toast(`ავტორიზაციის შეცდომა: ${R.friendlyError(err)}`, { type: 'error' });
+            googleBtn.dataset.busy = ''; googleBtn.disabled = false;
+          }
+        });
+      }
+    })();
+  </script>
+</body>
+</html>

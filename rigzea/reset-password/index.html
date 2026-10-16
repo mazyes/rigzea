@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="ka">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0a5c44" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=4" />
+  <link rel="icon" href="/favicon.ico?v=4" sizes="48x48" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=4" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=4" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+
+  <title>პაროლის აღდგენა · Rigzea</title>
+
+  <link rel="stylesheet" href="/app/app.css" />
+</head>
+<body style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg)">
+  <main id="auth" class="auth" style="display:flex;width:100%;justify-content:center;padding:20px">
+    <div class="auth-card">
+      <a class="brand" href="/" aria-label="Rigzea: მთავარი გვერდი"><span class="brand-mark" data-icon="logo"></span><span class="brand-text">რიგზეა<i>.</i></span></a>
+
+      <!-- Reset request form -->
+      <form id="form-reset" class="form-stack" novalidate>
+        <div><h1>პაროლის აღდგენა</h1><p class="page-sub">გამოგიგზავნით ბმულს ახალი პაროლის დასაყენებლად.</p></div>
+        <div class="form-error" role="alert" hidden></div>
+        <label class="field"><span class="field-label">ელფოსტა</span><input type="email" name="email" required autocomplete="email" data-error="შეიყვანე სწორი ელფოსტა." /></label>
+        <button type="submit" class="btn btn-primary btn-block">ბმულის გაგზავნა</button>
+        <p class="auth-foot"><a class="link-btn" href="/signin/">შესვლაზე დაბრუნება</a></p>
+      </form>
+
+      <!-- New password form (for recovery token arrivals) -->
+      <form id="form-newpass" class="form-stack" novalidate hidden>
+        <div><h1>ახალი პაროლი</h1><p class="page-sub">ჩაწერე ახალი პაროლი. შენახვის შემდეგ პირდაპირ შეხვალ ანგარიშში.</p></div>
+        <div class="form-error" role="alert" hidden></div>
+        <label class="field"><span class="field-label">ახალი პაროლი</span><input type="password" name="password" required minlength="8" autocomplete="new-password" data-error="პაროლი მინიმუმ 8 სიმბოლოს უნდა შეიცავდეს." /><span class="field-hint">მინიმუმ 8 სიმბოლო</span></label>
+        <label class="field"><span class="field-label">გაიმეორე პაროლი</span><input type="password" name="password2" required minlength="8" autocomplete="new-password" data-error="გაიმეორე ახალი პაროლი." /></label>
+        <button type="submit" class="btn btn-primary btn-block">პაროლის შენახვა</button>
+      </form>
+    </div>
+  </main>
+
+  <script src="/js/supabase.js"></script>
+  <script src="/js/config.js"></script>
+  <script src="/js/core.js"></script>
+  <script>
+    (async () => {
+      'use strict';
+      const { sb, $, $$, icon, toast } = R;
+
+      $$('[data-icon]').forEach(el => { if (!el.firstChild) el.innerHTML = icon(el.dataset.icon, el.classList.contains('brand-mark') ? 16 : 18); });
+
+      const formReset = $('#form-reset');
+      const formNewPass = $('#form-newpass');
+
+      let recovery = /[#&?]type=recovery\b/.test(location.hash + location.search);
+      if (recovery) {
+        formReset.hidden = true;
+        formNewPass.hidden = false;
+      }
+
+      sb.auth.onAuthStateChange((event) => {
+        if (event === 'PASSWORD_RECOVERY') {
+          formReset.hidden = true;
+          formNewPass.hidden = false;
+        }
+      });
+
+      formReset.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const errBox = formReset.querySelector('.form-error');
+        errBox.hidden = true;
+        const invalid = $$('input', formReset).find(el => !el.checkValidity());
+        if (invalid) {
+          errBox.textContent = invalid.dataset.error || 'შეავსე სავალდებულო ველები.';
+          errBox.hidden = false;
+          return;
+        }
+        const btn = formReset.querySelector('[type=submit]');
+        btn.disabled = true;
+        try {
+          const email = formReset.email.value.trim();
+          const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + '/reset-password/' });
+          if (error) throw error;
+          toast('აღდგენის ბმული გაიგზავნა ელფოსტაზე.', { type: 'success' });
+        } catch (err) {
+          console.error(err);
+          errBox.textContent = R.friendlyError(err);
+          errBox.hidden = false;
+        } finally {
+          btn.disabled = false;
+        }
+      });
+
+      formNewPass.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const errBox = formNewPass.querySelector('.form-error');
+        errBox.hidden = true;
+        if (formNewPass.password.value !== formNewPass.password2.value) {
+          errBox.textContent = 'პაროლები ერთმანეთს არ ემთხვევა.';
+          errBox.hidden = false;
+          return;
+        }
+        const btn = formNewPass.querySelector('[type=submit]');
+        btn.disabled = true;
+        try {
+          const { error } = await sb.auth.updateUser({ password: formNewPass.password.value });
+          if (error) throw error;
+          toast('პაროლი წარმატებით შეიცვალა.', { type: 'success' });
+          setTimeout(() => location.replace('/app/#/today'), 1000);
+        } catch (err) {
+          console.error(err);
+          errBox.textContent = R.friendlyError(err);
+          errBox.hidden = false;
+        } finally {
+          btn.disabled = false;
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

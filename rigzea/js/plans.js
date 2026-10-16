@@ -25,7 +25,8 @@
     top:     { id: 'top', name: 'გუნდი', price: 99, apartments: 150, seats: 3, features: ['profile', 'contracts', 'matchmaker', 'reminders', 'import', 'presentation', 'selections', 'analytics', 'export'],
       bullets: ['150 აქტიური ობიექტი', '3 სამუშაო ადგილი', 'მრავალობიექტიანი გვერდი', 'ანალიტიკა და ექსპორტი'] },
     agency:  { id: 'agency', name: 'სააგენტო', price: 249, apartments: null, seats: null, features: ALL_FEATURES,
-      bullets: ['ულიმიტო ობიექტები', '10+ აგენტის სამუშაო ადგილი', 'White-label ბრენდირება', 'პრიორიტეტული მხარდაჭერა'] },
+      desc: 'თუ სააგენტოს მართავ და მთელი გუნდი ერთ სივრცეში გინდა.',
+      bullets: ['♾️ ულიმიტო ობიექტები და ულიმიტო გუნდის წევრები', 'ყველა ფუნქცია სრულიად შეუზღუდავად (Unlimited)', 'საკუთარი ბრენდირება (White-label) და პრიორიტეტული მხარდაჭერა'] },
   };
   const PLAN_ORDER = ['starter', 'pro', 'top', 'agency'];
 

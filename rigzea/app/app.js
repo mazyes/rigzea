@@ -228,7 +228,7 @@
   async function signOut() {
     await sb.auth.signOut();
     localStorage.removeItem('rigzea_selected_org_id');
-    location.href = '/app/?signin'; // returning users get the sign-in form, not sign-up
+    location.href = '/signin/'; // clean redirect to standalone signin page
   }
   document.addEventListener('click', (e) => { if (e.target.closest('[data-action="signout"]')) signOut(); });
 
@@ -781,13 +781,17 @@
     return `<div class="plan-grid">${PLAN_ORDER.map(id => {
       const p = PLANS[id];
       const cur = id === currentId, rec = id === recId && !cur;
-      return `<div class="plan-card ${rec ? 'is-rec' : ''} ${cur ? 'is-current' : ''}">
-        ${rec ? '<span class="plan-tag">შენთვის შესაფერისი</span>' : cur ? '<span class="plan-tag plan-tag-cur">შენი პაკეტი</span>' : ''}
-        <h3>${esc(p.name)}</h3>
-        <div class="plan-price">${p.price ? `${p.price} ₾<small> / 30 დღე</small>` : '0 ₾<small> / უფასო</small>'}</div>
+      const isAgency = id === 'agency';
+      return `<div class="plan-card ${isAgency ? 'plan-card-agency' : ''} ${rec ? 'is-rec' : ''} ${cur ? 'is-current' : ''}">
+        <div class="plan-card-main">
+          ${isAgency ? '<span class="plan-tag plan-tag-unlimited">♾️ სრულიად ულიმიტო პაკეტი</span>' : rec ? '<span class="plan-tag">შენთვის შესაფერისი</span>' : cur ? '<span class="plan-tag plan-tag-cur">შენი პაკეტი</span>' : ''}
+          <h3>${esc(p.name)}</h3>
+          ${p.desc ? `<p class="plan-desc" style="font-size:12px;color:var(--muted);margin:4px 0 0">${esc(p.desc)}</p>` : ''}
+          <div class="plan-price">${p.price ? `${p.price} ₾<small> / 30 დღე</small>` : '0 ₾<small> / უფასო</small>'}</div>
+        </div>
         <ul>${p.bullets.map(b => `<li>${esc(b)}</li>`).join('')}</ul>
         ${cur ? '' : p.price ? `<div class="plan-card-actions">
-          <button type="button" class="btn ${rec ? 'btn-primary' : 'btn-secondary'} btn-sm" data-kisa-checkout="${id}">${icon('card', 16)} ბარათით გადახდა</button>
+          <button type="button" class="btn ${rec || isAgency ? 'btn-primary' : 'btn-secondary'} btn-sm" data-kisa-checkout="${id}">${icon('card', 16)} ბარათით გადახდა</button>
           <a class="plan-wa" href="${esc(waLink(p))}" target="_blank" rel="noopener">${icon('whatsapp', 13)} WhatsApp-ით შეკვეთა</a>
         </div>` : ''}
       </div>`;

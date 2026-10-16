@@ -272,7 +272,7 @@
         const originalContent = btn.innerHTML;
         btn.classList.add('copied');
         btn.innerHTML = `
-          <svg class="lx-check-icon-anim" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#00f59b" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round">
+          <svg class="lx-check-icon-anim" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#047857" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round">
             <path class="lx-check-path" d="M20 6L9 17l-5-5"></path>
           </svg>
           <span>დაკოპირდა!</span>
@@ -725,7 +725,7 @@
       toast.className = 'lx-toast';
       document.body.appendChild(toast);
     }
-    toast.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00f59b" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> <span>' + message + '</span>';
+    toast.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#047857" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> <span>' + message + '</span>';
     toast.classList.add('is-visible');
 
     clearTimeout(toast._timer);

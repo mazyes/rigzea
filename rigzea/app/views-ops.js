@@ -443,10 +443,10 @@
         <div class="page-actions"><button type="button" class="btn btn-secondary" id="btn-digest">${icon('telegram', 16)} დღის შეჯამება</button></div>
       </div>
       ${activeApts.length === 0 ? `
-      <section class="card onboarding-hero-card" style="margin-bottom:16px;background:linear-gradient(135deg, rgba(0, 245, 155, 0.08) 0%, rgba(10, 92, 68, 0.12) 100%);border:1px solid rgba(0, 245, 155, 0.3);padding:24px;border-radius:var(--r)">
+      <section class="card onboarding-hero-card" style="margin-bottom:16px;background:linear-gradient(135deg, rgba(4, 120, 87, 0.08) 0%, rgba(4, 120, 87, 0.12) 100%);border:1px solid rgba(4, 120, 87, 0.35);padding:24px;border-radius:var(--r)">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:16px">
           <div style="max-width:560px">
-            <span class="badge" style="background:rgba(0, 245, 155, 0.18);color:#0a5c44;font-weight:700;padding:3px 10px;border-radius:99px;font-size:11.5px">⚡ პირველი ნაბიჯი</span>
+            <span class="badge" style="background:rgba(4, 120, 87, 0.18);color:#047857;font-weight:700;padding:3px 10px;border-radius:99px;font-size:11.5px">⚡ პირველი ნაბიჯი</span>
             <h2 style="font-size:22px;margin:8px 0 6px 0">შემოიტანე შენი პირველი ბინა 1 წამში</h2>
             <p style="color:var(--muted);font-size:13.5px;line-height:1.5;margin:0 0 14px 0">
               ჩასვი MyHome.ge ან SS.ge განცხადების ბმული. სისტემა წამებში გადმოიტანს HD ფოტოებს, ფართობს, ფასს და შექმნის შენს პირად VIP ბმულს.
@@ -482,13 +482,13 @@
       <div class="chips" role="group" aria-label="ფილტრი">${FILTERS.map(([id, label]) => `<button type="button" class="chip" data-filter="${id}" aria-pressed="${todayFilter === id}">${label}${id !== 'all' ? ` <span class="count">${counts[id]}</span>` : ''}</button>`).join('')}</div>
       <div class="cols">
         <div class="stack">
-          ${showSetup ? `<section class="card onboarding-card" style="margin-bottom:16px;border:1px solid rgba(0,245,155,0.25);background:linear-gradient(180deg, var(--surface) 0%, rgba(0,245,155,0.03) 100%)">
+          ${showSetup ? `<section class="card onboarding-card" style="margin-bottom:16px;border:1px solid rgba(4, 120, 87, 0.3);background:linear-gradient(180deg, var(--surface) 0%, rgba(4, 120, 87, 0.04) 100%)">
             <div class="card-head">
               <h2>${icon('sparkle', 16)} ახალი აგენტის Quick Start <span class="badge badge-neutral" style="font-size:12px;font-weight:700">${steps.filter(s => s.done).length} / ${steps.length} დასრულებულია</span></h2>
               <button type="button" class="link-btn small" id="btn-hide-setup">დამალვა</button>
             </div>
             <div style="background:var(--line);height:6px;border-radius:99px;margin:8px 0 16px 0;overflow:hidden">
-              <div style="background:#00f59b;height:100%;width:${(steps.filter(s => s.done).length / steps.length) * 100}%;border-radius:99px;transition:width 0.3s"></div>
+              <div style="background:#047857;height:100%;width:${(steps.filter(s => s.done).length / steps.length) * 100}%;border-radius:99px;transition:width 0.3s"></div>
             </div>
             <ol class="setup">${steps.map(s => `<li class="${s.done ? 'done' : ''}"><div><div class="step-title">${esc(s.title)}</div><div class="step-desc">${esc(s.desc)}</div></div><div>${s.done ? '<span class="t-ok" style="font-weight:700">შესრულებულია ✓</span>' : s.action || ''}</div></li>`).join('')}</ol>
           </section>` : ''}
