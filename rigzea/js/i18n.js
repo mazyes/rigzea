@@ -1915,6 +1915,8 @@
 "ფოტოები შემოტანილია ✓": "Photos imported ✓",
 "ფოტოები შემოტანილია": "Photos imported",
 "18 HD ფოტო": "18 HD photos",
+"ყველაფერი რიგზეა.": "Everything in order.",
+"მართე ობიექტები, კლიენტები და გარიგებები ერთ სივრცეში.": "Manage listings, clients and deals in one space.",
 };
   var WD = ['კვირა', 'ორშაბათი', 'სამშაბათი', 'ოთხშაბათი', 'ხუთშაბათი', 'პარასკევი', 'შაბათი'];
   var WE = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
