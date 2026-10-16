@@ -106,8 +106,8 @@ export default async function handler(req, res) {
   const clientId = process.env.KISA_CLIENT_ID;
   const clientSecret = process.env.KISA_CLIENT_SECRET;
 
-  const successRedirectUrl = `${BASE_APP_URL}/app/#/settings?payment=success&plan=${encodeURIComponent(planId)}`;
-  const failRedirectUrl = `${BASE_APP_URL}/app/#/settings?payment=failed`;
+  const successRedirectUrl = `${BASE_APP_URL}/app/settings/?payment=success&plan=${encodeURIComponent(planId)}`;
+  const failRedirectUrl = `${BASE_APP_URL}/app/settings/?payment=failed`;
   const callbackUrl = `${BASE_APP_URL}/api/kisa-webhook`;
 
   // If KISA credentials are not yet configured in env

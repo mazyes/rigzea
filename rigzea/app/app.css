@@ -401,17 +401,28 @@ img { max-width: 100%; display: block; }
   line-height: 1.1;
 }
 
-@media (max-width: 1180px) {
-  .topbar-tab span:not(.topbar-tab-count) {
-    display: none;
-  }
-  .topbar-tab {
-    padding: 0 8px;
-  }
-  .search-trigger {
-    min-width: 160px;
-  }
+/* The bar never wraps: items give up their labels as the window narrows instead
+   (search, then the user name and tools label, then the tab labels, see fitTopbarTabs). */
+.topbar > * { flex-shrink: 0; }
+.topbar > .org-switch, .topbar > .topbar-nav { flex-shrink: 1; }
+.topbar-icons, .topbar-user { display: flex; align-items: center; gap: 2px; }
+.topbar-nav { overflow: hidden; }
+.search-trigger .label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.user-meta > span, .user-meta small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px; }
+.menu-lang { display: none !important; }
+@media (max-width: 1880px) {
+  .topbar .search-trigger { min-width: 0; width: 36px; padding: 0; justify-content: center; }
+  .topbar .search-trigger .label, .topbar .search-trigger kbd { display: none; }
 }
+@media (max-width: 1880px) {
+  .topbar .user-meta, .topbar-tools-btn .tools-btn-label { display: none; }
+}
+@media (max-width: 1080px) {
+  .topbar .brand-text, .topbar-tools-btn .tools-btn-arrow { display: none; }
+}
+/* Set by fitTopbarTabs() in app.js when the labelled tabs do not fit */
+.topbar.tabs-compact .topbar-tab span:not(.topbar-tab-count) { display: none; }
+.topbar.tabs-compact .topbar-tab { padding: 0 8px; }
 @media (max-width: 860px) {
   .topbar-nav {
     display: none;
@@ -425,6 +436,16 @@ img { max-width: 100%; display: block; }
 }
 
 .topbar-spacer { flex: 1; }
+/* Phones: language and theme live in the account menu, so the bell stays in the bar */
+@media (max-width: 600px) {
+  #btn-lang, #btn-theme { display: none; }
+  .menu-lang { display: flex !important; }
+}
+@media (max-width: 360px) {
+  :root .topbar { gap: 4px; padding: 0 6px 0 10px; }
+  :root .org-switch { min-width: 44px; padding-left: 6px; }
+  .topbar .icon-btn, .topbar .search-trigger, .topbar #btn-tools, .topbar #btn-new-task { width: 40px; height: 40px; min-height: 40px; min-width: 40px; padding: 0; justify-content: center; }
+}
 .search-trigger {
   display: flex; align-items: center; gap: 8px; height: 36px; padding: 0 10px; min-width: 220px;
   border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--surface-2); color: var(--muted); cursor: pointer;
@@ -806,6 +827,7 @@ button.row { width: 100%; border: 0; border-bottom: 1px solid var(--line); backg
   .brand-text, .user-meta, .topbar .new-task-label { display: none; }
   .org-switch { padding-left: 8px; margin-left: 0; }
   .org-switch select, .org-switch .org-static { max-width: 150px; }
+  .org-switch { min-width: 56px; }
   .icon-btn { width: 44px; height: 44px; }
   .btn { min-height: 44px; }
   .btn-sm { min-height: 36px; }

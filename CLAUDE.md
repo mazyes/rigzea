@@ -7,6 +7,8 @@ Live at https://rigzea.com (Vercel project `rigzea-website`); database is Supaba
 
 - `rigzea/` is the deployed static site (Vercel `outputDirectory`). Everything in it is public.
   - `app/` the CRM: `app.js` (shell, routing, data load), `views-*.js` (one file per area), `app.css`
+    Each area is its own page (`/app/owners/`, items as `?id=`). Edit only `app/index.html`: the area pages
+    are generated from it, with hashed `?v=` asset URLs, by `node scripts/stamp-assets.mjs` (also Vercel's build).
   - `js/core.js` shared helpers exposed as `window.R` (`esc`, `safeUrl`, `money`, `dialog`, `toast`, labels `L`)
   - `p/` public listing page, `p/s/` multi-listing selection, `guide/` guest guide, `approve/` owner approval, `staff/` cleaner app
   - `index.html`, `site.js`, `landing-luxury.*` landing page; `demo/` offline demo with mock data

@@ -62,7 +62,7 @@ async function run() {
       // Valid credentials
       await page.fill('#form-signin input[name=password]', 'test1234');
       await page.click('#form-signin [type=submit]');
-      await page.waitForURL('**/app/#/today', { timeout: 8000 });
+      await page.waitForURL('**/app/', { timeout: 8000 });
       assert.strictEqual(page.errors.length, 0, `Errors on /signin/: ${page.errors.join('; ')}`);
       await page.close();
       console.log('✓ 4. /signin/ authenticates and redirects to /app/#/today');

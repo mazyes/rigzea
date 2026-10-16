@@ -1,23 +1,43 @@
-// Stamps the app's script and stylesheet URLs with a hash of their contents (?v=1a2b3c4d), so
-// browsers can keep them cached for a year (see the immutable rule in vercel.json) and still get
-// a changed file at once. Vercel runs this as the build command; it is safe to run any time.
+// Builds the app's pages. Vercel runs this as the build command; it is safe to run any time.
 //   node scripts/stamp-assets.mjs
-import { readFileSync, writeFileSync } from 'node:fs';
+// 1. Stamps script and stylesheet URLs in app/index.html with a hash of their contents
+//    (?v=1a2b3c4d), so browsers keep them cached for a year (the immutable rule in vercel.json)
+//    and still get a changed file at once.
+// 2. Writes one page per app area (app/owners/index.html, ...) from app/index.html, which is the
+//    only one to edit. They differ only in the title; routing is in app/app.js.
+import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const site = join(dirname(fileURLToPath(import.meta.url)), '..', 'rigzea');
-const pages = ['app/index.html'];
 const ref = /(src|href)="(\/(?:app|js)\/[^"?]+\.(?:js|css))(?:\?v=[^"]*)?"/g;
+const AREAS = {
+  tasks: 'საქმეები', apartments: 'ბინები', owners: 'კონტაქტები', deals: 'გარიგებები',
+  finance: 'ფინანსები', team: 'გუნდი', settings: 'პარამეტრები',
+};
+const GENERATED = '<!-- Generated from app/index.html by scripts/stamp-assets.mjs: edit that file, not this one. -->';
 
-for (const page of pages) {
-  const file = join(site, page);
-  const html = readFileSync(file, 'utf8');
-  const out = html.replace(ref, (_, attr, path) => {
-    const hash = createHash('sha256').update(readFileSync(join(site, path))).digest('hex').slice(0, 8);
-    return `${attr}="${path}?v=${hash}"`;
-  });
-  if (out !== html) writeFileSync(file, out);
-  console.log(`${page}: ${out === html ? 'up to date' : 'stamped'}`);
+function write(rel, content) {
+  const file = join(site, rel);
+  let old = null;
+  try { old = readFileSync(file, 'utf8'); } catch { /* new page */ }
+  if (old === content) return console.log(`${rel}: up to date`);
+  mkdirSync(dirname(file), { recursive: true });
+  writeFileSync(file, content);
+  console.log(`${rel}: ${old === null ? 'created' : 'updated'}`);
+}
+
+const template = readFileSync(join(site, 'app/index.html'), 'utf8').replace(ref, (_, attr, path) => {
+  const hash = createHash('sha256').update(readFileSync(join(site, path))).digest('hex').slice(0, 8);
+  return `${attr}="${path}?v=${hash}"`;
+});
+if (!/<title>[^<]*<\/title>/.test(template)) throw new Error('app/index.html needs a <title>');
+write('app/index.html', template);
+
+for (const [area, label] of Object.entries(AREAS)) {
+  const page = template
+    .replace(/<title>[^<]*<\/title>/, `<title>Rigzea: ${label}</title>`)
+    .replace('<!doctype html>', `<!doctype html>\n${GENERATED}`);
+  write(`app/${area}/index.html`, page);
 }
