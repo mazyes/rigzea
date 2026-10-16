@@ -1091,6 +1091,32 @@ test('27. watermarking every photo saves them and closes the tool', async (brows
   return page;
 });
 
+test('29. the portal button hands public listing data to the extension and warns when it is missing', async (browser) => {
+  const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
+  await page.goto(BASE + '/app/#/apartments/dddddddd-0000-4000-8000-000000000001');
+  await page.locator('#btn-post-portals').waitFor();
+  // No extension answers: an error toast, the dialog stays open
+  await page.locator('#btn-post-portals').click();
+  await page.locator('dialog[open] [data-submit]').click();
+  await page.locator('.toast', { hasText: 'გაფართოება ვერ მოიძებნა' }).waitFor();
+  // A stand-in extension acknowledges and records the payload
+  await page.evaluate(() => {
+    window.__posted = null;
+    window.addEventListener('message', (e) => {
+      if (e.source === window && e.data?.type === 'rigzea:post') { window.__posted = e.data; window.postMessage({ type: 'rigzea:ack' }, location.origin); }
+    });
+  });
+  await page.locator('dialog[open] select[name=target]').selectOption('ss');
+  await page.locator('dialog[open] [data-submit]').click();
+  await page.locator('dialog[open]').waitFor({ state: 'detached' });
+  const posted = await page.evaluate(() => window.__posted);
+  assert.deepStrictEqual(posted.targets, ['ss']);
+  const json = JSON.stringify(posted.listing);
+  assert(!/4821#|sea-view-24|door_code|wifi/.test(json), 'private fields leaked: ' + json.slice(0, 300));
+  assert(posted.listing.city === 'ბათუმი', 'public fields are sent');
+  return page;
+});
+
 test('28. the service worker precaches the app shell under a content-named cache', async (browser) => {
   const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
   await page.goto(BASE + '/app/');

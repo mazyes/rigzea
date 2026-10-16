@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "Rigzea: SS.ge და MyHome.ge",
+  "version": "0.1.0",
+  "description": "ავტომატურად ავსებს განცხადებას SS.ge-ზე და MyHome.ge-ზე Rigzea-ს ობიექტის მონაცემებით.",
+  "permissions": ["storage"],
+  "host_permissions": ["https://*.ss.ge/*", "https://*.myhome.ge/*"],
+  "background": { "service_worker": "background.js" },
+  "content_scripts": [
+    { "matches": ["https://rigzea.com/*"], "js": ["content/bridge.js"], "run_at": "document_idle" },
+    { "matches": ["https://*.ss.ge/*"], "js": ["content/fill.js", "content/ss.js"], "run_at": "document_idle" },
+    { "matches": ["https://statements.myhome.ge/*"], "js": ["content/fill.js", "content/myhome.js"], "run_at": "document_idle" }
+  ]
+}

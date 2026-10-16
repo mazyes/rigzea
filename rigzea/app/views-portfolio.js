@@ -596,6 +596,61 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
     fillLinkStats(id);
   }
 
+  // Public listing fields only: never door codes, wifi, notes, owner or tenant data.
+  function portalPayload(a) {
+    const isSale = a.transaction_type === 'sale';
+    return {
+      transaction_type: a.transaction_type || 'long_term',
+      property_type: a.property_type || 'apartment',
+      price: Number(isSale ? a.sale_price : a.monthly_rent) || null,
+      currency: a.currency || 'USD',
+      rooms: a.rooms ?? null, bedrooms: a.bedrooms ?? null, bathrooms: a.bathrooms ?? null,
+      area_sqm: a.area_sqm ?? null, floor: a.floor ?? null, total_floors: a.total_floors ?? null,
+      city: a.city || '', district: a.district || '', address: a.address || '',
+      lat: a.lat ?? null, lng: a.lng ?? null, cadastral_code: a.cadastral_code || '',
+      description: a.description || '',
+      photos: listingPhotos(a).map(p => p.url),
+    };
+  }
+
+  // Hands the listing to the Rigzea Chrome extension (content script on this page) via postMessage.
+  function sendToPortals(a, targets) {
+    return new Promise((resolve) => {
+      const onMsg = (e) => {
+        if (e.source !== window || e.data?.type !== 'rigzea:ack') return;
+        clearTimeout(timer); window.removeEventListener('message', onMsg); resolve(true);
+      };
+      const timer = setTimeout(() => { window.removeEventListener('message', onMsg); resolve(false); }, 1200);
+      window.addEventListener('message', onMsg);
+      window.postMessage({ type: 'rigzea:post', targets, listing: portalPayload(a) }, window.location.origin);
+    });
+  }
+
+  function openPortalPostDialog(a) {
+    return R.dialog({
+      title: 'გამოქვეყნება SS.ge / MyHome.ge-ზე',
+      subtitle: a.name,
+      submitLabel: 'ფორმის შევსება',
+      body: `
+        <p class="dlg-text">Rigzea-ს Chrome-ის გაფართოება გახსნის საიტს, ავტომატურად შეავსებს განცხადებას ამ ობიექტის მონაცემებით. საიტზე წინასწარ უნდა იყო შესული. სტატუსს და მდგომარეობას შენ აირჩევ, შემდეგ დააჭირე გამოქვეყნებას.</p>
+        <label class="field"><span class="field-label">სად გამოქვეყნდეს</span>
+          <select name="target" class="input">
+            <option value="both">SS.ge და MyHome.ge</option>
+            <option value="ss">მხოლოდ SS.ge</option>
+            <option value="myhome">მხოლოდ MyHome.ge</option>
+          </select></label>`,
+      onSubmit: async (_f, v) => {
+        const targets = v.target === 'both' ? ['ss', 'myhome'] : [v.target];
+        const ok = await sendToPortals(a, targets);
+        if (!ok) {
+          toast('გაფართოება ვერ მოიძებნა. დააყენე Rigzea-ს გაფართოება Chrome-ში და სცადე თავიდან.', { type: 'error' });
+          return false;
+        }
+        toast('გაფართოებას გადაეცა. ახალ ფანჯარაში იხილავ შევსებას.');
+      },
+    });
+  }
+
   function listingCard(a) {
     const photos = listingPhotos(a);
     const isSale = a.transaction_type === 'sale';
@@ -616,6 +671,7 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
           <button type="button" class="btn btn-secondary btn-sm" id="btn-owner-report" title="მესაკუთრის 1-კლიკიანი WhatsApp რეპორტი">${icon('whatsapp', 14)} მესაკუთრის რეპორტი</button>
           <button type="button" class="btn btn-secondary btn-sm" id="btn-reverse-match" title="იპოვე კლიენტები, რომლებიც ამ ბინას ეძებენ">${icon('sparkle', 14)} შესაბამისი კლიენტები</button>
           <button type="button" class="btn btn-secondary btn-sm" id="btn-open-post">${icon('whatsapp', 14)} პოსტი WhatsApp-ისა და Facebook-ისთვის</button>
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-post-portals" title="Chrome-ის გაფართოება ავტომატურად შეავსებს განცხადებას">${icon('external', 14)} გამოქვეყნება SS.ge / MyHome.ge-ზე</button>
           ${isSale ? '' : `<button type="button" class="btn btn-secondary btn-sm" id="btn-open-lease">${icon('file', 14)} იჯარის ხელშეკრულება</button>`}
           <button type="button" class="btn btn-secondary btn-sm" id="btn-apt-viewing">${icon('clock', 14)} + დათვალიერება</button>
           <button type="button" class="btn btn-ghost btn-sm" id="btn-apt-deal">+ გარიგება</button>
@@ -1130,6 +1186,7 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
     $('#listing-url')?.addEventListener('focus', (e) => e.target.select());
     loadLinkStats(id);
     $('#btn-open-post')?.addEventListener('click', () => App.openPostGenerator(a));
+    $('#btn-post-portals')?.addEventListener('click', () => openPortalPostDialog(a));
     $('#a-share')?.addEventListener('click', () => App.openCoBrokerShare(a));
     $('#a-pdf')?.addEventListener('click', () => App.openPresentation(a));
     $('#a-docs')?.addEventListener('click', () => App.openDocChooser({ apartment: a }));
