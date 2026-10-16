@@ -3403,3 +3403,8 @@ html.lenis, html.lenis body { height: auto; }
 .lx-motion #features-grid .lx-publish-chip:first-child { transition-delay: 1.5s; }
 .lx-motion #features-grid .lx-publish-chip:last-child { transition-delay: 1.75s; }
 .lx-motion #features-grid .is-in .lx-publish-chip { opacity: 1; transform: none; }
+
+/* English: the elements that render in Georgian capitals (Mtavruli) are uppercase in English too */
+html[lang="en"] :is(h1, h2, h3, .lx-nav-link, .lx-badge, .lx-btn, .lx-plan-name, .lx-hero-eyebrow, .lx-video-btn, .lx-thumb-btn, .lx-pricing-featured-badge, .lx-discount-badge) {
+  text-transform: uppercase; letter-spacing: .01em;
+}
