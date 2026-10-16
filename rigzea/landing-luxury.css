@@ -1263,9 +1263,9 @@ body.luxury-theme::before {
 /* ==========================================================================
    MOBILE & RESPONSIVE ADAPTATIONS
    ========================================================================== */
-@media (max-width: 1080px) {
+@media (max-width: 1240px) {
   .lx-pricing-grid-4 {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -3208,3 +3208,22 @@ html.lenis, html.lenis body { height: auto; }
 @media (max-width: 560px) { .lx-final-cta-box h2::after { margin-left: 0; } }
 .lx-motion .lx-final-cta-box h2::after { transform: scaleX(0); transition: transform .9s var(--lx-ease-out) .25s; }
 .lx-motion .lx-final-cta-box.is-in h2::after { transform: scaleX(1); }
+
+/* Small laptops (901-1199px): keep the header on one line */
+.lx-nav-link { white-space: nowrap; }
+@media (min-width: 901px) and (max-width: 1199px) {
+  .lx-nav-links .lx-nav-link[href="#faq"], .lx-nav-links .lx-nav-link[href="/demo/"] { display: none; }
+  .lx-nav-links { gap: 2px; }
+}
+@media (min-width: 901px) and (max-width: 1099px) { .lx-header-signin { display: none; } }
+
+/* Primary actions: solid emerald, white text, flat (no glow, no shadow) in both themes */
+.lx-btn-primary, .lx-thumb-btn-primary, :root[data-theme="light"] .lx-btn-primary {
+  background: #047857; color: #fff; border-color: #047857; box-shadow: none;
+}
+.lx-btn-primary:hover, .lx-thumb-btn-primary:hover, :root[data-theme="light"] .lx-btn-primary:hover {
+  background: #065F46; color: #fff; border-color: #065F46; box-shadow: none;
+}
+.lx-btn-primary:focus-visible { box-shadow: var(--lx-focus-ring); }
+.lx-video-btn, .lx-video-btn:hover { box-shadow: none; }
+.lx-mobile-thumb-bar { box-shadow: none; }
