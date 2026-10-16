@@ -3349,3 +3349,6 @@ html.lenis, html.lenis body { height: auto; }
   }
   :root .lx-thumb-btn { border-radius: 999px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
 }
+
+/* Logo tile: flat, no glow */
+.lx-brand-icon, :root[data-theme="light"] .lx-brand-icon { box-shadow: none; filter: none; }
