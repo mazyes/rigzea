@@ -1,0 +1,239 @@
+<!doctype html>
+<!-- Generated from app/index.html by scripts/stamp-assets.mjs: edit that file, not this one. -->
+<html lang="ka">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Rigzea: გარიგებები</title>
+  <meta name="theme-color" content="#047857" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=4" />
+  <link rel="icon" href="/favicon.ico?v=4" sizes="48x48" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=4" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=4" />
+  <link rel="apple-touch-icon" sizes="167x167" href="/apple-touch-icon-167x167.png?v=4" />
+  <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png?v=4" />
+  <link rel="apple-touch-icon" sizes="120x120" href="/apple-touch-icon-120x120.png?v=4" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Rigzea" />
+
+  <!-- Performance: DNS prefetch and preconnect for Supabase API -->
+  <link rel="dns-prefetch" href="https://cuioodytwyzykqlrjfej.supabase.co" />
+  <link rel="preconnect" href="https://cuioodytwyzykqlrjfej.supabase.co" crossorigin />
+
+  <!-- Open Graph / Social Preview -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Rigzea: უძრავი ქონების CRM" />
+  <meta property="og:description" content="უძრავი ქონების სააგენტოებისა და აგენტების სამუშაო სისტემა" />
+  <meta property="og:image" content="https://rigzea.com/img/og-preview.jpg?v=3" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:image" content="https://rigzea.com/img/og-preview.jpg?v=3" />
+
+  <link rel="stylesheet" href="/app/app.css?v=bbf3b80c" />
+<script>window.__RIGZEA_ASSET_VERSIONS={"/app/views-ops.js":"751ecaad","/app/views-portfolio.js":"6363f057","/app/views-deals.js":"d95db3e3","/app/views-docs.js":"967cd001","/app/views-finance.js":"3dd2ee5d","/app/views-admin.js":"58a2296f"};</script></head>
+<body>
+  <div id="boot" class="boot" role="status">იტვირთება…</div>
+
+  <!-- Sign in / sign up / reset -->
+  <main id="auth" class="auth" hidden>
+    <div class="auth-card">
+      <a class="brand" href="/" aria-label="Rigzea: მთავარი გვერდი"><span class="brand-mark" data-icon="logo"></span><span class="brand-text">რიგზეა<i>.</i></span></a>
+
+      <div class="auth-tabs" id="auth-tabs" role="tablist">
+        <button type="button" class="auth-tab active" data-auth="signup" id="tab-auth-signup"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:5px"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>რეგისტრაცია (14 დღე უფასოდ)</button>
+        <button type="button" class="auth-tab" data-auth="signin" id="tab-auth-signin">შესვლა</button>
+      </div>
+
+      <div class="oauth-stack" id="auth-oauth-stack">
+        <button type="button" class="btn btn-oauth btn-google" data-oauth="google">
+          <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+            <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
+            <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"/>
+            <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.98 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
+            <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
+          </svg>
+          <span id="oauth-google-label">Google-ით რეგისტრაცია</span>
+        </button>
+      </div>
+
+      <div class="auth-divider" id="auth-divider">
+        <span>ან ელფოსტით</span>
+      </div>
+
+      <form id="form-signin" class="form-stack" novalidate hidden>
+        <div><h1>შესვლა</h1><p class="page-sub">შეიყვანე სამუშაო ელფოსტა და პაროლი.</p></div>
+        <div class="form-error" role="alert" hidden></div>
+        <label class="field"><span class="field-label">ელფოსტა</span><input type="email" name="email" required autocomplete="email" data-error="შეიყვანე სწორი ელფოსტა." /></label>
+        <label class="field"><span class="field-label">პაროლი</span><input type="password" name="password" required autocomplete="current-password" data-error="შეიყვანე პაროლი." /></label>
+        <button type="submit" class="btn btn-primary btn-block">შესვლა</button>
+        <div class="auth-demo-prompt">
+          <a class="btn btn-secondary btn-block" href="/demo/"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:6px"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>სცადე დემო (რეგისტრაციის გარეშე)</a>
+        </div>
+        <p class="auth-foot"><button type="button" class="link-btn" data-auth="reset">დაგავიწყდა პაროლი?</button> · <button type="button" class="link-btn" data-auth="signup">ახალი ანგარიში (14 დღე უფასოდ)</button></p>
+      </form>
+
+      <form id="form-signup" class="form-stack" novalidate>
+        <div>
+          <h1>ანგარიშის შექმნა</h1>
+          <p class="page-sub"><strong>14 დღე უფასო საცდელი პერიოდი</strong> · საბანკო ბარათი არ არის საჭირო.</p>
+        </div>
+        <div class="form-error" role="alert" hidden></div>
+        <label class="field"><span class="field-label">სახელი და გვარი</span><input type="text" name="name" required autocomplete="name" data-error="შეიყვანე სახელი." placeholder="მაგ.: გიორგი ბერიძე" /></label>
+        <label class="field"><span class="field-label">ელფოსტა</span><input type="email" name="email" required autocomplete="email" data-error="შეიყვანე სწორი ელფოსტა." placeholder="name@example.com" /></label>
+        <label class="field"><span class="field-label">პაროლი</span><input type="password" name="password" required minlength="8" autocomplete="new-password" data-error="პაროლი მინიმუმ 8 სიმბოლოს უნდა შეიცავდეს." aria-describedby="signup-pass-hint" /><span class="field-hint" id="signup-pass-hint">მინიმუმ 8 სიმბოლო</span></label>
+        <label class="auth-consent" id="signup-consent-label">
+          <input type="checkbox" name="agree" id="signup-agree" required data-error="რეგისტრაციისთვის დაეთანხმე მომსახურების წესებს, კონფიდენციალურობის, ქუქიებისა და თანხის დაბრუნების (24 სთ) პოლიტიკას." />
+          <span>ვეთანხმები <a href="/legal/terms/" target="_blank" rel="noopener">მომსახურების წესებს</a>, <a href="/legal/privacy/" target="_blank" rel="noopener">კონფიდენციალურობის პოლიტიკას</a>, <a href="/legal/cookies/" target="_blank" rel="noopener">ქუქიების პოლიტიკას</a> და <a href="/legal/refund/" target="_blank" rel="noopener">თანხის დაბრუნების პოლიტიკას (24 სთ)</a>.</span>
+        </label>
+        <button type="submit" class="btn btn-primary btn-block">რეგისტრაცია (14 დღე უფასოდ)</button>
+        <div class="auth-demo-prompt">
+          <a class="btn btn-secondary btn-block" href="/demo/"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:6px"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>სცადე დემო (რეგისტრაციის გარეშე)</a>
+        </div>
+        <p class="auth-foot">უკვე გაქვს ანგარიში? <button type="button" class="link-btn" data-auth="signin">შესვლა</button></p>
+      </form>
+
+      <form id="form-reset" class="form-stack" novalidate hidden>
+        <div><h1>პაროლის აღდგენა</h1><p class="page-sub">გამოგიგზავნით ბმულს ახალი პაროლის დასაყენებლად.</p></div>
+        <div class="form-error" role="alert" hidden></div>
+        <label class="field"><span class="field-label">ელფოსტა</span><input type="email" name="email" required autocomplete="email" data-error="შეიყვანე სწორი ელფოსტა." /></label>
+        <button type="submit" class="btn btn-primary btn-block">ბმულის გაგზავნა</button>
+        <p class="auth-foot"><button type="button" class="link-btn" data-auth="signin">შესვლაზე დაბრუნება</button></p>
+      </form>
+
+      <form id="form-newpass" class="form-stack" novalidate hidden>
+        <div><h1>ახალი პაროლი</h1><p class="page-sub">ჩაწერე ახალი პაროლი. შენახვის შემდეგ პირდაპირ შეხვალ ანგარიშში.</p></div>
+        <div class="form-error" role="alert" hidden></div>
+        <label class="field"><span class="field-label">ახალი პაროლი</span><input type="password" name="password" required minlength="8" autocomplete="new-password" data-error="პაროლი მინიმუმ 8 სიმბოლოს უნდა შეიცავდეს." aria-describedby="newpass-hint" /><span class="field-hint" id="newpass-hint">მინიმუმ 8 სიმბოლო</span></label>
+        <label class="field"><span class="field-label">გაიმეორე პაროლი</span><input type="password" name="password2" required minlength="8" autocomplete="new-password" data-error="გაიმეორე ახალი პაროლი." /></label>
+        <button type="submit" class="btn btn-primary btn-block">პაროლის შენახვა</button>
+      </form>
+    </div>
+  </main>
+
+  <!-- First run: create organization -->
+  <main id="onboarding" class="auth" hidden>
+    <div class="auth-card auth-card-wide">
+      <a class="brand" href="/" aria-label="Rigzea: მთავარი გვერდი"><span class="brand-mark" data-icon="logo"></span><span class="brand-text">რიგზეა<i>.</i></span></a>
+      <form id="form-org" class="form-stack" novalidate>
+        <div>
+          <h1>შექმენი სამუშაო კაბინეტი</h1>
+          <p class="page-sub">ეს შენი პირადი ან სააგენტოს სივრცეა. თუ დამოუკიდებელი აგენტი ხარ, შეგიძლია უბრალოდ შენი სახელი ჩაწერო (მაგ.: გიორგი ბროკერი).</p>
+        </div>
+        <div class="form-error" role="alert" hidden></div>
+        <label class="field"><span class="field-label">კომპანიის ან აგენტის სახელი</span><input type="text" name="name" required placeholder="მაგ.: Apex Real Estate ან გიორგი ბროკერი" data-error="შეიყვანე სახელი." /></label>
+        <div class="form-grid">
+          <label class="field"><span class="field-label">ძირითადი ქალაქი</span>
+            <select name="city"><option selected>თბილისი</option><option>ბათუმი</option><option>ქუთაისი</option><option>სხვა</option></select>
+          </label>
+          <label class="field"><span class="field-label">ბინების რაოდენობა</span>
+            <select name="size"><option value="1-5" selected>1–5</option><option value="6-20">6–20</option><option value="21-50">21–50</option><option value="50+">50+</option></select>
+          </label>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">სამუშაო სივრცის შექმნა →</button>
+        <p class="auth-foot"><button type="button" class="link-btn" data-action="signout">სხვა ანგარიშით შესვლა</button></p>
+      </form>
+    </div>
+  </main>
+
+  <!-- Workspace -->
+  <div id="shell" class="shell" hidden>
+    <header class="topbar">
+      <a class="brand" href="#/today" aria-label="რიგზეა · მთავარი"><span class="brand-mark" data-icon="logo"></span><span class="brand-text">რიგზეა<i>.</i></span></a>
+      <div class="org-switch" id="org-switch"></div>
+      <nav class="topbar-nav" id="topbar-nav" aria-label="ძირითადი ნავიგაცია"></nav>
+      <div class="topbar-spacer"></div>
+      <button type="button" class="search-trigger" id="btn-search" aria-label="ძებნა"><span data-icon="search"></span><span class="label">ბინა, საქმე, მფლობელი…</span><kbd>/</kbd></button>
+      <div style="position:relative" id="quick-tools-wrap">
+        <button type="button" class="btn btn-ghost btn-sm topbar-tools-btn" id="btn-tools" aria-expanded="false" aria-haspopup="true">
+          <span data-icon="wrench"></span>
+          <span class="tools-btn-label">ხელსაწყოები</span>
+          <span data-icon="chevronDown" class="tools-btn-arrow"></span>
+        </button>
+        <div class="popover quick-tools-menu" id="tools-panel" hidden style="width:280px;right:0">
+          <div class="quick-tools-items">
+            <button type="button" class="quick-add-btn" data-tool="calculator">
+              <span class="qa-ico" data-icon="wallet"></span>
+              <span class="qa-text"><strong>საკომისიოს კალკულატორი</strong><small>სწრაფი გათვლა კლიენტთან</small></span>
+            </button>
+            <button type="button" class="quick-add-btn" data-tool="matchmaker">
+              <span class="qa-ico" data-icon="search"></span>
+              <span class="qa-text"><strong>კლიენტის სელექცია</strong><small>ბინების შერჩევა მოთხოვნით</small></span>
+            </button>
+            <button type="button" class="quick-add-btn" data-tool="social-post">
+              <span class="qa-ico" data-icon="sparkle"></span>
+              <span class="qa-text"><strong>პოსტის გენერატორი</strong><small>ტექსტი FB და Instagram-ისთვის</small></span>
+            </button>
+            <button type="button" class="quick-add-btn" data-tool="templates">
+              <span class="qa-ico" data-icon="file"></span>
+              <span class="qa-text"><strong>ხელშეკრულებები</strong><small>ქირავნობა, ყიდვა-გაყიდვა</small></span>
+            </button>
+          </div>
+        </div>
+      </div>
+      <div style="position:relative" id="quick-add-wrap">
+        <button type="button" class="btn btn-primary btn-sm" id="btn-new-task" aria-expanded="false" aria-haspopup="true"><span data-icon="plus"></span><span class="new-task-label">დამატება</span></button>
+        <div class="popover quick-add-menu" id="quick-add-panel" hidden style="width:260px;right:0">
+          <div class="quick-add-items">
+            <button type="button" class="quick-add-btn" data-qa="apartment">
+              <span class="qa-ico" data-icon="building"></span>
+              <span class="qa-text"><strong>ბინის დამატება</strong><small>ან ლინკით გადმოტანა</small></span>
+            </button>
+            <button type="button" class="quick-add-btn" data-qa="deal">
+              <span class="qa-ico" data-icon="wallet"></span>
+              <span class="qa-text"><strong>ახალი კლიენტი / გარიგება</strong><small>მოთხოვნა, შეთავაზება</small></span>
+            </button>
+            <button type="button" class="quick-add-btn" data-qa="viewing">
+              <span class="qa-ico" data-icon="calendar"></span>
+              <span class="qa-text"><strong>დათვალიერების ჩანიშვნა</strong><small>ბინის ნახვა კლიენტთან</small></span>
+            </button>
+            <button type="button" class="quick-add-btn" data-qa="task">
+              <span class="qa-ico" data-icon="tasks"></span>
+              <span class="qa-text"><strong>ახალი საქმე / დავალება</strong><small>დასუფთავება, რემონტი, სხვა</small></span>
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="topbar-icons" style="position:relative">
+        <button type="button" class="icon-btn" id="btn-lang" data-lang-toggle style="font-size:12px;font-weight:700">EN</button>
+        <button type="button" class="icon-btn" id="btn-theme" aria-label="თემის შეცვლა"></button>
+        <button type="button" class="icon-btn" id="btn-notif" aria-label="შეტყობინებები" aria-expanded="false"><span data-icon="bell"></span></button>
+        <div class="popover" id="notif-panel" hidden></div>
+      </div>
+      <div class="topbar-user" style="position:relative">
+        <button type="button" class="user-btn" id="btn-user" aria-expanded="false" aria-label="ანგარიში">
+          <span class="avatar" id="user-avatar">·</span>
+          <span class="user-meta"><span id="user-name"></span><small id="user-role"></small></span>
+        </button>
+        <div class="popover" id="user-panel" hidden style="width:240px"></div>
+      </div>
+    </header>
+
+    <div class="layout">
+      <nav class="rail" id="rail" aria-label="მთავარი ნავიგაცია"></nav>
+      <nav class="section-bar" id="section-bar" hidden></nav>
+      <main class="main" id="view" tabindex="-1"></main>
+    </div>
+
+    <nav class="bottom-nav" id="bottom-nav" aria-label="ნავიგაცია"></nav>
+  </div>
+
+  <script src="/js/supabase.js?v=6474aafb"></script>
+  <script src="/js/config.js?v=167b14f9"></script>
+  <script src="/js/core.js?v=7aba2e22"></script>
+  <!-- The English dictionary (about 200 KB) is only downloaded for English; Georgian needs just the toggle -->
+  <script>(function(){var en=false;try{en=localStorage.getItem('rigzea_lang')==='en'}catch(e){}window.RLang={lang:en?'en':'ka'};if(en){var s=document.createElement('script');s.src='/js/i18n.js';document.head.appendChild(s);return}document.addEventListener('click',function(e){if(!(e.target.closest&&e.target.closest('[data-lang-toggle]')))return;try{localStorage.setItem('rigzea_lang','en')}catch(x){}location.reload()})})()</script>
+  <script src="/js/plans.js?v=6a07db8f"></script>
+  <script src="/app/app.js?v=31363f41"></script>
+  <script>
+    if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/service-worker.js').catch(() => {});
+      });
+    }
+  </script>
+</body>
+</html>

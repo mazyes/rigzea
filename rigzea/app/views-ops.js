@@ -1091,7 +1091,14 @@
     });
   }
   App.openTaskForm = openTaskForm;
-  App.setTaskFilter = (patch) => Object.assign(tf, patch);
+  // A filter set on another page (an apartment's "all tasks", a member's tasks) travels to the
+  // tasks page through sessionStorage, since going there loads a new page.
+  try { const handed = JSON.parse(sessionStorage.getItem('rigzea_task_filter') || 'null'); if (handed) Object.assign(tf, handed); } catch { /* none */ }
+  try { sessionStorage.removeItem('rigzea_task_filter'); } catch { /* none */ }
+  App.setTaskFilter = (patch) => {
+    Object.assign(tf, patch);
+    if (App.route().name !== 'tasks') try { sessionStorage.setItem('rigzea_task_filter', JSON.stringify(patch)); } catch { /* none */ }
+  };
   App.openAssign = openAssign;
   App.taskRows = taskRows;
   App.activityList = activityList;

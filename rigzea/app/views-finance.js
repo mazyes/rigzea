@@ -13,7 +13,7 @@
   App.views.finance = (r) => {
     if (r.id === 'statement' && r.sub) return renderStatement(r.sub);
     const st = r.params.get('status');
-    if (st) { ff.status = st; ff.tab = 'expenses'; ff.month = ''; history.replaceState(null, '', '#/finance'); }
+    if (st) { ff.status = st; ff.tab = 'expenses'; ff.month = ''; history.replaceState(null, '', App.toUrl('#/finance')); }
 
     const inScope = (d, aptId) => (!ff.month || String(d || '').startsWith(ff.month)) && (!ff.apt || aptId === ff.apt);
     const exp = S.data.expenses.filter(e => inScope(e.expense_date, e.apartment_id));

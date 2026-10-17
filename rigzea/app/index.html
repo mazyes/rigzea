@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Rigzea: მთავარი</title>
   <meta name="theme-color" content="#047857" />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=4" />
   <link rel="icon" href="/favicon.ico?v=4" sizes="48x48" />
@@ -17,6 +18,10 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Rigzea" />
 
+  <!-- Performance: DNS prefetch and preconnect for Supabase API -->
+  <link rel="dns-prefetch" href="https://cuioodytwyzykqlrjfej.supabase.co" />
+  <link rel="preconnect" href="https://cuioodytwyzykqlrjfej.supabase.co" crossorigin />
+
   <!-- Open Graph / Social Preview -->
   <meta property="og:type" content="website" />
   <meta property="og:title" content="Rigzea: უძრავი ქონების CRM" />
@@ -27,8 +32,8 @@
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:image" content="https://rigzea.com/img/og-preview.jpg?v=3" />
 
-  <link rel="stylesheet" href="/app/app.css?v=756599f1" />
-</head>
+  <link rel="stylesheet" href="/app/app.css?v=bbf3b80c" />
+<script>window.__RIGZEA_ASSET_VERSIONS={"/app/views-ops.js":"751ecaad","/app/views-portfolio.js":"6363f057","/app/views-deals.js":"d95db3e3","/app/views-docs.js":"967cd001","/app/views-finance.js":"3dd2ee5d","/app/views-admin.js":"58a2296f"};</script></head>
 <body>
   <div id="boot" class="boot" role="status">იტვირთება…</div>
 
@@ -169,7 +174,7 @@
         </div>
       </div>
       <div style="position:relative" id="quick-add-wrap">
-        <button type="button" class="btn btn-primary btn-sm" id="btn-new-task" aria-expanded="false" aria-haspopup="true"><span data-icon="plus"></span><span class="new-task-label">+ დამატება</span></button>
+        <button type="button" class="btn btn-primary btn-sm" id="btn-new-task" aria-expanded="false" aria-haspopup="true"><span data-icon="plus"></span><span class="new-task-label">დამატება</span></button>
         <div class="popover quick-add-menu" id="quick-add-panel" hidden style="width:260px;right:0">
           <div class="quick-add-items">
             <button type="button" class="quick-add-btn" data-qa="apartment">
@@ -191,13 +196,13 @@
           </div>
         </div>
       </div>
-      <div style="position:relative">
+      <div class="topbar-icons" style="position:relative">
         <button type="button" class="icon-btn" id="btn-lang" data-lang-toggle style="font-size:12px;font-weight:700">EN</button>
         <button type="button" class="icon-btn" id="btn-theme" aria-label="თემის შეცვლა"></button>
         <button type="button" class="icon-btn" id="btn-notif" aria-label="შეტყობინებები" aria-expanded="false"><span data-icon="bell"></span></button>
         <div class="popover" id="notif-panel" hidden></div>
       </div>
-      <div style="position:relative">
+      <div class="topbar-user" style="position:relative">
         <button type="button" class="user-btn" id="btn-user" aria-expanded="false" aria-label="ანგარიში">
           <span class="avatar" id="user-avatar">·</span>
           <span class="user-meta"><span id="user-name"></span><small id="user-role"></small></span>
@@ -217,17 +222,11 @@
 
   <script src="/js/supabase.js?v=6474aafb"></script>
   <script src="/js/config.js?v=167b14f9"></script>
-  <script src="/js/core.js?v=709872bb"></script>
+  <script src="/js/core.js?v=7aba2e22"></script>
   <!-- The English dictionary (about 200 KB) is only downloaded for English; Georgian needs just the toggle -->
   <script>(function(){var en=false;try{en=localStorage.getItem('rigzea_lang')==='en'}catch(e){}window.RLang={lang:en?'en':'ka'};if(en){var s=document.createElement('script');s.src='/js/i18n.js';document.head.appendChild(s);return}document.addEventListener('click',function(e){if(!(e.target.closest&&e.target.closest('[data-lang-toggle]')))return;try{localStorage.setItem('rigzea_lang','en')}catch(x){}location.reload()})})()</script>
   <script src="/js/plans.js?v=6a07db8f"></script>
-  <script src="/app/app.js?v=8a905fe7"></script>
-  <script src="/app/views-ops.js?v=c578e0bd"></script>
-  <script src="/app/views-portfolio.js?v=cc9e0a2e"></script>
-  <script src="/app/views-deals.js?v=d95db3e3"></script>
-  <script src="/app/views-docs.js?v=967cd001"></script>
-  <script src="/app/views-finance.js?v=0404b3d4"></script>
-  <script src="/app/views-admin.js?v=58a2296f"></script>
+  <script src="/app/app.js?v=31363f41"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
       window.addEventListener('load', () => {

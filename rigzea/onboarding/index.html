@@ -77,7 +77,7 @@
           const size = form.size.value;
           const orgId = await q(sb.rpc('create_user_organization', { p_org_name: name, p_city: city, p_portfolio_size: size }));
           localStorage.setItem('rigzea_selected_org_id', orgId);
-          location.replace('/app/#/today');
+          location.replace('/app/');
         } catch (err) {
           console.error(err);
           errBox.textContent = R.friendlyError(err);

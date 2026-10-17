@@ -1,10 +1,16 @@
 /* Rigzea application styles — shared by /app/, /staff/ and /approve/.
    One token set, one component set. Marketing pages keep /style.css. */
 
-@font-face { font-family: 'FiraGO'; src: url('/fonts/FiraGO-Regular.woff2') format('woff2'); font-weight: 400; font-display: swap; }
-@font-face { font-family: 'FiraGO'; src: url('/fonts/FiraGO-Medium.woff2') format('woff2'); font-weight: 500; font-display: swap; }
-@font-face { font-family: 'FiraGO'; src: url('/fonts/FiraGO-SemiBold.woff2') format('woff2'); font-weight: 600; font-display: swap; }
-@font-face { font-family: 'FiraGO'; src: url('/fonts/FiraGO-Bold.woff2') format('woff2'); font-weight: 700; font-display: swap; }
+/* The ~38 KB subsets cover Latin, Georgian and common punctuation. The full ~250 KB files are
+   downloaded only when a page shows a character outside that range (Cyrillic names, ↔, ≈). */
+@font-face { font-family: 'FiraGO'; src: url('/fonts/FiraGO-Regular-sub.woff2') format('woff2'); font-weight: 400; font-display: swap; unicode-range: U+20-7E, U+A0-FF, U+10D0-10FF, U+2010-2016, U+2018-201A, U+201C-201E, U+2020-2022, U+2026, U+2030, U+2039-203A, U+20AC, U+20BE, U+2116, U+2190-2193, U+2212; }
+@font-face { font-family: 'FiraGO'; src: url('/fonts/FiraGO-Medium-sub.woff2') format('woff2'); font-weight: 500; font-display: swap; unicode-range: U+20-7E, U+A0-FF, U+10D0-10FF, U+2010-2016, U+2018-201A, U+201C-201E, U+2020-2022, U+2026, U+2030, U+2039-203A, U+20AC, U+20BE, U+2116, U+2190-2193, U+2212; }
+@font-face { font-family: 'FiraGO'; src: url('/fonts/FiraGO-SemiBold-sub.woff2') format('woff2'); font-weight: 600; font-display: swap; unicode-range: U+20-7E, U+A0-FF, U+10D0-10FF, U+2010-2016, U+2018-201A, U+201C-201E, U+2020-2022, U+2026, U+2030, U+2039-203A, U+20AC, U+20BE, U+2116, U+2190-2193, U+2212; }
+@font-face { font-family: 'FiraGO'; src: url('/fonts/FiraGO-Bold-sub.woff2') format('woff2'); font-weight: 700; font-display: swap; unicode-range: U+20-7E, U+A0-FF, U+10D0-10FF, U+2010-2016, U+2018-201A, U+201C-201E, U+2020-2022, U+2026, U+2030, U+2039-203A, U+20AC, U+20BE, U+2116, U+2190-2193, U+2212; }
+@font-face { font-family: 'FiraGO'; src: url('/fonts/FiraGO-Regular.woff2') format('woff2'); font-weight: 400; font-display: swap; unicode-range: U+100-10CF, U+1100-200F, U+2017, U+201B, U+201F, U+2023-2025, U+2027-202F, U+2031-2038, U+203B-20AB, U+20AD-20BD, U+20BF-2115, U+2117-218F, U+2194-2211, U+2213-FFFF; }
+@font-face { font-family: 'FiraGO'; src: url('/fonts/FiraGO-Medium.woff2') format('woff2'); font-weight: 500; font-display: swap; unicode-range: U+100-10CF, U+1100-200F, U+2017, U+201B, U+201F, U+2023-2025, U+2027-202F, U+2031-2038, U+203B-20AB, U+20AD-20BD, U+20BF-2115, U+2117-218F, U+2194-2211, U+2213-FFFF; }
+@font-face { font-family: 'FiraGO'; src: url('/fonts/FiraGO-SemiBold.woff2') format('woff2'); font-weight: 600; font-display: swap; unicode-range: U+100-10CF, U+1100-200F, U+2017, U+201B, U+201F, U+2023-2025, U+2027-202F, U+2031-2038, U+203B-20AB, U+20AD-20BD, U+20BF-2115, U+2117-218F, U+2194-2211, U+2213-FFFF; }
+@font-face { font-family: 'FiraGO'; src: url('/fonts/FiraGO-Bold.woff2') format('woff2'); font-weight: 700; font-display: swap; unicode-range: U+100-10CF, U+1100-200F, U+2017, U+201B, U+201F, U+2023-2025, U+2027-202F, U+2031-2038, U+203B-20AB, U+20AD-20BD, U+20BF-2115, U+2117-218F, U+2194-2211, U+2213-FFFF; }
 
 /* ------------------------------------------------------------------ tokens */
 :root {
@@ -401,17 +407,28 @@ img { max-width: 100%; display: block; }
   line-height: 1.1;
 }
 
-@media (max-width: 1180px) {
-  .topbar-tab span:not(.topbar-tab-count) {
-    display: none;
-  }
-  .topbar-tab {
-    padding: 0 8px;
-  }
-  .search-trigger {
-    min-width: 160px;
-  }
+/* The bar never wraps: items give up their labels as the window narrows instead
+   (search, then the user name and tools label, then the tab labels, see fitTopbarTabs). */
+.topbar > * { flex-shrink: 0; }
+.topbar > .org-switch, .topbar > .topbar-nav { flex-shrink: 1; }
+.topbar-icons, .topbar-user { display: flex; align-items: center; gap: 2px; }
+.topbar-nav { overflow: hidden; }
+.search-trigger .label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.user-meta > span, .user-meta small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px; }
+.menu-lang { display: none !important; }
+@media (max-width: 1880px) {
+  .topbar .search-trigger { min-width: 0; width: 36px; padding: 0; justify-content: center; }
+  .topbar .search-trigger .label, .topbar .search-trigger kbd { display: none; }
 }
+@media (max-width: 1880px) {
+  .topbar .user-meta, .topbar-tools-btn .tools-btn-label { display: none; }
+}
+@media (max-width: 1080px) {
+  .topbar .brand-text, .topbar-tools-btn .tools-btn-arrow { display: none; }
+}
+/* Set by fitTopbarTabs() in app.js when the labelled tabs do not fit */
+.topbar.tabs-compact .topbar-tab span:not(.topbar-tab-count) { display: none; }
+.topbar.tabs-compact .topbar-tab { padding: 0 8px; }
 @media (max-width: 860px) {
   .topbar-nav {
     display: none;
@@ -425,6 +442,16 @@ img { max-width: 100%; display: block; }
 }
 
 .topbar-spacer { flex: 1; }
+/* Phones: language and theme live in the account menu, so the bell stays in the bar */
+@media (max-width: 600px) {
+  #btn-lang, #btn-theme { display: none; }
+  .menu-lang { display: flex !important; }
+}
+@media (max-width: 360px) {
+  :root .topbar { gap: 4px; padding: 0 6px 0 10px; }
+  :root .org-switch { min-width: 44px; padding-left: 6px; }
+  .topbar .icon-btn, .topbar .search-trigger, .topbar #btn-tools, .topbar #btn-new-task { width: 40px; height: 40px; min-height: 40px; min-width: 40px; padding: 0; justify-content: center; }
+}
 .search-trigger {
   display: flex; align-items: center; gap: 8px; height: 36px; padding: 0 10px; min-width: 220px;
   border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--surface-2); color: var(--muted); cursor: pointer;
@@ -459,8 +486,9 @@ img { max-width: 100%; display: block; }
 .main { min-width: 0; padding: 20px 24px 48px; }
 /* Saved data from the last visit is on screen while fresh data loads (see setStale in app.js) */
 .main.is-stale { cursor: progress; }
-.main.is-stale::before { content: ""; position: fixed; top: 0; left: 0; right: 0; height: 2px; z-index: 50; background: linear-gradient(90deg, transparent, var(--brand), transparent); background-size: 50% 100%; background-repeat: no-repeat; animation: staleBar 1s linear infinite; }
-@keyframes staleBar { from { background-position: -50% 0; } to { background-position: 150% 0; } }
+/* Moved with transform (compositor) rather than background-position (repaint every frame). */
+.main.is-stale::before { content: ""; position: fixed; top: 0; left: 0; width: 50vw; height: 2px; z-index: 50; background: linear-gradient(90deg, transparent, var(--brand), transparent); animation: staleBar 1s linear infinite; }
+@keyframes staleBar { from { transform: translateX(-50vw); } to { transform: translateX(100vw); } }
 @media (prefers-reduced-motion: reduce) { .main.is-stale::before { animation: none; background: var(--brand); opacity: .5; } }
 
 .popover {
@@ -608,9 +636,10 @@ button.row { width: 100%; border: 0; border-bottom: 1px solid var(--line); backg
 .error-state { padding: 20px; display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
 .error-state p { color: var(--danger); }
 .skeleton { display: flex; flex-direction: column; gap: 10px; padding: 16px; }
-.skeleton i { display: block; height: 14px; border-radius: 4px; background: linear-gradient(90deg, var(--hover), var(--surface-2), var(--hover)); background-size: 200% 100%; animation: shimmer 1.2s linear infinite; }
+/* Opacity runs on the compositor; an animated background repaints every frame on slow machines. */
+.skeleton i { display: block; height: 14px; border-radius: 4px; background: var(--hover); animation: shimmer 1.2s ease-in-out infinite alternate; }
 .skeleton i:nth-child(2n) { width: 70%; }
-@keyframes shimmer { to { background-position: -200% 0; } }
+@keyframes shimmer { from { opacity: 1; } to { opacity: .45; } }
 .notice { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border-radius: var(--r-sm); background: var(--info-bg); color: var(--info); font-size: 13px; }
 .notice-warn { background: var(--warn-bg); color: var(--warn); }
 .notice-danger { background: var(--danger-bg); color: var(--danger); }
@@ -806,6 +835,7 @@ button.row { width: 100%; border: 0; border-bottom: 1px solid var(--line); backg
   .brand-text, .user-meta, .topbar .new-task-label { display: none; }
   .org-switch { padding-left: 8px; margin-left: 0; }
   .org-switch select, .org-switch .org-static { max-width: 150px; }
+  .org-switch { min-width: 56px; }
   .icon-btn { width: 44px; height: 44px; }
   .btn { min-height: 44px; }
   .btn-sm { min-height: 36px; }

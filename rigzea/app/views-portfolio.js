@@ -1619,7 +1619,7 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
       <div id="o-body"></div>`;
     $('#o-new').onclick = () => openOwnerForm(null, { contact_type: type });
     // Show the new request right away instead of leaving the user on the contact list.
-    $('#o-appr')?.addEventListener('click', async () => { if (await App.openApprovalForm({})) location.hash = '#/owners?type=owner&tab=approvals'; });
+    $('#o-appr')?.addEventListener('click', async () => { if (await App.openApprovalForm({})) App.go('#/owners?type=owner&tab=approvals'); });
     if (tab === 'approvals') renderApprovals($('#o-body')); else renderOwnersList($('#o-body'), type);
   }
 
@@ -1633,9 +1633,9 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
         <div class="page-actions"><button type="button" class="btn btn-secondary" id="o-appr">თანხმობის მოთხოვნა</button><button type="button" class="btn btn-primary" id="o-new">${icon('plus', 16)} კონტაქტის დამატება</button></div></div>
       <div class="tabs" role="tablist"><button type="button" role="tab" class="tab" data-tab="owners" aria-selected="${tab === 'owners'}">კონტაქტები <span class="count">${S.data.owners.length}</span></button><button type="button" role="tab" class="tab" data-tab="approvals" aria-selected="${tab === 'approvals'}">თანხმობები <span class="count">${pending.length}</span></button></div>
       <div id="o-body"></div>`;
-    $$('[data-tab]').forEach(b => b.addEventListener('click', () => { location.hash = b.dataset.tab === 'approvals' ? '#/owners?tab=approvals' : '#/owners'; }));
+    $$('[data-tab]').forEach(b => b.addEventListener('click', () => { App.go(b.dataset.tab === 'approvals' ? '#/owners?tab=approvals' : '#/owners'); }));
     $('#o-new').onclick = () => openOwnerForm();
-    $('#o-appr').onclick = async () => { if (await App.openApprovalForm({})) location.hash = '#/owners?tab=approvals'; };
+    $('#o-appr').onclick = async () => { if (await App.openApprovalForm({})) App.go('#/owners?tab=approvals'); };
     if (tab === 'approvals') renderApprovals($('#o-body')); else renderOwnersList($('#o-body'));
   };
 
@@ -1749,8 +1749,6 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
     $('#ow-edit').onclick = () => openOwnerForm(o);
     $('#ow-appr').onclick = () => App.openApprovalForm({ apartmentId: apts[0]?.id });
   }
-  const monthLabel = (mk) => { const [y, m] = String(mk).split('-').map(Number); return `${R.MONTHS[m - 1]} ${y}`; };
-  App.monthLabel = monthLabel;
 
   // requirements is stored as text; older rows may hold an empty object.
   const reqText = (o) => (typeof o?.requirements === 'string' ? o.requirements : '');

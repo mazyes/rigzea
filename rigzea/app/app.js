@@ -81,6 +81,20 @@
         return showAuth(wantsSignin ? 'signin' : 'signup');
       }
       if (recovery) return showAuth('newpass');
+      const handed = await dataCache.takeHandoff();
+      if (handed) {
+        S.orgs = handed.handoff.orgs;
+        S.org = S.orgs.find(o => o.id === handed.org) || null;
+        S.member = S.org?.member || null;
+        if (S.org && S.member.role !== 'staff') {
+          S.platformAdmin = handed.handoff.platformAdmin;
+          S.limits = handed.handoff.limits || S.limits;
+          S.data = handed.data;
+          S.totals = handed.totals || {};
+          indexData();
+          return enterShell({ handed: true });
+        }
+      }
       // These do not depend on each other, so they run together instead of one after another.
       // The last used organization's data starts loading now too; enterShell drops it if a
       // different organization ends up selected.
@@ -299,6 +313,19 @@
   // Fetches everything the workspace shows for one organization. Throws on failure.
   async function fetchData(org) {
     const totals = {};
+    const area = route().name;
+    const needs = new Set(area === 'today'
+      ? ['closedTasks', 'approvals', 'expenses', 'income', 'reservations', 'events', 'repairs', 'deals', 'statements']
+      : area === 'tasks'
+        ? ['closedTasks', 'approvals', 'expenses', 'repairs', 'deals']
+        : area === 'apartments' || area === 'owners'
+          ? ['approvals', 'expenses', 'deals', 'repairs']
+          : area === 'deals'
+            ? ['approvals', 'deals', 'reservations']
+            : area === 'finance'
+              ? ['expenses', 'income', 'statements']
+              : new Set());
+    const optional = (name, factory) => needs.has(name) ? factory() : Promise.resolve([]);
     const since = new Date(); since.setDate(since.getDate() - 120);
     const sinceIso = R.isoDate(since);
     const [apartments, owners, openTasks, closedTasks, approvals, expenses, income, reservations, events, members, notifications, statements, repairs, deals] = await Promise.all([
@@ -306,18 +333,18 @@
       q(sb.from('owners').select('*').eq('organization_id', org).order('name')),
       // Every open task, plus the most recent closed ones for history.
       q(sb.from('tasks').select('*').eq('organization_id', org).in('status', OPEN_TASK_STATUSES).order('due_date', { ascending: true })),
-      take(totals, 'closedTasks', sb.from('tasks').select('*', { count: 'exact' }).eq('organization_id', org).in('status', ['done', 'cancelled']).order('due_date', { ascending: false }).limit(S.limits.closedTasks)),
-      take(totals, 'approvals', sb.from('approvals').select('*', { count: 'exact' }).eq('organization_id', org).order('created_at', { ascending: false }).limit(S.limits.approvals)),
-      take(totals, 'expenses', sb.from('expenses').select('*', { count: 'exact' }).eq('organization_id', org).order('expense_date', { ascending: false }).limit(S.limits.expenses)),
-      take(totals, 'income', sb.from('income').select('*', { count: 'exact' }).eq('organization_id', org).order('income_date', { ascending: false }).limit(S.limits.income)),
+      optional('closedTasks', () => take(totals, 'closedTasks', sb.from('tasks').select('*', { count: 'exact' }).eq('organization_id', org).in('status', ['done', 'cancelled']).order('due_date', { ascending: false }).limit(S.limits.closedTasks))),
+      optional('approvals', () => take(totals, 'approvals', sb.from('approvals').select('*', { count: 'exact' }).eq('organization_id', org).order('created_at', { ascending: false }).limit(S.limits.approvals))),
+      optional('expenses', () => take(totals, 'expenses', sb.from('expenses').select('*', { count: 'exact' }).eq('organization_id', org).order('expense_date', { ascending: false }).limit(S.limits.expenses))),
+      optional('income', () => take(totals, 'income', sb.from('income').select('*', { count: 'exact' }).eq('organization_id', org).order('income_date', { ascending: false }).limit(S.limits.income))),
       // Reservations need the operations RLS migration; treat a failure as "no data" rather than breaking the app.
-      sb.from('reservations').select('*').eq('organization_id', org).gte('check_out', sinceIso).order('check_in').then(r => r.data || [], () => []),
-      q(sb.from('activity_events').select('*').eq('organization_id', org).order('created_at', { ascending: false }).limit(200)),
+      optional('reservations', () => sb.from('reservations').select('*').eq('organization_id', org).gte('check_out', sinceIso).order('check_in').then(r => r.data || [], () => [])),
+      optional('events', () => q(sb.from('activity_events').select('*').eq('organization_id', org).order('created_at', { ascending: false }).limit(100))),
       q(sb.from('organization_members').select('*').eq('organization_id', org)),
       q(sb.from('notifications').select('*').eq('organization_id', org).eq('user_id', S.user.id).order('created_at', { ascending: false }).limit(40)),
-      q(sb.from('monthly_reports').select('*').eq('organization_id', org).order('month_period', { ascending: false }).limit(48)),
-      q(sb.from('repairs').select('*').eq('organization_id', org)).catch(() => []),
-      take(totals, 'deals', sb.from('deals').select('*', { count: 'exact' }).eq('organization_id', org).order('created_at', { ascending: false }).limit(S.limits.deals)).catch(() => []),
+      optional('statements', () => q(sb.from('monthly_reports').select('*').eq('organization_id', org).order('month_period', { ascending: false }).limit(24))),
+      optional('repairs', () => q(sb.from('repairs').select('*').eq('organization_id', org)).catch(() => [])),
+      optional('deals', () => take(totals, 'deals', sb.from('deals').select('*', { count: 'exact' }).eq('organization_id', org).order('created_at', { ascending: false }).limit(S.limits.deals)).catch(() => [])),
     ]);
     const tasks = [...openTasks, ...closedTasks].sort((a, b) => String(a.due_date || '~').localeCompare(String(b.due_date || '~')));
     return { totals, data: { apartments, owners, tasks, approvals, expenses, income, reservations, events, members, notifications, statements, repairs, deals: deals || [] } };
@@ -374,6 +401,25 @@
         setTimeout(() => tx('readwrite', st => st.put({ v: VERSION, at: Date.now(), data, totals }, key(org))).catch(() => {}), 0);
       },
       clear: () => tx('readwrite', st => st.clear()).catch(() => {}),
+      // Moving to another area loads a new page. The data in memory (including this page's own
+      // edits) is saved first and marked for this tab, so the next page shows it as current
+      // instead of fetching everything again, the same as the old single-page app did.
+      async handoff(org) {
+        const at = Date.now();
+        try {
+          await tx('readwrite', st => st.put({ v: VERSION, at, data: S.data, totals: S.totals,
+            handoff: { orgs: S.orgs, platformAdmin: S.platformAdmin, limits: S.limits } }, key(org)));
+          sessionStorage.setItem('rigzea_handoff', JSON.stringify({ user: S.user.id, org, at }));
+        } catch { /* the next page just loads normally */ }
+      },
+      // Used once: a reload of that page fetches fresh data as usual.
+      async takeHandoff() {
+        let h = null;
+        try { h = JSON.parse(sessionStorage.getItem('rigzea_handoff') || 'null'); sessionStorage.removeItem('rigzea_handoff'); } catch { return null; }
+        if (!h || h.user !== S.user.id || Date.now() - h.at > 60e3) return null;
+        const v = await this.read(h.org);
+        return v && v.at === h.at && v.handoff ? { org: h.org, ...v } : null;
+      },
     };
   })();
 
@@ -453,25 +499,138 @@
   };
 
   // ---------------------------------------------------------------------------
-  // Routing: #/path[?task=id]
+  // Routing. Each area is its own page, /app/<area>/ (pages are built by scripts/stamp-assets.mjs),
+  // and an item inside it is ?id=<id>[&sub=<tab>]: #/apartments/42/photos is /app/apartments/?id=42&sub=photos.
+  // Code still writes links as #/area/id/sub?x=1; toUrl() turns them into page addresses and every
+  // such link in the page is rewritten as it appears. Moving within a page (filters, tabs, the task
+  // drawer) updates the address without a reload; moving to another area loads that page.
+  // The offline demo (/demo/) is a single page and keeps #/ addresses.
   // ---------------------------------------------------------------------------
   const views = {};
-  function parseHash() {
-    const raw = location.hash.replace(/^#/, '') || '/today';
-    const [path, query] = raw.split('?');
-    const parts = path.split('/').filter(Boolean);
-    return { parts, name: parts[0] || 'today', id: parts[1] || null, sub: parts[2] || null, params: new URLSearchParams(query || '') };
+  // Shared by finance and portfolio views; keep it in the shell so either lazy chunk can use it.
+  const monthLabel = (mk) => {
+    const [y, m] = String(mk || '').split('-').map(Number);
+    return `${R.MONTHS?.[m - 1] || ''} ${y || ''}`.trim();
+  };
+  // Route chunks are loaded only when their area is opened. This keeps the shell and first
+  // dashboard render small on slower machines while preserving the existing global view API.
+  const VIEW_CHUNKS = {
+    today: '/app/views-ops.js', tasks: '/app/views-ops.js',
+    apartments: '/app/views-portfolio.js', owners: '/app/views-portfolio.js',
+    deals: '/app/views-deals.js', finance: '/app/views-finance.js',
+    team: '/app/views-admin.js', settings: '/app/views-admin.js',
+  };
+  const viewLoads = new Map();
+  function ensureChunk(src, name = 'გვერდი') {
+    if (viewLoads.has(src)) return viewLoads.get(src);
+    const promise = new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = `${src}?v=${window.__RIGZEA_ASSET_VERSIONS?.[src] || ''}`;
+      s.onload = resolve;
+      s.onerror = () => reject(new Error(`ვერ ჩაიტვირთა გვერდის კოდი: ${name}`));
+      document.head.appendChild(s);
+    });
+    viewLoads.set(src, promise);
+    return promise;
   }
-  const route = () => parseHash();
-  function go(hash) { if (location.hash === hash) render(); else location.hash = hash; }
+  function ensureViewLoaded(name) { return ensureChunk(VIEW_CHUNKS[name] || VIEW_CHUNKS.today, name); }
+  const PAGE_ROUTES = location.pathname.startsWith('/app/');
+  const AREAS = ['today', 'tasks', 'apartments', 'owners', 'deals', 'finance', 'team', 'settings'];
+  const areaPath = (name) => `/app/${name === 'today' ? '' : name + '/'}`;
+  function toUrl(hash) {
+    if (!PAGE_ROUTES) return '#' + String(hash).replace(/^#/, '');
+    const [path, query] = String(hash).replace(/^#/, '').split('?');
+    const [name, id, sub] = path.split('/').filter(Boolean);
+    const out = new URLSearchParams();
+    if (id) out.set('id', id);
+    if (sub) out.set('sub', sub);
+    new URLSearchParams(query || '').forEach((v, k) => out.append(k, v));
+    const qs = out.toString();
+    return areaPath(AREAS.includes(name) ? name : 'today') + (qs ? '?' + qs : '');
+  }
+  function parseUrl(u = location) {
+    if (!PAGE_ROUTES) {
+      const [path, query] = (u.hash.replace(/^#/, '') || '/today').split('?');
+      const parts = path.split('/').filter(Boolean);
+      return { parts, name: parts[0] || 'today', id: parts[1] || null, sub: parts[2] || null, params: new URLSearchParams(query || '') };
+    }
+    const m = /^\/app\/([a-z]+)\//.exec(u.pathname);
+    const name = m && AREAS.includes(m[1]) ? m[1] : 'today';
+    const params = new URLSearchParams(u.search);
+    const id = params.get('id'), sub = params.get('sub');
+    params.delete('id'); params.delete('sub');
+    return { parts: [name, id, sub].filter(Boolean), name, id, sub, params };
+  }
+  const route = () => parseUrl();
+  // Accepts #/area/... or a page address. Same page: new address, no reload. Other area: loads it,
+  // handing over the data already in memory so it opens without fetching again (see dataCache).
+  async function go(target, { replace = false } = {}) {
+    if (!PAGE_ROUTES) {
+      const hash = toUrl(target);
+      if (location.hash === hash) render(); else if (replace) { history.replaceState(null, '', hash); onRoute(); } else location.hash = hash;
+      return;
+    }
+    const next = new URL(String(target).startsWith('#') ? toUrl(target) : target, location.origin);
+    if (next.pathname === location.pathname) {
+      const url = next.pathname + next.search;
+      if (url !== location.pathname + location.search) history[replace ? 'replaceState' : 'pushState'](null, '', url);
+      onRoute();
+      return;
+    }
+    if (S.data && S.org) await dataCache.handoff(S.org.id);
+    location[replace ? 'replace' : 'assign'](next.pathname + next.search);
+  }
   // Keeps the current page and adds/removes ?task=
-  function taskHref(id) { const r = parseHash(); return `#/${r.parts.join('/') || 'today'}?task=${id}`; }
-  function closeTaskOverlay() { const r = parseHash(); r.params.delete('task'); const qs = r.params.toString(); location.hash = `#/${r.parts.join('/') || 'today'}${qs ? '?' + qs : ''}`; }
+  function taskHref(id) { const r = route(); return toUrl(`#/${r.parts.join('/')}?task=${id}`); }
+  function closeTaskOverlay() { const r = route(); r.params.delete('task'); const qs = r.params.toString(); go(`#/${r.parts.join('/')}${qs ? '?' + qs : ''}`); }
 
-  // Legacy links from notifications: /app/?view=finance
+  function onRoute() {
+    const r = route();
+    if (r.name !== lastViewName) window.scrollTo(0, 0);
+    lastViewName = r.name;
+    render();
+  }
+  window.addEventListener('popstate', onRoute);
+  // An old #/ address typed or pasted into an open page changes only the hash, so no page loads.
+  window.addEventListener('hashchange', () => { if (!PAGE_ROUTES) onRoute(); else if (!legacyRedirect()) onRoute(); });
+
+  // Rewrites #/... links to page addresses wherever they appear (views, dialogs, drawers), so
+  // opening in a new tab or copying a link gives the real address.
+  function rewriteLinks(root) {
+    if (!PAGE_ROUTES || root.nodeType !== 1) return;
+    if (root.matches('a[href^="#/"]')) root.setAttribute('href', toUrl(root.getAttribute('href')));
+    root.querySelectorAll('a[href^="#/"]').forEach(a => a.setAttribute('href', toUrl(a.getAttribute('href'))));
+  }
+  new MutationObserver(list => list.forEach(m => {
+    if (m.type === 'attributes') rewriteLinks(m.target);
+    else m.addedNodes.forEach(rewriteLinks);
+  })).observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['href'] });
+
+  // Plain clicks on app links go through go(), so same-page moves skip the reload.
+  document.addEventListener('click', (e) => {
+    if (!PAGE_ROUTES || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    const a = e.target.closest?.('a[href]');
+    if (!a || (a.target && a.target !== '_self') || a.hasAttribute('download')) return;
+    const href = a.getAttribute('href');
+    if (!href.startsWith('#/') && !(href.startsWith('/app/') && /^\/app\/(?:[a-z]+\/)?(?:\?|$)/.test(href))) return;
+    e.preventDefault();
+    go(href);
+  });
+
+  // Old addresses keep working: /app/#/owners (bookmarks, Telegram, e-mails) and /app/?view=finance.
+  // Returns true when the browser is being sent to another page.
   function legacyRedirect() {
-    const v = new URLSearchParams(location.search).get('view');
-    if (v) { history.replaceState(null, '', '/app/#/' + ({ dashboard: 'today', reports: 'finance' }[v] || v)); }
+    if (!PAGE_ROUTES) return false;
+    let target = null;
+    if (location.hash.startsWith('#/')) target = toUrl(location.hash);
+    else {
+      const v = new URLSearchParams(location.search).get('view');
+      if (v) target = toUrl('#/' + ({ dashboard: 'today', reports: 'finance' }[v] || v));
+    }
+    if (!target) return false;
+    if (new URL(target, location.origin).pathname === location.pathname) { history.replaceState(null, '', target); return false; }
+    location.replace(target);
+    return true;
   }
 
   // Simplified clean navigation: 5 core daily workflows + 1 management group.
@@ -521,6 +680,21 @@
     return group.items.map(n => `<a class="${cls}" href="${n.href}" ${key === n.id ? 'aria-current="page"' : ''}>${icon(n.icon)}<span>${n.label}</span>${countHtml(counts[n.id])}</a>`).join('');
   }
 
+  // Tab labels show only when every tab fits; otherwise the tabs become icons. Measured rather
+  // than set by breakpoints because the organization name, counts and language change the width.
+  function fitTopbarTabs() {
+    const bar = $('.topbar'), nav = $('#topbar-nav');
+    if (!bar || !nav) return;
+    bar.classList.remove('tabs-compact');
+    if (nav.scrollWidth > nav.clientWidth + 1) bar.classList.add('tabs-compact');
+  }
+  let fitQueued = false;
+  window.addEventListener('resize', () => {
+    if (fitQueued) return;
+    fitQueued = true;
+    requestAnimationFrame(() => { fitQueued = false; fitTopbarTabs(); });
+  });
+
   function renderShell() {
     const key = S.data ? navKey() : route().name;
     const counts = navCounts();
@@ -538,8 +712,9 @@
         const active = key === item.id;
         const c = item.count;
         const badge = c ? `<span class="topbar-tab-count ${c.danger ? 'count-danger' : ''}" title="${esc(c.label)}">${c.n}</span>` : '';
-        return `<a class="topbar-tab ${active ? 'is-active' : ''}" href="${item.href}" ${active ? 'aria-current="page"' : ''}>${icon(item.icon, 15)}<span>${item.label}</span>${badge}</a>`;
+        return `<a class="topbar-tab ${active ? 'is-active' : ''}" href="${item.href}" ${active ? 'aria-current="page"' : ''} title="${esc(item.label)}">${icon(item.icon, 15)}<span>${item.label}</span>${badge}</a>`;
       }).join('');
+      fitTopbarTabs();
     }
     $('#rail').innerHTML = navGroups().map(g => `${g.label ? `<div class="nav-group">${g.label}</div>` : ''}${navLinks(g, key, counts)}`).join('')
       + `<div class="rail-foot">${S.data ? `${S.data.apartments.filter(a => a.status !== 'archived').length} ბინა · ${S.data.owners.length} კონტაქტი · ${S.data.members.length} წევრი` : ''}</div>`;
@@ -617,10 +792,11 @@
     S.org = o; S.member = o.member;
     localStorage.setItem('rigzea_selected_org_id', id);
     if (o.member.role === 'staff') { location.href = '/staff/'; return; }
+    if (PAGE_ROUTES && location.pathname !== '/app/') { location.assign('/app/'); return; }
     // Drop the previous workspace's data first so nothing renders it under the new name.
     S.data = null;
     S.loadError = null;
-    location.hash = '#/today';
+    history.replaceState(null, '', toUrl('#/today'));
     await refresh();
     if (!S.data) return;
     toast(`გადაერთე: ${o.name}`);
@@ -650,9 +826,19 @@
       return;
     }
     const r = route();
-    if (isAgent() && AGENT_CLOSED.includes(r.name)) { location.hash = '#/today'; return; }
+    if (isAgent() && AGENT_CLOSED.includes(r.name)) { go('#/today', { replace: true }); return; }
     renderShell();
-    const view = views[r.name] || views.today;
+    const view = views[r.name];
+    if (!view) {
+      renderLoading();
+      ensureViewLoaded(r.name).then(() => {
+        if (route().name === r.name) render();
+      }).catch(err => {
+        console.error(err);
+        $('#view').innerHTML = `<div class="card"><div class="error-state"><p>გვერდის კოდი ვერ ჩაიტვირთა.</p></div></div>`;
+      });
+      return;
+    }
     try {
       view(r);
     } catch (err) {
@@ -664,12 +850,6 @@
     if (taskId) App.openTaskDrawer(taskId); else App.closeTaskDrawer?.(true);
   }
 
-  window.addEventListener('hashchange', () => {
-    const r = route();
-    if (r.name !== lastViewName) window.scrollTo(0, 0);
-    lastViewName = r.name;
-    render();
-  });
   let lastViewName = null;
 
   // ---------------------------------------------------------------------------
@@ -680,6 +860,7 @@
     const m = /view=([a-z]+)/.exec(link);
     if (m) return '#/' + ({ dashboard: 'today', reports: 'finance' }[m[1]] || m[1]);
     if (link.startsWith('/app/#')) return link.slice(5);
+    if (link.startsWith('/app/')) return link;
     return null;
   }
 
@@ -721,6 +902,7 @@
       <div class="menu-list">
         <label class="field" style="padding:4px 10px 8px"><span class="field-label">თემა</span>
           <select id="theme-select" class="input"><option value="system">სისტემის მიხედვით</option><option value="light">ღია</option><option value="dark">მუქი</option></select></label>
+        <button type="button" class="menu-lang" data-lang-toggle>${window.RLang?.lang === 'en' ? 'ქართული' : 'English'}</button>
         <button type="button" data-action="signout">${icon('logout')} გამოსვლა</button>
       </div>`;
     $('#theme-select').value = theme;
@@ -773,8 +955,10 @@
           out.innerHTML = res.length ? res.map(x => `<a class="row" style="--cols:24px minmax(0,1fr)" href="${x.href}">${icon(x.icon)}<span class="cell-main"><strong>${esc(x.title)}</strong><span>${esc(x.sub)}</span></span></a>`).join('') : '<p class="empty-inline">ვერაფერი მოიძებნა.</p>';
           $$('a', out).forEach(a => a.addEventListener('click', () => dlg.close()));
         };
-        input.addEventListener('input', draw);
-        input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); $('a', out)?.click(); } });
+        // Each search scans every apartment, task and contact, so wait for a pause in typing.
+        let timer;
+        input.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(draw, 150); });
+        input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); clearTimeout(timer); draw(); $('a', out)?.click(); } });
         draw();
       },
     });
@@ -868,12 +1052,17 @@
   // ---------------------------------------------------------------------------
   // Enter workspace
   // ---------------------------------------------------------------------------
-  async function enterShell() {
+  async function enterShell({ handed = false } = {}) {
     showScreen('shell');
     // Created here so the app and demo pages share it without markup changes.
     if (!$('#section-bar')) $('#view').insertAdjacentHTML('beforebegin', '<nav class="section-bar" id="section-bar" hidden></nav>');
     hydrateIcons();
     lastViewName = route().name;
+    if (handed) { // data came over from the previous page, see dataCache.handoff
+      render();
+      checkPaymentReturn();
+      return;
+    }
     S.data = null;
     renderShell();
     const org = S.org.id;
@@ -898,12 +1087,11 @@
   }
 
   async function checkPaymentReturn() {
-    const search = location.search || '';
-    const hash = location.hash || '';
-    if (search.includes('payment=success') || hash.includes('payment=success')) {
-      const isSimulated = search.includes('simulated=true') || hash.includes('simulated=true');
-      const cleanUrl = location.pathname + (hash.replace(/[?&]payment=success[^&]*/g, '').replace(/[?&]simulated=true[^&]*/g, '').replace(/[?&]plan=[^&]*/g, '').replace(/[?&]payment_id=[^&]*/g, '') || '#/settings');
-      window.history.replaceState({}, document.title, cleanUrl);
+    const p = new URLSearchParams(location.search);
+    if (p.get('payment') === 'success') {
+      const isSimulated = p.get('simulated') === 'true';
+      ['payment', 'simulated', 'plan', 'payment_id'].forEach(k => p.delete(k));
+      window.history.replaceState({}, document.title, location.pathname + (p.toString() ? '?' + p : ''));
       if (isSimulated) {
         toast('სატესტო გადახდა წარმატებით შესრულდა! (KISA რეჟიმი)', { type: 'success', timeout: 6000 });
       } else {
@@ -971,7 +1159,7 @@
       const isAgency = id === 'agency';
       return `<div class="plan-card ${isAgency ? 'plan-card-agency' : ''} ${rec ? 'is-rec' : ''} ${cur ? 'is-current' : ''}">
         <div class="plan-card-main">
-          ${isAgency ? '<span class="plan-tag plan-tag-unlimited"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:5px"><path d="M18.178 8c5.096 0 5.096 8 0 8-2.678 0-4.678-2.667-6.178-5.333C10.5 8 8.5 8 5.822 8c-5.096 0-5.096 8 0 8 2.678 0 4.678-2.667 6.178-5.333C13.5 16 15.5 16 18.178 16z"/></svg>სრულიად ულიმიტო პაკეტი</span>' : rec ? '<span class="plan-tag">შენთვის შესაფერისი</span>' : cur ? '<span class="plan-tag plan-tag-cur">შენი პაკეტი</span>' : ''}
+          ${isAgency ? '<span class="plan-tag plan-tag-unlimited"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-4px;margin-right:6px"><path d="M12 12c-2-2.67-4-4-6-4a4 4 0 1 0 0 8c2 0 4-1.33 6-4Zm0 0c2 2.67 4 4 6 4a4 4 0 0 0 0-8c-2 0-4 1.33-6 4Z"/></svg>სრულიად ულიმიტო პაკეტი</span>' : rec ? '<span class="plan-tag">შენთვის შესაფერისი</span>' : cur ? '<span class="plan-tag plan-tag-cur">შენი პაკეტი</span>' : ''}
           <h3>${esc(p.name)}</h3>
           ${p.desc ? `<p class="plan-desc" style="font-size:12px;color:var(--muted);margin:4px 0 0">${esc(p.desc)}</p>` : ''}
           <div class="plan-price">${p.price ? `${p.price} ₾<small> / 30 დღე</small>` : '0 ₾<small> / უფასო</small>'}</div>
@@ -1583,13 +1771,16 @@
     });
   }
 
-  window.App = { S, H, views, aptSection, contactSection, isManager, isAdmin, isAgent, refresh, render, renderShell, go, route, taskHref, closeTaskOverlay, upsertLocal, logEvent, loadMore,
+  window.App = { S, H, views, aptSection, contactSection, isManager, isAdmin, isAgent, refresh, render, renderShell, go, route, toUrl, taskHref, closeTaskOverlay, upsertLocal, logEvent, loadMore,
     openCommissionCalculator, openMatchmaker, openSocialPostGenerator,
-    PLANS, PLAN_ORDER, FEATURE_LABEL, CONTACT, planState, can, guardLimit, guardFeature, openUpgrade, planCardsHtml, waLink, activeApartments, pausedApartmentIds, seatsUsed, openKisaCheckoutModal, startKisaCheckout: openKisaCheckoutModal };
+    openDocChooser: (...args) => ensureChunk('/app/views-docs.js', 'დოკუმენტები').then(() => window.App.openDocChooser?.(...args)),
+    openPresentation: (...args) => ensureViewLoaded('apartments').then(() => window.App.openPresentation?.(...args)),
+    monthLabel, PLANS, PLAN_ORDER, FEATURE_LABEL, CONTACT, planState, can, guardLimit, guardFeature, openUpgrade, planCardsHtml, waLink, activeApartments, pausedApartmentIds, seatsUsed, openKisaCheckoutModal, startKisaCheckout: openKisaCheckoutModal };
 
   document.addEventListener('DOMContentLoaded', () => {
+    if (legacyRedirect()) return;
+    rewriteLinks(document.body);
     hydrateIcons();
-    legacyRedirect();
     boot();
   });
 })();

@@ -93,12 +93,42 @@ test('1c. the next visit shows saved data at once, read-only, then the fresh dat
   return page;
 });
 
+test('1d. each area is its own page, and old #/ links still open the right one', async (browser) => {
+  const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
+  // An old bookmark or Telegram link lands on the new address.
+  await page.goto(BASE + '/app/#/owners?tab=approvals');
+  await page.waitForURL('**/app/owners/?tab=approvals');
+  await page.locator('#view h1').waitFor();
+  assert.strictEqual(await page.title(), 'Rigzea: კონტაქტები', 'page has its own title');
+  // Links in the page are real addresses.
+  const href = await page.locator('#topbar-nav a', { hasText: 'საქმეები' }).getAttribute('href');
+  assert.strictEqual(href, '/app/tasks/', 'nav links are page addresses');
+  assert.strictEqual(await page.locator('a[href^="#/"]').count(), 0, 'no #/ links left in the page');
+  // Moving to another area is a page load that reuses the data from this one.
+  const loaded = page.waitForEvent('load');
+  await page.locator('#topbar-nav a', { hasText: 'საქმეები' }).click();
+  await loaded;
+  await page.waitForURL('**/app/tasks/');
+  await page.locator('#view .rows').waitFor();
+  assert.strictEqual(await page.locator('#view.is-stale').count(), 0, 'handed-over data is current, not read-only');
+  // Inside a page, opening a task changes the address without a reload.
+  let reloaded = false;
+  page.once('load', () => { reloaded = true; });
+  await page.locator('#view .rows .row').first().click();
+  await page.locator('.drawer').waitFor();
+  assert(/\/app\/tasks\/\?task=/.test(page.url()), 'task opens in the address');
+  assert(!reloaded, 'opening a task does not reload the page');
+  await page.goBack();
+  await page.waitForURL('**/app/tasks/');
+  return page;
+});
+
 test('2. filter tasks and open the correct task and apartment', async (browser) => {
   const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
   await page.goto(BASE + '/app/');
   await page.locator('[data-filter="unassigned"]').click();
   await page.locator('.row', { hasText: 'კონდიციონერი არ აგრილებს' }).waitFor();
-  await page.goto(BASE + '/app/#/tasks');
+  await page.goto(BASE + '/app/tasks/');
   await page.locator('#tf-type').selectOption('cleaning');
   const rows = page.locator('#view .rows .row');
   assert.strictEqual(await rows.count(), 1);
@@ -107,13 +137,13 @@ test('2. filter tasks and open the correct task and apartment', async (browser) 
   assert(page.url().includes('?task=eeeeeeee-0000-4000-8000-000000000001'));
   await page.locator('.drawer a', { hasText: 'Orbi City · 1204' }).click();
   await page.getByRole('heading', { name: 'Orbi City · 1204' }).waitFor();
-  assert(page.url().endsWith('#/apartments/dddddddd-0000-4000-8000-000000000001'));
+  assert(page.url().endsWith('/app/apartments/?id=dddddddd-0000-4000-8000-000000000001'), 'apartment page address');
   return page;
 });
 
 test('3. create and assign a task once, even with double submit and a failed save', async (browser) => {
   const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
-  await page.goto(BASE + '/app/#/tasks');
+  await page.goto(BASE + '/app/tasks/');
   await page.locator('#view .rows').waitFor();
   await page.locator('#btn-new-task').click();
   await page.locator('#quick-add-panel [data-qa=task]').click();
@@ -167,7 +197,7 @@ test('4. staff completes the assigned job checklist on a phone', async (browser)
 
 test('5. manager requests owner approval and sees its status', async (browser) => {
   const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
-  await page.goto(BASE + '/app/#/owners');
+  await page.goto(BASE + '/app/owners/');
   await page.locator('#o-appr').click();
   await pickApartment(page, 'Orbi City · 1204');
   await page.locator('dialog[open] [data-owner]', { hasText: 'დავით' }).waitFor();
@@ -204,7 +234,7 @@ test('6. owner sees confirmation only after the server records the decision', as
 
 test('7. manager records an expense with a receipt and sees it once', async (browser) => {
   const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
-  await page.goto(BASE + '/app/#/finance');
+  await page.goto(BASE + '/app/finance/');
   await page.locator('#f-exp').click();
   await pickApartment(page, 'სანაპირო · 801');
   await page.locator('dialog[open] input[name=amount]').fill('95');
@@ -242,7 +272,7 @@ test('9. phone layout has no horizontal overflow on main screens', async (browse
     const { sw, w } = await page.evaluate(() => ({ sw: document.documentElement.scrollWidth, w: window.innerWidth }));
     assert(sw <= w, `${hash} overflows: ${sw} > ${w}`);
   }
-  await page.goto(BASE + '/app/#/tasks?task=eeeeeeee-0000-4000-8000-000000000002');
+  await page.goto(BASE + '/app/tasks/?task=eeeeeeee-0000-4000-8000-000000000002');
   await page.locator('.drawer').waitFor();
   const b = await page.locator('.drawer-foot .btn').first().boundingBox();
   assert(b.height >= 44 && b.x >= 0, 'drawer actions reachable');
@@ -272,7 +302,7 @@ test('10. auth, organization switching and permissions still work', async (brows
   await page.locator('.toast', { hasText: 'Tbilisi Homes' }).waitFor();
   await page.locator('.setup').waitFor(); // empty org shows first-run steps
   assert.strictEqual(await page.locator('#user-role').innerText(), 'მენეჯერი');
-  await page.goto(BASE + '/app/#/team');
+  await page.goto(BASE + '/app/team/');
   await page.locator('#view h1', { hasText: 'გუნდი' }).waitFor();
   assert.strictEqual(await page.locator('#t-invite').count(), 0, 'managers cannot invite (admin only)');
   await page.locator('#btn-user').click();
@@ -326,14 +356,14 @@ test('11. plans: trial banner, apartment cap upgrade modal, branding, export, pl
   await page.locator('dialog[open] h2', { hasText: 'ეს ფუნქცია სხვა პაკეტშია' }).waitFor();
   await page.keyboard.press('Escape');
   // Platform admin activates Pro for this org
-  await page.goto(BASE + '/app/#/settings/platform');
+  await page.goto(BASE + '/app/settings/?id=platform');
   await page.locator('[data-org] [data-plan]').first().selectOption('top');
   await page.locator('[data-org] [data-save]').first().click();
   await page.locator('.toast', { hasText: 'პაკეტი გააქტიურდა' }).waitFor();
   await page.waitForFunction(() => App.planState().key === 'top' && App.can('export'));
   assert.strictEqual(await page.locator('#plan-banner').isHidden(), true, 'no banner for a fresh paid plan');
   // Platform admins: an unknown email is refused, a registered user can be added and removed, the last admin cannot be removed
-  await page.goto(BASE + '/app/#/settings/platform');
+  await page.goto(BASE + '/app/settings/?id=platform');
   await page.locator('#p-admins [data-admin]').first().waitFor();
   assert.strictEqual(await page.locator('#p-admins [data-revoke]').count(), 0, 'the only admin has no remove button');
   await page.fill('#p-admin-add input[name=email]', 'nobody@example.ge');
@@ -353,11 +383,11 @@ test('11. plans: trial banner, apartment cap upgrade modal, branding, export, pl
   assert.strictEqual(admins.length, 2, 'a removed admin row is kept');
   assert.strictEqual(admins.filter(x => !x.revoked_at).length, 1);
   // Plan tab
-  await page.goto(BASE + '/app/#/settings/plan');
+  await page.goto(BASE + '/app/settings/?id=plan');
   await page.locator('#view h2', { hasText: 'გუნდი' }).waitFor();
   await page.screenshot({ path: process.env.SHOT_DIR ? process.env.SHOT_DIR + '/plan-tab.png' : undefined, fullPage: true });
   // Branding
-  await page.goto(BASE + '/app/#/settings');
+  await page.goto(BASE + '/app/settings/');
   await page.locator('#s-brand').waitFor();
   assert.strictEqual(await page.locator('#s-brand input[name=brand_color]').isDisabled(), true, 'colour needs Agency');
   await page.fill('#s-brand input[name=agent_display_name]', 'ნინო ბერიძე · Batumi Stay');
@@ -374,7 +404,7 @@ test('11. plans: trial banner, apartment cap upgrade modal, branding, export, pl
   assert.strictEqual((await db(page)).tables.organizations[0].brand_color, '#1A73E8');
   await page.screenshot({ path: process.env.SHOT_DIR ? process.env.SHOT_DIR + '/settings-brand.png' : undefined, fullPage: true });
   // Export CSV
-  await page.goto(BASE + '/app/#/settings/export');
+  await page.goto(BASE + '/app/settings/?id=export');
   await page.locator('[data-export="apartments"]').click();
   await page.locator('dialog[open] input[value=csv]').check();
   const [dl] = await Promise.all([page.waitForEvent('download'), page.locator('dialog[open] [data-submit]').click()]);
@@ -443,7 +473,7 @@ test('13. apartment edit keeps commission, saves photos and amenities, shows lin
     const d = JSON.parse(localStorage.getItem('rigzea_mockdb'));
     if (d && !(d.tables.link_events || []).length) { d.tables.link_events = [{ id: 1, apartment_id: 'dddddddd-0000-4000-8000-000000000003', kind: 'view', visitor: 'x', created_at: new Date().toISOString() }, { id: 2, apartment_id: 'dddddddd-0000-4000-8000-000000000003', kind: 'whatsapp', visitor: 'x', created_at: new Date().toISOString() }]; localStorage.setItem('rigzea_mockdb', JSON.stringify(d)); }
   });
-  await page.goto(BASE + '/app/#/apartments/dddddddd-0000-4000-8000-000000000003');
+  await page.goto(BASE + '/app/apartments/?id=dddddddd-0000-4000-8000-000000000003');
   await page.locator('[data-ls="views"]', { hasText: '1' }).waitFor();
   assert.strictEqual(await page.locator('[data-ls="whatsapp"]').innerText(), '1');
   assert((await page.locator('#listing-url').inputValue()).endsWith('/p/apt-3/'), 'pretty link with slug');
@@ -481,7 +511,7 @@ const DEAL_RENT = (page) => page.addInitScript(() => {
 test('D1. deals: create, failed stage change is not shown as saved, matchmaker selection link and public page', async (browser) => {
   const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
   await DEAL_RENT(page);
-  await page.goto(BASE + '/app/#/deals');
+  await page.goto(BASE + '/app/deals/');
   await page.locator('#btn-deal-new').click();
   await page.locator('dialog[open] input[name=client_name]').fill('ლევან გიორგაძე');
   await page.locator('dialog[open] #deal-apt-select').selectOption('dddddddd-0000-4000-8000-000000000001');
@@ -542,11 +572,11 @@ test('D2. deals: lease contract is saved and bilingual, commissions tab and phon
       localStorage.setItem('rigzea_mockdb', JSON.stringify(d));
     }
   });
-  await page.goto(BASE + '/app/#/deals/commissions');
+  await page.goto(BASE + '/app/deals/?id=commissions');
   const stats = await page.locator('#deals-body .stats').innerText();
   assert(stats.includes('$500') && stats.includes('$250'), 'gross and net for the closed co-broker deal: ' + stats);
   assert(stats.includes('$500'), 'GEL deal converted with org FX rate (2700 ₾ → $1000 → $500 expected)');
-  await page.goto(BASE + '/app/#/deals');
+  await page.goto(BASE + '/app/deals/');
   await page.locator('[data-deal-lease="55555555-0000-4000-8000-000000000002"]').click();
   await page.locator('dialog[open] input[name=landlord_name]').waitFor();
   assert.strictEqual(await page.locator('dialog[open] input[name=landlord_name]').inputValue(), 'დავით მამულაშვილი', 'landlord from owner record');
@@ -577,7 +607,7 @@ test('D2. deals: lease contract is saved and bilingual, commissions tab and phon
 
 test('14. sales: create property for sale, compute price/sqm, filter inventory by sale vs rent', async (browser) => {
   const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
-  await page.goto(BASE + '/app/#/apartments');
+  await page.goto(BASE + '/app/apartments/');
   await page.locator('#btn-apt-new').click();
   const dlg = page.locator('dialog[open]');
   await dlg.waitFor();
@@ -603,7 +633,7 @@ test('14. sales: create property for sale, compute price/sqm, filter inventory b
   assert.strictEqual(Number(apt.price_sqm), 2200);
 
   // Filter inventory by "sale"
-  await page.goto(BASE + '/app/#/apartments');
+  await page.goto(BASE + '/app/apartments/');
   await page.locator('[data-tp="sale"]').click();
   await page.waitForTimeout(200);
   const rows = page.locator('#view .rows a.row');
@@ -625,7 +655,7 @@ test('14. sales: create property for sale, compute price/sqm, filter inventory b
 test('15. sales CRM: buyer lead, sales deal commission, 7-stage pipeline advance & viewing appointment', async (browser) => {
   const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
   // 1. Verify Buyer contact
-  await page.goto(BASE + '/app/#/owners');
+  await page.goto(BASE + '/app/owners/');
   await page.locator('[data-tab="owners"]').click();
   await page.locator('[data-oct="buyer"]').click();
   await page.locator('.row', { hasText: 'გიორგი მაისურაძე' }).waitFor();
@@ -633,7 +663,7 @@ test('15. sales CRM: buyer lead, sales deal commission, 7-stage pipeline advance
   assert(contactRowText.includes('მყიდველი'), 'buyer badge displayed');
 
   // 2. Create a Sales Deal
-  await page.goto(BASE + '/app/#/deals');
+  await page.goto(BASE + '/app/deals/');
   await page.locator('#btn-deal-new').click();
   const dlg = page.locator('dialog[open]');
   await dlg.waitFor();
@@ -690,7 +720,7 @@ test('15. sales CRM: buyer lead, sales deal commission, 7-stage pipeline advance
   assert(viewingTask, 'viewing task created');
 
   // 5. Today dashboard shows real estate CRM stats
-  await page.goto(BASE + '/app/#/today');
+  await page.goto(BASE + '/app/');
   await page.getByRole('heading', { name: /უძრავი ქონების მიმოხილვა/ }).waitFor();
   const todayText = await page.locator('#view').innerText();
   assert(todayText.includes('აქტიური ქონება') && todayText.includes('იყიდება'), 'active sales properties counted');
@@ -736,7 +766,7 @@ test('17. navigation: rentals and sales sections scope apartments, contacts and 
   await page.getByRole('heading', { name: 'მყიდველები', exact: true }).waitFor();
   await page.locator('#o-body .row', { hasText: 'გიორგი მაისურაძე' }).waitFor();
   assert.strictEqual(await page.locator('#o-body .row', { hasText: 'დავით მამულაშვილი' }).count(), 0, 'landlord is not listed among buyers');
-  assert.strictEqual(await page.locator('#rail [aria-current="page"]').getAttribute('href'), '#/owners');
+  assert.strictEqual(await page.locator('#rail [aria-current="page"]').getAttribute('href'), '/app/owners/');
 
   await go('#/owners?type=owner');
   await page.getByRole('heading', { name: 'მეპატრონეები', exact: true }).waitFor();
@@ -758,7 +788,7 @@ test('17. navigation: rentals and sales sections scope apartments, contacts and 
   // The contact's own page keeps the section highlighted
   await page.locator('#o-body .row', { hasText: 'ლიკა თოდუა' }).click();
   await page.getByRole('heading', { name: 'ლიკა თოდუა' }).waitFor();
-  assert.strictEqual(await page.locator('#rail [aria-current="page"]').getAttribute('href'), '#/owners');
+  assert.strictEqual(await page.locator('#rail [aria-current="page"]').getAttribute('href'), '/app/owners/');
 
   // Apartments and deals follow the section
   await go('#/apartments?type=sale');
@@ -783,11 +813,11 @@ test('17. navigation: rentals and sales sections scope apartments, contacts and 
     assert.strictEqual(await phone.locator('#section-bar a').count(), tabCount[hash.slice(2).split('?')[0]], `${hash} shows the section tabs`);
   }
   assert.strictEqual((await phone.locator('#bottom-nav [aria-current="page"]').innerText()).trim(), 'გარიგებები');
-  await phone.goto(BASE + '/app/#/owners');
-  await phone.locator('#section-bar a[href="#/owners?type=seller"]').click();
+  await phone.goto(BASE + '/app/owners/');
+  await phone.locator('#section-bar a[href="/app/owners/?type=seller"]').click();
   await phone.getByRole('heading', { name: 'გამყიდველები', exact: true }).waitFor();
   await phone.locator('#btn-more').click();
-  await phone.locator('dialog[open] a[href="#/finance"]').click();
+  await phone.locator('dialog[open] a[href="/app/finance/"]').click();
   await phone.getByRole('heading', { name: 'ფინანსები', exact: true }).waitFor();
   assert(await phone.locator('#section-bar').isHidden(), 'no section tabs outside a section');
   return phone;
@@ -795,7 +825,7 @@ test('17. navigation: rentals and sales sections scope apartments, contacts and 
 
 test('18. co-broker share: owner data hidden by default, toggles rebuild the text, daily digest', async (browser) => {
   const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
-  await page.goto(BASE + '/app/#/apartments/dddddddd-0000-4000-8000-000000000001');
+  await page.goto(BASE + '/app/apartments/?id=dddddddd-0000-4000-8000-000000000001');
   await page.locator('#a-share').click();
   const dlg = page.locator('dialog[open]');
   const text = () => dlg.locator('#cb-output').inputValue();
@@ -818,7 +848,7 @@ test('18. co-broker share: owner data hidden by default, toggles rebuild the tex
   assert(decodeURIComponent(await dlg.locator('#cb-wa').getAttribute('href')).includes('1%'), 'WhatsApp link carries the current text');
   await page.keyboard.press('Escape');
 
-  await page.goto(BASE + '/app/#/today');
+  await page.goto(BASE + '/app/');
   await page.locator('#btn-digest').click();
   const digest = await page.locator('dialog[open] #digest-output').inputValue();
   assert(digest.includes('დღევანდელი ნახვები') && digest.includes('ცხელი ობიექტები'), 'digest lists viewings and hot listings');
@@ -829,7 +859,7 @@ test('18. co-broker share: owner data hidden by default, toggles rebuild the tex
 test('19. trust: cadastral duplicate banner, unreliable client flag warns in contact and deal forms', async (browser) => {
   const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
   // Save a cadastral code on an existing property (dots are inserted while typing)
-  await page.goto(BASE + '/app/#/apartments/dddddddd-0000-4000-8000-000000000001');
+  await page.goto(BASE + '/app/apartments/?id=dddddddd-0000-4000-8000-000000000001');
   await page.locator('#a-edit').click();
   await page.locator('dialog[open] #apt-cadastral').fill('01101400901' + '1');
   assert.strictEqual(await page.locator('dialog[open] #apt-cadastral').inputValue(), '01.10.14.009.011');
@@ -838,7 +868,7 @@ test('19. trust: cadastral duplicate banner, unreliable client flag warns in con
   assert.strictEqual((await db(page)).tables.apartments.find(a => a.id === 'dddddddd-0000-4000-8000-000000000001').cadastral_code, '01.10.14.009.011');
 
   // Adding another property with the same code warns immediately
-  await page.goto(BASE + '/app/#/apartments?type=rent');
+  await page.goto(BASE + '/app/apartments/?type=rent');
   await page.locator('#btn-apt-new').click();
   const dlg = page.locator('dialog[open]');
   await openMore(dlg);
@@ -854,7 +884,7 @@ test('19. trust: cadastral duplicate banner, unreliable client flag warns in con
   await page.keyboard.press('Escape');
 
   // Mark a buyer as unreliable
-  await page.goto(BASE + '/app/#/owners/cccccccc-0000-4000-8000-000000000003');
+  await page.goto(BASE + '/app/owners/?id=cccccccc-0000-4000-8000-000000000003');
   await page.locator('#ow-edit').click();
   await page.locator('dialog[open] #ow-flag').check();
   await page.locator('dialog[open] textarea[name=flag_note]').fill('არ იხდის საკომისიოს');
@@ -865,12 +895,12 @@ test('19. trust: cadastral duplicate banner, unreliable client flag warns in con
   assert(flagged.is_flagged === true && flagged.flagged_by_name, 'flag and who set it are saved');
 
   // The same number typed in a new deal or a new contact shows the warning
-  await page.goto(BASE + '/app/#/deals?type=sale');
+  await page.goto(BASE + '/app/deals/?type=sale');
   await page.locator('#btn-deal-new').click();
   await page.locator('dialog[open] #deal-client-phone').fill('591 00 22 33');
   assert((await page.locator('dialog[open] #deal-flag-banner').innerText()).includes('არ იხდის საკომისიოს'));
   await page.keyboard.press('Escape');
-  await page.goto(BASE + '/app/#/owners?type=buyer');
+  await page.goto(BASE + '/app/owners/?type=buyer');
   await page.locator('#o-body .badge-danger', { hasText: 'არასანდო' }).waitFor();
   await page.locator('#o-new').click();
   await page.locator('dialog[open] input[name=phone]').fill('+995591002233');
@@ -880,7 +910,7 @@ test('19. trust: cadastral duplicate banner, unreliable client flag warns in con
 
 test('20. documents: PDF presentation templates, auto-filled sale contract, registry check', async (browser) => {
   const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
-  await page.goto(BASE + '/app/#/apartments/dddddddd-0000-4000-8000-000000000001');
+  await page.goto(BASE + '/app/apartments/?id=dddddddd-0000-4000-8000-000000000001');
   await page.locator('#a-pdf').click();
   const pz = page.locator('dialog[open] #pz-preview');
   await pz.locator('.pz-page').first().waitFor();
@@ -892,7 +922,7 @@ test('20. documents: PDF presentation templates, auto-filled sale contract, regi
   await page.keyboard.press('Escape');
 
   // Deposit agreement filled from the property and its owner
-  await page.goto(BASE + '/app/#/deals/documents?type=sale');
+  await page.goto(BASE + '/app/deals/?id=documents&type=sale');
   await page.locator('[data-doc="deposit"]').click();
   const dlg = page.locator('dialog[open]');
   await dlg.locator('#doc-apt').selectOption('dddddddd-0000-4000-8000-000000000001');
@@ -932,7 +962,7 @@ test('21. smart import: a listing link fills the new property form, errors are e
       area_sqm: 115, floor: 1, total_floors: 3, rooms: 4, bedrooms: 3, bathrooms: 1, price: 123000, currency: 'USD', price_sqm: 1070, lat: 41.69, lng: 44.79, cadastral_code: null,
       description: 'ნათელი ბინა ცენტრში.', images: [] } }) });
   });
-  await page.goto(BASE + '/app/#/apartments?type=rent');
+  await page.goto(BASE + '/app/apartments/?type=rent');
   await page.locator('#btn-apt-new').click();
   const dlg = page.locator('dialog[open]');
 
@@ -962,7 +992,7 @@ test('21. smart import: a listing link fills the new property form, errors are e
 
 test('22. team: commission split, payout marks, leaderboard and the agent role', async (browser) => {
   const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
-  await page.goto(BASE + '/app/#/deals?type=sale');
+  await page.goto(BASE + '/app/deals/?type=sale');
   await page.locator('#btn-deal-new').click();
   const dlg = page.locator('dialog[open]');
   await dlg.locator('input[name=client_name]').fill('ლევან ჩხეიძე');
@@ -983,7 +1013,7 @@ test('22. team: commission split, payout marks, leaderboard and the agent role',
   const deal = (await db(page)).tables.deals.find(x => x.client_name === 'ლევან ჩხეიძე');
   assert(deal.listing_agent_id && deal.selling_agent_id && Number(deal.listing_split) === 25 && Number(deal.selling_split) === 25);
 
-  await page.goto(BASE + '/app/#/deals/commissions?type=sale');
+  await page.goto(BASE + '/app/deals/?id=commissions&type=sale');
   const payouts = page.locator('#team-payouts');
   await payouts.waitFor();
   assert.strictEqual(await payouts.locator(`[data-payout="${deal.id}"]`).count(), 2, 'one payout line per agent');
@@ -1003,11 +1033,11 @@ test('22. team: commission split, payout marks, leaderboard and the agent role',
     d.tables.owners = d.tables.owners.filter(o => o.contact_type === 'buyer');
     localStorage.setItem('rigzea_mockdb', JSON.stringify(d));
   });
-  await agent.goto(BASE + '/app/#/finance');
+  await agent.goto(BASE + '/app/finance/');
   await agent.getByRole('heading', { name: 'დღეს', exact: true }).waitFor();
-  assert.strictEqual(await agent.locator('#rail a[href="#/finance"], #rail a[href="#/team"], #rail a[href="#/settings"]').count(), 0, 'management pages are not in the menu');
-  assert.strictEqual(await agent.locator('#rail a[href="#/deals"]').count(), 1);
-  await agent.goto(BASE + '/app/#/apartments/dddddddd-0000-4000-8000-000000000001');
+  assert.strictEqual(await agent.locator('#rail a[href="/app/finance/"], #rail a[href="/app/team/"], #rail a[href="/app/settings/"]').count(), 0, 'management pages are not in the menu');
+  assert.strictEqual(await agent.locator('#rail a[href="/app/deals/"]').count(), 1);
+  await agent.goto(BASE + '/app/apartments/?id=dddddddd-0000-4000-8000-000000000001');
   await agent.locator('#a-owner-masked').waitFor();
   assert(!(await agent.locator('#view').innerText()).includes('577 00 11 22'), 'owner phone is not shown');
   return agent;
@@ -1036,14 +1066,14 @@ test('23. password reset link asks for a new password before opening the workspa
 test('24. honest owner report, direct lead source, guest guide keeps codes behind the token', async (browser) => {
   const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
   // Owner report: no invented numbers (the apartment has no deals or viewings this week)
-  await page.goto(BASE + '/app/#/apartments/dddddddd-0000-4000-8000-000000000001');
+  await page.goto(BASE + '/app/apartments/?id=dddddddd-0000-4000-8000-000000000001');
   await page.locator('#btn-owner-report').click();
   const report = await page.locator('dialog[open] #or-text').inputValue();
   assert(/ახალი მოთხოვნები: 0/.test(report) && /ბინის ჩვენებები: 0/.test(report), 'report shows real counts: ' + report.slice(0, 300));
   await page.keyboard.press('Escape');
 
   // A new contact is saved with lead source "direct", not the first option (Instagram)
-  await page.goto(BASE + '/app/#/owners?type=buyer');
+  await page.goto(BASE + '/app/owners/?type=buyer');
   await page.locator('#o-new').click();
   await page.locator('dialog[open] input[name=name]').fill('ტესტ წყარო');
   await page.locator('dialog[open] [data-submit]').click();
@@ -1051,7 +1081,7 @@ test('24. honest owner report, direct lead source, guest guide keeps codes behin
   assert.strictEqual((await db(page)).tables.owners.find(o => o.name === 'ტესტ წყარო').lead_source, 'direct');
 
   // The apartment page links the guest guide by token; the old id link hides the codes
-  const href = await page.goto(BASE + '/app/#/apartments/dddddddd-0000-4000-8000-000000000001').then(() => page.locator('a[href^="/guide/"]').getAttribute('href'));
+  const href = await page.goto(BASE + '/app/apartments/?id=dddddddd-0000-4000-8000-000000000001').then(() => page.locator('a[href^="/guide/"]').getAttribute('href'));
   assert(href.includes('t=g1d3t0k3n'), 'guide link uses the token: ' + href);
   await page.goto(BASE + href);
   await page.locator('.door-code', { hasText: '4821#' }).waitFor();
@@ -1064,7 +1094,7 @@ test('24. honest owner report, direct lead source, guest guide keeps codes behin
 
 test('25. an expired private receipt link is re-signed when clicked', async (browser) => {
   const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
-  await page.goto(BASE + '/app/#/finance');
+  await page.goto(BASE + '/app/finance/');
   await page.locator('#view h1').waitFor();
   // A one-year link that expired in 2020 (JWT payload {"exp":1600000000})
   const expired = 'https://x.supabase.co/storage/v1/object/sign/rigzea-private/org/receipts/a.jpg?token=h.' + Buffer.from('{"exp":1600000000}').toString('base64url') + '.s';
@@ -1101,7 +1131,7 @@ test('26. a capped list says how much is hidden and can load more', async (brows
 test('27. watermarking every photo saves them and closes the tool', async (browser) => {
   const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
   await seedListing(page);
-  await page.goto(BASE + '/app/#/apartments/dddddddd-0000-4000-8000-000000000003');
+  await page.goto(BASE + '/app/apartments/?id=dddddddd-0000-4000-8000-000000000003');
   await page.locator('#a-edit').click();
   await page.locator('dialog[open] [data-pm-input]').setInputFiles([FIXTURE, FIXTURE]);
   await page.locator('dialog[open] .pm-item img').nth(1).waitFor();
@@ -1121,7 +1151,7 @@ test('27. watermarking every photo saves them and closes the tool', async (brows
 
 test('29. the portal button hands public listing data to the extension and warns when it is missing', async (browser) => {
   const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
-  await page.goto(BASE + '/app/#/apartments/dddddddd-0000-4000-8000-000000000001');
+  await page.goto(BASE + '/app/apartments/?id=dddddddd-0000-4000-8000-000000000001');
   await page.locator('#btn-post-portals').waitFor();
   // No extension answers: the install guide opens with the download link
   await page.locator('#btn-post-portals').click();
