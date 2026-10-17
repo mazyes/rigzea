@@ -507,6 +507,11 @@
   // The offline demo (/demo/) is a single page and keeps #/ addresses.
   // ---------------------------------------------------------------------------
   const views = {};
+  // Shared by finance and portfolio views; keep it in the shell so either lazy chunk can use it.
+  const monthLabel = (mk) => {
+    const [y, m] = String(mk || '').split('-').map(Number);
+    return `${R.MONTHS?.[m - 1] || ''} ${y || ''}`.trim();
+  };
   // Route chunks are loaded only when their area is opened. This keeps the shell and first
   // dashboard render small on slower machines while preserving the existing global view API.
   const VIEW_CHUNKS = {
@@ -520,7 +525,7 @@
     if (viewLoads.has(src)) return viewLoads.get(src);
     const promise = new Promise((resolve, reject) => {
       const s = document.createElement('script');
-      s.src = src;
+      s.src = `${src}?v=${window.__RIGZEA_ASSET_VERSIONS?.[src] || ''}`;
       s.onload = resolve;
       s.onerror = () => reject(new Error(`ვერ ჩაიტვირთა გვერდის კოდი: ${name}`));
       document.head.appendChild(s);
@@ -1768,7 +1773,7 @@
     openCommissionCalculator, openMatchmaker, openSocialPostGenerator,
     openDocChooser: (...args) => ensureChunk('/app/views-docs.js', 'დოკუმენტები').then(() => window.App.openDocChooser?.(...args)),
     openPresentation: (...args) => ensureViewLoaded('apartments').then(() => window.App.openPresentation?.(...args)),
-    PLANS, PLAN_ORDER, FEATURE_LABEL, CONTACT, planState, can, guardLimit, guardFeature, openUpgrade, planCardsHtml, waLink, activeApartments, pausedApartmentIds, seatsUsed, openKisaCheckoutModal, startKisaCheckout: openKisaCheckoutModal };
+    monthLabel, PLANS, PLAN_ORDER, FEATURE_LABEL, CONTACT, planState, can, guardLimit, guardFeature, openUpgrade, planCardsHtml, waLink, activeApartments, pausedApartmentIds, seatsUsed, openKisaCheckoutModal, startKisaCheckout: openKisaCheckoutModal };
 
   document.addEventListener('DOMContentLoaded', () => {
     if (legacyRedirect()) return;

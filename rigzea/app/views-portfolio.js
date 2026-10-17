@@ -1749,8 +1749,6 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
     $('#ow-edit').onclick = () => openOwnerForm(o);
     $('#ow-appr').onclick = () => App.openApprovalForm({ apartmentId: apts[0]?.id });
   }
-  const monthLabel = (mk) => { const [y, m] = String(mk).split('-').map(Number); return `${R.MONTHS[m - 1]} ${y}`; };
-  App.monthLabel = monthLabel;
 
   // requirements is stored as text; older rows may hold an empty object.
   const reqText = (o) => (typeof o?.requirements === 'string' ? o.requirements : '');
