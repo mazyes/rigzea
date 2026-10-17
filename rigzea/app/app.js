@@ -955,8 +955,10 @@
           out.innerHTML = res.length ? res.map(x => `<a class="row" style="--cols:24px minmax(0,1fr)" href="${x.href}">${icon(x.icon)}<span class="cell-main"><strong>${esc(x.title)}</strong><span>${esc(x.sub)}</span></span></a>`).join('') : '<p class="empty-inline">ვერაფერი მოიძებნა.</p>';
           $$('a', out).forEach(a => a.addEventListener('click', () => dlg.close()));
         };
-        input.addEventListener('input', draw);
-        input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); $('a', out)?.click(); } });
+        // Each search scans every apartment, task and contact, so wait for a pause in typing.
+        let timer;
+        input.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(draw, 150); });
+        input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); clearTimeout(timer); draw(); $('a', out)?.click(); } });
         draw();
       },
     });
