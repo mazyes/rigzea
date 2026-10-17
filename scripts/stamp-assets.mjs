@@ -32,11 +32,15 @@ const template = readFileSync(join(site, 'app/index.html'), 'utf8').replace(ref,
   const hash = createHash('sha256').update(readFileSync(join(site, path))).digest('hex').slice(0, 8);
   return `${attr}="${path}?v=${hash}"`;
 });
-if (!/<title>[^<]*<\/title>/.test(template)) throw new Error('app/index.html needs a <title>');
-write('app/index.html', template);
+// Route chunks are injected by app.js, so keep their cache-busting versions available there.
+const chunkVersions = Object.fromEntries(['/app/views-ops.js', '/app/views-portfolio.js', '/app/views-deals.js', '/app/views-docs.js', '/app/views-finance.js', '/app/views-admin.js']
+  .map(path => [path, createHash('sha256').update(readFileSync(join(site, path))).digest('hex').slice(0, 8)]));
+const stamped = template.replace('</head>', `<script>window.__RIGZEA_ASSET_VERSIONS=${JSON.stringify(chunkVersions)};</script></head>`);
+if (!/<title>[^<]*<\/title>/.test(stamped)) throw new Error('app/index.html needs a <title>');
+write('app/index.html', stamped);
 
 for (const [area, label] of Object.entries(AREAS)) {
-  const page = template
+  const page = stamped
     .replace(/<title>[^<]*<\/title>/, `<title>Rigzea: ${label}</title>`)
     .replace('<!doctype html>', `<!doctype html>\n${GENERATED}`);
   write(`app/${area}/index.html`, page);

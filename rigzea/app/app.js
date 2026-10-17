@@ -313,6 +313,19 @@
   // Fetches everything the workspace shows for one organization. Throws on failure.
   async function fetchData(org) {
     const totals = {};
+    const area = route().name;
+    const needs = new Set(area === 'today'
+      ? ['closedTasks', 'approvals', 'expenses', 'income', 'reservations', 'events', 'repairs', 'deals', 'statements']
+      : area === 'tasks'
+        ? ['closedTasks', 'approvals', 'expenses', 'repairs', 'deals']
+        : area === 'apartments' || area === 'owners'
+          ? ['approvals', 'expenses', 'deals', 'repairs']
+          : area === 'deals'
+            ? ['approvals', 'deals', 'reservations']
+            : area === 'finance'
+              ? ['expenses', 'income', 'statements']
+              : new Set());
+    const optional = (name, factory) => needs.has(name) ? factory() : Promise.resolve([]);
     const since = new Date(); since.setDate(since.getDate() - 120);
     const sinceIso = R.isoDate(since);
     const [apartments, owners, openTasks, closedTasks, approvals, expenses, income, reservations, events, members, notifications, statements, repairs, deals] = await Promise.all([
@@ -320,18 +333,18 @@
       q(sb.from('owners').select('*').eq('organization_id', org).order('name')),
       // Every open task, plus the most recent closed ones for history.
       q(sb.from('tasks').select('*').eq('organization_id', org).in('status', OPEN_TASK_STATUSES).order('due_date', { ascending: true })),
-      take(totals, 'closedTasks', sb.from('tasks').select('*', { count: 'exact' }).eq('organization_id', org).in('status', ['done', 'cancelled']).order('due_date', { ascending: false }).limit(S.limits.closedTasks)),
-      take(totals, 'approvals', sb.from('approvals').select('*', { count: 'exact' }).eq('organization_id', org).order('created_at', { ascending: false }).limit(S.limits.approvals)),
-      take(totals, 'expenses', sb.from('expenses').select('*', { count: 'exact' }).eq('organization_id', org).order('expense_date', { ascending: false }).limit(S.limits.expenses)),
-      take(totals, 'income', sb.from('income').select('*', { count: 'exact' }).eq('organization_id', org).order('income_date', { ascending: false }).limit(S.limits.income)),
+      optional('closedTasks', () => take(totals, 'closedTasks', sb.from('tasks').select('*', { count: 'exact' }).eq('organization_id', org).in('status', ['done', 'cancelled']).order('due_date', { ascending: false }).limit(S.limits.closedTasks))),
+      optional('approvals', () => take(totals, 'approvals', sb.from('approvals').select('*', { count: 'exact' }).eq('organization_id', org).order('created_at', { ascending: false }).limit(S.limits.approvals))),
+      optional('expenses', () => take(totals, 'expenses', sb.from('expenses').select('*', { count: 'exact' }).eq('organization_id', org).order('expense_date', { ascending: false }).limit(S.limits.expenses))),
+      optional('income', () => take(totals, 'income', sb.from('income').select('*', { count: 'exact' }).eq('organization_id', org).order('income_date', { ascending: false }).limit(S.limits.income))),
       // Reservations need the operations RLS migration; treat a failure as "no data" rather than breaking the app.
-      sb.from('reservations').select('*').eq('organization_id', org).gte('check_out', sinceIso).order('check_in').then(r => r.data || [], () => []),
-      q(sb.from('activity_events').select('*').eq('organization_id', org).order('created_at', { ascending: false }).limit(200)),
+      optional('reservations', () => sb.from('reservations').select('*').eq('organization_id', org).gte('check_out', sinceIso).order('check_in').then(r => r.data || [], () => [])),
+      optional('events', () => q(sb.from('activity_events').select('*').eq('organization_id', org).order('created_at', { ascending: false }).limit(100))),
       q(sb.from('organization_members').select('*').eq('organization_id', org)),
       q(sb.from('notifications').select('*').eq('organization_id', org).eq('user_id', S.user.id).order('created_at', { ascending: false }).limit(40)),
-      q(sb.from('monthly_reports').select('*').eq('organization_id', org).order('month_period', { ascending: false }).limit(48)),
-      q(sb.from('repairs').select('*').eq('organization_id', org)).catch(() => []),
-      take(totals, 'deals', sb.from('deals').select('*', { count: 'exact' }).eq('organization_id', org).order('created_at', { ascending: false }).limit(S.limits.deals)).catch(() => []),
+      optional('statements', () => q(sb.from('monthly_reports').select('*').eq('organization_id', org).order('month_period', { ascending: false }).limit(24))),
+      optional('repairs', () => q(sb.from('repairs').select('*').eq('organization_id', org)).catch(() => [])),
+      optional('deals', () => take(totals, 'deals', sb.from('deals').select('*', { count: 'exact' }).eq('organization_id', org).order('created_at', { ascending: false }).limit(S.limits.deals)).catch(() => [])),
     ]);
     const tasks = [...openTasks, ...closedTasks].sort((a, b) => String(a.due_date || '~').localeCompare(String(b.due_date || '~')));
     return { totals, data: { apartments, owners, tasks, approvals, expenses, income, reservations, events, members, notifications, statements, repairs, deals: deals || [] } };
@@ -494,6 +507,28 @@
   // The offline demo (/demo/) is a single page and keeps #/ addresses.
   // ---------------------------------------------------------------------------
   const views = {};
+  // Route chunks are loaded only when their area is opened. This keeps the shell and first
+  // dashboard render small on slower machines while preserving the existing global view API.
+  const VIEW_CHUNKS = {
+    today: '/app/views-ops.js', tasks: '/app/views-ops.js',
+    apartments: '/app/views-portfolio.js', owners: '/app/views-portfolio.js',
+    deals: '/app/views-deals.js', finance: '/app/views-finance.js',
+    team: '/app/views-admin.js', settings: '/app/views-admin.js',
+  };
+  const viewLoads = new Map();
+  function ensureChunk(src, name = 'გვერდი') {
+    if (viewLoads.has(src)) return viewLoads.get(src);
+    const promise = new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = src;
+      s.onload = resolve;
+      s.onerror = () => reject(new Error(`ვერ ჩაიტვირთა გვერდის კოდი: ${name}`));
+      document.head.appendChild(s);
+    });
+    viewLoads.set(src, promise);
+    return promise;
+  }
+  function ensureViewLoaded(name) { return ensureChunk(VIEW_CHUNKS[name] || VIEW_CHUNKS.today, name); }
   const PAGE_ROUTES = location.pathname.startsWith('/app/');
   const AREAS = ['today', 'tasks', 'apartments', 'owners', 'deals', 'finance', 'team', 'settings'];
   const areaPath = (name) => `/app/${name === 'today' ? '' : name + '/'}`;
@@ -788,7 +823,17 @@
     const r = route();
     if (isAgent() && AGENT_CLOSED.includes(r.name)) { go('#/today', { replace: true }); return; }
     renderShell();
-    const view = views[r.name] || views.today;
+    const view = views[r.name];
+    if (!view) {
+      renderLoading();
+      ensureViewLoaded(r.name).then(() => {
+        if (route().name === r.name) render();
+      }).catch(err => {
+        console.error(err);
+        $('#view').innerHTML = `<div class="card"><div class="error-state"><p>გვერდის კოდი ვერ ჩაიტვირთა.</p></div></div>`;
+      });
+      return;
+    }
     try {
       view(r);
     } catch (err) {
@@ -1721,6 +1766,8 @@
 
   window.App = { S, H, views, aptSection, contactSection, isManager, isAdmin, isAgent, refresh, render, renderShell, go, route, toUrl, taskHref, closeTaskOverlay, upsertLocal, logEvent, loadMore,
     openCommissionCalculator, openMatchmaker, openSocialPostGenerator,
+    openDocChooser: (...args) => ensureChunk('/app/views-docs.js', 'დოკუმენტები').then(() => window.App.openDocChooser?.(...args)),
+    openPresentation: (...args) => ensureViewLoaded('apartments').then(() => window.App.openPresentation?.(...args)),
     PLANS, PLAN_ORDER, FEATURE_LABEL, CONTACT, planState, can, guardLimit, guardFeature, openUpgrade, planCardsHtml, waLink, activeApartments, pausedApartmentIds, seatsUsed, openKisaCheckoutModal, startKisaCheckout: openKisaCheckoutModal };
 
   document.addEventListener('DOMContentLoaded', () => {
