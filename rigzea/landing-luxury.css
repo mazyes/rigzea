@@ -3448,20 +3448,14 @@ html[lang="en"] :is(h1, h2, h3, .lx-nav-link, .lx-badge, .lx-btn, .lx-plan-name,
   gap: 10px;
 }
 
-.lx-agency-unlimited-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  width: fit-content;
-  padding: 5px 14px;
-  background: rgba(4, 120, 87, 0.16);
-  border: 1px solid rgba(4, 120, 87, 0.4);
-  border-radius: var(--lx-r-pill);
+.lx-agency-infinity {
+  display: block;
+  width: 64px;
+  height: 64px;
+  margin: -8px 0 -6px -4px;
   color: var(--lx-mint-neon);
-  font-size: 11.5px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
 }
+.lx-agency-infinity svg { width: 100%; height: 100%; display: block; }
 
 .lx-agency-card-left .lx-plan-name {
   font-size: 24px;
@@ -3492,16 +3486,30 @@ html[lang="en"] :is(h1, h2, h3, .lx-nav-link, .lx-badge, .lx-btn, .lx-plan-name,
   list-style: none;
   padding: 0;
   margin: 0;
+  border-top: 0;
+  flex: none;
 }
 
+/* Icon column + one text block, aligned to the first line so wrapped text stays together */
 .lx-agency-card-features li {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 13.5px;
-  color: var(--lx-text-silver);
-  line-height: 1.4;
+  display: grid;
+  grid-template-columns: 24px 1fr;
+  align-items: start;
+  gap: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--lx-text-white, #fff);
+  line-height: 1.45;
 }
+.lx-agency-feat-icon {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 20px; /* one line of text */
+  color: var(--lx-mint-neon);
+}
+.lx-agency-feat-icon svg { width: 14px; height: 14px; }
+.lx-agency-feat-icon.is-unlimited svg { width: 24px; height: 24px; }
 
 .lx-agency-card-cta {
   display: flex;
@@ -3519,6 +3527,8 @@ html[lang="en"] :is(h1, h2, h3, .lx-nav-link, .lx-badge, .lx-btn, .lx-plan-name,
 @media (max-width: 959px) {
   .lx-pricing-card.lx-pricing-card-agency-wide {
     grid-template-columns: 1fr;
+    align-content: start;
+    min-height: 0;
     gap: 20px;
     padding: 24px;
   }
