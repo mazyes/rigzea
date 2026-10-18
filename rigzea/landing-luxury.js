@@ -13,13 +13,8 @@
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const isCoarse = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
 
-  // Smooth wheel scrolling (Lenis). Touch keeps the browser's own momentum; reduced motion keeps native scroll.
-  let lenis = null;
-  if (window.Lenis && !prefersReducedMotion) {
-    lenis = new window.Lenis({ lerp: 0.12, smoothWheel: true });
-    const lenisRaf = (time) => { lenis.raf(time); requestAnimationFrame(lenisRaf); };
-    requestAnimationFrame(lenisRaf);
-  }
+  // Scrolling is the browser's own: it runs off the main thread, so it stays smooth on slow PCs.
+  // (A smooth-scroll library used to drive it from script on every frame, which made it stutter.)
 
   // =========================================================================
   // 3. HEADER SCROLL, MOBILE DRAWER & STICKY THUMB BAR
@@ -418,8 +413,7 @@ rigzea.com/p/vake-loft-42`
         if (targetEl) {
           e.preventDefault();
           const targetY = window.pageYOffset + targetEl.getBoundingClientRect().top - 75;
-          if (lenis) lenis.scrollTo(targetY, { duration: 1.1 });
-          else window.scrollTo({ top: targetY, behavior: prefersReducedMotion ? 'auto' : 'smooth' });
+          window.scrollTo({ top: targetY, behavior: prefersReducedMotion ? 'auto' : 'smooth' });
         }
       }
     });
