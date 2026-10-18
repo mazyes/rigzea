@@ -157,9 +157,12 @@
 
   // 3. Feature demos play once: link fills in, result lands; match score counts; clauses write in; post writes in
   const bento = [...document.querySelectorAll('#features-grid > *')];
+  // The score counts up only if nobody has picked another client yet; after a click it just shows.
+  const scoreChip = document.querySelector('#match-score-display');
+  const scoreAtLoad = scoreChip?.textContent;
   once(bento, (card) => {
     const chip = card.querySelector('#match-score-display');
-    if (chip) {
+    if (chip && chip.textContent === scoreAtLoad) {
       const m = chip.textContent.match(/^(\d+)(.*)$/s);
       if (m) countUp(chip, +m[1], { dur: 1100, fmt: (v) => v + m[2] });
     }
