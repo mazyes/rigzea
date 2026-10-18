@@ -126,7 +126,10 @@ body.luxury-theme::before {
   z-index: 0;
 }
 
-/* Ambient Canvas & Hardware-Accelerated Parallax Orbs */
+/* Ambient glow. Static and fixed: the soft edge comes from the gradient itself, so the
+   browser never has to blur or move these large layers while the page scrolls (that was what
+   made scrolling stutter on low-end PCs). Each box is 85px larger on every side than the old
+   blurred orb, so the glow reaches as far as before. */
 .lx-ambient-canvas {
   position: fixed;
   inset: 0;
@@ -135,37 +138,36 @@ body.luxury-theme::before {
   pointer-events: none;
   z-index: 0;
   overflow: hidden;
+  contain: strict;
 }
 
 .lx-ambient-orb {
   position: absolute;
-  border-radius: 50%;
   pointer-events: none;
-  filter: blur(85px);
 }
 
 .lx-orb-primary {
-  top: -120px;
-  left: 25%;
-  width: 640px;
-  height: 500px;
-  background: radial-gradient(circle, rgba(4, 120, 87, 0.45) 0%, rgba(4, 120, 87, 0.16) 60%, transparent 80%);
+  top: -205px;
+  left: calc(25% - 85px);
+  width: 810px;
+  height: 670px;
+  background: radial-gradient(closest-side, rgba(4, 120, 87, 0.40) 0%, rgba(4, 120, 87, 0.16) 50%, rgba(4, 120, 87, 0.05) 75%, transparent 100%);
 }
 
 .lx-orb-secondary {
-  top: 36%;
-  right: -100px;
-  width: 520px;
-  height: 480px;
-  background: radial-gradient(circle, rgba(4, 120, 87, 0.13) 0%, rgba(4, 120, 87, 0.08) 60%, transparent 80%);
+  top: calc(36% - 85px);
+  right: -185px;
+  width: 690px;
+  height: 650px;
+  background: radial-gradient(closest-side, rgba(4, 120, 87, 0.12) 0%, rgba(4, 120, 87, 0.07) 50%, rgba(4, 120, 87, 0.02) 75%, transparent 100%);
 }
 
 .lx-orb-tertiary {
-  bottom: -100px;
-  left: 10%;
-  width: 600px;
-  height: 520px;
-  background: radial-gradient(circle, rgba(6, 56, 42, 0.40) 0%, transparent 75%);
+  bottom: -185px;
+  left: calc(10% - 85px);
+  width: 770px;
+  height: 690px;
+  background: radial-gradient(closest-side, rgba(6, 56, 42, 0.36) 0%, rgba(6, 56, 42, 0.14) 50%, rgba(6, 56, 42, 0.04) 75%, transparent 100%);
 }
 
 

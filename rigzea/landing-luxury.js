@@ -22,64 +22,6 @@
   }
 
   // =========================================================================
-  // 2. BUTTER-SMOOTH BACKGROUND MESH & AMBIENT ORBS PARALLAX
-  // =========================================================================
-  const orbPrimary = document.querySelector('.lx-orb-primary');
-  const orbSecondary = document.querySelector('.lx-orb-secondary');
-  const orbTertiary = document.querySelector('.lx-orb-tertiary');
-  const ambientGrid = document.querySelector('.lx-ambient-grid');
-
-  let currentScrollY = 0;
-  let targetOrb1Y = 0, currentOrb1Y = 0;
-  let targetOrb2Y = 0, currentOrb2Y = 0;
-  let targetOrb3Y = 0, currentOrb3Y = 0;
-  let targetGridY = 0, currentGridY = 0;
-  let isParallaxTicking = false;
-
-  function renderParallaxFrame() {
-    if (prefersReducedMotion) return;
-
-    currentOrb1Y += (targetOrb1Y - currentOrb1Y) * 0.10;
-    currentOrb2Y += (targetOrb2Y - currentOrb2Y) * 0.10;
-    currentOrb3Y += (targetOrb3Y - currentOrb3Y) * 0.10;
-    currentGridY += (targetGridY - currentGridY) * 0.12;
-
-    if (orbPrimary) {
-      orbPrimary.style.transform = `translate3d(0, ${currentOrb1Y.toFixed(2)}px, 0)`;
-    }
-    if (orbSecondary) {
-      orbSecondary.style.transform = `translate3d(0, ${currentOrb2Y.toFixed(2)}px, 0)`;
-    }
-    if (orbTertiary) {
-      orbTertiary.style.transform = `translate3d(0, ${currentOrb3Y.toFixed(2)}px, 0)`;
-    }
-    if (ambientGrid) {
-      ambientGrid.style.transform = `translate3d(0, ${currentGridY.toFixed(2)}px, 0)`;
-    }
-
-    const delta = Math.abs(targetOrb1Y - currentOrb1Y) + Math.abs(targetOrb2Y - currentOrb2Y);
-    if (delta > 0.05) {
-      requestAnimationFrame(renderParallaxFrame);
-    } else {
-      isParallaxTicking = false;
-    }
-  }
-
-  function updateParallax(y) {
-    if (prefersReducedMotion) return;
-    currentScrollY = y;
-    targetOrb1Y = -y * 0.06;
-    targetOrb2Y = y * 0.08;
-    targetOrb3Y = -y * 0.04;
-    targetGridY = (y * 0.12) % 36;
-
-    if (!isParallaxTicking) {
-      isParallaxTicking = true;
-      requestAnimationFrame(renderParallaxFrame);
-    }
-  }
-
-  // =========================================================================
   // 3. HEADER SCROLL, MOBILE DRAWER & STICKY THUMB BAR
   // =========================================================================
   const header = document.querySelector('.lx-header');
@@ -113,12 +55,17 @@
     }
 
     const heroPassed = y > 420;
-    let nearBottom = false;
-    if (finalCta) {
-      const rect = finalCta.getBoundingClientRect();
-      nearBottom = rect.top < window.innerHeight - 80;
-    }
     thumbBar.classList.toggle('is-visible', heroPassed && !nearBottom);
+  }
+
+  // True once the final call to action reaches 80px above the bottom of the screen (or has
+  // scrolled past). Kept by an observer, so scrolling never has to measure the layout.
+  let nearBottom = false;
+  if (finalCta && thumbBar && 'IntersectionObserver' in window) {
+    new IntersectionObserver(([entry]) => {
+      nearBottom = entry.isIntersecting || entry.boundingClientRect.top < 0;
+      updateThumbBar(window.scrollY);
+    }, { rootMargin: '0px 0px -80px 0px' }).observe(finalCta);
   }
 
   function closeMobileMenu() {
@@ -164,12 +111,11 @@
     });
   }
 
-  // Unified scroll handler for header, parallax, and thumb bar
+  // The only scroll handler: header state and the mobile thumb bar (both just toggle a class)
   const onPageScroll = () => {
     const y = window.scrollY;
     updateHeader(y);
     updateThumbBar(y);
-    updateParallax(y);
   };
   window.addEventListener('scroll', onPageScroll, { passive: true });
   window.addEventListener('resize', () => updateThumbBar(window.scrollY), { passive: true });
@@ -286,19 +232,6 @@
     });
   });
 
-
-  // =========================================================================
-  // 10. SCROLL EVENT LISTENER (Header & Parallax)
-  // =========================================================================
-  function handleScrollUpdate(scrollY) {
-    if (typeof updateHeader === 'function') updateHeader(scrollY);
-    if (typeof updateParallax === 'function') updateParallax(scrollY);
-  }
-
-  window.addEventListener('scroll', () => {
-    const y = window.scrollY || window.pageYOffset;
-    handleScrollUpdate(y);
-  }, { passive: true });
 
   // =========================================================================
   // 11. HERO INTERACTIVE PHONE VIEW TOGGLE (/p/ PREVIEWS)

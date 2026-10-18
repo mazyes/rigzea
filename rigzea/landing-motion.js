@@ -119,12 +119,16 @@
   if (reduce) return;
   root.classList.add('lx-motion');
 
+  // Stops as soon as something else changes the text (a demo tab clicked mid-count), instead of
+  // writing the old number back over it.
   const countUp = (el, to, { from = 0, dur = 900, pad = 0, fmt } = {}) => {
     const start = performance.now();
+    let written = null;
     const step = (now) => {
+      if (written !== null && el.textContent !== written) return;
       const p = Math.min(1, (now - start) / (dur * T));
       const v = Math.round(from + (to - from) * (1 - Math.pow(1 - p, 4)));
-      el.textContent = fmt ? fmt(v) : String(v).padStart(pad, '0');
+      el.textContent = written = fmt ? fmt(v) : String(v).padStart(pad, '0');
       if (p < 1) requestAnimationFrame(step);
     };
     requestAnimationFrame(step);
