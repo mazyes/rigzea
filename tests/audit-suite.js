@@ -45,7 +45,7 @@ async function runAudit() {
     await step('3. Bento Feature 1: Social Post Generator tabs & copy button work cleanly', async () => {
       const page = await newPage(browser);
       await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
-      await page.goto(testBase + '/');
+      await page.goto(testBase + '/features/');
 
       const postBox = page.locator('#post-preview-box');
       await postBox.waitFor();
@@ -71,7 +71,7 @@ async function runAudit() {
 
     await step('4. Bento Feature 2: Bilingual Lease Agreement toggles KA, EN, and Dual modes', async () => {
       const page = await newPage(browser);
-      await page.goto(testBase + '/');
+      await page.goto(testBase + '/features/');
 
       const kaBtn = page.locator('[data-lease-lang="ka"]');
       const enBtn = page.locator('[data-lease-lang="en"]');
@@ -100,7 +100,7 @@ async function runAudit() {
 
     await step('5. Bento Feature 3: Client Matchmaker simulator tabs update recommendations', async () => {
       const page = await newPage(browser);
-      await page.goto(testBase + '/');
+      await page.goto(testBase + '/features/');
 
       const reqText = page.locator('#match-req-text');
       const scoreBadge = page.locator('#match-score-display');
@@ -128,7 +128,7 @@ async function runAudit() {
     };
     await step('7. Pricing 4-Tier: monthly/yearly billing interval switch updates prices', async () => {
       const page = await newPage(browser);
-      await page.goto(testBase + '/#pricing');
+      await page.goto(testBase + '/pricing/');
 
       const monthlyBtn = page.locator('.lx-billing-toggle-pill button[data-billing="monthly"]');
       const yearlyBtn = page.locator('.lx-billing-toggle-pill button[data-billing="yearly"]');
@@ -146,6 +146,32 @@ async function runAudit() {
       await monthlyBtn.click();
       await expectText(proPrice, '39 ₾');
 
+      await page.close();
+    });
+
+    await step('8. Mobile landing controls stay accessible and do not interrupt reading', async () => {
+      const page = await newPage(browser, { viewport: { width: 390, height: 844 } });
+      await page.goto(testBase + '/');
+      assert.strictEqual(await page.locator('.lx-hero-actions a[href="/signup/"]').count(), 1);
+      await page.waitForTimeout(1800); // Let the existing entrance animation finish before visual captures.
+      for (const theme of ['dark', 'light']) {
+        await page.evaluate(theme => { document.documentElement.dataset.theme = theme; }, theme);
+        assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `${theme}: horizontal overflow`);
+        await page.screenshot({ path: path.join(require('os').tmpdir(), `rigzea-landing-${theme}-mobile.png`) });
+      }
+      assert.strictEqual(await page.locator('main > section').count(), 5);
+      assert.strictEqual(await page.locator('.lx-story-section').count(), 1);
+      assert.strictEqual(await page.locator('#features-grid, #pricing-grid, .lx-faq-accordion, .lx-comparison-grid').count(), 0);
+      assert.strictEqual(await page.locator('.lx-hero-shot img').count(), 2);
+      await page.getByRole('button', { name: 'არ ვეთანხმები', exact: true }).click();
+      await page.locator('.lx-mobile-toggle').click();
+      assert.strictEqual(await page.locator('.lx-mobile-toggle').getAttribute('aria-expanded'), 'true');
+      for (const route of ['/features/', '/pricing/', '/faq/']) {
+        assert.strictEqual(await page.locator('#main-nav a[href="' + route + '"]').isVisible(), true);
+      }
+      await page.keyboard.press('Escape');
+      assert.strictEqual(await page.locator('.lx-mobile-toggle').getAttribute('aria-expanded'), 'false');
+      assert.strictEqual(page.errors.length, 0, page.errors.join('; '));
       await page.close();
     });
 

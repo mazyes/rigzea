@@ -36,7 +36,8 @@
 
   <script>try{var t=localStorage.getItem('rigzea_theme');if(t==='light'||(t==='system'&&matchMedia('(prefers-color-scheme: light)').matches))document.documentElement.dataset.theme='light'}catch(e){}document.addEventListener('click',function(e){if(!e.target.closest('#theme-toggle'))return;var n=document.documentElement.dataset.theme==='light'?'dark':'light';document.documentElement.dataset.theme=n;try{localStorage.setItem('rigzea_theme',n)}catch(x){}})</script>
   <script>(function(){var en=false;try{en=localStorage.getItem('rigzea_lang')==='en'}catch(e){}window.RLang={lang:en?'en':'ka'};if(en){var s=document.createElement('script');s.src='/js/i18n.js';document.head.appendChild(s);return}document.addEventListener('click',function(e){if(!(e.target.closest&&e.target.closest('[data-lang-toggle]')))return;try{localStorage.setItem('rigzea_lang','en')}catch(x){}location.reload()})})()</script>
-  <link rel="stylesheet" href="/landing-luxury.css?v=b6f171bf" />
+  <link rel="stylesheet" href="/landing-luxury.css?v=ab0c53b3" />
+<link rel="stylesheet" href="/js/site-tools.css?v=e08eaf48" />
 </head>
 <body class="luxury-theme">
 
@@ -62,10 +63,8 @@
         <nav class="lx-nav-links" id="main-nav" aria-label="მთავარი მენიუ">
           <a class="lx-nav-link" href="/#how-it-works">როგორ მუშაობს</a>
           <a class="lx-nav-link" href="/features/">უპირატესობები</a>
-          <a class="lx-nav-link" href="/#comparison">შედარება</a>
-          <a class="lx-nav-link active" href="/pricing/">ნაკრები</a>
-          <a class="lx-nav-link" href="/faq/">FAQ</a>
-          <a class="lx-nav-link" href="/demo/">დემო</a>
+          <a class="lx-nav-link" href="/pricing/">ნაკრები</a>
+          <a class="lx-nav-link" href="/faq/">კითხვები</a>
           <div class="lx-mobile-menu-actions">
             <a class="lx-btn lx-btn-primary" href="/signup/" style="width:100%;justify-content:center;">გამოცადე უფასოდ</a>
             <a class="lx-btn lx-btn-secondary" href="/signin/" style="width:100%;justify-content:center;">შესვლა</a>
@@ -78,7 +77,7 @@
           <button type="button" class="lx-theme-toggle" id="theme-toggle" aria-label="თემის შეცვლა"><svg class="ic-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/></svg><svg class="ic-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></button>
           <a class="lx-btn lx-btn-secondary lx-btn-sm lx-header-signin" href="/signin/">შესვლა</a>
           <a class="lx-btn lx-btn-primary lx-btn-sm lx-header-cta" href="/signup/">გამოცადე უფასოდ</a>
-          <button class="lx-mobile-toggle" aria-label="მენიუს გახსნა"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></button>
+          <button type="button" class="lx-mobile-toggle" aria-label="მენიუს გახსნა"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></button>
         </div>
       </div>
     </header>
@@ -203,7 +202,7 @@
             </div>
 
           </div>
-          <div class="lx-dots" data-dots-for="pricing-grid" aria-hidden="true"></div>
+          <div class="lx-dots" data-dots-for="pricing-grid"></div>
 
           <!-- Detailed Plan Comparison Table (Expanded on Pricing Page) -->
           <div class="lx-cmp-details is-open" id="plans-compare" style="margin-top:40px;border-top:1px solid rgba(255,255,255,0.08);padding-top:30px">
@@ -217,7 +216,7 @@
                   <thead>
                     <tr>
                       <th scope="col">შესაძლებლობა</th>
-                      <th scope="col">დამწყები<small>0 ₾</small></th>
+                      <th scope="col">დამწყები<small>9.99 ₾ / თვე</small></th>
                       <th scope="col" class="is-featured">პრო აგენტი<small>39 ₾ / თვე</small></th>
                       <th scope="col">გუნდი<small>99 ₾ / თვე</small></th>
                       <th scope="col">სააგენტო<small>249 ₾ / თვე</small></th>
@@ -307,9 +306,8 @@
         <div class="lx-footer-links">
           <a href="/#how-it-works">როგორ მუშაობს</a>
           <a href="/features/">უპირატესობები</a>
-          <a href="/#comparison">შედარება</a>
           <a href="/pricing/">ნაკრები</a>
-          <a href="/faq/">FAQ</a>
+          <a href="/faq/">კითხვები</a>
           <a href="mailto:contact@rigzea.com">contact@rigzea.com</a>
           <a href="/signin/">სამუშაო სივრცეში შესვლა</a>
         </div>
@@ -332,7 +330,8 @@
   </aside>
 
   <script src="/legal/operator.js" defer></script>
-  <script src="/landing-motion.js?v=b6f171bf" defer></script>
-  <script src="/landing-luxury.js?v=b6f171bf" defer></script>
+  <script src="/landing-motion.js?v=d2515549" defer></script>
+  <script src="/landing-luxury.js?v=c00e517d" defer></script>
+  <script src="/js/site-tools.js?v=5a601f29" defer></script>
 </body>
 </html>

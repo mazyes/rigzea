@@ -106,8 +106,6 @@ export default async function handler(req, res) {
   const q = req.query || Object.fromEntries(new URL(req.url, 'http://x').searchParams);
   const ref = String(q.ref || q.id || q.p || q.apt || '').trim();
   const whiteLabel = q.wl === '1';
-  const host = req.headers['x-forwarded-host'] || req.headers.host || '';
-  const proto = req.headers['x-forwarded-proto'] || 'https';
 
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
   res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -126,7 +124,7 @@ export default async function handler(req, res) {
 
   const found = data.success && data.apartment;
   const slug = found ? (data.apartment.slug || data.apartment.id) : ref;
-  const pageUrl = `${proto}://${host}/p/${encodeURIComponent(slug)}/${whiteLabel ? '?wl=1' : ''}`;
+  const pageUrl = `https://rigzea.com/p/${encodeURIComponent(slug)}/${whiteLabel ? '?wl=1' : ''}`;
   const boot = `<script>window.__RIGZEA_LISTING__=${JSON.stringify({ ref, data }).replace(/</g, '\\u003c').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029')};</script>`;
 
   let out = html;

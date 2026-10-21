@@ -2855,14 +2855,14 @@ h1, h2, h3 { line-height: 1.12; letter-spacing: -0.02em; }
   box-shadow: 14px 0 #f59e0b, 28px 0 #22c55e; margin: 0 0 14px;
 }
 .lx-import-url-text { font-family: var(--lx-font); }
-.lx-mini-btn { background: #047857; color: #04170f; font-weight: 700; font-size: 11.5px; padding: 3px 10px; border-radius: 6px; }
+.lx-mini-btn { background: #047857; color: #fff; font-weight: 700; font-size: 11.5px; padding: 3px 10px; border-radius: 6px; }
 .lx-import-result-card { margin-top: 10px; padding: 12px; border: 1px solid rgba(255, 255, 255, .08); border-radius: 10px; background: rgba(255, 255, 255, .03); }
 .lx-import-result-title { color: #fff; font-weight: 600; font-size: 13.5px; }
 .lx-import-result-meta { display: flex; gap: 10px; align-items: center; margin-top: 8px; font-size: 11.5px; color: #82988c; flex-wrap: wrap; }
 .lx-mini-ok { background: rgba(4, 120, 87, .14); color: #047857; border-radius: 99px; padding: 2px 8px; font-weight: 600; }
 .lx-filter-tag { display: inline-block; margin-bottom: 10px; padding: 4px 10px; border-radius: 99px; background: rgba(4, 120, 87, .12); color: #047857; font-size: 11.5px; font-weight: 600; }
 .lx-split-strip { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; }
-.lx-split-badge { background: #047857; color: #04170f; border-radius: 99px; padding: 3px 10px; font-size: 11.5px; font-weight: 700; }
+.lx-split-badge { background: #047857; color: #fff; border-radius: 99px; padding: 3px 10px; font-size: 11.5px; font-weight: 700; }
 .lx-lock { font-size: 11.5px; color: #82988c; }
 
 /* Comparison contrast */
@@ -3045,9 +3045,9 @@ h1, h2, h3 { line-height: 1.12; letter-spacing: -0.02em; }
 /* ==========================================================================
    HERO v4: centered headline + real product window under an emerald glow
    ========================================================================== */
-.lx-hero--center { position: relative; isolation: isolate; overflow: hidden; padding: clamp(44px, 5vw, 72px) 0 0; }
+.lx-hero--center { position: relative; isolation: isolate; overflow: hidden; padding: clamp(28px, 3vw, 44px) 0 0; }
 .lx-hero--center .lx-container { position: relative; z-index: 1; }
-.lx-hero--center .lx-hero-copy { max-width: 900px; margin: 0 auto; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 22px; }
+.lx-hero--center .lx-hero-copy { max-width: 900px; margin: 0 auto; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 16px; }
 .lx-hero--center .lx-hero-title { max-width: 24em; margin: 0 auto; font-size: clamp(30px, 3.5vw, 50px); line-height: 1.08; letter-spacing: -0.02em; }
 .lx-hero--center .lx-hero-desc { max-width: 40em; margin: 0 auto; font-size: clamp(15px, 1.25vw, 17px); }
 .lx-hero--center .lx-hero-actions { justify-content: center; margin: 4px 0 0; }
@@ -3075,7 +3075,7 @@ h1, h2, h3 { line-height: 1.12; letter-spacing: -0.02em; }
 }
 
 /* Product window */
-.lx-hero-shot { position: relative; margin: clamp(40px, 5vw, 64px) auto 0; max-width: 1080px; }
+.lx-hero-shot { position: relative; margin: clamp(24px, 3vw, 36px) auto 0; max-width: 1080px; }
 .lx-hero-window {
   position: relative; border-radius: 16px 16px 0 0; overflow: hidden;
   border: 1px solid rgba(255, 255, 255, .12); border-bottom: 0; background: #0C1014;
@@ -3168,10 +3168,6 @@ pre, code, kbd, samp, textarea, input, select, button { font-family: var(--lx-fo
 .lx-hero-play .lx-hero-copy > :nth-child(5) { animation-delay: .3s; }
 .lx-hero-play .lx-hero-shot { animation: lx-rise 1s var(--lx-ease-out) .35s backwards; }
 .lx-hero-play .lx-hero-glow { animation: lx-fade 1.6s ease-out .2s backwards; }
-
-/* 2. Steps in order */
-.lx-motion .lx-steps-grid-3 > .lx-step-card { opacity: 0; transform: translateY(16px); transition: opacity .6s var(--lx-ease-out), transform .6s var(--lx-ease-out); transition-delay: calc(var(--i, 0) * 140ms); }
-.lx-motion .lx-steps-grid-3.is-in > .lx-step-card { opacity: 1; transform: none; }
 
 /* 3. Feature demos play once */
 .lx-motion #features-grid .lx-import-url-text { clip-path: inset(0 100% 0 0); transition: clip-path .8s var(--lx-ease-out) .15s; }
@@ -3318,7 +3314,7 @@ pre, code, kbd, samp, textarea, input, select, button { font-family: var(--lx-fo
   #features-grid .lx-match-listing-row { flex-wrap: wrap; gap: 8px; }
 
   .lx-dots { display: flex; justify-content: center; gap: 2px; margin-top: 10px; }
-  .lx-dots button { width: 22px; height: 22px; padding: 0; border: 0; background: none; display: grid; place-items: center; cursor: pointer; }
+  .lx-dots button { width: 44px; height: 44px; padding: 0; border: 0; background: none; display: grid; place-items: center; cursor: pointer; }
   .lx-dots button::before { content: ""; width: 6px; height: 6px; border-radius: 99px; background: var(--lx-border-medium); transition: width .3s var(--lx-ease-out), background-color .3s; }
   .lx-dots button.is-active::before { width: 18px; background: #047857; }
   :root[data-theme="light"] .lx-dots button::before { background: #CBD5E1; }
@@ -3544,3 +3540,74 @@ html[lang="en"] :is(h1, h2, h3, .lx-nav-link, .lx-badge, .lx-btn, .lx-plan-name,
     justify-content: center;
   }
 }
+
+/* Readable product examples in both themes. */
+.lx-mini-ok, .lx-filter-tag { color: #6ee7b7; }
+:root[data-theme="light"] .lx-mini-ok, :root[data-theme="light"] .lx-filter-tag { color: #065f46; }
+.lx-import-result-meta, .lx-lock { color: var(--lx-text-silver); }
+.lx-import-result-title, .lx-import-result-meta, .lx-mini-btn, .lx-mini-ok, .lx-filter-tag, .lx-split-badge, .lx-lock, .lx-match-req-text, .lx-clause-item, .lx-post-preview { font-size: 14px; line-height: 1.5; }
+.lx-hero-actions > .lx-btn { min-height: 48px; }
+.lx-dots button:focus-visible { outline: 2px solid var(--lx-mint-neon); outline-offset: 2px; border-radius: 8px; }
+
+.lx-hero--center .lx-video-btn { background: transparent; color: var(--lx-text-white); border: 1px solid var(--lx-border-medium); box-shadow: none; }
+.lx-hero--center .lx-video-btn:hover { border-color: var(--lx-text-silver); background: var(--lx-obsidian-card); }
+
+/* The home page introduces the product; the detailed demos have their own pages. */
+.lx-home .lx-how-it-works-section { padding-block: clamp(48px, 6vw, 80px); }
+.lx-home .lx-final-cta-section { padding-block: 0 clamp(48px, 6vw, 80px); }
+.lx-home .lx-final-cta-box { padding: clamp(32px, 5vw, 64px) 24px; }
+.lx-home .lx-final-cta-box p { max-width: 48ch; margin-inline: auto; }
+.lx-header .lx-mobile-toggle { min-width: 44px; min-height: 44px; }
+.lx-workday-section { padding-block: clamp(56px, 8vw, 112px); }
+.lx-workday-layout { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(32px, 6vw, 96px); align-items: start; }
+.lx-workday-layout h2 { max-width: 14ch; font-size: clamp(32px, 3.5vw, 48px); line-height: 1.16; text-wrap: balance; }
+.lx-workday-copy { max-width: 52ch; }
+.lx-workday-copy p { color: var(--lx-text-silver); font-size: 17px; line-height: 1.8; }
+.lx-workday-copy p + p { margin-top: 24px; }
+.luxury-theme.lx-home .lx-step-card { padding: 24px 0 0; border: 0; border-top: 1px solid var(--lx-border-medium); border-radius: 0; background: transparent; box-shadow: none; }
+.lx-home .lx-steps-grid-3 { gap: 32px; }
+.lx-home .lx-step-index { display: block; margin-bottom: 20px; color: var(--lx-text-silver); font-size: 13px; font-variant-numeric: tabular-nums; }
+.luxury-theme.lx-home .lx-final-cta-box { border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+@media (max-width: 700px) {
+  .lx-workday-layout { grid-template-columns: 1fr; gap: 24px; }
+  .lx-workday-copy p { font-size: 16px; }
+  .lx-home .lx-step-index { grid-row: span 2; margin: 0; }
+  .lx-home .lx-steps-grid-3 { gap: 24px; }
+}
+
+/* Desktop hero: the product window and glow fade into the next section instead of a hard cut. */
+@media (min-width: 701px) {
+  .lx-hero--center { -webkit-mask-image: linear-gradient(#000 calc(100% - 180px), transparent); mask-image: linear-gradient(#000 calc(100% - 180px), transparent); }
+}
+
+/* Footer: everything centered, softer link color, no underlines (hover still turns links mint). */
+.lx-footer-inner { display: flex; flex-direction: column; align-items: center; gap: 20px; text-align: center; }
+.lx-footer-links { justify-content: center; }
+.lx-footer-legal { flex-direction: column; justify-content: center; text-align: center; gap: 4px; }
+.lx-footer-legal nav { justify-content: center; }
+.lx-footer-legal a { color: var(--lx-text-muted); text-decoration: none; }
+.lx-footer-links a:hover, .lx-footer-legal a:hover { color: var(--lx-mint-neon); }
+
+/* Phones: home sections follow the centered hero instead of falling back to left-aligned. */
+@media (max-width: 700px) {
+  .lx-home :is(.lx-workday-section, .lx-how-it-works-header, .lx-step-card, .lx-final-cta-box) { text-align: center; }
+  .lx-home .lx-how-it-works-header { align-items: center; }
+  .lx-home :is(.lx-workday-layout h2, .lx-workday-copy, .lx-final-cta-box p) { margin-inline: auto; }
+  .lx-home .lx-step-index { grid-row: auto; margin: 0 auto 12px; }
+  .luxury-theme.lx-home .lx-step-card { display: block; }
+  .lx-home .lx-how-it-works-header > * { text-align: center; margin-inline: auto; }
+  .lx-home .lx-final-cta-box .lx-btn { margin-inline: auto; }
+}
+
+/* Home polish: step titles that wrap to 2 lines no longer push their text out of line with the other columns. */
+@media (min-width: 1024px) {
+  .lx-home .lx-steps-grid-3 > .lx-step-card { display: grid; grid-row: span 3; grid-template-rows: subgrid; row-gap: 0; align-content: start; }
+}
+/* The final CTA accent bar follows the centered text on phones (an older rule pinned it left at <=560px). */
+@media (max-width: 700px) {
+  .lx-home .lx-final-cta-box h2::after { margin-inline: auto; }
+}
+
+/* Brand mark: transparent tile like the round header buttons; the light theme needs a darker check mark. */
+.luxury-theme .lx-brand-icon { background: transparent; border-color: var(--lx-border-medium); }
+:root[data-theme="light"] .lx-brand-icon svg { stroke: #047857; }

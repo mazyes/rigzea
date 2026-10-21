@@ -16,20 +16,6 @@
   }
   const EASE = 'cubic-bezier(0.22, 1, 0.36, 1)';
 
-  // 7. Scroll progress line (orientation, not decoration: runs even with reduced motion)
-  const bar = document.createElement('div');
-  bar.className = 'lx-progress';
-  bar.setAttribute('aria-hidden', 'true');
-  document.body.appendChild(bar);
-  let ticking = false;
-  const paint = () => {
-    const max = document.documentElement.scrollHeight - window.innerHeight;
-    bar.style.transform = `scaleX(${max > 0 ? Math.min(1, window.scrollY / max) : 0})`;
-    ticking = false;
-  };
-  window.addEventListener('scroll', () => { if (!ticking) { ticking = true; requestAnimationFrame(paint); } }, { passive: true });
-  paint();
-
   // 6. FAQ answers slide open and closed (instant with reduced motion)
   document.querySelectorAll('.lx-faq-item').forEach((item) => {
     const summary = item.querySelector('summary');
@@ -56,41 +42,42 @@
     const track = document.getElementById(dots.dataset.dotsFor);
     if (!track) return;
     const items = [...track.children];
-    const go = (it, smooth) => track.scrollTo({ left: it.offsetLeft - items[0].offsetLeft, behavior: smooth && !reduce ? 'smooth' : 'auto' });
+    if (phone.matches) items.sort((a, b) => a.offsetLeft - b.offsetLeft);
+    const go = (it, smooth) => track.scrollTo({ left: it.offsetLeft - Math.min(...items.map(item => item.offsetLeft)), behavior: smooth && !reduce ? 'smooth' : 'auto' });
     items.forEach((it) => {
       const b = document.createElement('button');
-      b.type = 'button'; b.tabIndex = -1;
+      b.type = 'button';
+      b.setAttribute('aria-label', it.querySelector('h3')?.textContent.trim() || String(items.indexOf(it) + 1));
+      b.setAttribute('aria-controls', track.id);
       b.addEventListener('click', () => go(it, true));
       dots.appendChild(b);
     });
-    const setActive = (i) => [...dots.children].forEach((b, k) => b.classList.toggle('is-active', k === i));
-    const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) setActive(items.indexOf(e.target)); }), { root: track, threshold: 0.6 });
-    items.forEach((it) => io.observe(it));
+    const setActive = (i) => [...dots.children].forEach((b, k) => {
+      b.classList.toggle('is-active', k === i);
+      b.setAttribute('aria-pressed', String(k === i));
+    });
+    // Track horizontal position even when tall cards extend beyond the viewport.
+    track.addEventListener('scroll', () => {
+      const left = track.getBoundingClientRect().left;
+      const distances = items.map(it => Math.abs(it.getBoundingClientRect().left - left));
+      setActive(distances.indexOf(Math.min(...distances)));
+    }, { passive: true });
     // pricing opens on the most popular plan
     const start = Math.max(0, items.findIndex((it) => it.classList.contains('featured')));
     setActive(start);
     if (start && phone.matches) requestAnimationFrame(() => go(items[start], false));
   });
 
-  // Phones: old way vs Rigzea as a segmented control; moves to the Rigzea side once on its own
+  // Phones: readers choose when to switch comparison panels.
   const seg = document.querySelector('.lx-cmp-seg');
   const cmpGrid = document.querySelector('.lx-comparison-grid');
   if (seg && cmpGrid) {
-    let touched = false;
     const show = (k) => {
       cmpGrid.dataset.cmpShow = k;
       seg.querySelectorAll('button[data-cmp]').forEach((b) => { const on = b.dataset.cmp === k; b.classList.toggle('is-active', on); b.setAttribute('aria-selected', String(on)); });
       if (!reduce && cmpGrid.classList.contains('is-in')) { cmpGrid.classList.remove('is-in'); requestAnimationFrame(() => requestAnimationFrame(() => cmpGrid.classList.add('is-in'))); }
     };
-    seg.addEventListener('click', (e) => { const b = e.target.closest('button[data-cmp]'); if (b) { touched = true; show(b.dataset.cmp); } });
-    if (phone.matches) {
-      const auto = new IntersectionObserver((es) => {
-        if (!es[0].isIntersecting) return;
-        auto.disconnect();
-        setTimeout(() => { if (!touched) show('new'); }, 2600);
-      }, { rootMargin: '0px 0px -30% 0px' });
-      auto.observe(cmpGrid);
-    }
+    seg.addEventListener('click', (e) => { const b = e.target.closest('button[data-cmp]'); if (b) show(b.dataset.cmp); });
   }
 
   // Phones: the Dynamic Island in the hero mockup turns into a live notification (tap the phone to replay)

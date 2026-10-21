@@ -200,6 +200,7 @@
       options: {
         data: {
           full_name: v.name.trim(),
+          campaign: window.RigzeaCampaign?.(),
           terms_accepted_at: new Date().toISOString(),
           policies_accepted_version: '2026-10-16'
         },
@@ -526,6 +527,7 @@
     const promise = new Promise((resolve, reject) => {
       const s = document.createElement('script');
       s.src = `${src}?v=${window.__RIGZEA_ASSET_VERSIONS?.[src] || ''}`;
+      s.async = false; // downloads in parallel, runs in request order (views-docs reads App.dealsUtil at load)
       s.onload = resolve;
       s.onerror = () => reject(new Error(`ვერ ჩაიტვირთა გვერდის კოდი: ${name}`));
       document.head.appendChild(s);
@@ -533,7 +535,11 @@
     viewLoads.set(src, promise);
     return promise;
   }
-  function ensureViewLoaded(name) { return ensureChunk(VIEW_CHUNKS[name] || VIEW_CHUNKS.today, name); }
+  // shortcut: the chunks call each other's App.* functions during render and on clicks, so every
+  // area loads all of them (in parallel, cached). Split per area again only once those shared
+  // helpers live in the shell.
+  const ALL_CHUNKS = [...new Set([...Object.values(VIEW_CHUNKS), '/app/views-docs.js'])];
+  function ensureViewLoaded(name) { return Promise.all(ALL_CHUNKS.map(src => ensureChunk(src, name))); }
   const PAGE_ROUTES = location.pathname.startsWith('/app/');
   const AREAS = ['today', 'tasks', 'apartments', 'owners', 'deals', 'finance', 'team', 'settings'];
   const areaPath = (name) => `/app/${name === 'today' ? '' : name + '/'}`;

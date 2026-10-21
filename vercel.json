@@ -1,7 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "outputDirectory": "rigzea",
-  "buildCommand": "node scripts/stamp-assets.mjs",
+  "buildCommand": "node scripts/stamp-assets.mjs && node scripts/generate-sitemap.mjs",
   "cleanUrls": true,
   "trailingSlash": true,
   "functions": {

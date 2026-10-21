@@ -11,6 +11,8 @@ const STATIC_ASSETS = [
   '/app/app.js',
   '/js/config.js',
   '/js/core.js',
+  '/js/site-tools.js',
+  '/js/site-tools.css',
   '/js/plans.js',
   '/js/supabase.js',
   '/favicon.svg',

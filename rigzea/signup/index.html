@@ -2,7 +2,9 @@
 <html lang="ka">
 <head>
   <meta charset="utf-8" />
+  <script>(function(){var en=false;try{en=localStorage.getItem('rigzea_lang')==='en'}catch(e){}window.RLang={lang:en?'en':'ka'};if(en){var s=document.createElement('script');s.src='/js/i18n.js';document.head.appendChild(s)}})()</script>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="robots" content="noindex, nofollow" />
   <meta name="theme-color" content="#09090b" />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=4" />
   <link rel="icon" href="/favicon.ico?v=4" sizes="48x48" />
@@ -13,6 +15,7 @@
   <title>რეგისტრაცია (14 დღე უფასოდ) · Rigzea</title>
 
   <link rel="stylesheet" href="/app/app.css" />
+<link rel="stylesheet" href="/js/site-tools.css?v=e08eaf48" />
 </head>
 <body style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg)">
   <main id="auth" class="auth" style="display:flex;width:100%;justify-content:center;padding:20px">
@@ -65,6 +68,7 @@
   <script src="/js/supabase.js"></script>
   <script src="/js/config.js"></script>
   <script src="/js/core.js"></script>
+  <script src="/js/site-tools.js?v=5a601f29"></script>
   <script>
     (async () => {
       'use strict';
@@ -114,6 +118,7 @@
             options: {
               data: {
                 full_name: name,
+                campaign: window.RigzeaCampaign?.(),
                 terms_accepted_at: new Date().toISOString(),
                 policies_accepted_version: '2026-10-16'
               },

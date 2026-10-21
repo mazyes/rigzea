@@ -1,0 +1,63 @@
+.st-password-toggle, .st-search input, .st-preferences {
+  font: inherit;
+}
+.st-control { min-height: 44px; }
+.st-icon { display: inline-flex; align-items: center; justify-content: center; }
+.st-control.st-icon { width: 44px; padding: 0; }
+.st-preferences { cursor: pointer; }
+.st-preferences:hover { color: var(--lx-mint-neon); }
+.st-control:focus-visible, .st-password-toggle:focus-visible,
+.st-search input:focus-visible, .st-preferences:focus-visible {
+  outline: 2px solid var(--st-focus, var(--brand));
+  outline-offset: 3px;
+}
+.st-progress { position: fixed; inset: 0 0 auto; height: 2px; background: var(--st-focus); transform-origin: left; z-index: 1000; pointer-events: none; }
+.st-floating { position: fixed; right: 16px; bottom: max(20px, env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 8px; z-index: 80; }
+.st-floating .lx-btn { background: var(--lx-obsidian-card-solid); }
+.st-preferences { display: block; margin: 8px auto; background: none; color: var(--lx-text-muted); border: 0; min-height: 44px; font-size: 13px; }
+.st-cookie { position: fixed; bottom: 12px; left: 12px; right: 12px; max-width: 760px; margin: auto; padding: 20px; border-radius: var(--lx-r-md); background: var(--lx-obsidian-card-solid); color: var(--lx-text-white); box-shadow: 0 8px 32px #0004; z-index: 1200; font-size: 14px; line-height: 1.6; max-height: 75dvh; overflow: auto; }
+.st-cookie p { margin: 0 0 14px; }
+.st-cookie > a, .st-search-results a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
+.st-cookie > a { font-size: 13px; }
+.st-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+.st-cookie-open .st-floating, .st-cookie-open #mobile-thumb-bar { visibility: hidden; }
+.st-search { width: min(600px, calc(100% - 24px)); max-height: 85dvh; margin: auto; padding: 24px; border: 1px solid var(--lx-border-medium); border-radius: var(--lx-r-md); background: var(--lx-obsidian-card-solid); color: var(--lx-text-white); }
+.st-search::backdrop { background: #0009; }
+.st-search-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.st-search h2 { font-size: 22px; margin: 0; }
+.st-search form { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 16px; }
+.st-search label { width: 100%; }
+.st-search input { min-width: 0; flex: 1; width: 100%; padding: 10px; border: 1px solid var(--lx-text-muted); border-radius: var(--lx-r-sm); color: inherit; background: var(--lx-obsidian); caret-color: var(--st-focus); }
+.st-search-results { padding-left: 20px; }
+.st-search-results li { margin-top: 20px; overflow-wrap: anywhere; }
+.st-search-results p { font-size: 14px; line-height: 1.6; }
+.st-search [role="status"] { font-size: 14px; margin-top: 16px; }
+.st-password { position: relative; display: block; width: 100%; }
+.st-password input { padding-right: 52px !important; width: 100%; }
+.st-password-toggle { position: absolute; right: 2px; top: 50%; transform: translateY(-50%); min-height: 44px; min-width: 44px; padding: 0; border: none; background: transparent; color: var(--ink); font-size: 12px; }
+[hidden].st-control, [hidden].st-cookie { display: none; }
+@media (max-width: 768px) {
+  .st-floating { bottom: calc(88px + env(safe-area-inset-bottom)); right: 12px; }
+  .st-cookie { padding: 16px; }
+  .st-actions .st-control { flex: 1 1 140px; }
+  .st-search-heading { align-items: flex-start; }
+  .st-search h2 { font-size: 20px; }
+  .st-search { padding: 20px; }
+}
+@media print {
+  .st-floating, .st-progress, .st-cookie, .st-preferences, .st-search, .st-search-button { display: none !important; }
+}
+@media (max-width: 380px) {
+  .lx-header-inner { padding-inline: 8px; }
+  .lx-header-actions { gap: 4px; }
+  .lx-header .lx-brand { font-size: 18px; gap: 6px; }
+}
+.luxury-theme { --st-focus: #6ee7b7; }
+:root[data-theme="light"] .luxury-theme { --st-focus: var(--lx-emerald-primary); }
+/* Auth pages (app.css): tabs are links on one page and buttons on the other, so they must look the same. */
+.auth-card .auth-tab svg { flex: none; }
+.auth-card .auth-tab { display: flex; align-items: center; justify-content: center; min-height: 44px; text-decoration: none; }
+/* Dark theme: the brand green and muted grey are below 4.5:1 as text on the card. */
+[data-theme="dark"] .auth-card { --muted: #a1a1aa; }
+[data-theme="dark"] .auth-card .link-btn, [data-theme="dark"] .auth-card .auth-tab.active,
+[data-theme="dark"] .auth-card .check a, [data-theme="dark"] .auth-card .auth-foot a { color: #34d399; }

@@ -71,6 +71,7 @@
     if (mobileToggle) {
       mobileToggle.innerHTML = ICON_MENU;
       mobileToggle.setAttribute('aria-expanded', 'false');
+      mobileToggle.setAttribute('aria-label', 'მენიუს გახსნა');
     }
     updateThumbBar(window.scrollY);
   }
@@ -79,6 +80,8 @@
   const ICON_CLOSE = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
 
   if (mobileToggle && navLinks) {
+    mobileToggle.setAttribute('aria-controls', navLinks.id);
+    mobileToggle.setAttribute('aria-expanded', 'false');
     mobileToggle.addEventListener('click', (e) => {
       e.stopPropagation();
       const isOpen = navLinks.classList.toggle('open');
@@ -86,6 +89,7 @@
       document.body.style.overflow = isOpen ? 'hidden' : '';
       mobileToggle.innerHTML = isOpen ? ICON_CLOSE : ICON_MENU;
       mobileToggle.setAttribute('aria-expanded', String(isOpen));
+      mobileToggle.setAttribute('aria-label', isOpen ? 'მენიუს დახურვა' : 'მენიუს გახსნა');
       updateThumbBar(window.scrollY);
     });
 
@@ -102,6 +106,7 @@
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && navLinks.classList.contains('open')) {
         closeMobileMenu();
+        mobileToggle.focus();
       }
     });
   }
@@ -285,8 +290,12 @@ rigzea.com/p/vake-loft-42`
   const postBox = document.querySelector('#post-preview-box');
 
   postTabBtns.forEach(btn => {
+    btn.setAttribute('aria-pressed', String(btn.classList.contains('active')));
     btn.addEventListener('click', () => {
-      postTabBtns.forEach(b => b.classList.remove('active'));
+      postTabBtns.forEach(b => {
+        b.classList.remove('active');
+        b.setAttribute('aria-pressed', String(b === btn));
+      });
       btn.classList.add('active');
       const activePostKey = btn.dataset.postType || 'facebook';
       if (postBox && postTemplates[activePostKey]) {
@@ -302,8 +311,12 @@ rigzea.com/p/vake-loft-42`
   const leaseClauses = document.querySelectorAll('.lx-clause-item');
 
   leaseLangBtns.forEach(btn => {
+    btn.setAttribute('aria-pressed', String(btn.classList.contains('active')));
     btn.addEventListener('click', () => {
-      leaseLangBtns.forEach(b => b.classList.remove('active'));
+      leaseLangBtns.forEach(b => {
+        b.classList.remove('active');
+        b.setAttribute('aria-pressed', String(b === btn));
+      });
       btn.classList.add('active');
       const lang = btn.dataset.leaseLang;
 
@@ -353,8 +366,12 @@ rigzea.com/p/vake-loft-42`
   };
 
   matchPills.forEach(pill => {
+    pill.setAttribute('aria-pressed', String(pill.classList.contains('active')));
     pill.addEventListener('click', () => {
-      matchPills.forEach(p => p.classList.remove('active'));
+      matchPills.forEach(p => {
+        p.classList.remove('active');
+        p.setAttribute('aria-pressed', String(p === pill));
+      });
       pill.classList.add('active');
       const key = pill.dataset.matchKey;
       const data = matchData[key];

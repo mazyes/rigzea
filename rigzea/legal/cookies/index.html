@@ -2,6 +2,7 @@
 <html lang="ka">
 <head>
   <meta charset="utf-8" />
+  <script>(function(){var en=false;try{en=localStorage.getItem('rigzea_lang')==='en'}catch(e){}window.RLang={lang:en?'en':'ka'};if(en){var s=document.createElement('script');s.src='/js/i18n.js';document.head.appendChild(s)}})()</script>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#047857" />
   <title>ქუქიების პოლიტიკა · Rigzea</title>
@@ -11,7 +12,8 @@
   <link rel="icon" href="/favicon.ico?v=4" sizes="48x48" />
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=4" />
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=4" />
-  <link rel="stylesheet" href="/legal/legal.css" />
+  <script>try{var t=localStorage.getItem('rigzea_theme');document.documentElement.dataset.theme=t==='light'||(t==='system'&&matchMedia('(prefers-color-scheme: light)').matches)?'light':'dark'}catch(e){}</script>
+  <link rel="stylesheet" href="/legal/legal.css?v=0723862c" />
 </head>
 <body>
   <a class="lg-skip" href="#main">გადასვლა ძირითად ტექსტზე</a>
@@ -28,12 +30,13 @@
     <div class="lg-notice" data-operator-notice hidden role="note">ამ დოკუმენტში ოპერატორის საკონტაქტო მონაცემები ჯერ სრულად არ არის შევსებული. დოკუმენტი სრულდება მათი დამატებისთანავე.</div>
     <article>
       <h1>ქუქიების პოლიტიკა</h1>
-      <p class="lg-meta">ბოლო განახლება: 16 ოქტომბერი, 2026</p>
+      <p class="lg-meta">ბოლო განახლება: 21 ოქტომბერი, 2026</p>
       <section><h2 id="short">1. მოკლედ</h2>
       <ul>
         <li>Rigzea არ იყენებს სარეკლამო ან ანალიტიკურ ქუქიებს და არ გადასცემს მონაცემებს სარეკლამო ქსელებს.</li>
         <li>ბრაუზერში ვინახავთ მხოლოდ იმას, რაც საიტის მუშაობისთვის აუცილებელია: შესვლის სესიას და რამდენიმე პარამეტრს.</li>
-        <li>ამიტომ თანხმობის ბანერი საიტზე არ არის: აუცილებელი ჩანაწერებისთვის ის საჭირო არ არის.</li>
+        <li>ბანერში „ვეთანხმები“ კამპანიის ნიშნულების (UTM) შენახვასაც დაუშვებს, „არ ვეთანხმები“ კი მხოლოდ აუცილებელს დატოვებს. არჩევანის შეცვლა შეგიძლია საიტის ქვედა ნაწილში, „ქუქიების პარამეტრების“ ღილაკით.</li>
+        <li>კამპანიის ნიშნულები ინახება მხოლოდ შენი თანხმობით, მიმდინარე ჩანართის დახურვამდე. რეგისტრაციისას ისინი ემატება ანგარიშის მონაცემებს, რომ ვიცოდეთ, რომელი კამპანიიდან მოხვედი. უარის შემდეგ ახალი ნიშნულები აღარ ინახება; ანგარიშზე უკვე დამატებული მონაცემების წასაშლელად მოგვწერე.</li>
       </ul></section>
 
       <section><h2 id="what">2. რა ინახება ბრაუზერში</h2>
@@ -44,6 +47,8 @@
           <tr><th scope="row">შესვლის სესია (Supabase)</th><td>რომ ყოველ გვერდზე თავიდან არ მოგიწიოს შესვლა</td><td>გამოსვლამდე</td></tr>
           <tr><th scope="row">არჩეული სამუშაო სივრცე</th><td>რომ აპი იმავე სივრცეში გაიხსნას</td><td>წაშლამდე</td></tr>
           <tr><th scope="row">ენა, ვალუტა, თემა, დამალული მინიშნებები</th><td>შენი პარამეტრების დამახსოვრება</td><td>წაშლამდე</td></tr>
+          <tr><th scope="row">კამპანიის ნიშნულების არჩევანი</th><td>შენი თანხმობის ან უარის დამახსოვრება</td><td>არჩევანის შეცვლამდე ან წაშლამდე</td></tr>
+          <tr><th scope="row">კამპანიის ნიშნულები (UTM)</th><td>რეგისტრაციის წყაროს განსაზღვრა, მხოლოდ თანხმობის შემთხვევაში</td><td>ჩანართში: მის დახურვამდე; ანგარიშზე დამატების შემდეგ: ანგარიშის მონაცემების წაშლამდე</td></tr>
           <tr><th scope="row">შემთხვევითი იდენტიფიკატორი საჯარო განცხადების გვერდზე</th><td>რომ ერთი სტუმრის ნახვა ორჯერ არ დაითვალოს</td><td>ბრაუზერის ჩანართის დახურვამდე</td></tr>
           <tr><th scope="row">სადემონსტრაციო მონაცემები (მხოლოდ დემო ვერსიაში)</th><td>დემო მუშაობს მთლიანად შენს ბრაუზერში</td><td>12 საათი ან წაშლამდე</td></tr>
         </tbody>
