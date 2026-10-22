@@ -42,6 +42,8 @@ repo, and then aligned with the app by patches 06-09.
 | 18_security_hardening | yes | migration `18_security_hardening`, 2026-10-14 |
 | 19_listing_notify_cap | yes | migration `19_listing_notify_cap`, 2026-10-15 |
 | 20_import_rate_limit | yes | migration `20_import_rate_limit`, 2026-10-15 (10 imports/hour per user) |
+| 21_kisa_payments | yes | run outside migrations (the `payments` table was live); reconciled by 22 |
+| 22_backend_security_hardening | yes | migration `22_backend_security_hardening`, 2026-10-22 (dry run first; advisor: no new findings) |
 
 ## Rules for new patches
 
