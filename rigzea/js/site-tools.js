@@ -149,7 +149,7 @@
     document.body.classList.toggle('st-cookie-open', show);
     if (show || banner.hidden || matchMedia('(prefers-reduced-motion: reduce)').matches) { banner.hidden = !show; return; }
     banner.classList.add('st-leaving');
-    banner.addEventListener('animationend', () => { if (banner.classList.contains('st-leaving')) { banner.hidden = true; banner.classList.remove('st-leaving'); } }, { once: true });
+    setTimeout(() => { if (banner.classList.contains('st-leaving')) { banner.hidden = true; banner.classList.remove('st-leaving'); } }, 260);
   };
   const preferences = make('button', 'ქუქიების პარამეტრები', 'st-preferences');
   preferences.type = 'button';
