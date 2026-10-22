@@ -13,8 +13,12 @@
 }
 .st-progress { position: fixed; inset: 0 0 auto; height: 2px; background: var(--st-focus); transform-origin: left; z-index: 1000; pointer-events: none; }
 .st-floating { position: fixed; right: 16px; bottom: max(20px, env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 8px; z-index: 80; }
-.st-floating .lx-btn { background: rgba(14, 18, 16, .3); border-color: rgba(255, 255, 255, .08); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); opacity: .7; }
-.st-floating .lx-btn:hover, .st-floating .lx-btn:focus-visible { opacity: 1; }
+.st-floating .lx-btn { background: rgba(14, 18, 16, .3); border-color: rgba(255, 255, 255, .08); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); opacity: 0; visibility: hidden; transform: translateY(calc(var(--st-lag, 0px) + 12px)); transition: opacity .35s ease, transform .7s cubic-bezier(.22, 1, .36, 1), visibility .35s, background .2s; }
+.st-floating .lx-btn.st-show { opacity: .7; visibility: visible; transform: translateY(var(--st-lag, 0px)); }
+.st-floating .lx-btn.st-show:hover, .st-floating .lx-btn.st-show:focus-visible { opacity: 1; }
+:root[data-theme="light"] .st-floating .lx-btn { background: rgba(4, 120, 87, .14); border-color: rgba(4, 120, 87, .35); color: #0a5c44; }
+:root[data-theme="light"] .st-floating .lx-btn:hover { background: rgba(4, 120, 87, .24); }
+@media (prefers-reduced-motion: reduce) { .st-floating .lx-btn { transition: none; transform: none; } }
 .st-preferences { display: block; margin: 8px auto; background: none; color: var(--lx-text-muted); border: 0; min-height: 44px; font-size: 13px; }
 .st-cookie { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: min(340px, calc(100% - 24px)); padding: 16px; border: 1px solid rgba(255, 255, 255, .12); border-radius: var(--lx-r-md); background: rgba(14, 18, 16, .62); -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4); color: var(--lx-text-silver); box-shadow: 0 12px 40px #0005; z-index: 1200; font-size: 13px; line-height: 1.6; text-align: center; max-height: 75dvh; overflow: auto; }
 :root[data-theme="light"] .st-cookie { background: rgba(255, 255, 255, .7); border-color: rgba(16, 24, 40, .1); box-shadow: 0 12px 40px rgba(16, 24, 40, .12); }

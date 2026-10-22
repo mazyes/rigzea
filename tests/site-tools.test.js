@@ -30,7 +30,7 @@ const { serve, launch, newPage } = require('./harness');
     await page.keyboard.press('Escape');
     assert.equal(await page.locator('.st-search-button').evaluate(el => el === document.activeElement), true);
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-    await page.waitForFunction(() => !document.querySelector('.st-floating button').hidden);
+    await page.waitForFunction(() => document.querySelector('.st-floating button').classList.contains('st-show'));
     assert(await page.locator('.st-progress').evaluate(el => Number(getComputedStyle(el).transform.split(',')[0].slice(7)) > .9));
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.locator('.st-floating button').click();

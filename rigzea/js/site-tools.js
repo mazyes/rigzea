@@ -92,18 +92,24 @@
   tools.setAttribute('aria-label', 'სწრაფი მოქმედებები');
   const top = iconButton('button', 'ზემოთ', icons.up, 'lx-btn lx-btn-secondary lx-btn-sm st-control');
   top.type = 'button';
-  top.hidden = true;
   top.addEventListener('click', () => {
     window.scrollTo({ top: 0, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
     main.focus({ preventScroll: true });
   });
   tools.append(top);
   document.body.append(tools);
-  let scheduled = false;
+  let scheduled = false, lastY = scrollY, settle;
   const updateScroll = () => {
     const height = document.documentElement.scrollHeight - innerHeight;
     progress.style.transform = `scaleX(${height > 0 ? Math.min(1, Math.max(0, scrollY / height)) : 0})`;
-    top.hidden = scrollY < 400;
+    top.classList.toggle('st-show', scrollY >= 400);
+    const dy = scrollY - lastY;
+    lastY = scrollY;
+    if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      top.style.setProperty('--st-lag', Math.max(-18, Math.min(18, dy * .5)) + 'px');
+      clearTimeout(settle);
+      settle = setTimeout(() => top.style.setProperty('--st-lag', '0px'), 120);
+    }
     scheduled = false;
   };
   const schedule = () => {
