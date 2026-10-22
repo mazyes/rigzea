@@ -3625,3 +3625,7 @@ html[lang="en"] :is(h1, h2, h3, .lx-nav-link, .lx-badge, .lx-btn, .lx-plan-name,
 :root:not([data-theme="light"]) .lx-btn-ghost:hover { background: rgba(255, 255, 255, .1); }
 :root[data-theme="light"] .lx-btn-ghost { background: rgba(15, 23, 42, .05); border: 1px solid #CBD5E1; color: #0F172A; }
 :root[data-theme="light"] .lx-btn-ghost:hover { background: rgba(15, 23, 42, .1); }
+
+/* Home: sections and steps flow without divider lines; spacing alone separates them. */
+.lx-home :is(.lx-how-it-works-section, .lx-how-it-works-header, .lx-story-section) { border: 0; }
+.luxury-theme.lx-home .lx-steps-grid-3 > .lx-step-card { border: 0; }
