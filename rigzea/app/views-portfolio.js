@@ -1052,7 +1052,7 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
           </div>
         </div>
         <div class="stats">
-          <div class="stat"><span class="stat-label">გასაყიდი ფასი</span><span class="stat-value" style="font-size:22px;color:var(--brand)">${money(a.sale_price || a.monthly_rent || 0, a.currency || 'USD')}</span></div>
+          <div class="stat"><span class="stat-label">გასაყიდი ფასი</span><span class="stat-value" style="font-size:22px;color: var(--brand-ink)">${money(a.sale_price || a.monthly_rent || 0, a.currency || 'USD')}</span></div>
           <div class="stat"><span class="stat-label">ფასი მ²-ზე</span><span class="stat-value">${a.price_sqm ? money(a.price_sqm, a.currency || 'USD') + ' / მ²' : (a.sale_price && a.area_sqm ? Math.round(Number(a.sale_price) / Number(a.area_sqm)) + ' / მ²' : '–')}</span></div>
           <div class="stat"><span class="stat-label">ფართობი</span><span class="stat-value">${a.area_sqm ? `${a.area_sqm} მ²` : '–'}</span><span class="stat-note">${a.rooms ? `${a.rooms} ოთახი` : ''}${a.bedrooms ? ` · ${a.bedrooms} საძინებელი` : ''}</span></div>
           <div class="stat"><span class="stat-label">სართული</span><span class="stat-value">${a.floor ? `${a.floor}${a.total_floors ? `/${a.total_floors}` : ''}` : '–'}</span><span class="stat-note">${a.bathrooms ? `${a.bathrooms} სველი წერტილი` : ''}</span></div>

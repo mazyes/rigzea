@@ -7,6 +7,7 @@
  */
 import { BASE_APP_URL, publicConfig } from './_lib.js';
 import planCatalog from '../rigzea/js/plans.js';
+import { createHash, randomBytes } from 'node:crypto';
 
 const { PLANS } = planCatalog;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -31,6 +32,9 @@ export default async function handler(req, res) {
 
   const { url, key } = publicConfig();
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const kisaBaseUrl = (process.env.KISA_API_URL || 'https://www.kisa.ge').replace(/\/$/, '');
+  const clientId = process.env.KISA_CLIENT_ID;
+  const clientSecret = process.env.KISA_CLIENT_SECRET;
   if (!url || !key || !serviceKey) {
     return res.status(503).json({ ok: false, error: 'database_not_configured' });
   }
@@ -64,6 +68,13 @@ export default async function handler(req, res) {
     return res.status(500).json({ ok: false, error: 'permission_check_failed' });
   }
 
+  if (!clientId || !clientSecret) {
+    return res.status(503).json({ ok: false, error: 'payment_provider_not_configured', message: 'ბარათით გადახდა დროებით მიუწვდომელია.' });
+  }
+
+  const callbackToken = randomBytes(32).toString('base64url');
+  const callbackTokenHash = createHash('sha256').update(callbackToken).digest('hex');
+
   // 3. Create pending payment record in DB
   let paymentRecord = null;
   try {
@@ -87,6 +98,7 @@ export default async function handler(req, res) {
           user_email: user.email,
           plan_name: plan.name,
           initiated_at: new Date().toISOString(),
+          callback_token_hash: callbackTokenHash,
         },
       }),
     });
@@ -96,30 +108,21 @@ export default async function handler(req, res) {
     }
     const inserted = await insertRes.json();
     paymentRecord = inserted[0];
+    if (!paymentRecord?.id) return res.status(502).json({ ok: false, error: 'payment_record_failed' });
   } catch (err) {
     console.error('kisa-checkout: db insert exception', err);
     return res.status(500).json({ ok: false, error: 'db_error' });
   }
+  const markPaymentFailed = () => fetch(`${url}/rest/v1/payments?id=eq.${paymentRecord.id}&status=eq.pending`, {
+    method: 'PATCH',
+    headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status: 'failed', updated_at: new Date().toISOString() }),
+  }).catch(() => {});
 
   // 4. KISA API interaction
-  const kisaBaseUrl = (process.env.KISA_API_URL || 'https://www.kisa.ge').replace(/\/$/, '');
-  const clientId = process.env.KISA_CLIENT_ID;
-  const clientSecret = process.env.KISA_CLIENT_SECRET;
-
   const successRedirectUrl = `${BASE_APP_URL}/app/settings/?payment=success&plan=${encodeURIComponent(planId)}`;
   const failRedirectUrl = `${BASE_APP_URL}/app/settings/?payment=failed`;
-  const callbackUrl = `${BASE_APP_URL}/api/kisa-webhook`;
-
-  // If KISA credentials are not yet configured in env
-  if (!clientId || !clientSecret) {
-    return res.status(200).json({
-      ok: true,
-      simulated: true,
-      paymentId: paymentRecord.id,
-      message: 'KISA credentials not set. Simulated checkout created.',
-      checkoutUrl: `${successRedirectUrl}&simulated=true&payment_id=${paymentRecord.id}`,
-    });
-  }
+  const callbackUrl = `${BASE_APP_URL.replace(/\/$/, '')}/api/kisa-webhook?token=${encodeURIComponent(callbackToken)}`;
 
   try {
     // Step 4.1: Get access token from KISA
@@ -131,7 +134,8 @@ export default async function handler(req, res) {
 
     const tokenData = await tokenRes.json().catch(() => ({}));
     if (!tokenRes.ok || !tokenData.accessToken) {
-      console.error('kisa-checkout: failed to obtain KISA access token', tokenRes.status, tokenData);
+      console.error('kisa-checkout: failed to obtain KISA access token', tokenRes.status);
+      await markPaymentFailed();
       return res.status(502).json({
         ok: false,
         error: 'kisa_auth_error',
@@ -160,8 +164,11 @@ export default async function handler(req, res) {
     });
 
     const paymentData = await paymentRes.json().catch(() => ({}));
-    if (!paymentRes.ok || !paymentData.url) {
-      console.error('kisa-checkout: create-payment error', paymentRes.status, paymentData);
+    let checkoutUrl;
+    try { checkoutUrl = new URL(paymentData.url); } catch { checkoutUrl = null; }
+    if (!paymentRes.ok || !checkoutUrl || checkoutUrl.protocol !== 'https:' || !paymentData.orderId) {
+      console.error('kisa-checkout: create-payment error', paymentRes.status);
+      await markPaymentFailed();
       return res.status(502).json({
         ok: false,
         error: 'kisa_payment_error',
@@ -169,9 +176,9 @@ export default async function handler(req, res) {
       });
     }
 
-    // Store KISA orderId in database
-    if (paymentData.orderId) {
-      await fetch(`${url}/rest/v1/payments?id=eq.${paymentRecord.id}`, {
+    // Store KISA orderId before returning the checkout URL, so callbacks can only match this row.
+    try {
+      const stored = await fetch(`${url}/rest/v1/payments?id=eq.${paymentRecord.id}&status=eq.pending`, {
         method: 'PATCH',
         headers: {
           apikey: serviceKey,
@@ -179,17 +186,27 @@ export default async function handler(req, res) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ provider_order_id: String(paymentData.orderId) }),
-      }).catch(() => {});
+      });
+      if (!stored.ok) {
+        console.error('kisa-checkout: could not store provider order', stored.status);
+        await markPaymentFailed();
+        return res.status(502).json({ ok: false, error: 'payment_record_update_failed' });
+      }
+    } catch (err) {
+      console.error('kisa-checkout: could not store provider order', err.message);
+      await markPaymentFailed();
+      return res.status(502).json({ ok: false, error: 'payment_record_update_failed' });
     }
 
     return res.status(200).json({
       ok: true,
-      checkoutUrl: paymentData.url,
+      checkoutUrl: checkoutUrl.href,
       orderId: paymentData.orderId,
       paymentId: paymentRecord.id,
     });
   } catch (err) {
     console.error('kisa-checkout: exception', err);
+    await markPaymentFailed();
     return res.status(502).json({ ok: false, error: 'kisa_connection_error' });
   }
 }

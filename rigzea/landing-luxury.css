@@ -3611,3 +3611,17 @@ html[lang="en"] :is(h1, h2, h3, .lx-nav-link, .lx-badge, .lx-btn, .lx-plan-name,
 /* Brand mark: transparent tile like the round header buttons; the light theme needs a darker check mark. */
 .luxury-theme .lx-brand-icon { background: transparent; border-color: var(--lx-border-medium); }
 :root[data-theme="light"] .lx-brand-icon svg { stroke: #047857; }
+
+/* FAQ: no backdrop blur. The cards sit on a solid page, and re-blurring every card below an
+   opening/closing answer on each frame made the accordion stutter. */
+.lx-faq-item { -webkit-backdrop-filter: none; backdrop-filter: none; }
+
+/* Dark theme: green and muted text inside the feature demo panels pass 4.5:1 (#047857 was 3:1 there). */
+:root:not([data-theme="light"]) .lx-bento-preview-stage { --lx-mint-neon: #34d399; --lx-mint-bright: #34d399; --lx-text-muted: #a1a1aa; }
+/* Dark theme: the hero play button is a dark glass circle, not a white disc. */
+:root:not([data-theme="light"]) .lx-video-btn-icon { background: rgba(255, 255, 255, .08); color: #34d399; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .14); }
+/* The mobile menu's demo link uses .lx-btn-ghost, which had no styles (it showed the browser's link blue). */
+:root:not([data-theme="light"]) .lx-btn-ghost { background: rgba(255, 255, 255, .05); border: 1px solid rgba(255, 255, 255, .1); color: #fff; }
+:root:not([data-theme="light"]) .lx-btn-ghost:hover { background: rgba(255, 255, 255, .1); }
+:root[data-theme="light"] .lx-btn-ghost { background: rgba(15, 23, 42, .05); border: 1px solid #CBD5E1; color: #0F172A; }
+:root[data-theme="light"] .lx-btn-ghost:hover { background: rgba(15, 23, 42, .1); }

@@ -136,7 +136,8 @@
   captureCampaign();
   const banner = make('section', '', 'st-cookie');
   banner.setAttribute('aria-label', 'ქუქიების პარამეტრები');
-  banner.append(make('p', 'ბრაუზერში ვინახავთ შენს შესვლას, ენასა და თემას: ამის გარეშე საიტი ვერ იმუშავებს. თუ დაგვეთანხმები, იმასაც დავიმახსოვრებთ, რომელი ბმულით მოხვედი. სარეკლამო და ანალიტიკურ ქუქიებს არ ვიყენებთ.'));
+  const note = make('p', 'საიტი იყენებს მხოლოდ აუცილებელ ქუქი-ფაილებს. თანახმა ხარ, რომ დავიმახსოვროთ, რომელი ბმულით შემოხვედი?');
+  banner.append(note);
   const policy = make('a', 'ქუქიების პოლიტიკა');
   policy.href = '/legal/cookies/';
   const actions = make('div', '', 'st-actions');
@@ -160,7 +161,8 @@
   essential.addEventListener('click', () => choose('no'));
   accept.addEventListener('click', () => choose('yes'));
   actions.append(essential, accept);
-  banner.append(policy, actions);
+  note.append(' ', policy);
+  banner.append(actions);
   document.body.append(banner);
   showBanner(!['yes', 'no'].includes(read('localStorage', 'rigzea_campaign_consent')));
   window.addEventListener('storage', e => {

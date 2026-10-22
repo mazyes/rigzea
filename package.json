@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "node serve.js",
     "dev:full": "npx vercel dev",
-    "test": "node tests/plans-sync.test.js && node tests/import-parse.test.js && node tests/apartment-story.test.js && node tests/multi-page.test.js && node tests/site-tools.test.js && node tests/landing-theme.test.js && node tests/audit-suite.js && node tests/e2e.js",
+    "test": "node tests/plans-sync.test.js && node tests/import-parse.test.js && node tests/backend-security.test.mjs && node tests/apartment-story.test.js && node tests/multi-page.test.js && node tests/site-tools.test.js && node tests/landing-theme.test.js && node tests/audit-suite.js && node tests/e2e.js",
     "test:unit": "node tests/import-parse.test.js",
     "test:e2e": "node tests/e2e.js",
     "screenshots": "node tests/screenshots.js screenshots",

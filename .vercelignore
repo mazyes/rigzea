@@ -3,6 +3,7 @@ videos/
 tests/
 scripts/*
 !scripts/stamp-assets.mjs
+!scripts/generate-sitemap.mjs
 skills/
 .git/
 .github/

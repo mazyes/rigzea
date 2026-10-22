@@ -186,3 +186,19 @@
   .lx-story-tab { transition: none; }
   .lx-story-panel:not([hidden]) { animation: none; }
 }
+
+/* Dark theme: the preview screen uses dark surfaces instead of a white panel. */
+:root:not([data-theme="light"]) :is(.lx-story-panel-wrap, .lx-story-disclaimer) { background: #121215; color: #f4f4f5; }
+:root:not([data-theme="light"]) .lx-story-owner-view { background: #18181b; border-color: rgba(255, 255, 255, .1); }
+:root:not([data-theme="light"]) :is(.lx-story-owner-heading, .lx-story-private-row) { border-color: rgba(255, 255, 255, .1); }
+:root:not([data-theme="light"]) .lx-story-facts span + span { border-color: rgba(255, 255, 255, .16); }
+:root:not([data-theme="light"]) :is(.lx-story-panel h3, .lx-story-owner-amount, .lx-story-owner-request strong, .lx-story-facts, .lx-story-private-row strong) { color: #f4f4f5; }
+:root:not([data-theme="light"]) :is(.lx-story-overline, .lx-story-owner-request, .lx-story-property-address, .lx-story-private-row, .lx-story-panel-note, .lx-story-disclaimer) { color: #a1a1aa; }
+:root:not([data-theme="light"]) .lx-story-role-icon { background: rgba(4, 120, 87, .16); color: #34d399; }
+:root:not([data-theme="light"]) .lx-story-status { background: #352812; color: #e7ab4f; }
+:root:not([data-theme="light"]) .lx-story-owner-actions span { border-color: rgba(255, 255, 255, .16); color: #e4e4e7; }
+:root:not([data-theme="light"]) .lx-story-owner-actions span:first-child { border-color: #047857; background: #047857; color: #fff; }
+:root:not([data-theme="light"]) .lx-story-property-photo { background: #222226; }
+:root:not([data-theme="light"]) .lx-story-photo-tag { border-color: rgba(255, 255, 255, .14); background: rgba(18, 18, 21, .85); color: #f4f4f5; }
+:root:not([data-theme="light"]) .lx-story-client-contact { color: #34d399; }
+:root:not([data-theme="light"]) .lx-story-panel:focus-visible { outline-color: #80d8b4; }

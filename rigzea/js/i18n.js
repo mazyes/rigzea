@@ -1931,7 +1931,7 @@
 "ქუქიების პარამეტრები": "Cookie settings",
 "მოგვწერე": "Contact us",
 "ზემოთ": "Back to top",
-"ბრაუზერში ვინახავთ შენს შესვლას, ენასა და თემას: ამის გარეშე საიტი ვერ იმუშავებს. თუ დაგვეთანხმები, იმასაც დავიმახსოვრებთ, რომელი ბმულით მოხვედი. სარეკლამო და ანალიტიკურ ქუქიებს არ ვიყენებთ.": "We store your sign-in, language and theme in your browser, because the site can't work without them. If you agree, we will also remember which link brought you here. We do not use advertising or analytics cookies.",
+"საიტი იყენებს მხოლოდ აუცილებელ ქუქი-ფაილებს. თანახმა ხარ, რომ დავიმახსოვროთ, რომელი ბმულით შემოხვედი?": "This site uses only essential cookies. May we remember which link brought you here?",
 "ქუქიების პოლიტიკა": "Cookie policy",
 "არ ვეთანხმები": "Decline",
 "საიტზე ძიება": "Site search",

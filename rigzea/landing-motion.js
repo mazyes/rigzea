@@ -27,12 +27,14 @@
       if (anim) anim.cancel();
       const opening = !item.open;
       if (opening) item.open = true;
-      const h = body.scrollHeight;
-      anim = body.animate(
-        opening ? [{ height: '0px', opacity: 0 }, { height: h + 'px', opacity: 1 }] : [{ height: h + 'px', opacity: 1 }, { height: '0px', opacity: 0 }],
-        { duration: 280 * T, easing: EASE }
-      );
-      anim.onfinish = () => { anim = null; if (!opening) item.open = false; };
+      // Padding collapses with the height (border-box), otherwise closing stops at the padding and snaps.
+      const cs = getComputedStyle(body);
+      const full = { height: body.offsetHeight + 'px', paddingTop: cs.paddingTop, paddingBottom: cs.paddingBottom, opacity: 1 };
+      const shut = { height: '0px', paddingTop: '0px', paddingBottom: '0px', opacity: 0 };
+      anim = body.animate(opening ? [shut, full] : [full, shut], { duration: 280 * T, easing: EASE, fill: 'forwards' });
+      const done = anim;
+      // fill: forwards holds the closed frame until <details> really closes, so it never flashes open.
+      anim.onfinish = () => { if (!opening) item.open = false; done.cancel(); if (anim === done) anim = null; };
     });
   });
 

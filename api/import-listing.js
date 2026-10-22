@@ -34,9 +34,7 @@ async function planAllowsImport(req, org) {
   } catch { return false; }
 }
 
-// Per-user import budget: 10 an hour. Counted in the database so it holds across serverless
-// instances (supabase/patches/20_import_rate_limit.sql). Fails open: if the helper is not
-// deployed yet the import still works, so the cap never becomes an outage.
+// Per-user import budget: 10 an hour, counted across serverless instances.
 const IMPORT_LIMIT_PER_HOUR = 10;
 async function withinImportBudget(req, org) {
   const { url, key } = config();
@@ -44,9 +42,10 @@ async function withinImportBudget(req, org) {
     const res = await fetch(`${url}/rest/v1/rpc/register_import`, { method: 'POST',
       headers: { apikey: key, Authorization: `Bearer ${bearer(req)}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ p_org: org, p_limit: IMPORT_LIMIT_PER_HOUR }) });
-    if (!res.ok) { console.error('import-listing: register_import', res.status); return true; }
-    return (await res.json()) === true;
-  } catch (err) { console.error('import-listing: register_import', err && err.message); return true; }
+    if (!res.ok) { console.error('import-listing: register_import', res.status); return null; }
+    const allowed = await res.json();
+    return typeof allowed === 'boolean' ? allowed : null;
+  } catch (err) { console.error('import-listing: register_import', err && err.message); return null; }
 }
 
 async function fetchPage(url, site) {
@@ -103,7 +102,9 @@ export default async function handler(req, res) {
   const target = hostOf(body.url);
   if (!target) return res.status(400).json({ ok: false, error: 'url', message: 'ჩასვი განცხადების ბმული MyHome.ge-დან, SS.ge-დან ან Place.ge-დან.' });
   // Charged only for a real read, after the URL is known to be one of the three sites.
-  if (!(await withinImportBudget(req, body.org))) return res.status(429).json({ ok: false, error: 'rate_limit', message: 'საათში მაქსიმუმ 10 განცხადების ჩატვირთვა შეიძლება. სცადე ცოტა ხანში ან შეავსე ველები ხელით.' });
+  const importAllowed = await withinImportBudget(req, body.org);
+  if (importAllowed === null) return res.status(503).json({ ok: false, error: 'rate_limit_unavailable', message: 'იმპორტი დროებით მიუწვდომელია. სცადე ცოტა ხანში.' });
+  if (!importAllowed) return res.status(429).json({ ok: false, error: 'rate_limit', message: 'საათში მაქსიმუმ 10 განცხადების ჩატვირთვა შეიძლება. სცადე ცოტა ხანში ან შეავსე ველები ხელით.' });
 
   try {
     const page = await fetchPage(target.url, target.site);
