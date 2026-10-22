@@ -26,10 +26,10 @@ const openMore = (scope) => scope.locator('details.form-more').evaluateAll(ds =>
 test('1. manager sees real tasks needing attention on Today', async (browser) => {
   const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
   await page.goto(BASE + '/app/');
-  await page.getByRole('heading', { name: 'დღეს', exact: true }).waitFor();
+  await page.getByRole('heading', { name: /გამარჯობა,/ }).waitFor();
   const alerts = page.locator('.alert-row');
   await alerts.first().waitFor();
-  const text = await page.locator('.cols').first().innerText();
+  const text = await page.locator('#view').innerText();
   assert(text.includes('სარეცხი მანქანის შემოწმება'), 'overdue task listed');
   assert(text.includes('ვადა გადაცილებულია'), 'overdue reason shown');
   assert(text.includes('მფლობელი 18 საათია არ პასუხობს'), 'owner waiting time shown');
@@ -41,7 +41,7 @@ test('1. manager sees real tasks needing attention on Today', async (browser) =>
 test('1b. upcoming lease renewals are listed and can be extended', async (browser) => {
   const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
   await page.goto(BASE + '/app/');
-  await page.getByRole('heading', { name: 'დღეს', exact: true }).waitFor();
+  await page.getByRole('heading', { name: /გამარჯობა,/ }).waitFor();
   await page.evaluate(() => {
     const d = JSON.parse(localStorage.getItem('rigzea_mockdb'));
     const end = new Date(Date.now() + 10 * 86400e3);
@@ -93,7 +93,7 @@ test('1c. the next visit shows saved data at once, read-only, then the fresh dat
   return page;
 });
 
-test('1d. each area is its own page, and old #/ links still open the right one', async (browser) => {
+test('1d. each area has its own address, and old #/ links still open the right one', async (browser) => {
   const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
   // An old bookmark or Telegram link lands on the new address.
   await page.goto(BASE + '/app/#/owners?tab=approvals');
@@ -104,11 +104,10 @@ test('1d. each area is its own page, and old #/ links still open the right one',
   const href = await page.locator('#topbar-nav a', { hasText: 'საქმეები' }).getAttribute('href');
   assert.strictEqual(href, '/app/tasks/', 'nav links are page addresses');
   assert.strictEqual(await page.locator('a[href^="#/"]').count(), 0, 'no #/ links left in the page');
-  // Moving to another area is a page load that reuses the data from this one.
-  const loaded = page.waitForEvent('load');
+  // Moving to another area swaps the page in place and keeps the data (no reload, see 1i).
   await page.locator('#topbar-nav a', { hasText: 'საქმეები' }).click();
-  await loaded;
   await page.waitForURL('**/app/tasks/');
+  assert.strictEqual(await page.title(), 'Rigzea: საქმეები', 'title follows the area');
   await page.locator('#view .rows').waitFor();
   assert.strictEqual(await page.locator('#view.is-stale').count(), 0, 'handed-over data is current, not read-only');
   // Inside a page, opening a task changes the address without a reload.
@@ -259,7 +258,7 @@ test('8. failed load is understandable and recoverable', async (browser) => {
   await page.goto(BASE + '/app/');
   await page.locator('.error-state', { hasText: 'კავშირი ვერ დამყარდა' }).waitFor();
   await page.locator('#btn-load-retry').click();
-  await page.getByRole('heading', { name: 'დღეს', exact: true }).waitFor();
+  await page.getByRole('heading', { name: /გამარჯობა,/ }).waitFor();
   return page;
 });
 
@@ -297,7 +296,7 @@ test('10. auth, organization switching and permissions still work', async (brows
   await page.locator('#form-signin .form-error', { hasText: 'არასწორია' }).waitFor();
   await page.fill('#form-signin input[name=password]', 'test1234');
   await page.click('#form-signin [type=submit]');
-  await page.getByRole('heading', { name: 'დღეს', exact: true }).waitFor();
+  await page.getByRole('heading', { name: /გამარჯობა,/ }).waitFor();
   await page.selectOption('#org-select', { label: 'Tbilisi Homes' });
   await page.locator('.toast', { hasText: 'Tbilisi Homes' }).waitFor();
   await page.locator('.setup').waitFor(); // empty org shows first-run steps
@@ -655,7 +654,7 @@ test('14. sales: create property for sale, compute price/sqm, filter inventory b
 test('14.1. switching a rental to sale clears fields that no longer apply', async (browser) => {
   const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
   await page.goto(BASE + '/app/');
-  await page.getByRole('heading', { name: 'დღეს', exact: true }).waitFor();
+  await page.getByRole('heading', { name: /გამარჯობა,/ }).waitFor();
   await page.evaluate(() => {
     const d = JSON.parse(localStorage.getItem('rigzea_mockdb'));
     Object.assign(d.tables.apartments[0], {
@@ -687,7 +686,7 @@ test('14.1. switching a rental to sale clears fields that no longer apply', asyn
 test('14.2. apartment search includes district in the list and global search', async (browser) => {
   const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
   await page.goto(BASE + '/app/');
-  await page.getByRole('heading', { name: 'დღეს', exact: true }).waitFor();
+  await page.getByRole('heading', { name: /გამარჯობა,/ }).waitFor();
   await page.evaluate(() => {
     const d = JSON.parse(localStorage.getItem('rigzea_mockdb'));
     Object.assign(d.tables.apartments[0], { name: 'სატესტო სახლი', address: 'სატესტო ქუჩა', city: 'ქუთაისი', district: 'წყალტუბო' });
@@ -718,7 +717,7 @@ test('14.3. large property lists show the count and can load more', async (brows
 test('14.4. global search combines type and status filters, pages results, and loads the rest', async (browser) => {
   const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
   await page.goto(BASE + '/app/');
-  await page.getByRole('heading', { name: 'დღეს', exact: true }).waitFor();
+  await page.getByRole('heading', { name: /გამარჯობა,/ }).waitFor();
   await page.evaluate(async () => {
     const d = JSON.parse(localStorage.getItem('rigzea_mockdb'));
     const org = d.tables.organizations[0].id;
@@ -780,18 +779,18 @@ test('17.2. optional dashboard read failures are explained and can be retried', 
   const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
   await page.addInitScript(() => { if (!sessionStorage.getItem('failedOptional')) { sessionStorage.setItem('failedOptional', '1'); localStorage.setItem('rigzea_mock_fail', JSON.stringify({ 'select:reservations': 1 })); } });
   await page.goto(BASE + '/app/');
-  await page.getByRole('heading', { name: 'დღეს', exact: true }).waitFor();
+  await page.getByRole('heading', { name: /გამარჯობა,/ }).waitFor();
   await page.locator('#data-notice', { hasText: 'ჯავშნები' }).waitFor();
   await page.locator('#btn-data-retry').click();
   await page.locator('#data-notice').waitFor({ state: 'hidden' });
-  await page.getByRole('heading', { name: 'დღეს', exact: true }).waitFor();
+  await page.getByRole('heading', { name: /გამარჯობა,/ }).waitFor();
   return page;
 });
 
 test('17.3. non-managers do not request manager-only repair records', async (browser) => {
   const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
   await page.goto(BASE + '/app/');
-  await page.getByRole('heading', { name: 'დღეს', exact: true }).waitFor();
+  await page.getByRole('heading', { name: /გამარჯობა,/ }).waitFor();
   await page.evaluate(() => {
     const d = JSON.parse(localStorage.getItem('rigzea_mockdb'));
     const own = d.tables.organization_members.find(m => m.user_id === 'aaaaaaaa-0000-4000-8000-000000000001');
@@ -800,7 +799,7 @@ test('17.3. non-managers do not request manager-only repair records', async (bro
     localStorage.setItem('rigzea_mock_fail', JSON.stringify({ 'select:repairs': 1 }));
   });
   await page.reload();
-  await page.getByRole('heading', { name: 'დღეს', exact: true }).waitFor();
+  await page.getByRole('heading', { name: /გამარჯობა,/ }).waitFor();
   assert.deepStrictEqual(await page.evaluate(() => JSON.parse(localStorage.getItem('rigzea_mock_fail'))), { 'select:repairs': 1 }, 'repair query was skipped for an agent');
   assert.strictEqual(await page.locator('#data-notice').isVisible(), false, 'skipped permission-specific read does not show a false error');
   return page;
@@ -810,7 +809,7 @@ test('17.4. manager repair read errors are visible and recoverable after startup
   const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
   await page.addInitScript(() => { if (!sessionStorage.getItem('failedRepairs')) { sessionStorage.setItem('failedRepairs', '1'); localStorage.setItem('rigzea_mock_fail', JSON.stringify({ 'select:repairs': 1 })); } });
   await page.goto(BASE + '/app/');
-  await page.getByRole('heading', { name: 'დღეს', exact: true }).waitFor();
+  await page.getByRole('heading', { name: /გამარჯობა,/ }).waitFor();
   await page.locator('#data-notice', { hasText: 'რემონტის ჩანაწერები' }).waitFor();
   await page.locator('#btn-data-retry').click();
   await page.locator('#data-notice').waitFor({ state: 'hidden' });
@@ -886,10 +885,108 @@ test('15. sales CRM: buyer lead, sales deal commission, 7-stage pipeline advance
 
   // 5. Today dashboard shows real estate CRM stats
   await page.goto(BASE + '/app/');
-  await page.getByRole('heading', { name: /უძრავი ქონების მიმოხილვა/ }).waitFor();
+  await page.getByRole('heading', { name: /გამარჯობა,/ }).waitFor();
   const todayText = await page.locator('#view').innerText();
   assert(todayText.includes('აქტიური ქონება') && todayText.includes('იყიდება'), 'active sales properties counted');
   assert(todayText.includes('დათვალიერებები'), 'viewings tracked on dashboard');
+  assert.strictEqual(await page.locator('.dash-kpi').count(), 4, 'four dashboard KPI cards are shown');
+  assert.strictEqual(await page.locator('.dash-analytics').count(), 1, 'analytics charts render');
+  return page;
+});
+
+test('1e. dashboard layout fits phone viewport', async (browser) => {
+  const page = await newPage(browser, { viewport: PHONE, login: USERS.manager });
+  await page.goto(BASE + '/app/');
+  await page.getByRole('heading', { name: /გამარჯობა,/ }).waitFor();
+  assert.strictEqual(await page.locator('.bottom-nav').evaluate(el => getComputedStyle(el).display), 'grid', 'mobile navigation is visible');
+  assert.strictEqual(await page.locator('.dash-kpi').count(), 4, 'all KPI cards remain visible on mobile');
+  assert(await page.locator('.dash-analytics').evaluate(el => {
+    const widths = [...el.children].map(child => child.getBoundingClientRect().width);
+    return widths.length > 1 && widths.every(width => Math.abs(width - widths[0]) < 1);
+  }), 'dashboard cards stack on mobile');
+  assert(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), 'dashboard has no horizontal page overflow');
+  return page;
+});
+
+test('1f. dark mode stays green and floats the sidebar', async (browser) => {
+  const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
+  await page.addInitScript(() => localStorage.setItem('rigzea_theme', 'dark'));
+  await page.goto(BASE + '/app/');
+  await page.getByRole('heading', { name: /გამარჯობა,/ }).waitFor();
+  const colors = await page.evaluate(() => ({
+    theme: document.documentElement.dataset.theme,
+    brand: getComputedStyle(document.querySelector('#shell')).getPropertyValue('--brand').trim(),
+    logo: getComputedStyle(document.querySelector('#shell .brand-mark')).backgroundColor,
+    chart: getComputedStyle(document.querySelector('.dash-stage-track span')).backgroundImage,
+    button: getComputedStyle(document.querySelector('#btn-new-task')).backgroundColor,
+    activeNav: getComputedStyle(document.querySelector('#rail a[aria-current="page"]')).backgroundColor,
+    success: getComputedStyle(document.querySelector('#shell')).getPropertyValue('--ok').trim(),
+    rail: {
+      position: getComputedStyle(document.querySelector('#rail')).position,
+      borderWidth: getComputedStyle(document.querySelector('#rail')).borderTopWidth,
+      radius: getComputedStyle(document.querySelector('#rail')).borderTopLeftRadius,
+    },
+  }));
+  assert.strictEqual(colors.theme, 'dark', 'dark theme is active');
+  assert.strictEqual(colors.brand, '#047857', 'dark-mode brand is green');
+  assert.strictEqual(colors.logo, 'rgb(4, 120, 87)', 'logo tile is brand green');
+  assert(colors.chart.includes('52, 211, 153'), 'dashboard chart bars use green');
+  assert.strictEqual(colors.button, 'rgb(4, 120, 87)', 'primary buttons are green');
+  assert(colors.activeNav.includes('4, 120, 87'), 'active navigation is green');
+  assert.strictEqual(colors.success, '#34d399', 'success accents are green');
+  assert.strictEqual(colors.rail.position, 'relative', 'sidebar is not sticky');
+  assert.strictEqual(colors.rail.borderWidth, '0px', 'sidebar has no border');
+  assert.strictEqual(colors.rail.radius, '22px', 'sidebar has rounded corners');
+  return page;
+});
+
+test('1g. light mode stays light and green', async (browser) => {
+  const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
+  await page.addInitScript(() => localStorage.setItem('rigzea_theme', 'light'));
+  await page.goto(BASE + '/app/');
+  await page.getByRole('heading', { name: /გამარჯობა,/ }).waitFor();
+  const colors = await page.evaluate(() => ({
+    theme: document.documentElement.dataset.theme,
+    bg: getComputedStyle(document.querySelector('#shell')).getPropertyValue('--bg').trim(),
+    surface: getComputedStyle(document.querySelector('#shell')).getPropertyValue('--surface').trim(),
+    button: getComputedStyle(document.querySelector('#btn-new-task')).backgroundColor,
+    chart: getComputedStyle(document.querySelector('.dash-stage-track span')).backgroundImage,
+  }));
+  assert.strictEqual(colors.theme, 'light', 'light theme is active');
+  assert.strictEqual(colors.bg, '#f6f7f8', 'light mode keeps a light canvas');
+  assert.strictEqual(colors.surface, '#ffffff', 'light mode keeps white cards');
+  assert.strictEqual(colors.button, 'rgb(10, 92, 68)', 'primary buttons are green');
+  assert(colors.chart.includes('10, 92, 68'), 'dashboard chart bars are green');
+  return page;
+});
+
+test('1h. dashboard quick actions open their forms', async (browser) => {
+  const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
+  await page.goto(BASE + '/app/');
+  await page.getByRole('heading', { name: /გამარჯობა,/ }).waitFor();
+  for (const [qa, title] of [['apartment', 'ახალი უძრავი ქონება'], ['deal', 'ახალი გარიგება'], ['task', 'ახალი საქმე']]) {
+    await page.locator(`.dash-action[data-qa=${qa}]`).click();
+    await page.locator('dialog[open]', { hasText: title }).waitFor();
+    await page.keyboard.press('Escape');
+    await page.locator('dialog[open]').waitFor({ state: 'detached' });
+  }
+  return page;
+});
+
+test('1i. switching areas swaps the page in place without a reload', async (browser) => {
+  const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
+  await page.goto(BASE + '/app/');
+  await page.getByRole('heading', { name: /გამარჯობა,/ }).waitFor();
+  await page.evaluate(() => { window.__noReload = true; });
+  for (const [href, title] of [['/app/deals/', 'გარიგებები'], ['/app/apartments/', 'ბინები'], ['/app/', 'მთავარი']]) {
+    await page.locator(`#rail a[href="${href}"]`).click();
+    await page.waitForFunction((t) => document.title === `Rigzea: ${t}`, title);
+    assert.strictEqual(new URL(page.url()).pathname, href);
+    assert(await page.evaluate(() => window.__noReload === true), `${href} reloaded the page`);
+  }
+  await page.goBack();
+  await page.waitForFunction(() => document.title === 'Rigzea: ბინები');
+  assert(await page.evaluate(() => window.__noReload === true), 'back button reloaded the page');
   return page;
 });
 
@@ -1199,7 +1296,7 @@ test('22. team: commission split, payout marks, leaderboard and the agent role',
     localStorage.setItem('rigzea_mockdb', JSON.stringify(d));
   });
   await agent.goto(BASE + '/app/finance/');
-  await agent.getByRole('heading', { name: 'დღეს', exact: true }).waitFor();
+  await agent.getByRole('heading', { name: /გამარჯობა,/ }).waitFor();
   assert.strictEqual(await agent.locator('#rail a[href="/app/finance/"], #rail a[href="/app/team/"], #rail a[href="/app/settings/"]').count(), 0, 'management pages are not in the menu');
   assert.strictEqual(await agent.locator('#rail a[href="/app/deals/"]').count(), 1);
   await agent.goto(BASE + '/app/apartments/?id=dddddddd-0000-4000-8000-000000000001');
@@ -1273,7 +1370,7 @@ test('25. an expired private receipt link is re-signed when clicked', async (bro
 test('26. a capped list says how much is hidden and can load more', async (browser) => {
   const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
   await page.goto(BASE + '/app/');
-  await page.getByRole('heading', { name: 'დღეს', exact: true }).waitFor();
+  await page.getByRole('heading', { name: /გამარჯობა,/ }).waitFor();
   // Seed more expenses than a deliberately small cap, then reload the workspace with that cap.
   await page.evaluate((uid) => {
     const d = JSON.parse(localStorage.getItem('rigzea_mockdb'));
@@ -1373,7 +1470,7 @@ test('30. with FORCE_NO_TRIAL a trial workspace is limited at once and card chec
 test('28. the service worker precaches the app shell under a content-named cache', async (browser) => {
   const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
   await page.goto(BASE + '/app/');
-  await page.getByRole('heading', { name: 'დღეს', exact: true }).waitFor();
+  await page.getByRole('heading', { name: /გამარჯობა,/ }).waitFor();
   const state = await page.evaluate(() => Promise.race([
     navigator.serviceWorker.ready.then(() => 'ready'),
     new Promise(r => setTimeout(() => r('timeout'), 15000)),

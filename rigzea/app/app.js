@@ -10,7 +10,7 @@
   // intentionally capped as feeds and are not listed here.
   const PAGED = {
     apartments:  { label: 'ობიექტები', page: 500 },
-    owners:      { label: 'კონტაქტები', page: 500 },
+    owners:      { label: 'ჩემი კლიენტები', page: 500 },
     openTasks:   { label: 'აქტიური საქმეები', page: 300 },
     reservations:{ label: 'ჯავშნები', page: 300 },
     repairs:     { label: 'რემონტის ჩანაწერები', page: 300 },
@@ -565,6 +565,8 @@
   function ensureViewLoaded(name) { return Promise.all(ALL_CHUNKS.map(src => ensureChunk(src, name))); }
   const PAGE_ROUTES = location.pathname.startsWith('/app/');
   const AREAS = ['today', 'tasks', 'apartments', 'owners', 'deals', 'finance', 'team', 'settings'];
+  // Same labels scripts/stamp-assets.mjs puts in each page's <title>.
+  const AREA_TITLES = { today: 'მთავარი', tasks: 'საქმეები', apartments: 'ბინები', owners: 'კონტაქტები', deals: 'გარიგებები', finance: 'ფინანსები', team: 'გუნდი', settings: 'პარამეტრები' };
   const areaPath = (name) => `/app/${name === 'today' ? '' : name + '/'}`;
   function toUrl(hash) {
     if (!PAGE_ROUTES) return '#' + String(hash).replace(/^#/, '');
@@ -600,13 +602,14 @@
       return;
     }
     const next = new URL(String(target).startsWith('#') ? toUrl(target) : target, location.origin);
-    if (next.pathname === location.pathname) {
+    // Every view script is loaded in-page (ALL_CHUNKS) and the data is in memory, so another area
+    // swaps in place too; a full page load is only the fallback while nothing is loaded yet.
+    if (next.pathname === location.pathname || (S.data && S.org)) {
       const url = next.pathname + next.search;
       if (url !== location.pathname + location.search) history[replace ? 'replaceState' : 'pushState'](null, '', url);
       onRoute();
       return;
     }
-    if (S.data && S.org) await dataCache.handoff(S.org.id);
     location[replace ? 'replace' : 'assign'](next.pathname + next.search);
   }
   // Keeps the current page and adds/removes ?task=
@@ -617,6 +620,7 @@
     const r = route();
     if (r.name !== lastViewName) window.scrollTo(0, 0);
     lastViewName = r.name;
+    if (PAGE_ROUTES) document.title = `Rigzea: ${AREA_TITLES[r.name]}`;
     render();
   }
   window.addEventListener('popstate', onRoute);
@@ -665,16 +669,16 @@
   // Simplified clean navigation: 5 core daily workflows + 1 management group.
   const NAV = [
     { items: [
-      { id: 'today', label: 'მთავარი', icon: 'today', href: '#/today' },
-      { id: 'apartments', label: 'ბინები', icon: 'building', href: '#/apartments' },
-      { id: 'deals', label: 'გარიგებები', icon: 'wallet', href: '#/deals' },
-      { id: 'contacts', label: 'კონტაქტები', icon: 'user', href: '#/owners' },
-      { id: 'tasks', label: 'საქმეები', icon: 'tasks', href: '#/tasks' },
+      { id: 'today', label: 'ჩემთვის', icon: 'today', href: '#/today' },
+      { id: 'apartments', label: 'ჩემი ობიექტები', icon: 'building', href: '#/apartments' },
+      { id: 'deals', label: 'ჩემი გარიგებები', icon: 'wallet', href: '#/deals' },
+      { id: 'contacts', label: 'ჩემი კლიენტები', icon: 'user', href: '#/owners' },
+      { id: 'tasks', label: 'ჩემი საქმეები', icon: 'tasks', href: '#/tasks' },
     ] },
-    { id: 'manage', label: 'მართვა', items: [
-      { id: 'finance', label: 'ფინანსები', icon: 'wallet', href: '#/finance' },
-      { id: 'team', label: 'გუნდი', icon: 'team', href: '#/team' },
-      { id: 'settings', label: 'პარამეტრები', icon: 'settings', href: '#/settings' },
+    { id: 'manage', label: 'ჩემი სააგენტოსთვის', items: [
+      { id: 'finance', label: 'ჩემი ფინანსები', icon: 'wallet', href: '#/finance' },
+      { id: 'team', label: 'ჩემი გუნდი', icon: 'team', href: '#/team' },
+      { id: 'settings', label: 'ჩემი პარამეტრები', icon: 'settings', href: '#/settings' },
     ] },
   ];
   const navGroups = () => (isAgent() ? NAV.filter(g => g.id !== 'manage') : NAV);
@@ -730,12 +734,12 @@
     const topNav = $('#topbar-nav');
     if (topNav) {
       const topItems = [
-        { id: 'today', label: 'მთავარი', icon: 'today', href: '#/today' },
-        { id: 'apartments', label: 'ბინები', icon: 'building', href: '#/apartments' },
-        { id: 'deals', label: 'გარიგებები', icon: 'wallet', href: '#/deals', count: counts.deals },
-        { id: 'contacts', label: 'კონტაქტები', icon: 'user', href: '#/owners', count: counts.contacts },
-        { id: 'tasks', label: 'საქმეები', icon: 'tasks', href: '#/tasks', count: counts.tasks },
-        { id: 'finance', label: 'ფინანსები', icon: 'wallet', href: '#/finance' },
+        { id: 'today', label: 'ჩემთვის', icon: 'today', href: '#/today' },
+        { id: 'apartments', label: 'ჩემი ობიექტები', icon: 'building', href: '#/apartments' },
+        { id: 'deals', label: 'ჩემი გარიგებები', icon: 'wallet', href: '#/deals', count: counts.deals },
+        { id: 'contacts', label: 'ჩემი კლიენტები', icon: 'user', href: '#/owners', count: counts.contacts },
+        { id: 'tasks', label: 'ჩემი საქმეები', icon: 'tasks', href: '#/tasks', count: counts.tasks },
+        { id: 'finance', label: 'ჩემი ფინანსები', icon: 'wallet', href: '#/finance' },
       ];
       topNav.innerHTML = topItems.map(item => {
         const active = key === item.id;
@@ -746,15 +750,15 @@
       fitTopbarTabs();
     }
     $('#rail').innerHTML = navGroups().map(g => `${g.label ? `<div class="nav-group">${g.label}</div>` : ''}${navLinks(g, key, counts)}`).join('')
-      + `<div class="rail-foot">${S.data ? `${S.data.apartments.filter(a => a.status !== 'archived').length} ბინა · ${S.data.owners.length} კონტაქტი · ${S.data.members.length} წევრი` : ''}</div>`;
+      + `<div class="rail-foot">${S.data ? `${S.data.apartments.filter(a => a.status !== 'archived').length} ობიექტი · ${S.data.owners.length} კლიენტი · ${S.data.members.length} გუნდის წევრი` : ''}</div>`;
 
     // Phone: 4 primary workflows + More menu sheet.
     const tab = (href, ic, label, active, count) => `<a href="${href}" ${active ? 'aria-current="page"' : ''}>${icon(ic, 20)}<span>${label}</span>${count ? `<span class="count ${count.danger ? 'count-danger' : ''}">${count.n}</span>` : ''}</a>`;
     const inMore = ['tasks', 'finance', 'team', 'settings'].includes(key);
-    $('#bottom-nav').innerHTML = tab('#/today', 'today', 'მთავარი', key === 'today')
-      + tab('#/apartments', 'building', 'ბინები', key === 'apartments')
+    $('#bottom-nav').innerHTML = tab('#/today', 'today', 'ჩემთვის', key === 'today')
+      + tab('#/apartments', 'building', 'ობიექტები', key === 'apartments')
       + tab('#/deals', 'wallet', 'გარიგებები', key === 'deals', counts.deals)
-      + tab('#/owners', 'user', 'კონტაქტები', key === 'contacts', counts.contacts)
+      + tab('#/owners', 'user', 'კლიენტები', key === 'contacts', counts.contacts)
       + `<button type="button" id="btn-more" ${inMore ? 'aria-current="page"' : ''}>${icon('menu', 20)}<span>მენიუ</span>${counts.tasks ? `<span class="count count-danger">${counts.tasks.n}</span>` : ''}</button>`;
     $('#btn-more').onclick = openMoreSheet;
 
@@ -836,6 +840,7 @@
     const counts = navCounts();
     R.dialog({
       title: 'მენიუ',
+      sheet: true,
       body: `<nav class="menu-list" style="padding:0">${navGroups().map(g => `${g.label ? `<div class="nav-group">${g.label}</div>` : ''}${navLinks(g, key, counts, '')}`).join('')}
         <button type="button" data-action="signout">${icon('logout')} გამოსვლა</button></nav>`,
       onOpen: (form, dlg) => $$('a', form).forEach(a => a.addEventListener('click', () => dlg.close())),
@@ -870,6 +875,7 @@
     }
     try {
       view(r);
+      swipeIn(r.name);
     } catch (err) {
       console.error(err);
       $('#view').innerHTML = `<div class="card"><div class="error-state"><p>გვერდის ჩვენება ვერ მოხერხდა: ${esc(err.message)}</p><a class="btn btn-secondary" href="#/today">მთავარზე დაბრუნება</a></div></div>`;
@@ -880,6 +886,18 @@
   }
 
   let lastViewName = null;
+
+  // Blocks slide in from the right once per page, not on every re-render (filters, saves).
+  let swipedView = null;
+  function swipeIn(name) {
+    if (swipedView === name) return;
+    swipedView = name;
+    const v = $('#view');
+    v.querySelectorAll('.page-head, .chips, .dash-kpi, .card:not(.card .card), .stats, .table-wrap').forEach((el, i) => el.style.setProperty('--i', Math.min(i, 9)));
+    v.classList.remove('view-enter');
+    void v.offsetWidth;
+    v.classList.add('view-enter');
+  }
 
   // ---------------------------------------------------------------------------
   // Notifications

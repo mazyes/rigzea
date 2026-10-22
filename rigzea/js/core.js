@@ -296,7 +296,7 @@
   function dialog(opts) {
     return new Promise((resolve) => {
       const dlg = document.createElement('dialog');
-      dlg.className = 'dlg' + (opts.wide ? ' dlg-wide' : '');
+      dlg.className = 'dlg' + (opts.wide ? ' dlg-wide' : '') + (opts.sheet ? ' dlg-sheet' : '');
       dlg.innerHTML = `
         <form method="dialog" class="dlg-form" novalidate>
           <header class="dlg-head">
@@ -318,6 +318,7 @@
       let result;
       const close = () => { dlg.close(); };
       dlg.addEventListener('close', () => { dlg.remove(); resolve(result); });
+      if (opts.sheet) dlg.addEventListener('click', (e) => { if (e.target === dlg) close(); });
       $$('[data-close]', dlg).forEach(b => b.addEventListener('click', close));
       dlg.addEventListener('cancel', (e) => { if ($('[data-submit]', dlg)?.dataset.busy === '1') e.preventDefault(); });
       form.addEventListener('submit', async (e) => {

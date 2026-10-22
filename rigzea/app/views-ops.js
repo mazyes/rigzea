@@ -367,12 +367,8 @@
     const activeApts = S.data.apartments.filter(a => !a.is_archived && a.status !== 'archived');
     const forSaleApts = activeApts.filter(a => a.transaction_type === 'sale');
     const forRentApts = activeApts.filter(a => a.transaction_type !== 'sale');
-    const soldApts = S.data.apartments.filter(a => a.status === 'sold');
-
     const deals = S.data.deals || [];
     const newLeads = deals.filter(d => d.stage === 'enquiry');
-    const inNegotiation = deals.filter(d => ['offer', 'negotiation', 'deposit'].includes(d.stage));
-    const closedDeals = deals.filter(d => d.stage === 'closed');
 
     const rate = Number(App.state?.usdRate || S.org?.fx_rate || 2.7);
     let expectedComm = 0;
@@ -411,6 +407,28 @@
     ];
     const FILTERS = ALL_FILTERS.filter(([id]) => ALWAYS_FILTERS.has(id) || (counts[id] > 0) || todayFilter === id);
     const fin = financeSnapshot();
+    const firstName = (S.member?.display_name || 'აგენტო').trim().split(/\s+/)[0];
+    const pipelineStages = ['enquiry', 'contacted', 'viewing', 'offer', 'negotiation', 'deposit', 'closed'];
+    const pipelineCounts = pipelineStages.map(stage => ({ stage, label: L.dealStage[stage], value: deals.filter(d => d.stage === stage).length }));
+    const pipelineMax = Math.max(1, ...pipelineCounts.map(item => item.value));
+    const propertyTypes = [
+      { label: 'იყიდება', value: activeApts.filter(a => a.transaction_type === 'sale').length, color: 'var(--dash-sale)' },
+      { label: 'ქირავდება', value: activeApts.filter(a => a.transaction_type !== 'sale' && a.transaction_type !== 'daily' && a.rental_type !== 'short_term').length, color: 'var(--dash-rent)' },
+      { label: 'დღიურად', value: activeApts.filter(a => a.transaction_type === 'daily' || (!a.transaction_type && a.rental_type === 'short_term')).length, color: 'var(--dash-daily)' },
+    ];
+    const propertyTypesTotal = propertyTypes.reduce((sum, item) => sum + item.value, 0);
+    let donutStart = 0;
+    const donutStops = propertyTypes.map(item => {
+      const share = propertyTypesTotal ? item.value / propertyTypesTotal * 100 : 0;
+      const stop = `${item.color} ${donutStart}% ${donutStart + share}%`;
+      donutStart += share;
+      return stop;
+    });
+    const donutBackground = propertyTypesTotal ? `conic-gradient(${donutStops.join(', ')})` : 'conic-gradient(var(--line) 0% 100%)';
+    const recentApts = activeApts.slice().sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || ''))).slice(0, 3);
+    const aptPrice = (apt) => apt.transaction_type === 'sale'
+      ? money(apt.sale_price, apt.currency || 'USD')
+      : `${money(apt.monthly_rent, apt.currency || 'USD')} / თვე`;
     const steps = setupSteps();
     const showSetup = steps.some(s => !s.done) && localStorage.getItem('rigzea_setup_hidden_' + S.org.id) !== '1';
 
@@ -438,57 +456,84 @@
     const tomorrowCount = scheduleItems(1).length;
 
     $('#view').innerHTML = `
-      <div class="page-head">
-        <div><h1>დღეს</h1><p class="page-sub">${R.WEEKDAYS[now.getDay()]}, ${now.getDate()} ${R.MONTHS[now.getMonth()]}</p></div>
-        <div class="page-actions"><button type="button" class="btn btn-secondary" id="btn-digest">${icon('telegram', 16)} დღის შეჯამება</button></div>
+      <div class="dashboard">
+      <div class="page-head dash-head">
+        <div><span class="dash-eyebrow">უძრავი ქონების აგენტის სამუშაო სივრცე</span><h1>გამარჯობა, ${esc(firstName)}!</h1><p class="page-sub">მართე ობიექტები, კლიენტები და საქმეები ერთ სივრცეში.</p></div>
+        <div class="page-actions"><span class="dash-date">${icon('calendar', 16)} ${R.WEEKDAYS[now.getDay()]}, ${now.getDate()} ${R.MONTHS[now.getMonth()]}</span><button type="button" class="btn btn-secondary" id="btn-digest">${icon('telegram', 16)} დღის შეჯამება</button></div>
       </div>
       ${activeApts.length === 0 ? `
-      <section class="card onboarding-hero-card" style="margin-bottom:16px;background:linear-gradient(135deg, rgba(4, 120, 87, 0.08) 0%, rgba(4, 120, 87, 0.12) 100%);border:1px solid rgba(4, 120, 87, 0.35);padding:24px;border-radius:var(--r)">
+      <section class="card onboarding-hero-card" style="margin-bottom:16px;background:linear-gradient(135deg, var(--brand-soft) 0%, color-mix(in srgb, var(--brand-soft) 65%, var(--surface)) 100%);border:1px solid color-mix(in srgb, var(--brand-ink) 35%, var(--line));padding:24px;border-radius:var(--r)">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:16px">
           <div style="max-width:560px">
-            <span class="badge" style="background:rgba(4, 120, 87, 0.18);color:#047857;font-weight:700;padding:3px 10px;border-radius:99px;font-size:11.5px">პირველი ნაბიჯი</span>
-            <h2 style="font-size:22px;margin:8px 0 6px 0">შემოიტანე შენი პირველი ბინა</h2>
+            <span class="badge" style="background:var(--brand-soft);color:var(--brand-ink);font-weight:700;padding:3px 10px;border-radius:99px;font-size:11.5px">პირველი ნაბიჯი</span>
+            <h2 style="font-size:22px;margin:8px 0 6px 0">გადმოიტანე შენი პირველი ობიექტი</h2>
             <p style="color:var(--muted);font-size:13.5px;line-height:1.5;margin:0 0 14px 0">
-              ჩასვი MyHome.ge ან SS.ge განცხადების ბმული და ფოტოები, ფართობი და ფასი თავისით შემოდის. კლიენტისთვის პირად ბმულსაც მიიღებ.
+              ჩასვი MyHome.ge ან SS.ge განცხადების ბმული. ფოტოები, ფართობი და ფასი შენს სამუშაო სივრცეში გადმოვა.
             </p>
             <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-              <button type="button" class="btn btn-primary" id="btn-quick-import-hero">${icon('sparkle', 16)} ბინის შემოტანა ლინკით</button>
-              <button type="button" class="btn btn-secondary" id="btn-quick-manual-hero">+ ხელით დამატება</button>
+              <button type="button" class="btn btn-primary" id="btn-quick-import-hero">${icon('sparkle', 16)} გადმოიტანე ბმულით</button>
+              <button type="button" class="btn btn-secondary" id="btn-quick-manual-hero">${icon('plus', 16)} დაამატე ხელით</button>
             </div>
           </div>
           <div style="background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 16px;font-size:12px;color:var(--muted);max-width:240px;line-height:1.4">
-            <strong style="color:var(--ink);display:block;margin-bottom:4px">შენი პირადი ვიტრინა</strong>
-            საჯარო ბმულზე ჩანს მხოლოდ შენი სახელი, ლოგო და საკონტაქტო WhatsApp.
+            <strong style="color:var(--ink);display:block;margin-bottom:4px">გაუზიარე შენი გვერდი</strong>
+            კლიენტს ობიექტი შენი სახელითა და საკონტაქტო ინფორმაციით გაუგზავნე.
           </div>
         </div>
       </section>` : ''}
-      <section class="card" style="margin-bottom:16px">
-        <div class="card-head">
-          <h2>${icon('building', 18)} უძრავი ქონების მიმოხილვა</h2>
-          <div style="display:flex;gap:8px">
-            <a class="btn btn-secondary btn-sm" href="#/deals">+ ახალი გარიგება</a>
-            <a class="btn btn-primary btn-sm" href="#/apartments">+ ბინის დამატება</a>
-          </div>
-        </div>
-        <div class="stats stats-tiles">
-          <div class="stat"><span class="stat-label">აქტიური ქონება</span><span class="stat-value">${activeApts.length}</span><span class="stat-note">${forSaleApts.length} იყიდება · ${forRentApts.length} ქირავდება</span></div>
-          <div class="stat"><span class="stat-label">ახალი ლიდები</span><span class="stat-value">${newLeads.length}</span><span class="stat-note">შემოსული მოთხოვნა</span></div>
-          <div class="stat"><span class="stat-label">დათვალიერებები</span><span class="stat-value">${counts.viewing}</span><span class="stat-note">აქტიური ვიზიტი</span></div>
-          <div class="stat"><span class="stat-label">მოლაპარაკებაში</span><span class="stat-value">${inNegotiation.length}</span><span class="stat-note">შეთავაზება / დეპოზიტი</span></div>
-          <div class="stat"><span class="stat-label">დასრულებული</span><span class="stat-value">${closedDeals.length}</span><span class="stat-note">${soldApts.length} გაყიდული</span></div>
-          <div class="stat"><span class="stat-label">საკომისიო</span><span class="stat-value t-ok">${money(earnedComm)}</span><span class="stat-note">მოლოდინში: ${money(expectedComm)}</span></div>
-        </div>
+      <section class="dash-kpis" aria-label="უძრავი ქონების მიმოხილვა">
+        <article class="dash-kpi"><span class="dash-kpi-icon green">${icon('building', 19)}</span><span class="dash-kpi-label">აქტიური ქონება</span><strong>${activeApts.length}</strong><small>${forSaleApts.length} იყიდება · ${forRentApts.length} ქირავდება</small></article>
+        <article class="dash-kpi"><span class="dash-kpi-icon blue">${icon('user', 19)}</span><span class="dash-kpi-label">ახალი მოთხოვნები</span><strong>${newLeads.length}</strong><small>კლიენტებს პასუხი გაეცი</small></article>
+        <article class="dash-kpi"><span class="dash-kpi-icon amber">${icon('wallet', 19)}</span><span class="dash-kpi-label">მიღებული საკომისიო</span><strong>${money(earnedComm)}</strong><small>მოლოდინში: ${money(expectedComm)}</small></article>
+        <article class="dash-kpi"><span class="dash-kpi-icon rose">${icon('alert', 19)}</span><span class="dash-kpi-label">სასწრაფო საქმეები</span><strong>${att.length}</strong><small>${counts.today} საქმე დღეს</small></article>
       </section>
-      <div class="chips" role="group" aria-label="ფილტრი">${FILTERS.map(([id, label]) => `<button type="button" class="chip" data-filter="${id}" aria-pressed="${todayFilter === id}">${label}${id !== 'all' ? ` <span class="count">${counts[id]}</span>` : ''}</button>`).join('')}</div>
-      <div class="cols">
+      <div class="chips dash-filters" role="group" aria-label="ჩემი საქმეების ფილტრი">${FILTERS.map(([id, label]) => `<button type="button" class="chip" data-filter="${id}" aria-pressed="${todayFilter === id}">${id === 'all' ? 'ჩემი საქმეები' : label}${id !== 'all' ? ` <span class="count">${counts[id]}</span>` : ''}</button>`).join('')}</div>
+      <section class="dash-analytics">
+        <article class="card dash-chart-card">
+          <div class="card-head"><div><h2>გარიგებების დინამიკა</h2><p class="dash-card-sub">გადაადგილე თითოეული მოთხოვნა შემდეგ ეტაპზე.</p></div><a class="link-btn small" href="#/deals">ყველა გარიგება ${icon('chevronRight', 14)}</a></div>
+          <div class="dash-stage-chart" role="img" aria-label="გარიგებების რაოდენობა ეტაპების მიხედვით">${pipelineCounts.map(item => `<div class="dash-stage"><strong>${item.value}</strong><div class="dash-stage-track"><span style="height:${Math.max(item.value ? 8 : 0, item.value / pipelineMax * 100)}%"></span></div><small>${esc(item.label)}</small></div>`).join('')}</div>
+          <div class="dash-chart-foot"><span><i></i> დათვალიერებები: ${counts.viewing} · მოლაპარაკებაში: ${deals.filter(d => ['offer', 'negotiation', 'deposit'].includes(d.stage)).length}</span><span>${deals.length} გარიგება</span></div>
+        </article>
+        <article class="card dash-mix-card">
+          <div class="card-head"><div><h2>ჩემი ობიექტები</h2><p class="dash-card-sub">გაყიდვა და გაქირავება</p></div><a class="link-btn small" href="#/apartments">ყველა</a></div>
+          <div class="dash-mix-content"><div class="dash-donut" style="background:${donutBackground}" role="img" aria-label="ობიექტების განაწილება"><div><strong>${activeApts.length}</strong><small>აქტიური</small></div></div>
+            <ul class="dash-legend">${propertyTypes.map(item => `<li><span><i style="background:${item.color}"></i>${item.label}</span><strong>${item.value}</strong><small>${propertyTypesTotal ? Math.round(item.value / propertyTypesTotal * 100) : 0}%</small></li>`).join('')}</ul></div>
+        </article>
+        <article class="card dash-actions-card">
+          <div class="card-head"><div><h2>გაიმარტივე ყოველდღიური საქმე</h2><p class="dash-card-sub">ყველაფერი საჭირო ერთ სივრცეში.</p></div></div>
+          <div class="dash-action-list">
+            <button type="button" class="dash-action green" data-qa="apartment"><span>${icon('plus', 17)}</span><strong>დაამატე ობიექტი</strong>${icon('chevronRight', 15)}</button>
+            <button type="button" class="dash-action blue" data-qa="deal"><span>${icon('wallet', 17)}</span><strong>შექმენი გარიგება</strong>${icon('chevronRight', 15)}</button>
+            <a class="dash-action violet" href="#/owners?type=client"><span>${icon('user', 17)}</span><strong>ნახე კლიენტები</strong>${icon('chevronRight', 15)}</a>
+            <button type="button" class="dash-action amber" data-qa="task"><span>${icon('tasks', 17)}</span><strong>დაგეგმე საქმე</strong>${icon('chevronRight', 15)}</button>
+          </div>
+        </article>
+      </section>
+      <div class="dash-lower">
+        <section class="card dash-listings-card">
+          <div class="card-head"><div><h2>ბოლო დამატებული ობიექტები</h2><p class="dash-card-sub">შენი ახალი განცხადებები</p></div><a class="link-btn small" href="#/apartments">ყველა ნახე ${icon('chevronRight', 14)}</a></div>
+          ${recentApts.length ? `<div class="dash-listings">${recentApts.map(apt => {
+            const photo = (Array.isArray(apt.photos) ? apt.photos : []).map(p => typeof p === 'string' ? p : p?.thumb || p?.url).find(Boolean);
+            return `<a class="dash-listing" href="#/apartments/${encodeURIComponent(apt.id)}"><span class="dash-listing-photo">${photo ? `<img src="${R.safeUrl(photo)}" alt="" loading="lazy">` : icon('building', 20)}</span><span class="dash-listing-info"><strong>${esc(apt.name || 'ობიექტი')}</strong><small>${esc([apt.district, apt.city].filter(Boolean).join(', ') || 'მდებარეობა არ არის მითითებული')}</small><span>${apt.transaction_type === 'sale' ? 'იყიდება' : 'ქირავდება'}</span></span><strong class="dash-listing-price">${aptPrice(apt)}</strong></a>`;
+          }).join('')}</div>` : emptyInline('ჯერ ობიექტი არ დაგიმატებია. დაამატე პირველი და მართე შეთავაზებები ერთ სივრცეში.')}
+        </section>
+        <section class="card dash-schedule-card">
+          <div class="card-head"><div><h2>${scheduleDay ? 'ხვალის' : 'დღის'} განრიგი</h2><p class="dash-card-sub">ნახვები და დაგეგმილი საქმეები.</p></div><span class="count">${sched.length}</span></div>
+          <div class="dash-schedule-toggle"><div class="seg" role="group" aria-label="დღის არჩევა"><label><input type="radio" name="sday" value="0" ${scheduleDay === 0 ? 'checked' : ''}><span>დღეს</span></label><label><input type="radio" name="sday" value="1" ${scheduleDay === 1 ? 'checked' : ''}><span>ხვალ · ${tomorrowCount}</span></label></div></div>
+          ${sched.length ? sched.map(s => `<a class="sched-row" href="${s.href}"><span class="sched-time">${R.time(s.ts)}</span><span class="kind">${icon(s.icon, 15)} ${esc(s.kind)}</span><span class="cell-main sched-apt"><strong>${esc(H.aptName(s.apt))}</strong>${s.title ? `<span>${esc(s.title)}</span>` : ''}</span><span class="sched-who">${s.who ? esc(s.who) : '<span class="t-warn">არ არის დანიშნული</span>'}</span><span class="sched-status">${s.status}</span></a>`).join('') : emptyInline(scheduleDay ? 'ხვალისთვის საქმე არ გაქვს დაგეგმილი.' : 'დღეს საქმე არ გაქვს დაგეგმილი. დრო გამონახე ახალ შეთავაზებებზე.')}
+          ${S.data.reservations.length === 0 ? `<div class="card-foot">დაამატე ჯავშანი და შესვლისა თუ გასვლის დროებიც გამოჩნდება.</div>` : ''}
+        </section>
+        <section class="card dash-activity-card"><div class="card-head"><div><h2>ბოლო აქტივობა</h2><p class="dash-card-sub">შენი სამუშაო სივრცის სიახლეები.</p></div></div>${activityList(S.data.events.slice(0, 5))}</section>
+      </div>
+      <div class="cols dashboard-support">
         <div class="stack">
-          ${showSetup ? `<section class="card onboarding-card" style="margin-bottom:16px;border:1px solid rgba(4, 120, 87, 0.3);background:linear-gradient(180deg, var(--surface) 0%, rgba(4, 120, 87, 0.04) 100%)">
+          ${showSetup ? `<section class="card onboarding-card" style="margin-bottom:16px;border:1px solid color-mix(in srgb, var(--brand-ink) 32%, var(--line));background:linear-gradient(180deg, var(--surface) 0%, color-mix(in srgb, var(--brand-soft) 38%, var(--surface)) 100%)">
             <div class="card-head">
               <h2>${icon('sparkle', 16)} ახალი აგენტის Quick Start <span class="badge badge-neutral" style="font-size:12px;font-weight:700">${steps.filter(s => s.done).length} / ${steps.length} დასრულებულია</span></h2>
               <button type="button" class="link-btn small" id="btn-hide-setup">დამალვა</button>
             </div>
             <div style="background:var(--line);height:6px;border-radius:99px;margin:8px 0 16px 0;overflow:hidden">
-              <div style="background:#047857;height:100%;width:${(steps.filter(s => s.done).length / steps.length) * 100}%;border-radius:99px;transition:width 0.3s"></div>
+              <div style="background:var(--ok);height:100%;width:${(steps.filter(s => s.done).length / steps.length) * 100}%;border-radius:99px;transition:width 0.3s"></div>
             </div>
             <ol class="setup">${steps.map(s => `<li class="${s.done ? 'done' : ''}"><div><div class="step-title">${esc(s.title)}</div><div class="step-desc">${esc(s.desc)}</div></div><div>${s.done ? `<span class="t-ok" style="font-weight:700;display:inline-flex;align-items:center;gap:4px">${icon('check', 14)} შესრულებულია</span>` : s.action || ''}</div></li>`).join('')}</ol>
           </section>` : ''}
@@ -501,19 +546,7 @@
             <div class="card-head"><h2>განახლებები <span class="count ${ren.some(x => x.days <= 3) ? 'count-danger' : ''}">${ren.length}</span></h2><span class="page-sub">ხელშეკრულებები, რომლებიც 30 დღეში იწურება</span></div>
             <div>${ren.map(renewalRow).join('')}</div>
           </section>` : ''}
-          <section class="card">
-            <div class="card-head"><h2>${scheduleDay ? 'ხვალის' : 'დღის'} განრიგი <span class="count">${sched.length}</span></h2>
-              <div class="seg" role="group" aria-label="დღე"><label><input type="radio" name="sday" value="0" ${scheduleDay === 0 ? 'checked' : ''}><span>დღეს</span></label><label><input type="radio" name="sday" value="1" ${scheduleDay === 1 ? 'checked' : ''}><span>ხვალ · ${tomorrowCount}</span></label></div>
-            </div>
-            ${sched.length ? sched.map(s => `<a class="sched-row" href="${s.href}">
-                <span class="sched-time">${R.time(s.ts)}</span>
-                <span class="kind">${icon(s.icon, 15)} ${esc(s.kind)}</span>
-                <span class="cell-main sched-apt"><strong>${esc(H.aptName(s.apt))}</strong>${s.title ? `<span>${esc(s.title)}</span>` : ''}</span>
-                <span class="sched-who">${s.who ? esc(s.who) : '<span class="t-warn">არ არის დანიშნული</span>'}</span>
-                <span class="sched-status">${s.status}</span></a>`).join('')
-              : emptyInline(scheduleDay ? 'ხვალისთვის არაფერია დაგეგმილი.' : 'დღეს გასვლა, შესვლა ან დაგეგმილი საქმე არ არის.')}
-            ${S.data.reservations.length === 0 ? `<div class="card-foot">Check-in და check-out დროები ჯავშნებიდან ჩნდება. ჯავშანი დაამატე ბინის გვერდიდან.</div>` : ''}
-          </section>`}
+          `}
         </div>
         <div class="stack">
           ${pendingApprovals.length ? `
@@ -536,11 +569,8 @@
             <div class="card-head"><h2>Telegram შეხსენებები</h2></div>
             <p class="calc">ხელშეკრულების ვადებისა და ვადაგადაცილებული საქმეების შეხსენებებს Telegram-შიც მიიღებ.<br><button type="button" class="link-btn" id="btn-tg-link">Telegram-ის დაკავშირება</button></p>
           </section>
-          <section class="card">
-            <div class="card-head"><h2>ბოლო აქტივობა</h2></div>
-            ${activityList(S.data.events.slice(0, 8))}
-          </section>
         </div>
+      </div>
       </div>`;
 
     $$('[data-filter]').forEach(b => b.addEventListener('click', () => { todayFilter = b.dataset.filter; App.render(); }));
@@ -551,6 +581,10 @@
     $('#btn-digest').onclick = openDailyDigest;
     $('#btn-quick-import-hero')?.addEventListener('click', () => App.openApartmentForm());
     $('#btn-quick-manual-hero')?.addEventListener('click', () => App.openApartmentForm());
+    $$('.dash-action[data-qa]').forEach(b => b.addEventListener('click', () => {
+      const open = { apartment: () => App.openApartmentForm(), deal: () => App.openDealForm(), task: () => openTaskForm() }[b.dataset.qa];
+      open?.();
+    }));
     bindSetup($('#view'));
     bindAlertActions($('#view'), att);
     bindApprovalShare($('#view'));
