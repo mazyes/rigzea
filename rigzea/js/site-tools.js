@@ -138,6 +138,7 @@
   };
   captureCampaign();
   const banner = make('section', '', 'st-cookie');
+  banner.hidden = true;
   banner.setAttribute('aria-label', 'ქუქიების პარამეტრები');
   const note = make('p', 'საიტი იყენებს მხოლოდ აუცილებელ ქუქი-ფაილებს. თანახმა ხარ, რომ დავიმახსოვროთ, რომელი ბმულით შემოხვედი?');
   banner.append(note);
