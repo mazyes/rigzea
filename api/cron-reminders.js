@@ -37,7 +37,7 @@ export default async function handler(req, res) {
   const deliver = async (n) => {
     const icon = n.type === 'renewal' ? '📅' : '⏰';
     const link = n.link && n.link.startsWith('/') ? `${BASE_APP_URL}${n.link}` : `${BASE_APP_URL}/app/`;
-    const text = `${icon} <b>${esc(n.title)}</b>\n${esc(n.message || '')}\n\n🔗 <a href="${esc(link)}">სისტემაში გახსნა</a>`;
+    const text = `${icon} <b>${esc(n.title)}</b>\n${esc(n.message || '')}\n\n🔗 <a href="${esc(link)}">გახსენი რიგზეაში</a>`;
     const r = await sendMessage(n.chat_id, text);
     if (r && r.ok) {
       sent++;

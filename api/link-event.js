@@ -34,7 +34,7 @@ export default async function handler(req, res) {
 
   const n = out.notify;
   if (n && Array.isArray(n.chat_ids) && n.chat_ids.length) {
-    const text = `${TITLE[n.kind]}\n<b>${esc(n.apartment_name)}</b>\n\n🔗 <a href="${esc(`${BASE_APP_URL}/app/apartments/?id=${n.apartment_id}`)}">სისტემაში გახსნა</a>`;
+    const text = `${TITLE[n.kind]}\n<b>${esc(n.apartment_name)}</b>\n\n🔗 <a href="${esc(`${BASE_APP_URL}/app/apartments/?id=${n.apartment_id}`)}">გახსენი რიგზეაში</a>`;
     await Promise.all(n.chat_ids.map((id) => sendMessage(id, text)));
   }
   return res.status(200).json({ ok: true, counted: Boolean(out.counted) });

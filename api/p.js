@@ -74,6 +74,7 @@ function buildMeta(listing, pageUrl, whiteLabel) {
   const title = a.name || 'ბინა';
   const shareImg = photos[0]?.url || 'https://rigzea.com/img/og-preview.jpg';
   const tags = [
+    `<meta name="robots" content="noindex, nofollow" />`,
     `<meta property="og:type" content="website" />`,
     `<meta property="og:title" content="${esc(title)}" />`,
     `<meta property="og:description" content="${esc(description)}" />`,

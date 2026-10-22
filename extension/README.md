@@ -1,6 +1,6 @@
 # Rigzea extension (SS.ge / MyHome.ge)
 
-Receives a listing from the "გამოქვეყნება SS.ge / MyHome.ge-ზე" button in the Rigzea app, opens the posting form, fills it and publishes.
+Receives a listing from the "გამოქვეყნება SS.ge / MyHome.ge-ზე" button in the Rigzea app, opens the posting form and fills it. The agent presses publish.
 
 ## Install (unpacked)
 1. Chrome: `chrome://extensions`, turn on Developer mode, "Load unpacked", pick this `extension/` folder.

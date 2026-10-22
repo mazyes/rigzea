@@ -304,10 +304,10 @@
     const hasLease = localStorage.getItem('rigzea_lease_done') === '1' || (d.deals || []).some(x => x.stage === 'closed' || x.stage === 'deposit');
 
     return [
-      { id: 'apt', done: hasApt, title: '1. დაამატე პირველი ბინა', desc: 'MyHome / SS.ge ლინკით 1 წამში ან ხელით', action: `<button class="btn btn-primary btn-sm" data-setup="apartment">${icon('spark', 14)} ბინის შემოტანა</button>` },
+      { id: 'apt', done: hasApt, title: '1. დაამატე პირველი ბინა', desc: 'MyHome / SS.ge ლინკით ან ხელით', action: `<button class="btn btn-primary btn-sm" data-setup="apartment">${icon('spark', 14)} ბინის შემოტანა</button>` },
       { id: 'wm', done: hasWatermark, title: '2. დაადე Watermark ფოტოს', desc: 'დაიცავი ფოტოები მოპარვისგან შენი ლოგოთი და ნომრით', action: `<button class="btn btn-secondary btn-sm" data-setup="watermark">${icon('shield', 14)} Watermark</button>` },
       { id: 'col', done: hasCollection, title: '3. გააზიარე კოლექცია WhatsApp-ში', desc: 'მრავალბინიანი პრემიუმ კატალოგი კლიენტისთვის', action: `<button class="btn btn-secondary btn-sm" data-setup="collection">${icon('sparkle', 14)} კოლექციის შექმნა</button>` },
-      { id: 'lease', done: hasLease, title: '4. შექმენი ქირავნობის ხელშეკრულება', desc: 'სსკ 531–575 მუხლების 11-მუხლიანი იურიდიული აქტი', action: `<button class="btn btn-secondary btn-sm" data-setup="lease">${icon('file', 14)} ხელშეკრულება</button>` },
+      { id: 'lease', done: hasLease, title: '4. შექმენი ქირავნობის ხელშეკრულება', desc: 'სსკ 531–575 მუხლებზე დაფუძნებული ქირავნობის შაბლონი', action: `<button class="btn btn-secondary btn-sm" data-setup="lease">${icon('file', 14)} ხელშეკრულება</button>` },
     ];
   }
 
@@ -447,9 +447,9 @@
         <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:16px">
           <div style="max-width:560px">
             <span class="badge" style="background:rgba(4, 120, 87, 0.18);color:#047857;font-weight:700;padding:3px 10px;border-radius:99px;font-size:11.5px">პირველი ნაბიჯი</span>
-            <h2 style="font-size:22px;margin:8px 0 6px 0">შემოიტანე შენი პირველი ბინა 1 წამში</h2>
+            <h2 style="font-size:22px;margin:8px 0 6px 0">შემოიტანე შენი პირველი ბინა</h2>
             <p style="color:var(--muted);font-size:13.5px;line-height:1.5;margin:0 0 14px 0">
-              ჩასვი MyHome.ge ან SS.ge განცხადების ბმული. სისტემა წამებში გადმოიტანს HD ფოტოებს, ფართობს, ფასს და შექმნის შენს პირად VIP ბმულს.
+              ჩასვი MyHome.ge ან SS.ge განცხადების ბმული და ფოტოები, ფართობი და ფასი თავისით შემოდის. კლიენტისთვის პირად ბმულსაც მიიღებ.
             </p>
             <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
               <button type="button" class="btn btn-primary" id="btn-quick-import-hero">${icon('sparkle', 16)} ბინის შემოტანა ლინკით</button>

@@ -1396,7 +1396,7 @@
       !isSale && (a.pets_allowed ? 'ცხოველი დასაშვებია' : 'ცხოველი დაუშვებელია'),
       priceAmount ? `საკომისიო: ${commPct}% ${isSale ? 'გაყიდვის ფასიდან' : 'პირველი თვის ქირიდან'}${Number(a.owner_bonus) ? ' + მესაკუთრის ბონუსი' : ''} (${fmtMoney(commAmount, cur)}), ვიყოფთ ${split}/${100 - split}` : `საკომისიოს ვიყოფთ ${split}/${100 - split}`,
       '',
-      'ბმული კლიენტისთვის (ჩემი კონტაქტის გარეშე):',
+      'ბმული კლიენტისთვის (Rigzea-ს ბრენდის გარეშე):',
       `${wlUrl}`,
       '',
       phone ? `თუ შესაფერისი კლიენტი გყავთ, მომწერეთ: ${phone}` : 'თუ შესაფერისი კლიენტი გყავთ, მომწერეთ პირად შეტყობინებაში.',
@@ -1422,7 +1422,7 @@
         <div class="post-actions">
           <button type="button" class="btn btn-primary" id="btn-copy-post">${icon('copy', 16)} ტექსტის კოპირება</button>
           <a class="btn btn-wa" id="btn-wa-post" href="${R.whatsappUrl(postKA)}" target="_blank" rel="noopener">${icon('whatsapp', 16)} WhatsApp</a>
-          <button type="button" class="btn btn-secondary" id="btn-copy-wl" title="კლიენტისთვის გადასაგზავნი ბმული აგენტის კონტაქტის გარეშე">White-label ბმული</button>
+          <button type="button" class="btn btn-secondary" id="btn-copy-wl" title="კლიენტისთვის გადასაგზავნი ბმული Rigzea-ს ბრენდის გარეშე">White-label ბმული</button>
           <a class="btn btn-ghost" href="${esc(publicUrl)}" target="_blank" rel="noopener">${icon('external', 16)} გვერდის გახსნა</a>
         </div>`,
       onOpen: (form) => {
@@ -1436,7 +1436,7 @@
         }));
         out.addEventListener('input', sync);
         $('#btn-copy-post', form).onclick = () => copyText(out.value, 'პოსტის ტექსტი დაკოპირდა');
-        $('#btn-copy-wl', form).onclick = () => copyText(wlUrl, 'White-label ბმული დაკოპირდა (აგენტის კონტაქტის გარეშე)');
+        $('#btn-copy-wl', form).onclick = () => copyText(wlUrl, 'White-label ბმული დაკოპირდა (Rigzea-ს ბრენდის გარეშე)');
       },
     });
   };
@@ -1858,7 +1858,7 @@
       wide: true,
       submitLabel: 'ხელშეკრულების შედგენა',
       body: `
-        <div class="notice small">${icon('shield', 14)} ხელშეკრულების ტექსტი მკაცრად შეესაბამება საქართველოს სამოქალაქო კოდექსს (მუხლები 531–575). მოიცავს საგარანტიო დეპოზიტის დაცვას, ვადაგადაცილების პირგასამტეხლოს და მიღება-ჩაბარების აქტს მრიცხველების ჩვენებებით.</div>
+        <div class="notice small">${icon('shield', 14)} ხელშეკრულების ტექსტი აგებულია საქართველოს სამოქალაქო კოდექსის მუხლებზე (531–575) და პროექტად გამოსაყენებლად არის განკუთვნილი: გაუგზავნე იურისტს გადასამოწმებლად. მოიცავს საგარანტიო დეპოზიტის დაცვას, ვადაგადაცილების პირგასამტეხლოს და მიღება-ჩაბარების აქტს მრიცხველების ჩვენებებით.</div>
         <div class="form-section"><div class="form-section-title">საიდან შევავსო</div><div class="form-grid">
           <label class="field"><span class="field-label">გარიგება</span><select id="lease-deal"><option value="">არ არის არჩეული</option>${deals.map(x => `<option value="${x.id}" ${x.id === dl?.id ? 'selected' : ''}>${esc(x.client_name)}${x.apartment_id ? ' · ' + esc(H.aptName(x.apartment_id)) : ''}</option>`).join('')}</select></label>
           <label class="field"><span class="field-label">ობიექტი</span><select id="lease-apt"><option value="">არ არის არჩეული</option>${apts.map(x => `<option value="${x.id}" ${x.id === a?.id ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select></label>

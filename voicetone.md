@@ -36,7 +36,7 @@ Every screen, modal, card, and email must follow these five repeatable copywriti
 |---|---|---|---|
 | **1** | **First-Person Menus & Ownership (`ჩემთვის`)** | Nav says: „ჩემთვის“, „ჩემი ბიზნესისთვის“. Products: „ჩემი მიზანი“, „ჩემი სეიფი“. | Label navigation, filters, and plan tabs from the broker's viewpoint: „ჩემთვის (აგენტი)“, „ჩემი გუნდისთვის“, „ჩემი სააგენტოსთვის“, „ჩემი ობიექტები“. |
 | **2** | **Warm „შენ“ + Active Verbs** | Speaks directly using friendly imperative verbs: „აიღე“, „მართე“, „გაიმარტივე“, „აღმოაჩინე“, „გამოცადე“. Never stiff plural „თქვენ შეგიძლიათ“. | Lead feature cards and headings with active verbs addressing „შენ“: „გადმოიტანე“, „გაუზიარე“, „გააფორმე“, „მართე“, „გაიმარტივე“. |
-| **3** | **The 30-Second Speed Anchor** | Anchors real speed in the headline: „გახდი თიბისის მომხმარებელი 30 წამში“, „რამდენიმე წუთში“. | Attach realistic time anchors to 1-click tools: „გადმოიტანე განცხადება 10 წამში“, „მოამზადე ხელშეკრულება 1 წუთში“. |
+| **3** | **The 30-Second Speed Anchor** | Anchors real speed in the headline: „გახდი თიბისის მომხმარებელი 30 წამში“, „რამდენიმე წუთში“. | Use a time anchor only after you have measured it. Until then say „რამდენიმე წამში“: „გადმოიტანე განცხადება რამდენიმე წამში“. |
 | **4** | **„ერთ სივრცეში“ & „ნაკრები“** | Calls the platform a workspace: „მართე შენი ფინანსები ერთ სივრცეში“; subscription tiers are „ნაკრები“. | Keep „უძრავი ქონების აგენტის სამუშაო სივრცე“ front and center. Rename plans/tariffs from „ტარიფი / პაკეტი“ to „ნაკრები“. |
 | **5** | **The 3-Beat Benefit Sandwich** | Formula: `[Action Verb] + [3 Concrete Tasks] + [Simplify Your Day]`. | Group workflows into one smooth routine: „მართე მთელი საბროკერო საქმე ერთ სივრცეში: გადმოიტანე ობიექტები, გაუზიარე კოლექცია და გააფორმე ხელშეკრულება 1 კლიკით.“ |
 
@@ -99,7 +99,7 @@ TBC's organizational pillars map directly to how Rigzea delivers value across th
   * **KA:** `გადმოიტანე განცხადება რამდენიმე წამში, გაუზიარე კლიენტს შენი ბრენდირებული გვერდი და გააფორმე ხელშეკრულება სახლიდან გაუსვლელად.`
   * **EN:** `Import a listing in seconds, share your branded showcase page, and sign contracts wherever you are.`
 * **Hero CTAs:**
-  * **Primary:** `გამოცადე უფასოდ: 30 წამში` *(EN: Try for free: in 30 seconds)*
+  * **Primary:** `გამოცადე უფასოდ: ბარათის გარეშე` *(EN: Try for free: no card)*
   * **Secondary:** `აღმოაჩინე უპირატესობები` *(EN: Discover the benefits)*
 
 ---
@@ -114,9 +114,9 @@ TBC's organizational pillars map directly to how Rigzea delivers value across th
 
 #### Card 2: Personal Showcase Links (`/p/`)
 * **Headline:** `შენზე მორგებული სავიზიტო ბმულები`
-* **Body:** `გაუზიარე კლიენტს ერთი ან რამდენიმე ბინის კოლექცია შენი სახელით, ფერითა და დაცული ფოტოებით.`
+* **Body:** `გაუზიარე კლიენტს ერთი ან რამდენიმე ბინის კოლექცია შენი სახელითა და ლოგოთი.`
 * **Action Link:** `ვრცლად →`
-* *(EN: Showcase links tailored to you: Share single listings or curated collections with your branding, colors, and watermarked photos. Learn more →)*
+* *(EN: Showcase links tailored to you: Share single listings or curated collections with your name and logo. Learn more →)*
 
 #### Card 3: Bilingual Contracts (KA / EN)
 * **Headline:** `ხელშეკრულება 1 კლიკით`
@@ -165,7 +165,7 @@ When writing or reviewing any future UI copy, marketing text, or notifications f
 1. **Core Promise:** Rigzea exists to simplify a real estate broker's everyday life (*„გაიმარტივე საბროკერო ყოველდღიურობა“*). Always sell the relief of simplicity, speed, and clean order: never technical plumbing.
 2. **Perspective & Pronouns:** Use 1st-person labels for navigation and ownership (*„ჩემთვის“, „ჩემი ობიექტები“, „ჩემი გუნდისთვის“, „ჩემი სააგენტოსთვის“*). Use warm, direct 2nd-person singular (*„შენ“*) and active imperative Georgian verbs (*„მართე“, „გადმოიტანე“, „გაუზიარე“, „გააფორმე“, „გაიმარტივე“, „გამოცადე“*). Never use formal plural (*„თქვენ შეგიძლიათ განახორციელოთ“*) or passive voice (*„სისტემა უზრუნველყოფს“*).
 3. **3-Beat Copy Formula:**  
-   `(1) Action + Speed anchor` (*„გადმოიტანე განცხადება 10 წამში“*)  
+   `(1) Action + Speed anchor` (*„გადმოიტანე განცხადება რამდენიმე წამში“*)  
    `→ (2) Concrete capabilities in one space` (*„მართე ობიექტები, კოლექციები და ხელშეკრულებები ერთ სივრცეში“*)  
    `→ (3) Emotional payoff` (*„...და გაიმარტივე ყოველდღიურობა“*).
 4. **Vocabulary Rules:**  
