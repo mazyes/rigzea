@@ -28,7 +28,6 @@
   const icons = {
     eye: 'M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6',
     eyeOff: 'M3 3l18 18M10.6 5.1A10 10 0 0 1 12 5c6.5 0 10 7 10 7a17 17 0 0 1-3.2 4.1M6.6 6.6C3.8 8.4 2 12 2 12s3.5 7 10 7a10 10 0 0 0 5.4-1.6M9.9 9.9a3 3 0 0 0 4.2 4.2',
-    mail: 'M3 6h18v12H3zM3 6l9 7 9-7',
     up: 'M12 19V5M5 12l7-7 7 7',
     close: 'M18 6L6 18M6 6l12 12',
     search: 'M21 21l-5-5M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0',
@@ -91,8 +90,6 @@
   document.body.append(progress);
   const tools = make('aside', '', 'st-floating');
   tools.setAttribute('aria-label', 'სწრაფი მოქმედებები');
-  const contact = iconButton('a', 'მოგვწერე', icons.mail, 'lx-btn lx-btn-secondary lx-btn-sm st-control');
-  contact.href = 'mailto:contact@rigzea.com';
   const top = iconButton('button', 'ზემოთ', icons.up, 'lx-btn lx-btn-secondary lx-btn-sm st-control');
   top.type = 'button';
   top.hidden = true;
@@ -100,7 +97,7 @@
     window.scrollTo({ top: 0, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
     main.focus({ preventScroll: true });
   });
-  tools.append(contact, top);
+  tools.append(top);
   document.body.append(tools);
   let scheduled = false;
   const updateScroll = () => {
