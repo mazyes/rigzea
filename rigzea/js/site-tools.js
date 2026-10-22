@@ -145,8 +145,11 @@
   const accept = make('button', 'ვეთანხმები', 'lx-btn lx-btn-primary lx-btn-sm st-control st-accept');
   [essential, accept].forEach(button => { button.type = 'button'; });
   const showBanner = (show) => {
-    banner.hidden = !show;
+    banner.classList.remove('st-leaving');
     document.body.classList.toggle('st-cookie-open', show);
+    if (show || banner.hidden || matchMedia('(prefers-reduced-motion: reduce)').matches) { banner.hidden = !show; return; }
+    banner.classList.add('st-leaving');
+    banner.addEventListener('animationend', () => { if (banner.classList.contains('st-leaving')) { banner.hidden = true; banner.classList.remove('st-leaving'); } }, { once: true });
   };
   const preferences = make('button', 'ქუქიების პარამეტრები', 'st-preferences');
   preferences.type = 'button';

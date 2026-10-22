@@ -42,6 +42,11 @@
 .st-password input { padding-right: 52px !important; width: 100%; }
 .st-password-toggle { position: absolute; right: 2px; top: 50%; transform: translateY(-50%); min-height: 44px; min-width: 44px; padding: 0; border: none; background: transparent; color: var(--ink); font-size: 12px; }
 [hidden].st-control, [hidden].st-cookie { display: none; }
+@keyframes st-cookie-in { from { opacity: 0; transform: translate(-50%, 24px) scale(.96); } to { opacity: 1; transform: translate(-50%, 0) scale(1); } }
+@keyframes st-cookie-out { to { opacity: 0; transform: translate(-50%, 24px) scale(.96); } }
+.st-cookie { animation: st-cookie-in .45s cubic-bezier(.16, 1, .3, 1) both; }
+.st-cookie.st-leaving { animation: st-cookie-out .25s ease-in forwards; pointer-events: none; }
+@media (prefers-reduced-motion: reduce) { .st-cookie, .st-cookie.st-leaving { animation: none; } }
 @media (max-width: 768px) {
   .st-floating { bottom: calc(88px + env(safe-area-inset-bottom)); right: 12px; }
   .st-cookie { bottom: max(12px, env(safe-area-inset-bottom)); }

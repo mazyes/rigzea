@@ -13,7 +13,7 @@ const { serve, launch, newPage } = require('./harness');
     await page.goto(base + '/?utm_source=test&utm_campaign=launch');
     assert.equal(await page.evaluate(() => window.RigzeaCampaign()), undefined);
     await page.getByRole('button', { name: 'არ ვეთანხმები', exact: true }).click();
-    assert.equal(await page.locator('.st-cookie').isVisible(), false);
+    await page.locator('.st-cookie').waitFor({ state: 'hidden' });
     assert.equal(await page.evaluate(() => sessionStorage.getItem('rigzea_campaign')), null);
     await page.getByRole('button', { name: 'ქუქიების პარამეტრები', exact: true }).click();
     await page.getByRole('button', { name: 'ვეთანხმები', exact: true }).click();
@@ -37,7 +37,7 @@ const { serve, launch, newPage } = require('./harness');
     assert.equal(await page.evaluate(() => scrollY), 0);
     for (const route of ['/', '/features/', '/pricing/', '/faq/']) {
       await page.goto(base + route);
-      assert.equal(await page.locator('.st-cookie').isVisible(), false);
+      await page.locator('.st-cookie').waitFor({ state: 'hidden' });
     }
     await page.screenshot({ path: path.join(os.tmpdir(), 'rigzea-tools-desktop.png') });
     await page.goto(base + '/signup/');
@@ -103,7 +103,7 @@ const { serve, launch, newPage } = require('./harness');
     });
     await blocked.goto(base + '/');
     await blocked.getByRole('button', { name: 'არ ვეთანხმები', exact: true }).click();
-    assert.equal(await blocked.locator('.st-cookie').isVisible(), false);
+    await blocked.locator('.st-cookie').waitFor({ state: 'hidden' });
     assert.equal(await blocked.evaluate(() => window.RigzeaCampaign()), undefined);
     console.log('Site tools: consent, attribution, search/retry, keyboard, password controls, mobile and print passed.');
   } finally {
