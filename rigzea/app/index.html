@@ -35,8 +35,26 @@
 
   <link rel="stylesheet" href="/app/app.css?v=112078b6" />
 <link rel="stylesheet" href="/js/site-tools.css?v=411217bb" />
-<script>window.__RIGZEA_ASSET_VERSIONS={"/app/views-ops.js":"751ecaad","/app/views-portfolio.js":"9cc4053b","/app/views-deals.js":"d95db3e3","/app/views-docs.js":"967cd001","/app/views-finance.js":"3dd2ee5d","/app/views-admin.js":"58a2296f"};</script></head>
+<script>window.__RIGZEA_ASSET_VERSIONS={"/app/views-ops.js":"751ecaad","/app/views-portfolio.js":"5de9dfb3","/app/views-deals.js":"d95db3e3","/app/views-docs.js":"967cd001","/app/views-finance.js":"3dd2ee5d","/app/views-admin.js":"58a2296f"};</script></head>
 <body>
+  <script>
+    (function () {
+      var last = '';
+      function report(kind, filename, line, column) {
+        var path = '/app/' + (location.pathname.split('/').filter(Boolean).slice(-1)[0] || '');
+        var key = [kind, path, line || 0].join(':');
+        if (key === last) return;
+        last = key;
+        var body = JSON.stringify({ kind: kind, path: path, line: Number(line) || 0, column: Number(column) || 0, file: String(filename || '').split('/').pop().slice(0, 100) });
+        try {
+          if (navigator.sendBeacon && navigator.sendBeacon('/api/client-error/', new Blob([body], { type: 'application/json' }))) return;
+          fetch('/api/client-error/', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: body, keepalive: true }).catch(function () {});
+        } catch (_) {}
+      }
+      window.addEventListener('error', function (event) { report('error', event.filename, event.lineno, event.colno); });
+      window.addEventListener('unhandledrejection', function () { report('unhandledrejection', location.pathname, 0, 0); });
+    })();
+  </script>
   <div id="boot" class="boot" role="status">იტვირთება…</div>
 
   <!-- Sign in / sign up / reset -->
@@ -229,7 +247,7 @@
   <script>(function(){var en=false;try{en=localStorage.getItem('rigzea_lang')==='en'}catch(e){}window.RLang={lang:en?'en':'ka'};if(en){var s=document.createElement('script');s.src='/js/i18n.js';document.head.appendChild(s);return}document.addEventListener('click',function(e){if(!(e.target.closest&&e.target.closest('[data-lang-toggle]')))return;try{localStorage.setItem('rigzea_lang','en')}catch(x){}location.reload()})})()</script>
   <script src="/js/plans.js?v=6a07db8f"></script>
   <script src="/js/site-tools.js?v=2d8155ab"></script>
-  <script src="/app/app.js?v=feaa3898"></script>
+  <script src="/app/app.js?v=51e470d2"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
       window.addEventListener('load', () => {

@@ -652,6 +652,171 @@ test('14. sales: create property for sale, compute price/sqm, filter inventory b
   return page;
 });
 
+test('14.1. switching a rental to sale clears fields that no longer apply', async (browser) => {
+  const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
+  await page.goto(BASE + '/app/');
+  await page.getByRole('heading', { name: 'დღეს', exact: true }).waitFor();
+  await page.evaluate(() => {
+    const d = JSON.parse(localStorage.getItem('rigzea_mockdb'));
+    Object.assign(d.tables.apartments[0], {
+      transaction_type: 'long_term', rental_type: 'long_term', monthly_rent: 1200,
+      rent_due_day: 5, deposit_amount: 2400, tenant_name: 'ტესტი მდგმური',
+      tenant_phone: '+995 500 00 00 00', lease_end: '2027-01-01',
+      checkin_time: '15:00', checkout_time: '11:00',
+    });
+    localStorage.setItem('rigzea_mockdb', JSON.stringify(d));
+  });
+  const id = 'dddddddd-0000-4000-8000-000000000001';
+  await page.goto(`${BASE}/app/apartments/?id=${id}`);
+  await page.locator('#a-edit').click();
+  const dlg = page.locator('dialog[open]');
+  await dlg.locator('select[name=transaction_type]').selectOption('sale');
+  await dlg.locator('select[name=transaction_type]').dispatchEvent('change');
+  await dlg.locator('input[name=sale_price]').fill('175000');
+  await dlg.locator('[data-submit]').click();
+  await dlg.waitFor({ state: 'detached' });
+  const saved = (await db(page)).tables.apartments.find(a => a.id === id);
+  assert.strictEqual(saved.transaction_type, 'sale');
+  assert.strictEqual(Number(saved.sale_price), 175000);
+  for (const field of ['monthly_rent', 'rent_due_day', 'deposit_amount', 'tenant_name', 'tenant_phone', 'lease_end', 'checkin_time', 'checkout_time']) {
+    assert.strictEqual(saved[field], null, `${field} cleared when changing to sale`);
+  }
+  return page;
+});
+
+test('14.2. apartment search includes district in the list and global search', async (browser) => {
+  const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
+  await page.goto(BASE + '/app/');
+  await page.getByRole('heading', { name: 'დღეს', exact: true }).waitFor();
+  await page.evaluate(() => {
+    const d = JSON.parse(localStorage.getItem('rigzea_mockdb'));
+    Object.assign(d.tables.apartments[0], { name: 'სატესტო სახლი', address: 'სატესტო ქუჩა', city: 'ქუთაისი', district: 'წყალტუბო' });
+    localStorage.setItem('rigzea_mockdb', JSON.stringify(d));
+  });
+  await page.goto(BASE + '/app/apartments/');
+  await page.locator('#af-q').fill('წყალტუბო');
+  await page.locator('#view .rows a.row', { hasText: 'სატესტო სახლი' }).waitFor();
+  await page.locator('#af-q').fill('');
+  await page.locator('#btn-search').click();
+  await page.locator('#search-q').fill('წყალტუბო');
+  await page.locator('#search-results a.row', { hasText: 'სატესტო სახლი' }).waitFor();
+  return page;
+});
+
+test('14.3. large property lists show the count and can load more', async (browser) => {
+  const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
+  await page.goto(BASE + '/app/apartments/');
+  await page.locator('#btn-apt-new').waitFor();
+  const total = await page.evaluate(async () => { const n = window.App.S.data.apartments.length; window.App.S.limits.apartments = 2; await window.App.refresh({ quiet: true }); return n; });
+  await page.locator('#data-notice', { hasText: `ობიექტები 2/${total}` }).waitFor();
+  await page.locator('#data-notice [data-load-more="apartments"]').click();
+  await page.locator('#data-notice').waitFor({ state: 'hidden' });
+  assert.strictEqual(await page.locator('#view .rows a.row').count(), total, 'loading more reveals the full fixture list');
+  return page;
+});
+
+test('14.4. global search combines type and status filters, pages results, and loads the rest', async (browser) => {
+  const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
+  await page.goto(BASE + '/app/');
+  await page.getByRole('heading', { name: 'დღეს', exact: true }).waitFor();
+  await page.evaluate(async () => {
+    const d = JSON.parse(localStorage.getItem('rigzea_mockdb'));
+    const org = d.tables.organizations[0].id;
+    for (let i = 1; i <= 24; i++) d.tables.apartments.push({
+      id: `a1111111-0000-4000-8000-${String(i).padStart(12, '0')}`, organization_id: org,
+      name: `Needle apartment ${i}`, address: `Needle road ${i}`, city: 'თბილისი', district: 'ვაკე',
+      transaction_type: i % 2 ? 'sale' : 'long_term', rental_type: 'long_term', status: 'active', created_at: new Date().toISOString(),
+    });
+    d.tables.owners.push({ id: 'c1111111-0000-4000-8000-000000000001', organization_id: org, name: 'Needle contact', phone: '+995 500 00 00 01', contact_type: 'buyer' });
+    d.tables.tasks.push({ id: 'e1111111-0000-4000-8000-000000000001', organization_id: org, title: 'Needle task', status: 'new', type: 'followup', created_at: new Date().toISOString() });
+    d.tables.deals.push({ id: 'f1111111-0000-4000-8000-000000000001', organization_id: org, client_name: 'Needle deal', stage: 'enquiry', deal_type: 'sale', created_at: new Date().toISOString() });
+    localStorage.setItem('rigzea_mockdb', JSON.stringify(d));
+    window.App.S.limits.apartments = 2;
+    await window.App.refresh({ quiet: true });
+  });
+  await page.locator('#btn-search').click();
+  await page.locator('#search-q').fill('Needle');
+  await page.locator('#search-kind').selectOption('all');
+  await page.locator('#search-results [data-search-load="apartments"]').waitFor();
+  assert(await page.locator('#search-results .row[data-search-index]').count() >= 4, 'cross-category results include contacts, tasks, deals, and loaded properties');
+  await page.locator('#search-results [data-search-load="apartments"]').click();
+  await page.locator('#search-results [data-search-more]').waitFor();
+  assert.strictEqual(await page.locator('#search-results .row[data-search-index]').count(), 20, 'results show one page at a time');
+  await page.locator('#search-results [data-search-more]').click();
+  assert.strictEqual(await page.locator('#search-results .row[data-search-index]').count(), 27, 'show more reveals every matching loaded record');
+
+  await page.locator('#search-kind').selectOption('deals');
+  await page.locator('#search-filter').selectOption('enquiry');
+  assert.strictEqual(await page.locator('#search-results .row[data-search-index]').count(), 1, 'type and stage filters combine with the query');
+  await page.locator('#search-results .row[data-search-index]').click();
+  const dealForm = page.locator('dialog[open] input[name=client_name]');
+  await dealForm.waitFor();
+  assert.strictEqual(await dealForm.inputValue(), 'Needle deal', 'search opens the matching deal');
+  await page.keyboard.press('Escape');
+  await page.locator('#btn-search').click();
+  await page.locator('#search-q').fill('Needle');
+  await page.locator('#search-kind').selectOption('apartments');
+  await page.locator('#search-filter').selectOption('sale');
+  await page.locator('#search-results .row[data-search-index]').first().waitFor();
+  assert.strictEqual(await page.locator('#search-results .row[data-search-index]').count(), 12, 'property type filter is applied alongside the query');
+  return page;
+});
+
+test('17.1. contacts can be searched by name, phone, or email', async (browser) => {
+  const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
+  await page.goto(BASE + '/app/owners/');
+  await page.locator('#ow-q').fill('davit@example.ge');
+  await page.waitForFunction(() => document.querySelectorAll('#o-body .row').length === 1);
+  await page.locator('#o-body .row', { hasText: 'დავით მამულაშვილი' }).waitFor();
+  assert.strictEqual(await page.locator('#o-body .row').count(), 1, 'only matching contact is shown');
+  await page.locator('#ow-q').fill('თამარ');
+  await page.waitForFunction(() => document.querySelector('#o-body .row strong')?.textContent.includes('თამარ'));
+  await page.locator('#o-body .row', { hasText: 'თამარ გელაშვილი' }).waitFor();
+  assert.strictEqual(await page.locator('#o-body .row').count(), 1, 'query updates without changing the contact type filter');
+  return page;
+});
+
+test('17.2. optional dashboard read failures are explained and can be retried', async (browser) => {
+  const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
+  await page.addInitScript(() => { if (!sessionStorage.getItem('failedOptional')) { sessionStorage.setItem('failedOptional', '1'); localStorage.setItem('rigzea_mock_fail', JSON.stringify({ 'select:reservations': 1 })); } });
+  await page.goto(BASE + '/app/');
+  await page.getByRole('heading', { name: 'დღეს', exact: true }).waitFor();
+  await page.locator('#data-notice', { hasText: 'ჯავშნები' }).waitFor();
+  await page.locator('#btn-data-retry').click();
+  await page.locator('#data-notice').waitFor({ state: 'hidden' });
+  await page.getByRole('heading', { name: 'დღეს', exact: true }).waitFor();
+  return page;
+});
+
+test('17.3. non-managers do not request manager-only repair records', async (browser) => {
+  const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
+  await page.goto(BASE + '/app/');
+  await page.getByRole('heading', { name: 'დღეს', exact: true }).waitFor();
+  await page.evaluate(() => {
+    const d = JSON.parse(localStorage.getItem('rigzea_mockdb'));
+    const own = d.tables.organization_members.find(m => m.user_id === 'aaaaaaaa-0000-4000-8000-000000000001');
+    own.role = 'agent';
+    localStorage.setItem('rigzea_mockdb', JSON.stringify(d));
+    localStorage.setItem('rigzea_mock_fail', JSON.stringify({ 'select:repairs': 1 }));
+  });
+  await page.reload();
+  await page.getByRole('heading', { name: 'დღეს', exact: true }).waitFor();
+  assert.deepStrictEqual(await page.evaluate(() => JSON.parse(localStorage.getItem('rigzea_mock_fail'))), { 'select:repairs': 1 }, 'repair query was skipped for an agent');
+  assert.strictEqual(await page.locator('#data-notice').isVisible(), false, 'skipped permission-specific read does not show a false error');
+  return page;
+});
+
+test('17.4. manager repair read errors are visible and recoverable after startup', async (browser) => {
+  const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
+  await page.addInitScript(() => { if (!sessionStorage.getItem('failedRepairs')) { sessionStorage.setItem('failedRepairs', '1'); localStorage.setItem('rigzea_mock_fail', JSON.stringify({ 'select:repairs': 1 })); } });
+  await page.goto(BASE + '/app/');
+  await page.getByRole('heading', { name: 'დღეს', exact: true }).waitFor();
+  await page.locator('#data-notice', { hasText: 'რემონტის ჩანაწერები' }).waitFor();
+  await page.locator('#btn-data-retry').click();
+  await page.locator('#data-notice').waitFor({ state: 'hidden' });
+  return page;
+});
+
 test('15. sales CRM: buyer lead, sales deal commission, 7-stage pipeline advance & viewing appointment', async (browser) => {
   const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
   // 1. Verify Buyer contact

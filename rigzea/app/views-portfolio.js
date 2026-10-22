@@ -862,7 +862,7 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
     const title = sec === 'sale' ? 'გასაყიდი ბინები' : sec === 'rent' ? 'გასაქირავებელი ბინები' : 'უძრავი ქონება';
     const inScope = apts.filter(a => inSec(a) && a.status !== 'archived').length;
     const inStatus = (a, st) => st === 'current' ? !['archived', 'sold'].includes(a.status) : a.status === st;
-    const base = apts.filter(a => (!af.city || a.city === af.city) && inType(a, af.type) && (!s || [a.name, a.unit_number, a.address, a.city, H.owner(a.owner_id)?.name].some(v => String(v || '').toLowerCase().includes(s))));
+    const base = apts.filter(a => (!af.city || a.city === af.city) && inType(a, af.type) && (!s || [a.name, a.unit_number, a.address, a.city, a.district, H.owner(a.owner_id)?.name].some(v => String(v || '').toLowerCase().includes(s))));
     const list = base.filter(a => inStatus(a, af.status));
     const STATUS = [['current', 'ყველა მიმდინარე'], ['active', 'აქტიური'], ['reserved', 'დაჯავშნილი'], ['rented', 'გაქირავებული'], ['sold', 'გაყიდული'], ['maintenance', 'რემონტზე'], ['vacant', 'არააქტიური'], ['archived', 'დაარქივებული']]
       .filter(([id]) => !(sec === 'sale' && id === 'rented') && !(sec === 'rent' && id === 'sold'));
@@ -882,7 +882,7 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
       ${TYPES.length ? `<div class="chips" role="group" aria-label="ტრანზაქციის ტიპი" style="margin-bottom:8px">${TYPES.map(([id, label]) => `<button type="button" class="chip" data-tp="${id}" aria-pressed="${af.type === id}">${label} <span class="count">${apts.filter(a => inType(a, id) && a.status !== 'archived').length}</span></button>`).join('')}</div>` : ''}
       <div class="chips" role="group" aria-label="სტატუსი">${STATUS.map(([id, label]) => `<button type="button" class="chip" data-st="${id}" aria-pressed="${af.status === id}">${label} <span class="count">${base.filter(a => inStatus(a, id)).length}</span></button>`).join('')}</div>
       <div class="toolbar">
-        <div class="search-input grow">${icon('search', 16)}<input class="input" type="search" id="af-q" value="${esc(af.q)}" placeholder="სახელი, ნომერი, მისამართი, მფლობელი, ქალაქი" aria-label="ბინის ძებნა" /></div>
+        <div class="search-input grow">${icon('search', 16)}<input class="input" type="search" id="af-q" value="${esc(af.q)}" placeholder="სახელი, ნომერი, მისამართი, უბანი, მფლობელი, ქალაქი" aria-label="ბინის ძებნა" /></div>
         ${cities.length > 1 ? `<select class="input" id="af-city" aria-label="ქალაქი"><option value="">ყველა ქალაქი</option>${cities.map(c => `<option ${af.city === c ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select>` : ''}
       </div>
       <section class="card">${list.length ? `<div class="rows">
@@ -1205,7 +1205,7 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
     $('#a-pdf')?.addEventListener('click', () => App.openPresentation(a));
     $('#a-docs')?.addEventListener('click', () => App.openDocChooser({ apartment: a }));
     $('#btn-open-lease')?.addEventListener('click', () => App.openLeaseAgreementGenerator(a, null));
-    App.bindNapr($('#view'));
+    App.bindNextActions($('#view'));
     const openViewing = () => App.openTaskForm({ apartmentId: id, type: 'viewing', prefill: { title: `დათვალიერება: ${a.name}` } });
     $('#btn-apt-viewing')?.addEventListener('click', openViewing);
     $('#a-viewing')?.addEventListener('click', openViewing);
@@ -1484,6 +1484,9 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
         if (pm?.busy()) throw new Error('დაელოდე ფოტოების ატვირთვის დასრულებას.');
         const num = (x, dflt = null) => (x === undefined || String(x).trim() === '' ? dflt : Number(x));
         const txType = f.transaction_type || 'sale';
+        const isSale = txType === 'sale';
+        const isLongTerm = txType === 'long_term';
+        const isDaily = txType === 'daily';
         const cur = txType === 'sale' ? (f.currency_sale || f.currency || 'USD') : (f.currency || 'USD');
         const areaSqm = f.area_sqm ? Number(f.area_sqm) : null;
         const salePrice = f.sale_price ? Number(f.sale_price) : null;
@@ -1495,8 +1498,8 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
           cadastral_code: f.cadastral_code?.trim() || null,
           transaction_type: txType,
           property_type: f.property_type || 'apartment',
-          sale_price: salePrice,
-          price_sqm: priceSqm,
+          sale_price: isSale ? salePrice : null,
+          price_sqm: isSale ? priceSqm : null,
           ...(['land', 'commercial'].includes(f.property_type)
             ? { rooms: null, bedrooms: null, bathrooms: null }
             : { rooms: f.rooms ? Number(f.rooms) : null, bedrooms: f.bedrooms ? Number(f.bedrooms) : null, bathrooms: f.bathrooms ? Number(f.bathrooms) : null }),
@@ -1510,11 +1513,11 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
           commission_pct: num(f.commission_pct, 0), agent_commission_percent: num(f.agent_commission_percent),
           owner_bonus: num(f.owner_bonus, 0), cobroker_split: num(f.cobroker_split),
           owner_id: f.owner_id || null, status: f.status, is_archived: f.status === 'archived',
-          rental_type: txType === 'long_term' ? 'long_term' : 'short_term',
-          tenant_name: f.tenant_name?.trim() || null, tenant_phone: f.tenant_phone?.trim() || null,
-          monthly_rent: f.monthly_rent ? Number(f.monthly_rent) : null, rent_due_day: f.rent_due_day ? Number(f.rent_due_day) : 1,
-          deposit_amount: f.deposit_amount ? Number(f.deposit_amount) : null, lease_end: f.lease_end || null,
-          checkin_time: f.checkin_time || null, checkout_time: f.checkout_time || null,
+          rental_type: isSale ? null : isLongTerm ? 'long_term' : 'short_term',
+          tenant_name: isLongTerm ? (f.tenant_name?.trim() || null) : null, tenant_phone: isLongTerm ? (f.tenant_phone?.trim() || null) : null,
+          monthly_rent: isSale || !f.monthly_rent ? null : Number(f.monthly_rent), rent_due_day: isLongTerm && f.rent_due_day ? Number(f.rent_due_day) : (isLongTerm ? 1 : null),
+          deposit_amount: isLongTerm && f.deposit_amount ? Number(f.deposit_amount) : null, lease_end: isLongTerm ? (f.lease_end || null) : null,
+          checkin_time: isDaily ? (f.checkin_time || null) : null, checkout_time: isDaily ? (f.checkout_time || null) : null,
           door_code: f.door_code.trim() || null, parking_info: f.parking_info.trim() || null, wifi_name: f.wifi_name.trim() || null,
           wifi_password: f.wifi_password.trim() || null, access_instructions: f.access_instructions.trim() || null, notes: f.notes.trim() || null,
         };
@@ -1682,17 +1685,21 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
   }
 
   let ownerContactType = 'all';
+  let ownerQuery = '';
 
   // fixedType: a section page shows one contact type and no type filter.
   function renderOwnersList(root, fixedType = null) {
     const all = S.data.owners;
     const TYPES = [['all', 'ყველა'], ['owner', 'მეპატრონეები'], ['buyer', 'მყიდველები'], ['renter', 'მდგმურები'], ['seller', 'გამყიდველები']];
     const activeType = fixedType || ownerContactType;
-    const list = all.filter(o => activeType === 'all' || (o.contact_type || 'owner') === activeType);
+    const query = ownerQuery.trim().toLowerCase();
+    const list = all.filter(o => (activeType === 'all' || (o.contact_type || 'owner') === activeType)
+      && (!query || [o.name, o.phone, o.email].some(v => String(v || '').toLowerCase().includes(query))));
     const page = CONTACT_PAGES[fixedType];
     const cols = 'minmax(0,1.5fr) 110px minmax(0,1.2fr) minmax(0,1.3fr) 100px';
 
     root.innerHTML = `
+      <div class="toolbar" style="margin-bottom:12px"><div class="search-input grow">${icon('search', 16)}<input class="input" type="search" id="ow-q" value="${esc(ownerQuery)}" placeholder="სახელი, ტელეფონი ან ელფოსტა" aria-label="კონტაქტის ძებნა" /></div><span class="small muted">${list.length} კონტაქტი</span></div>
       ${fixedType ? '' : `<div class="chips" role="group" aria-label="კონტაქტის ტიპი" style="margin-bottom:12px">
         ${TYPES.map(([id, label]) => `<button type="button" class="chip" data-oct="${id}" aria-pressed="${ownerContactType === id}">${label} <span class="count">${all.filter(o => id === 'all' || (o.contact_type || 'owner') === id).length}</span></button>`).join('')}
       </div>`}
@@ -1709,8 +1716,11 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
           <span class="cell-meta">${esc([o.phone, o.email].filter(Boolean).join(' · ') || '–')}${budgetStr ? `<div class="small t-ok" style="font-weight:600">${esc(budgetStr)}</div>` : ''}</span>
           <span class="cell-meta" data-label="დეტალები">${apts.length ? esc(apts.map(a => a.name).join(', ')) : (prefStr ? esc(prefStr) : (typeof o.requirements === 'string' && o.requirements ? esc(o.requirements.slice(0, 40)) : '–'))}</span>
           <span class="cell-status">${pend ? R.badge(`${pend} ელოდება`, 'warn') : ''}</span></a>`;
-      }).join('')}</div>` : `<div class="empty">${icon('owner', 28)}<h3>${page ? `${page.one} ჯერ არ არის დამატებული` : 'კონტაქტი ვერ მოიძებნა'}</h3><p>${page ? 'დაამატე სახელი და ტელეფონი. დანარჩენის შევსება მოგვიანებითაც შეიძლება.' : 'დაამატე მეპატრონე, გამყიდველი, მყიდველი ან მდგმური.'}</p><button class="btn btn-primary" type="button" id="o-new-empty">${page ? page.add : 'კონტაქტის დამატება'}</button></div>`}</section>`;
+      }).join('')}</div>` : `<div class="empty">${icon('owner', 28)}<h3>${query ? 'შესაბამისი კონტაქტი ვერ მოიძებნა' : page ? `${page.one} ჯერ არ არის დამატებული` : 'კონტაქტი ჯერ არ არის დამატებული'}</h3><p>${query ? 'შეამოწმე სახელი, ტელეფონი ან ელფოსტა.' : 'დაამატე სახელი და ტელეფონი. დანარჩენის შევსება მოგვიანებითაც შეიძლება.'}</p>${query ? '<button class="btn btn-secondary" type="button" id="ow-q-clear">ძებნის გასუფთავება</button> <button class="btn btn-primary" type="button" id="o-new-empty">კონტაქტის დამატება</button>' : `<button class="btn btn-primary" type="button" id="o-new-empty">${page ? page.add : 'კონტაქტის დამატება'}</button>`}</div>`}</section>`;
 
+    let timer;
+    $('#ow-q').addEventListener('input', (e) => { clearTimeout(timer); timer = setTimeout(() => { ownerQuery = e.target.value; renderOwnersList(root, fixedType); const i = $('#ow-q'); i.focus(); i.setSelectionRange(ownerQuery.length, ownerQuery.length); }, 150); });
+    $('#ow-q-clear')?.addEventListener('click', () => { ownerQuery = ''; renderOwnersList(root, fixedType); $('#ow-q').focus(); });
     $$('[data-oct]', root).forEach(b => b.addEventListener('click', () => { ownerContactType = b.dataset.oct; renderOwnersList(root); }));
     $('#o-new-empty')?.addEventListener('click', () => openOwnerForm(null, fixedType ? { contact_type: fixedType } : {}));
   }

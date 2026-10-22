@@ -1,5 +1,5 @@
 // Who runs Rigzea. Fill these in once; the legal pages and the landing footer read them from here.
-// An empty value hides its line. While name or email is empty, the legal pages show a notice.
+// An empty value hides its line. While a required operator detail is empty, the legal pages show a notice.
 window.RIGZEA_OPERATOR = {
   name: 'რიგზეა (Rigzea)',     // legal name: company (შპს ...) or individual entrepreneur (ი/მ ...)
   id: '',       // identification code
@@ -18,7 +18,7 @@ window.RIGZEA_OPERATOR = {
       if (el.tagName === 'A' && value) el.href = (key === 'email' ? 'mailto:' : 'tel:') + value.replace(/\s+/g, '');
     });
   });
-  var complete = String(op.name || '').trim() && String(op.email || '').trim();
+  var complete = ['name', 'id', 'address', 'email'].every(function (key) { return String(op[key] || '').trim(); });
   document.querySelectorAll('[data-operator-notice]').forEach(function (el) { el.hidden = !!complete; });
   document.querySelectorAll('[data-operator-line]').forEach(function (el) {
     el.textContent = [op.name, op.id && ('ს/კ ' + op.id), op.address, op.email, op.phone].filter(Boolean).join(' · ');

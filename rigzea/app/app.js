@@ -9,6 +9,11 @@
   // dropping them (see renderDataNotice). Activity, notifications and monthly reports are
   // intentionally capped as feeds and are not listed here.
   const PAGED = {
+    apartments:  { label: 'ობიექტები', page: 500 },
+    owners:      { label: 'კონტაქტები', page: 500 },
+    openTasks:   { label: 'აქტიური საქმეები', page: 300 },
+    reservations:{ label: 'ჯავშნები', page: 300 },
+    repairs:     { label: 'რემონტის ჩანაწერები', page: 300 },
     deals:       { label: 'გარიგებები', page: 500 },
     approvals:   { label: 'დადასტურებები', page: 300 },
     expenses:    { label: 'ხარჯები', page: 500 },
@@ -26,6 +31,7 @@
     totals: {},        // { kind: { total, shown } } only when the server held more rows than fetched
     loading: false,
     loadError: null,
+    loadWarnings: {},
     stale: false,      // true while saved data from the last visit is shown and fresh data loads
     platformAdmin: false,
     seatInvites: 0,    // pending non-staff invitations, kept by the team view
@@ -68,6 +74,8 @@
   });
 
   let prefetch = null; // { org, data: Promise } started by boot()
+  let memberReady = null;
+  let globalSearchReady = false;
 
   async function boot() {
     try {
@@ -95,16 +103,18 @@
           return enterShell({ handed: true });
         }
       }
-      // These do not depend on each other, so they run together instead of one after another.
-      // The last used organization's data starts loading now too; enterShell drops it if a
-      // different organization ends up selected.
+      // The admin check does not depend on the organization list.
       const adminCheck = sb.rpc('is_platform_admin').then(r => r.data === true, () => false);
+      // Joins any organizations this email was invited to (no-op otherwise).
+      await sb.rpc('accept_my_invitations').then(() => {}, () => {});
+      // Start workspace reads with organization roles resolving so role-specific reads do not
+      // skip manager data or issue denied requests for agents.
+      memberReady = loadOrgs();
       const savedOrg = localStorage.getItem('rigzea_selected_org_id');
       prefetch = savedOrg ? { org: savedOrg, data: fetchData(savedOrg) } : null;
       prefetch?.data.catch(() => {}); // a failure is reported by loadData, not here
-      // Joins any organizations this email was invited to (no-op otherwise).
-      await sb.rpc('accept_my_invitations').then(() => {}, () => {});
-      await loadOrgs();
+      await memberReady;
+      memberReady = null;
       S.platformAdmin = await adminCheck;
       if (!S.orgs.length) return showScreen('onboarding');
       if (S.member.role === 'staff') { location.replace('/staff/'); return; }
@@ -306,16 +316,19 @@
   // say "500 of 1200" instead of pretending the rest do not exist.
   async function take(totals, kind, builder) {
     const r = await builder;
+    if (r.error) throw r.error;
     const rows = r.data || [];
-    if (!r.error && typeof r.count === 'number') totals[kind] = { total: r.count, shown: rows.length };
+    if (typeof r.count === 'number') totals[kind] = { total: r.count, shown: rows.length };
     return rows;
   }
 
   // Fetches everything the workspace shows for one organization. Throws on failure.
-  async function fetchData(org) {
+  async function fetchData(org, includeSearchData = false) {
     const totals = {};
     const area = route().name;
-    const needs = new Set(area === 'today'
+    const needs = new Set(includeSearchData
+      ? ['closedTasks', 'approvals', 'expenses', 'income', 'reservations', 'repairs', 'deals']
+      : area === 'today'
       ? ['closedTasks', 'approvals', 'expenses', 'income', 'reservations', 'events', 'repairs', 'deals', 'statements']
       : area === 'tasks'
         ? ['closedTasks', 'approvals', 'expenses', 'repairs', 'deals']
@@ -326,41 +339,51 @@
             : area === 'finance'
               ? ['expenses', 'income', 'statements']
               : new Set());
-    const optional = (name, factory) => needs.has(name) ? factory() : Promise.resolve([]);
+    const warnings = {};
+    const optional = (name, factory) => needs.has(name)
+      ? Promise.resolve().then(async () => {
+        if (name === 'repairs') {
+          if (!S.member && memberReady) await memberReady;
+          if (!isManager()) return [];
+        }
+        return factory();
+      }).catch(err => { warnings[name] = err; return []; })
+      : Promise.resolve([]);
     const since = new Date(); since.setDate(since.getDate() - 120);
     const sinceIso = R.isoDate(since);
     const [apartments, owners, openTasks, closedTasks, approvals, expenses, income, reservations, events, members, notifications, statements, repairs, deals] = await Promise.all([
-      q(sb.from('apartments').select('*').eq('organization_id', org).order('name')),
-      q(sb.from('owners').select('*').eq('organization_id', org).order('name')),
-      // Every open task, plus the most recent closed ones for history.
-      q(sb.from('tasks').select('*').eq('organization_id', org).in('status', OPEN_TASK_STATUSES).order('due_date', { ascending: true })),
+      take(totals, 'apartments', sb.from('apartments').select('*', { count: 'exact' }).eq('organization_id', org).order('name').order('id').limit(S.limits.apartments)),
+      take(totals, 'owners', sb.from('owners').select('*', { count: 'exact' }).eq('organization_id', org).order('name').order('id').limit(S.limits.owners)),
+      // The most urgent open tasks come first; the notice offers older ones when the list is long.
+      take(totals, 'openTasks', sb.from('tasks').select('*', { count: 'exact' }).eq('organization_id', org).in('status', OPEN_TASK_STATUSES).order('due_date', { ascending: true }).order('id').limit(S.limits.openTasks)),
       optional('closedTasks', () => take(totals, 'closedTasks', sb.from('tasks').select('*', { count: 'exact' }).eq('organization_id', org).in('status', ['done', 'cancelled']).order('due_date', { ascending: false }).limit(S.limits.closedTasks))),
       optional('approvals', () => take(totals, 'approvals', sb.from('approvals').select('*', { count: 'exact' }).eq('organization_id', org).order('created_at', { ascending: false }).limit(S.limits.approvals))),
       optional('expenses', () => take(totals, 'expenses', sb.from('expenses').select('*', { count: 'exact' }).eq('organization_id', org).order('expense_date', { ascending: false }).limit(S.limits.expenses))),
       optional('income', () => take(totals, 'income', sb.from('income').select('*', { count: 'exact' }).eq('organization_id', org).order('income_date', { ascending: false }).limit(S.limits.income))),
-      // Reservations need the operations RLS migration; treat a failure as "no data" rather than breaking the app.
-      optional('reservations', () => sb.from('reservations').select('*').eq('organization_id', org).gte('check_out', sinceIso).order('check_in').then(r => r.data || [], () => [])),
+      optional('reservations', () => take(totals, 'reservations', sb.from('reservations').select('*', { count: 'exact' }).eq('organization_id', org).gte('check_out', sinceIso).order('check_in').order('id').limit(S.limits.reservations))),
       optional('events', () => q(sb.from('activity_events').select('*').eq('organization_id', org).order('created_at', { ascending: false }).limit(100))),
       q(sb.from('organization_members').select('*').eq('organization_id', org)),
       q(sb.from('notifications').select('*').eq('organization_id', org).eq('user_id', S.user.id).order('created_at', { ascending: false }).limit(40)),
       optional('statements', () => q(sb.from('monthly_reports').select('*').eq('organization_id', org).order('month_period', { ascending: false }).limit(24))),
-      optional('repairs', () => q(sb.from('repairs').select('*').eq('organization_id', org)).catch(() => [])),
-      optional('deals', () => take(totals, 'deals', sb.from('deals').select('*', { count: 'exact' }).eq('organization_id', org).order('created_at', { ascending: false }).limit(S.limits.deals)).catch(() => [])),
+      optional('repairs', () => take(totals, 'repairs', sb.from('repairs').select('*', { count: 'exact' }).eq('organization_id', org).order('created_at', { ascending: false }).order('id').limit(S.limits.repairs))),
+      optional('deals', () => take(totals, 'deals', sb.from('deals').select('*', { count: 'exact' }).eq('organization_id', org).order('created_at', { ascending: false }).limit(S.limits.deals))),
     ]);
     const tasks = [...openTasks, ...closedTasks].sort((a, b) => String(a.due_date || '~').localeCompare(String(b.due_date || '~')));
-    return { totals, data: { apartments, owners, tasks, approvals, expenses, income, reservations, events, members, notifications, statements, repairs, deals: deals || [] } };
+    return { totals, warnings, data: { apartments, owners, tasks, approvals, expenses, income, reservations, events, members, notifications, statements, repairs, deals } };
   }
 
   // Loads the selected organization's data into S. `pending` is a fetchData() already in flight.
-  async function loadData(pending) {
+  async function loadData(pending, { searchAll = false } = {}) {
     const org = S.org.id;
     S.loading = true;
     S.loadError = null;
     try {
-      const { data, totals } = await (pending || fetchData(org));
+      const { data, totals, warnings } = await (pending || fetchData(org));
       if (S.org?.id !== org) return; // switched organization while this was loading
       S.data = data;
       S.totals = totals;
+      S.loadWarnings = warnings;
+      globalSearchReady = searchAll;
       indexData();
       dataCache.save(org);
     } catch (err) {
@@ -452,9 +475,9 @@
     indexData();
   }
 
-  async function refresh({ quiet = false } = {}) {
+  async function refresh({ quiet = false, searchAll = false } = {}) {
     if (!quiet) renderLoading();
-    await loadData();
+    await loadData(searchAll ? fetchData(S.org.id, true) : undefined, { searchAll });
     renderShell();
     render();
     // Shown once per failed refresh, not on every later render.
@@ -945,27 +968,134 @@
     if (!S.data || document.querySelector('dialog[open]')) return;
     R.dialog({
       title: 'ძებნა',
-      body: `<div class="search-input"><span>${icon('search', 16)}</span><input class="input" id="search-q" type="search" placeholder="ბინა, მისამართი, საქმე, მფლობელი…" autocomplete="off" aria-label="საძიებო სიტყვა" /></div><div id="search-results" class="rows" style="margin-top:10px"></div>`,
+      wide: true,
+      body: `<div class="toolbar" style="margin-bottom:10px"><div class="search-input grow"><span>${icon('search', 16)}</span><input class="input" id="search-q" type="search" placeholder="სახელი, ნომერი, მისამართი ან შენიშვნა" autocomplete="off" aria-label="საძიებო სიტყვა" /></div>
+        <select class="input" id="search-kind" aria-label="ჩანაწერის ტიპი"><option value="all">ყველა ტიპი</option><option value="apartments">ობიექტები</option><option value="owners">კონტაქტები</option><option value="tasks">საქმეები</option><option value="deals">გარიგებები</option><option value="reservations">ჯავშნები</option><option value="expenses">ხარჯები</option><option value="income">შემოსავალი</option><option value="approvals">თანხმობები</option><option value="repairs">რემონტი</option></select>
+        <select class="input" id="search-filter" aria-label="დამატებითი ფილტრი" hidden></select></div><div id="search-results" class="rows" style="margin-top:10px"></div>`,
       onOpen: (form, dlg) => {
         const input = $('#search-q', form);
+        const kindSelect = $('#search-kind', form);
+        const filterSelect = $('#search-filter', form);
         const out = $('#search-results', form);
-        const draw = () => {
-          const s = input.value.trim().toLowerCase();
-          if (s.length < 2) { out.innerHTML = '<p class="empty-inline">ჩაწერე მინიმუმ 2 სიმბოლო.</p>'; return; }
-          const has = (...v) => v.some(x => String(x || '').toLowerCase().includes(s));
-          const res = [
-            ...S.data.apartments.filter(a => has(a.name, a.unit_number, a.address, a.city, H.owner(a.owner_id)?.name)).slice(0, 6).map(a => ({ href: `#/apartments/${a.id}`, icon: 'building', title: a.name, sub: [a.address, a.city].filter(Boolean).join(', ') })),
-            ...S.data.tasks.filter(t => has(t.title, t.description, H.aptName(t.apartment_id))).slice(0, 6).map(t => ({ href: taskHref(t.id), icon: 'tasks', title: t.title, sub: `${H.aptName(t.apartment_id)} · ${L.taskStatus[t.status]}` })),
-            ...S.data.owners.filter(o => has(o.name, o.phone, o.email)).slice(0, 4).map(o => ({ href: `#/owners/${o.id}`, icon: 'owner', title: o.name, sub: (o.is_flagged ? 'არასანდო კლიენტი · ' : '') + (o.phone || o.email || '') })),
-          ];
-          out.innerHTML = res.length ? res.map(x => `<a class="row" style="--cols:24px minmax(0,1fr)" href="${x.href}">${icon(x.icon)}<span class="cell-main"><strong>${esc(x.title)}</strong><span>${esc(x.sub)}</span></span></a>`).join('') : '<p class="empty-inline">ვერაფერი მოიძებნა.</p>';
-          $$('a', out).forEach(a => a.addEventListener('click', () => dlg.close()));
+        const PAGE_SIZE = 20;
+        let visible = PAGE_SIZE;
+        let current = [];
+        let searchLoading = false;
+        let searchError = null;
+        const tokens = () => input.value.trim().toLowerCase().split(/\s+/).filter(Boolean);
+        const has = (terms, ...values) => terms.every(term => values.some(value => String(value || '').toLowerCase().includes(term)));
+        const filterChoices = {
+          apartments: { field: a => a.transaction_type || (a.rental_type === 'long_term' ? 'long_term' : 'daily'), label: 'გარიგების ტიპი', values: L.transactionType },
+          owners: { field: o => o.contact_type || 'owner', label: 'კონტაქტის ტიპი', values: L.contactType },
+          tasks: { field: t => t.status, label: 'საქმის სტატუსი', values: L.taskStatus },
+          deals: { field: d => d.stage, label: 'გარიგების ეტაპი', values: L.dealStage },
+          reservations: { field: r => r.status, label: 'ჯავშნის სტატუსი', values: { confirmed: 'დადასტურებული', cancelled: 'გაუქმებული', pending: 'მოლოდინში' } },
+          expenses: { field: e => e.status, label: 'ხარჯის სტატუსი', values: L.expense },
+          approvals: { field: a => R.approvalStatus(a), label: 'თანხმობის სტატუსი', values: L.approval },
+          repairs: { field: r => r.status, label: 'რემონტის სტატუსი', values: { estimated: 'შეფასებულია', approved: 'დადასტურებული', declined: 'უარყოფილი', completed: 'დასრულებული' } },
         };
-        // Each search scans every apartment, task and contact, so wait for a pause in typing.
+        const updateFilterOptions = () => {
+          const config = filterChoices[kindSelect.value];
+          filterSelect.hidden = !config;
+          filterSelect.innerHTML = config
+            ? `<option value="">ყველა ${config.label.toLowerCase()}</option>${Object.entries(config.values).map(([value, label]) => `<option value="${esc(value)}">${esc(label)}</option>`).join('')}`
+            : '';
+          filterSelect.value = '';
+        };
+        const incomplete = () => {
+          const map = { apartments: ['apartments'], owners: ['owners'], tasks: ['openTasks', 'closedTasks'], deals: ['deals'], reservations: ['reservations'], expenses: ['expenses'], income: ['income'], approvals: ['approvals'], repairs: ['repairs'] };
+          const keys = kindSelect.value === 'all' ? Object.values(map).flat() : (map[kindSelect.value] || []);
+          return [...new Set(keys)].filter(key => S.totals[key] && S.totals[key].shown < S.totals[key].total);
+        };
+        const loadSearchData = async () => {
+          if (searchLoading) return;
+          searchLoading = true;
+          searchError = null;
+          draw();
+          const org = S.org.id;
+          try {
+            const { data, totals, warnings } = await fetchData(org, true);
+            if (S.org?.id !== org) return;
+            S.data = data;
+            S.totals = totals;
+            S.loadWarnings = warnings;
+            globalSearchReady = true;
+            indexData();
+            dataCache.save(org);
+            renderShell();
+            render();
+          } catch (err) {
+            searchError = R.friendlyError(err);
+          } finally {
+            searchLoading = false;
+            draw();
+          }
+        };
+        const buildRecords = (terms) => {
+          const records = [];
+          const add = (kind, label, row, title, sub, href, fields, filterValue, iconName, onOpen) => {
+            if (has(terms, ...fields)) records.push({ kind, label, row, title, sub, href, filterValue, icon: iconName, onOpen });
+          };
+          S.data.apartments.forEach(a => add('apartments', 'ობიექტი', a, a.name, [a.address, a.district, a.city].filter(Boolean).join(', '), `#/apartments/${a.id}`,
+            [a.name, a.unit_number, a.address, a.district, a.city, H.owner(a.owner_id)?.name, a.status && L.aptStatus[a.status], a.transaction_type && L.transactionType[a.transaction_type]],
+            a.transaction_type || (a.rental_type === 'long_term' ? 'long_term' : 'daily'), 'building'));
+          S.data.owners.forEach(o => add('owners', 'კონტაქტი', o, o.name, [o.phone, o.email].filter(Boolean).join(' · '), `#/owners/${o.id}`,
+            [o.name, o.phone, o.email, o.requirements, o.notes, L.contactType[o.contact_type]], o.contact_type || 'owner', 'owner'));
+          S.data.tasks.forEach(t => add('tasks', 'საქმე', t, t.title, `${H.aptName(t.apartment_id)} · ${L.taskStatus[t.status] || t.status}`, taskHref(t.id),
+            [t.title, t.description, t.blocked_reason, H.aptName(t.apartment_id), H.memberName(t.assigned_to), L.taskStatus[t.status], L.taskType[t.type]], t.status, 'tasks'));
+          S.data.deals.forEach(d => add('deals', 'გარიგება', d, d.client_name || 'გარიგება', `${H.aptName(d.apartment_id)} · ${L.dealStage[d.stage] || d.stage}`, '#/deals',
+            [d.client_name, d.client_phone, d.note, H.aptName(d.apartment_id), L.dealStage[d.stage], d.deal_type === 'sale' ? 'გაყიდვა' : 'გაქირავება'], d.stage, 'wallet', () => {
+              ensureViewLoaded('deals').then(() => App.openDealForm(d));
+            }));
+          S.data.reservations.forEach(r => add('reservations', 'ჯავშანი', r, r.guest_name || 'ჯავშანი', `${H.aptName(r.apartment_id)} · ${R.date(r.check_in)}–${R.date(r.check_out)}`, `#/apartments/${r.apartment_id}`,
+            [r.guest_name, r.source && L.source[r.source], H.aptName(r.apartment_id), r.status, r.check_in, r.check_out], r.status, 'calendar'));
+          S.data.expenses.forEach(e => add('expenses', 'ხარჯი', e, e.description || L.expenseCategory[e.category] || 'ხარჯი', `${H.aptName(e.apartment_id)} · ${L.expense[e.status] || e.status}`, e.apartment_id ? `#/apartments/${e.apartment_id}` : '#/finance',
+            [e.description, e.vendor, L.expenseCategory[e.category], H.aptName(e.apartment_id), H.owner(e.owner_id)?.name, L.expense[e.status]], e.status, 'wallet'));
+          S.data.income.forEach(i => add('income', 'შემოსავალი', i, i.description || i.source || 'შემოსავალი', `${H.aptName(i.apartment_id)} · ${i.source || ''} · ${R.date(i.income_date)}`, i.apartment_id ? `#/apartments/${i.apartment_id}` : '#/finance',
+            [i.description, i.source, H.aptName(i.apartment_id), H.owner(i.owner_id)?.name, i.income_date, i.amount], null, 'wallet'));
+          S.data.approvals.forEach(a => add('approvals', 'თანხმობა', a, a.title || a.description || 'თანხმობის მოთხოვნა', `${H.aptName(a.apartment_id)} · ${L.approval[R.approvalStatus(a)] || R.approvalStatus(a)}`, '#/owners?type=owner&tab=approvals',
+            [a.title, a.description, a.response_note, H.aptName(a.apartment_id), H.owner(a.owner_id)?.name, L.approval[R.approvalStatus(a)]], R.approvalStatus(a), 'owner'));
+          S.data.repairs.forEach(r => add('repairs', 'რემონტი', r, r.issue || 'რემონტის ჩანაწერი', `${H.aptName(r.apartment_id)} · ${r.status || ''}`, r.task_id ? taskHref(r.task_id) : `#/apartments/${r.apartment_id}`,
+            [r.issue, r.description, H.aptName(r.apartment_id), r.status, r.estimate_amount], r.status, 'tools'));
+          return records.filter(item => (kindSelect.value === 'all' || item.kind === kindSelect.value)
+            && (!filterSelect.value || item.filterValue === filterSelect.value));
+        };
+        const draw = () => {
+          if (searchError) {
+            out.innerHTML = `<p class="empty-inline">ძებნის მონაცემები ვერ ჩაიტვირთა. ${esc(searchError)}</p><button type="button" class="btn btn-secondary btn-sm" data-search-retry>ხელახლა ცდა</button>`;
+            return;
+          }
+          if (!globalSearchReady) { out.innerHTML = '<p class="empty-inline" role="status">ძებნისთვის მონაცემებს ვტვირთავთ…</p>'; return; }
+          const terms = tokens();
+          if (!terms.length || terms.some(term => term.length < 2)) { out.innerHTML = '<p class="empty-inline">ჩაწერე მინიმუმ 2 სიმბოლო.</p>'; return; }
+          current = buildRecords(terms);
+          const page = current.slice(0, visible);
+          const missing = incomplete();
+          const typeName = kindSelect.options[kindSelect.selectedIndex].textContent;
+          out.innerHTML = `<p class="small muted" role="status">${current.length} შედეგი ჩაიტვირთულ ჩანაწერებში · ${esc(typeName)}</p>`
+            + (page.length ? page.map((item, index) => `<a class="row" style="--cols:24px minmax(0,1fr)" href="${item.href}" data-search-index="${index}">${icon(item.icon)}<span class="cell-main"><strong>${esc(item.title)}</strong><span>${esc(`${item.label} · ${item.sub}`)}</span></span></a>`).join('') : '<p class="empty-inline">ვერაფერი მოიძებნა.</p>')
+            + (visible < current.length ? `<button type="button" class="btn btn-secondary btn-sm" data-search-more>კიდევ ${Math.min(PAGE_SIZE, current.length - visible)} შედეგი</button>` : '')
+            + (Object.keys(S.loadWarnings || {}).length ? '<p class="small t-danger">ზოგი კატეგორიის მონაცემი ვერ ჩაიტვირთა. შეგიძლია ხელახლა სცადო.</p><button type="button" class="btn btn-secondary btn-sm" data-search-retry>ძებნის განახლება</button>' : '')
+            + (missing.length ? `<div class="search-incomplete"><p class="small muted">ზოგი სია ჯერ ბოლომდე ჩატვირთული არ არის. დამატებითი შედეგების მოსაძებნად ჩატვირთე:</p>${missing.map(key => `<button type="button" class="btn btn-ghost btn-sm" data-search-load="${key}">${esc(PAGED[key]?.label || key)} (${S.totals[key].shown}/${S.totals[key].total})</button>`).join('')}</div>` : '');
+        };
         let timer;
-        input.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(draw, 150); });
-        input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); clearTimeout(timer); draw(); $('a', out)?.click(); } });
+        input.addEventListener('input', () => { clearTimeout(timer); visible = PAGE_SIZE; timer = setTimeout(draw, 150); });
+        kindSelect.addEventListener('change', () => { visible = PAGE_SIZE; updateFilterOptions(); draw(); });
+        filterSelect.addEventListener('change', () => { visible = PAGE_SIZE; draw(); });
+        out.addEventListener('click', async (e) => {
+          if (e.target.closest('[data-search-retry]')) { globalSearchReady = false; await loadSearchData(); return; }
+          const load = e.target.closest('[data-search-load]');
+          if (load) { const key = load.dataset.searchLoad; load.disabled = true; await loadMore(key, true); draw(); return; }
+          if (e.target.closest('[data-search-more]')) { visible += PAGE_SIZE; draw(); return; }
+          const link = e.target.closest('[data-search-index]');
+          if (!link) return;
+          const item = current[Number(link.dataset.searchIndex)];
+          e.preventDefault();
+          dlg.close();
+          if (item?.onOpen) item.onOpen(); else if (item?.href) App.go(item.href);
+        });
         draw();
+        if (!globalSearchReady) loadSearchData();
       },
     });
   }
@@ -1290,11 +1420,11 @@
   }
 
   // Raise a capped list's limit and reload. Called from the notice below.
-  async function loadMore(kind) {
+  async function loadMore(kind, searchAll = false) {
     const paged = PAGED[kind];
     if (!paged) return;
     S.limits[kind] = S.limits[kind] + paged.page;
-    await refresh({ quiet: true });
+    await refresh({ quiet: true, searchAll });
   }
 
   // Says when a list was cut short, with a button to pull in the rest. Without it those rows
@@ -1303,14 +1433,17 @@
     let el = $('#data-notice');
     if (!el) { el = document.createElement('div'); el.id = 'data-notice'; $('.layout').before(el); }
     const full = Object.keys(PAGED).filter(k => S.data && S.totals[k] && S.totals[k].total > S.totals[k].shown);
-    if (!full.length) { el.hidden = true; el.innerHTML = ''; return; }
+    const failed = Object.keys(S.loadWarnings || {});
+    if (!full.length && !failed.length) { el.hidden = true; el.innerHTML = ''; return; }
     const parts = full.map(k => `${PAGED[k].label} ${S.totals[k].shown}/${S.totals[k].total}`).join(', ');
     el.hidden = false;
     el.className = 'data-notice';
     el.setAttribute('role', 'status');
-    el.innerHTML = `<span class="data-notice-text">${esc(`ნაჩვენებია ბოლო ჩანაწერები: ${parts}. დანარჩენი ჯერ არ ჩანს.`)}</span>`
+    el.innerHTML = (full.length ? `<span class="data-notice-text">${esc(`ნაჩვენებია ბოლო ჩანაწერები: ${parts}. დანარჩენი ჯერ არ ჩანს.`)}</span>` : '')
+      + (failed.length ? `<span class="data-notice-text t-danger">ზოგი მონაცემი ვერ ჩაიტვირთა: ${esc(failed.map(k => ({ apartments: 'ობიექტები', owners: 'კონტაქტები', openTasks: 'აქტიური საქმეები', reservations: 'ჯავშნები', repairs: 'რემონტის ჩანაწერები', deals: 'გარიგებები', closedTasks: 'დასრულებული საქმეები', approvals: 'თანხმობები', expenses: 'ხარჯები', income: 'შემოსავალი', events: 'აქტივობა', statements: 'ამონაწერები' }[k] || k)).join(', '))}. დანარჩენი ინფორმაცია ხელმისაწვდომია.</span><button type="button" class="btn btn-sm btn-secondary" id="btn-data-retry">ხელახლა ცდა</button>` : '')
       + full.map(k => `<button type="button" class="btn btn-sm btn-secondary" data-load-more="${k}">კიდევ ჩატვირთვა: ${esc(PAGED[k].label)}</button>`).join('');
     $$('#data-notice [data-load-more]').forEach(b => { b.onclick = () => loadMore(b.dataset.loadMore); });
+    $('#btn-data-retry')?.addEventListener('click', () => refresh({ quiet: true }));
   }
 
   // ---------------------------------------------------------------------------

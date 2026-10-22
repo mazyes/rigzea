@@ -77,7 +77,7 @@
 
   function renderJob(id) {
     const t = S.tasks.find(x => x.id === id);
-    if (!t) { view.innerHTML = `<div class="empty"><h3>სამუშაო ვერ მოიძებნა</h3><p>შესაძლოა სხვაზე გადაინიშნა ან გაუქმდა.</p><a class="btn btn-secondary" href="#">ჩემი სამუშაოები</a></div>`; return; }
+    if (!t) { view.innerHTML = `<div class="empty"><h3>სამუშაო ვერ მოიძებნა</h3><p>შესაძლოა სხვაზე გადაინიშნა ან გაუქმდა.</p><a class="btn btn-secondary" href="/staff/">ჩემი სამუშაოები</a></div>`; return; }
     const a = S.apts.get(t.apartment_id) || {};
     const checklist = t.checklist || [];
     const photos = t.photos || [];
