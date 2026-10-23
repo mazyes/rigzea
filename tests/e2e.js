@@ -1022,6 +1022,29 @@ test('1k. charts start at zero and fill when scrolled into view, even with reduc
   return page;
 });
 
+test('1l. the + button opens its menu on a phone and every item is reachable', async (browser) => {
+  const page = await newPage(browser, { viewport: PHONE, login: USERS.manager });
+  await page.goto(BASE + '/app/');
+  await page.locator('#btn-new-task').waitFor();
+  const box = await page.locator('#btn-new-task').boundingBox();
+  assert(box.width >= 40 && box.height >= 40 && Math.abs(box.width - box.height) < 2, `+ is a round tap target: ${JSON.stringify(box)}`);
+  await page.locator('#btn-new-task').click();
+  const panel = page.locator('#quick-add-panel');
+  await panel.waitFor({ state: 'visible' });
+  await page.waitForTimeout(700);
+  const info = await panel.evaluate((el) => { const r = el.getBoundingClientRect(); const nav = document.querySelector('.bottom-nav').getBoundingClientRect(); return { top: r.top, bottom: r.bottom, left: r.left, right: r.right, navTop: nav.top, iw: innerWidth, ih: innerHeight }; });
+  assert(info.left >= 0 && info.right <= info.iw, `menu fits the width: ${JSON.stringify(info)}`);
+  assert(info.top >= 0 && info.bottom <= info.navTop + 1, `menu sits above the tab bar: ${JSON.stringify(info)}`);
+  for (const qa of ['apartment', 'deal', 'viewing', 'task']) {
+    const item = page.locator(`#quick-add-panel [data-qa=${qa}]`);
+    const r = await item.boundingBox();
+    assert(r && r.height >= 44, `${qa} item is a 44px tap target: ${JSON.stringify(r)}`);
+  }
+  await page.locator('#quick-add-panel [data-qa=task]').click();
+  await page.locator('dialog[open]').waitFor();
+  return page;
+});
+
 test('16. sales public listing: sales price, sqm price, no rental labels or internal owner data leak', async (browser) => {
   const page = await newPage(browser, { viewport: PHONE });
   await page.addInitScript(() => {

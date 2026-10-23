@@ -1648,3 +1648,10 @@ html, body, button, input, select, textarea, option, optgroup, dialog, summary, 
 .topbar-icons { gap: 8px; }
 .topbar .user-btn { padding: 3px; border-radius: 50%; }
 @media (max-width: 900px) { .topbar .topbar-nav { display: none; } .shell .topbar { padding: 0 8px 0 12px; } }
+
+/* iOS Safari: the frosted layers must never take taps, and the phone sheets use a plain surface (blur plus transform animation can fail to paint there) */
+.shell .topbar::before, .bottom-nav::before { pointer-events: none; }
+.topbar > *, .topbar-icons > *, #quick-add-wrap > button { position: relative; z-index: 1; }
+@media (max-width: 900px) {
+  .popover, .popover[style] { -webkit-backdrop-filter: none; backdrop-filter: none; background: var(--surface); }
+}
