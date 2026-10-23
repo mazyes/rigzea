@@ -1,0 +1,170 @@
+/* The marketing pages in the app's own look. Loaded after landing-luxury.css, which keeps the layout and motion.
+   - FiraGO only, with its regular Georgian letters (the old sheet switched on the capital-letter feature for headings)
+   - the app's colors, flat surfaces, 14px controls and glass pill menu instead of glow, orbs and gradients */
+
+:root {
+  --la-bg: #0b0b0d;
+  --la-surface: #121215;
+  --la-surface-2: #18181b;
+  --la-hover: #222226;
+  --la-line: #27272a;
+  --la-line-strong: #3f3f46;
+  --la-ink: #f4f4f5;
+  --la-ink-2: #a1a1aa;
+  --la-muted: #94949c;
+  --la-brand: #047857;
+  --la-brand-hover: #065f46;
+  --la-brand-ink: #34d399;
+  --la-brand-soft: rgba(4, 120, 87, 0.16);
+  --la-ease: cubic-bezier(.32, .72, 0, 1);
+  --la-glass: rgba(18, 18, 21, 0.72);
+  --la-bg-glass: rgba(11, 11, 13, 0.82);
+  --la-fill: rgba(244, 244, 245, 0.06);
+  --la-fill-hover: rgba(244, 244, 245, 0.11);
+  --la-line-soft: rgba(39, 39, 42, 0.7);
+
+  --lx-obsidian: var(--la-bg);
+  --lx-obsidian-card: var(--la-surface);
+  --lx-obsidian-card-hover: var(--la-surface-2);
+  --lx-obsidian-card-solid: var(--la-surface);
+  --lx-obsidian-inset: var(--la-bg);
+  --lx-mint-neon: var(--la-brand-ink);
+  --lx-mint-bright: var(--la-brand-ink);
+  --lx-border-subtle: var(--la-line);
+  --lx-border-medium: var(--la-line-strong);
+  --lx-text-white: var(--la-ink);
+  --lx-text-silver: var(--la-ink-2);
+  --lx-text-muted: var(--la-muted);
+  --lx-glow-card: none;
+  --lx-glow-mint: none;
+  --lx-glow-mint-lg: none;
+}
+:root[data-theme="light"] {
+  --la-bg: #f6f7f8;
+  --la-surface: #ffffff;
+  --la-surface-2: #f9faf9;
+  --la-hover: #f1f4f2;
+  --la-line: #e6e9ec;
+  --la-line-strong: #c9ced5;
+  --la-ink: #15202b;
+  --la-ink-2: #3b4754;
+  --la-muted: #5b6673;
+  --la-brand: #0a5c44;
+  --la-brand-hover: #084b38;
+  --la-brand-ink: #0a5c44;
+  --la-brand-soft: #e7f1ed;
+  --la-glass: rgba(255, 255, 255, 0.72);
+  --la-bg-glass: rgba(246, 247, 248, 0.82);
+  --la-fill: rgba(21, 32, 43, 0.06);
+  --la-fill-hover: rgba(21, 32, 43, 0.11);
+  --la-line-soft: rgba(230, 233, 236, 0.7);
+
+  --lx-mint-dim: var(--la-brand-soft);
+  --lx-mint-badge: var(--la-brand-soft);
+  --lx-border-mint: rgba(10, 92, 68, 0.35);
+  --lx-border-mint-hover: rgba(10, 92, 68, 0.65);
+}
+
+/* ---- Type: FiraGO everywhere, Georgian in its regular letters like the app ---- */
+html, body, button, input, select, textarea, summary { font-family: 'FiraGO', sans-serif; }
+*, *::before, *::after { font-feature-settings: normal !important; }
+html[lang="en"] :is(h1, h2, h3, .lx-nav-link, .lx-badge, .lx-btn, .lx-plan-name, .lx-hero-eyebrow, .lx-video-btn, .lx-thumb-btn, .lx-pricing-featured-badge, .lx-discount-badge) {
+  text-transform: none; letter-spacing: normal;
+}
+h1, h2, h3 { letter-spacing: -0.015em; line-height: 1.18; font-weight: 700; }
+:root[data-theme="light"] .lx-hero-title span { color: var(--la-brand); }
+
+/* ---- Flat app surface: no glow, orbs or grid ---- */
+html, body.luxury-theme { background: var(--la-bg); }
+body.luxury-theme::before, .lx-ambient-canvas, .lx-ambient-orb { display: none !important; }
+
+/* ---- Menu: the app's glass pill with round icon buttons ---- */
+.lx-header { padding: 12px 0; }
+.lx-header.scrolled {
+  background: var(--la-bg-glass);
+  -webkit-backdrop-filter: saturate(180%) blur(18px); backdrop-filter: saturate(180%) blur(18px);
+  border-bottom: 1px solid var(--la-line-soft);
+}
+.lx-brand { font-size: 21px; color: var(--la-ink); }
+.lx-brand-icon { background: var(--la-brand); border: 0; border-radius: 10px; box-shadow: none; }
+.lx-brand-dot { color: var(--la-brand-ink); }
+.lx-nav-links {
+  height: 52px; padding: 4px; gap: 4px; border-radius: 999px;
+  background: var(--la-glass);
+  -webkit-backdrop-filter: saturate(180%) blur(18px); backdrop-filter: saturate(180%) blur(18px);
+  border: 1px solid var(--la-line-soft);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .25), 0 10px 30px -14px rgba(0, 0, 0, .35);
+}
+.lx-nav-link { display: inline-flex; align-items: center; height: 44px; padding: 0 16px; border-radius: 999px; color: var(--la-ink-2); font-size: 14px; font-weight: 500; transition: color .25s var(--la-ease), background-color .2s; }
+.lx-nav-link:hover { color: var(--la-ink); background: var(--la-hover); }
+.lx-header-actions { gap: 8px; }
+.lx-theme-toggle { width: 44px; height: 44px; border: 0; border-radius: 50%; background: var(--la-fill); color: var(--la-ink); transition: background-color .2s, transform .35s var(--la-ease); }
+.lx-theme-toggle:hover { background: var(--la-fill-hover); border: 0; }
+.lx-theme-toggle:active { transform: scale(.94); }
+.lx-mobile-toggle { border: 0; border-radius: 50%; background: var(--la-fill); }
+
+/* ---- Buttons: the app's 14px controls ---- */
+.lx-btn { min-height: 46px; padding: 0 22px; border-radius: 14px; font-size: 14.5px; font-weight: 600; transition: background-color .15s, border-color .15s, transform .35s var(--la-ease); }
+.lx-btn:active { transform: scale(.97); }
+.lx-btn-sm { min-height: 40px; padding: 0 16px; font-size: 13.5px; border-radius: 12px; }
+.lx-btn-primary { background: var(--la-brand); color: #fff; box-shadow: none; }
+.lx-btn-primary:hover { background: var(--la-brand-hover); filter: none; box-shadow: none; color: #fff; }
+.lx-btn-secondary { background: var(--la-surface); color: var(--la-ink); border-color: var(--la-line-strong); -webkit-backdrop-filter: none; backdrop-filter: none; }
+.lx-btn-secondary:hover { background: var(--la-hover); border-color: var(--la-line-strong); color: var(--la-ink); box-shadow: none; }
+.lx-btn-ghost { color: var(--la-ink-2); }
+.lx-header-cta, .lx-header-signin { white-space: nowrap; }
+
+/* ---- Cards: white or near black, 1px line, no glow ---- */
+.lx-pricing-card, .lx-step-card, .lx-bento-card, .lx-faq-item, .lx-card-rigzea-way, .lx-card-old-way, .lx-final-cta-box,
+.lx-cmp-table, .lx-cmp-scroll, .lx-story-window, .lx-story-panel, .lx-import-result-card, .lx-match-req-card, .lx-post-box {
+  background: var(--la-surface); border: 1px solid var(--la-line); border-radius: 20px; box-shadow: none;
+  -webkit-backdrop-filter: none; backdrop-filter: none;
+}
+.lx-pricing-card:hover, .lx-bento-card:hover, .lx-faq-item:hover { border-color: var(--la-line-strong); box-shadow: none; }
+.lx-pricing-card.is-featured, .lx-pricing-card-featured, .lx-pricing-card[data-featured] { border-color: var(--la-brand); }
+.lx-spotlight-card::before, .lx-spotlight-card::after { display: none; }
+.lx-bento-preview-stage, .lx-import-preview-box { background: var(--la-surface-2); border: 1px solid var(--la-line); border-radius: 14px; }
+.lx-step-card { padding: 22px; }
+.lx-final-cta-box { background: var(--la-brand-soft); border-color: color-mix(in srgb, var(--la-brand) 25%, var(--la-line)); }
+.lx-point-icon-green, .lx-agency-feat-icon, .lx-brand-dot-icon { background: var(--la-brand-soft); color: var(--la-brand-ink); border: 0; border-radius: 12px; }
+.lx-pricing-featured-badge, .lx-badge { border-radius: 999px; background: var(--la-brand-soft); color: var(--la-brand-ink); border: 0; box-shadow: none; }
+
+/* ---- Billing switch like the app's tab strip ---- */
+.lx-billing-toggle-pill { padding: 3px; border-radius: 12px; background: var(--la-fill); border: 0; }
+.lx-billing-toggle-pill button { min-height: 38px; border-radius: 9px; color: var(--la-ink-2); background: transparent; border: 0; font-weight: 500; }
+.lx-billing-toggle-pill button.active { background: var(--la-surface); color: var(--la-ink); font-weight: 600; box-shadow: 0 1px 2px rgba(0, 0, 0, .1), 0 3px 8px -2px rgba(0, 0, 0, .12); }
+
+/* ---- FAQ ---- */
+.lx-faq-item { border-radius: 16px; }
+.lx-faq-question { color: var(--la-ink); }
+
+/* ---- Dashboard window: the app screenshot in a clean frame ---- */
+.lx-hero-window { background: var(--la-surface); border: 1px solid var(--la-line); border-radius: 20px; box-shadow: 0 30px 60px -34px rgba(0, 0, 0, .45); overflow: hidden; }
+.lx-hero-window-bar { background: var(--la-surface-2); border-bottom: 1px solid var(--la-line); }
+.lx-hero-window-bar i { background: var(--la-line-strong); }
+.lx-hero-window-bar span { background: var(--la-surface); border: 1px solid var(--la-line); color: var(--la-muted); }
+
+/* ---- Footer ---- */
+.lx-footer { background: var(--la-surface); border-top: 1px solid var(--la-line); }
+.lx-footer-links a, .lx-footer-copy, .lx-footer-legal a { color: var(--la-muted); }
+.lx-footer-links a:hover, .lx-footer-legal a:hover { color: var(--la-ink); }
+
+
+/* ---- Home: the three steps as app cards, no hero glow ---- */
+.lx-hero-glow { display: none; }
+:root .lx-steps-grid-3 { gap: 16px; }
+:root .lx-steps-grid-3 > .lx-step-card, :root .lx-steps-grid-3 > .lx-step-card:first-child, :root .lx-steps-grid-3 > .lx-step-card + .lx-step-card {
+  background: var(--la-surface); border: 1px solid var(--la-line); border-radius: 20px; padding: 24px; box-shadow: none;
+}
+.lx-step-index { display: inline-flex; align-items: center; justify-content: center; align-self: flex-start; width: fit-content; min-width: 36px; height: 36px; padding: 0 8px; margin-bottom: 4px; border-radius: 12px; background: var(--la-brand-soft); color: var(--la-brand-ink); font-weight: 700; }
+@media (max-width: 900px) {
+  :root .lx-steps-grid-3 > .lx-step-card, :root .lx-steps-grid-3 > .lx-step-card:first-child { padding: 20px; border: 1px solid var(--la-line); }
+}
+
+/* ---- Touch sizes on phones ---- */
+@media (max-width: 900px) {
+  .lx-nav-links { height: auto; border-radius: 20px; }
+  .lx-footer-links a { display: inline-flex; align-items: center; min-height: 44px; }
+  .lx-hero-window { border-radius: 16px; }
+}
+@media (prefers-reduced-motion: reduce) { .lx-btn, .lx-theme-toggle, .lx-nav-link { transition: none; } }

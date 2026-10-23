@@ -1,8 +1,8 @@
 @font-face { font-family: 'FiraGO'; src: url('/fonts/FiraGO-Regular.woff2') format('woff2'); font-weight: 400; font-display: swap; }
 @font-face { font-family: 'FiraGO'; src: url('/fonts/FiraGO-SemiBold.woff2') format('woff2'); font-weight: 600; font-display: swap; }
 @font-face { font-family: 'FiraGO'; src: url('/fonts/FiraGO-Bold.woff2') format('woff2'); font-weight: 700; font-display: swap; }
-:root { --ink: #14201a; --muted: #4d5f55; --line: #d9e2dc; --bg: #f7faf8; --card: #ffffff; --brand: #047857; --warn-bg: #fff6df; --warn-ink: #6b4a00; }
-:root[data-theme="dark"] { --ink: #f4f4f5; --muted: #a1a1aa; --line: #27272a; --bg: #09090b; --card: #121215; --brand: #34d399; --warn-bg: #27272a; --warn-ink: #f4f4f5; }
+:root { --ink: #15202b; --muted: #5b6673; --line: #e6e9ec; --bg: #f6f7f8; --card: #ffffff; --brand: #0a5c44; --warn-bg: #fff6df; --warn-ink: #6b4a00; }
+:root[data-theme="dark"] { --ink: #f4f4f5; --muted: #a1a1aa; --line: #27272a; --bg: #0b0b0d; --card: #121215; --brand: #34d399; --warn-bg: #27272a; --warn-ink: #f4f4f5; }
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
 body { margin: 0; background: var(--bg); color: var(--ink); font-family: 'FiraGO', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 16px; line-height: 1.65; }
@@ -49,3 +49,9 @@ tbody th { font-weight: 600; width: 34%; }
   .lg-operator dt { flex: none; }
 }
 @media print { .lg-header nav, .lg-footer, .lg-skip, .lg-notice { display: none; } body { background: #fff; } }
+
+/* The app's look: pill menu links, 14px cards */
+.lg-header nav a { padding: 0 14px; min-height: 40px; display: inline-flex; align-items: center; border: 0; border-radius: 999px; }
+.lg-header nav a:hover { background: color-mix(in srgb, var(--ink) 6%, transparent); }
+.lg-header nav a[aria-current="page"] { background: var(--brand); color: #fff; border: 0; }
+table, .lg-notice { border-radius: 14px; }
