@@ -244,7 +244,7 @@ test('7. manager records an expense with a receipt and sees it once', async (bro
   const rows = page.locator('#f-body .row', { hasText: 'სარეცხი საშუალებები' });
   await rows.first().waitFor();
   assert.strictEqual(await rows.count(), 1);
-  assert((await rows.first().innerText()).includes('ნახვა'), 'receipt link');
+  await page.waitForFunction(() => [...document.querySelectorAll('#f-body .row')].some(r => r.textContent.includes('სარეცხი საშუალებები') && r.textContent.includes('ნახვა')), null, { timeout: 5000 }); // the receipt link is signed after the row renders
   assert((await rows.first().innerText()).includes('გადახდილი'));
   // Proposed costs are not counted as expenses
   const calc = await page.locator('.calc').first().innerText();
