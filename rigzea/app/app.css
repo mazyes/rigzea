@@ -74,7 +74,7 @@
 html { -webkit-text-size-adjust: 100%; }
 body {
   margin: 0;
-  font-family: 'FiraGO', system-ui, sans-serif;
+  font-family: 'FiraGO', sans-serif;
   font-size: 14px;
   line-height: 1.5;
   color: var(--ink);
@@ -655,7 +655,7 @@ button.row { width: 100%; border: 0; border-bottom: 1px solid var(--line); backg
 .setup .step-desc { font-size: 12.5px; color: var(--muted); }
 
 /* access section */
-.secret { font-family: 'FiraGO', system-ui, sans-serif; font-variant-numeric: tabular-nums; letter-spacing: .5px; }
+.secret { font-family: 'FiraGO', sans-serif; font-variant-numeric: tabular-nums; letter-spacing: .5px; }
 
 /* ------------------------------------------------------------------ dialogs */
 .dlg {
@@ -1081,7 +1081,7 @@ button.row { width: 100%; border: 0; border-bottom: 1px solid var(--line); backg
 .mm-done-head { display: flex; align-items: center; gap: 8px; color: var(--ok); }
 .mm-link .input { width: 100%; font-size: 13px; background: var(--surface); }
 .mm-done-actions, .post-actions { display: flex; flex-wrap: wrap; gap: 8px; }
-.post-output { width: 100%; font-family: 'FiraGO', system-ui, sans-serif; font-size: 13px; line-height: 1.5; margin-bottom: 12px; }
+.post-output { width: 100%; font-family: 'FiraGO', sans-serif; font-size: 13px; line-height: 1.5; margin-bottom: 12px; }
 .notice.notice-list { flex-direction: column; gap: 2px; margin-bottom: 10px; }
 .comm-row .comm-m { display: none; }
 .comm-net { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
@@ -1554,7 +1554,7 @@ h1, h2, h3 { letter-spacing: -.02em; }
 @media (max-width: 900px) { .dlg-sheet .dlg-body { padding-bottom: calc(16px + env(safe-area-inset-bottom)); } }
 
 /* One typeface everywhere: native controls, dialogs and option lists do not inherit it on their own */
-html, body, button, input, select, textarea, option, optgroup, dialog, summary, kbd, code, pre, samp, table { font-family: 'FiraGO', system-ui, sans-serif; }
+html, body, button, input, select, textarea, option, optgroup, dialog, summary, kbd, code, pre, samp, table { font-family: 'FiraGO', sans-serif; }
 ::placeholder { font-family: inherit; }
 @media (max-width: 900px) { .bottom-nav a, .bottom-nav button { justify-content: flex-start; padding-top: 8px; white-space: nowrap; } }
 
@@ -1926,3 +1926,38 @@ a.row:active, button.row:active, .row.clickable:active, .sched-row:active, .noti
 }
 @media (prefers-reduced-motion: reduce) { .as-card { animation: none !important; } }
 .lite .as-card { animation: none; }
+
+/* Sign in on tablets and phones: a short showcase banner above the form, and the same entrance as the app */
+#auth:not([hidden]) .auth-card > :is(.brand, .auth-tabs, .oauth-stack, .auth-divider) { animation: authIn .6s var(--ease) both; }
+#auth:not([hidden]) .auth-card > .auth-tabs { animation-delay: .06s; }
+#auth:not([hidden]) .auth-card > .oauth-stack { animation-delay: .12s; }
+#auth:not([hidden]) .auth-card > .auth-divider { animation-delay: .16s; }
+#auth:not([hidden]) .auth-showcase { animation: authIn .7s var(--ease) both; }
+@media (max-width: 900px) {
+  .auth { display: flex; flex-direction: column; align-items: stretch; gap: 8px; padding: max(12px, env(safe-area-inset-top)) 12px max(16px, env(safe-area-inset-bottom)); }
+  .auth-showcase { position: relative; display: flex; flex-direction: column; justify-content: flex-end; overflow: hidden; min-height: 150px; padding: 16px 18px; border-radius: 24px; color: #fff; background: radial-gradient(120% 90% at 50% 120%, #34d399 0, rgba(52, 211, 153, 0) 60%), linear-gradient(160deg, #8fdcb9 0%, #0a5c44 70%, #063e2f 100%); }
+  .as-logo { display: none; }
+  .as-stage { position: absolute; inset: 0; pointer-events: none; }
+  .as-card { position: absolute; border-radius: 14px; color: var(--ink); background: color-mix(in srgb, var(--surface) 88%, transparent); box-shadow: 0 14px 30px -16px rgba(6, 62, 47, .6); font-size: 12px; animation: asFloat 7s ease-in-out infinite; }
+  .as-card.as-balance, .as-card.as-ring { display: none; }
+  .as-chip { display: flex; align-items: center; gap: 8px; padding: 7px 12px 7px 8px; }
+  .as-pay { right: 12px; top: 12px; }
+  .as-pay .as-small, .as-pay .as-money { display: none; }
+  .as-pay b { font-size: 12px; }
+  .as-av { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: #7c5cd6; color: #fff; font-size: 10px; font-weight: 700; }
+  .as-pill { left: 14px; top: 14px; animation-delay: -3s; }
+  .as-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--brand); }
+  .as-copy { position: relative; }
+  .as-kicker { display: none; }
+  .as-title { margin: 0; max-width: 20ch; font-size: 19px; font-weight: 700; letter-spacing: -.03em; line-height: 1.15; text-wrap: balance; }
+  .auth-card { width: 100%; max-width: 480px; align-self: center; padding: 14px 6px 20px; }
+  .auth-card .brand { display: none; }
+  .auth .btn-primary.btn-block, .auth .btn-oauth, .auth .field input:not([type=checkbox]) { min-height: 48px; }
+  .otp-box { height: 52px; }
+}
+@media (max-width: 380px) {
+  .otp { gap: 5px; }
+  .otp-box { font-size: 19px; }
+  .as-pay { display: none; }
+}
+@media (max-height: 560px) and (max-width: 900px) { .auth-showcase { display: none; } }

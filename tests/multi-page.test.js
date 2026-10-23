@@ -62,10 +62,11 @@ async function run() {
       // Valid credentials
       await page.fill('#form-signin input[name=password]', 'test1234');
       await page.click('#form-signin [type=submit]');
-      await page.waitForURL('**/app/', { timeout: 8000 });
-      assert.strictEqual(page.errors.length, 0, `Errors on /signin/: ${page.errors.join('; ')}`);
+      await page.locator('#view').waitFor({ timeout: 8000 });
+      const unexpected = page.errors.filter(e => !/Invalid login credentials/.test(e)); // the wrong password above is logged on purpose
+      assert.strictEqual(unexpected.length, 0, `Errors on /signin/: ${unexpected.join('; ')}`);
       await page.close();
-      console.log('✓ 4. /signin/ authenticates and redirects to /app/#/today');
+      console.log('✓ 4. /signin/ opens the app sign in and authenticates');
     }
 
     // 5. /signup/

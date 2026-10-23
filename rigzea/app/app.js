@@ -151,7 +151,7 @@
       const f = $('#form-' + v);
       if (!f) return;
       const show = v === view;
-      if (show && f.hidden) { f.classList.remove('auth-enter'); void f.offsetWidth; f.classList.add('auth-enter'); }
+      if (show) { f.classList.remove('auth-enter'); void f.offsetWidth; f.classList.add('auth-enter'); }
       f.hidden = !show;
     });
     const tabs = $('#auth-tabs');

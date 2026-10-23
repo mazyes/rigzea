@@ -273,6 +273,7 @@ test('9. phone layout has no horizontal overflow on main screens', async (browse
   }
   await page.goto(BASE + '/app/tasks/?task=eeeeeeee-0000-4000-8000-000000000002');
   await page.locator('.drawer').waitFor();
+  await page.locator('.drawer-foot .btn').first().waitFor({ state: 'visible' });
   const b = await page.locator('.drawer-foot .btn').first().boundingBox();
   assert(b.height >= 44 && b.x >= 0, 'drawer actions reachable');
   return page;

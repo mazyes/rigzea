@@ -482,10 +482,11 @@
   // New accounts must give a Georgian-letter name; the owner is exempt. Existing accounts never pass through
   // sign-up again, so they keep their names. shortcut: browser-side only, a direct API sign-up skips it.
   const NAME_EXEMPT = ['akhalaianika44@gmail.com'];
-  const GEORGIAN_NAME = /^[ა-ჿᲐ-Ჿ]+(?:[ -][ა-ჿᲐ-Ჿ]+)*$/;
+  // A real first name and last name: at least two Georgian words of two or more letters (a double surname may use a hyphen).
+  const GEORGIAN_NAME = /^[ა-ჿᲐ-Ჿ]{2,}(?:-[ა-ჿᲐ-Ჿ]{2,})*(?: [ა-ჿᲐ-Ჿ]{2,}(?:-[ა-ჿᲐ-Ჿ]{2,})*)+$/;
   function bindGeorgianName(form) {
     const name = form.elements.name, email = form.elements.email;
-    const check = () => name.setCustomValidity(NAME_EXEMPT.includes(email.value.trim().toLowerCase()) || GEORGIAN_NAME.test(name.value.trim()) ? '' : 'ka');
+    const check = () => name.setCustomValidity(NAME_EXEMPT.includes(email.value.trim().toLowerCase()) || GEORGIAN_NAME.test(name.value.trim().replace(/\s+/g, ' ')) ? '' : 'ka');
     name.addEventListener('input', check);
     email.addEventListener('input', check);
     check();
