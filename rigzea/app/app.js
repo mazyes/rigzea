@@ -89,6 +89,7 @@
         return showAuth(wantsSignin ? 'signin' : 'signup');
       }
       if (recovery) return showAuth('newpass');
+      ALL_CHUNKS.forEach(src => ensureChunk(src).catch(() => {})); // download the view code while the data loads
       const handed = await dataCache.takeHandoff();
       if (handed) {
         S.orgs = handed.handoff.orgs;
@@ -2050,6 +2051,35 @@
     openDocChooser: (...args) => ensureChunk('/app/views-docs.js', 'დოკუმენტები').then(() => window.App.openDocChooser?.(...args)),
     openPresentation: (...args) => ensureViewLoaded('apartments').then(() => window.App.openPresentation?.(...args)),
     monthLabel, PLANS, PLAN_ORDER, FEATURE_LABEL, CONTACT, planState, can, guardLimit, guardFeature, openUpgrade, planCardsHtml, waLink, activeApartments, pausedApartmentIds, seatsUsed, openKisaCheckoutModal, startKisaCheckout: openKisaCheckoutModal };
+
+  // Pull down at the top of the page on a phone to reload the data (iOS home screen apps have no browser refresh).
+  (function pullToRefresh() {
+    let startY = 0, pull = 0, busy = false, armed = false, bar = null;
+    const THRESHOLD = 70;
+    const blocked = (t) => innerWidth > 900 || busy || document.querySelector('dialog[open]') || t.closest?.('.rows-scroll, .table-wrap, .tabs, .chips, .seg, input, textarea, select');
+    document.addEventListener('touchstart', (e) => {
+      armed = !blocked(e.target) && window.scrollY <= 0 && !!S.data;
+      startY = e.touches[0].clientY; pull = 0;
+    }, { passive: true });
+    document.addEventListener('touchmove', (e) => {
+      if (!armed) return;
+      pull = e.touches[0].clientY - startY;
+      if (pull <= 0 || window.scrollY > 0) { if (bar) bar.style.opacity = 0; return; }
+      if (!bar) { bar = document.createElement('div'); bar.className = 'ptr'; bar.setAttribute('aria-hidden', 'true'); bar.innerHTML = icon('refresh', 18); document.body.appendChild(bar); }
+      const d = Math.min(pull * .5, 64);
+      bar.style.opacity = Math.min(1, d / 40);
+      bar.style.transform = `translate(-50%, ${d}px) rotate(${d * 5}deg)`;
+    }, { passive: true });
+    document.addEventListener('touchend', async () => {
+      if (!armed || !bar) { armed = false; return; }
+      armed = false;
+      if (pull * .5 < THRESHOLD * .5) { bar.style.opacity = 0; return; }
+      busy = true; bar.classList.add('is-spinning'); bar.style.transform = 'translate(-50%, 48px)';
+      try { await refresh({ quiet: true }); } finally {
+        busy = false; bar.classList.remove('is-spinning'); bar.style.opacity = 0; bar.style.transform = 'translate(-50%, 0)';
+      }
+    }, { passive: true });
+  })();
 
   document.addEventListener('DOMContentLoaded', () => {
     if (legacyRedirect()) return;

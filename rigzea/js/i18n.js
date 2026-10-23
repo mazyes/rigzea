@@ -2289,6 +2289,15 @@
     "გარეგნობა": "Appearance",
     "მუქი რეჟიმი": "Dark mode",
     "კლიენტის სელექცია": "Property matching",
+    "სახელი, ნომერი, მისამართი, უბანი, მფლობელი, ქალაქი": "Name, unit, address, district, owner, city",
+    "ბინის ძებნა": "Search properties",
+    "სწრაფი გათვლა კლიენტთან": "Quick numbers for a client",
+    "ბინების შერჩევა მოთხოვნით": "Match properties to a request",
+    "ტექსტი FB და Instagram-ისთვის": "Copy for Facebook and Instagram",
+    "ქირავნობა, ყიდვა-გაყიდვა": "Rental and sale contracts",
+    "ხედი": "View",
+    "დეტალები": "Details",
+    "ჯავშანი": "Booking",
     "სწრაფი მოქმედებები": "Quick actions",
     "ბოლო ობიექტები": "Recent properties",
     "პირველი ნაბიჯები": "Getting started",
@@ -2555,14 +2564,16 @@
     [/^(.+?)მ დაადასტურა (.+)$/, function (m) { return translit(m[1]) + ' approved ' + m[2]; }]
   ];
   if (appPage) P.unshift(
+    [/^კოლეგასთან გაზიარება: (.+)$/, function (m) { return 'Share with a colleague: ' + translit(m[1]); }],
     [/^\. შეთავაზებული და დადასტურებული, ჯერ გაუწეველი ხარჯი \((.+)\) არ შედის\.$/, function (m) { return '. Proposed and approved expenses not yet incurred (' + m[1] + ') are excluded.'; }],
     [/^აკლია: (.+)\. შეავსე „რედაქტირებიდან“\.$/, function (m) { return 'Missing: ' + m[1].split(', ').map(function (field) { return (tr(field) || field).trim(); }).join(', ') + '. Fill in via Edit.'; }],
     [/^ყველა საქმე \((\d+)\)$/, function (m) { return 'All tasks (' + m[1] + ')'; }],
     [/^(\d+) საათია ელოდება$/, function (m) { return 'Waiting ' + plural(m[1], 'hour', 'hours'); }],
-    [/^გამარჯობა, (.+)!$/, function (m) { return 'Hello, ' + m[1] + '!'; }],
+    [/^გამარჯობა, (.+)!$/, function (m) { return 'Hello, ' + translit(m[1]) + '!'; }],
     [/^(\d+) საქმე დღეს$/, function (m) { return plural(m[1], 'task', 'tasks') + ' today'; }],
     [/^(\d+) (ობიექტი|მეპატრონე|მდგმური|მყიდველი|გამყიდველი)$/, function (m) { var nouns = { 'ობიექტი': ['property', 'properties'], 'მეპატრონე': ['owner', 'owners'], 'მდგმური': ['tenant', 'tenants'], 'მყიდველი': ['buyer', 'buyers'], 'გამყიდველი': ['seller', 'sellers'] }; return plural(m[1], nouns[m[2]][0], nouns[m[2]][1]); }],
     [/^(\d+) აქტიური გარიგება( · გაყიდვები და გაქირავება)?$/, function (m) { return plural(m[1], 'active deal', 'active deals') + (m[2] ? ' · sales and rentals' : ''); }],
+    [/^Check-in-მდე (\d+) წუთი დარჩა\. (დასუფთავება არ დასრულებულა|დასუფთავება არ არის დაგეგმილი|დასუფთავება ჯერ არ არის დანიშნული)$/, function (m) { return plural(m[1], 'minute', 'minutes') + ' until check-in. ' + ({ 'დასუფთავება არ დასრულებულა': 'Cleaning is unfinished.', 'დასუფთავება არ არის დაგეგმილი': 'Cleaning is not scheduled.', 'დასუფთავება ჯერ არ არის დანიშნული': 'Cleaning is not assigned yet.' })[m[2]]; }],
     [/^Check-in-მდე (\d+) საათი დარჩა\. დასუფთავება არ დასრულებულა$/, function (m) { return plural(m[1], 'hour', 'hours') + ' until check-in. Cleaning is unfinished.'; }],
     [/^(ობიექტის აგენტი|მყიდველის აგენტი|სააგენტო) \((\d+(?:\.\d+)?)%\)$/, function (m) { return D[m[1]] + ' (' + m[2] + '%)'; }],
     [/^(\d+) ობიექტი · (\d+) კლიენტი · (\d+) გუნდის წევრი$/, function (m) { return plural(m[1], 'property', 'properties') + ' · ' + plural(m[2], 'client', 'clients') + ' · ' + plural(m[3], 'team member', 'team members'); }],
@@ -2572,7 +2583,7 @@
   var MS = ['იან', 'თებ', 'მარ', 'აპრ', 'მაი', 'ივნ', 'ივლ', 'აგვ', 'სექ', 'ოქტ', 'ნოე', 'დეკ'];
 
   var origText = new WeakMap();
-  var ATTRS = ['placeholder', 'aria-label', 'title', 'alt', 'data-plan'];
+  var ATTRS = ['placeholder', 'aria-label', 'title', 'alt', 'data-plan', 'data-label'];
   var SKIP = /^(SCRIPT|STYLE|NOSCRIPT|TEXTAREA|CODE)$/;
 
   var SW = {
@@ -2594,6 +2605,20 @@
   }
   var TL = { 'ა': 'a', 'ბ': 'b', 'გ': 'g', 'დ': 'd', 'ე': 'e', 'ვ': 'v', 'ზ': 'z', 'თ': 't', 'ი': 'i', 'კ': 'k', 'ლ': 'l', 'მ': 'm', 'ნ': 'n', 'ო': 'o', 'პ': 'p', 'ჟ': 'zh', 'რ': 'r', 'ს': 's', 'ტ': 't', 'უ': 'u', 'ფ': 'p', 'ქ': 'k', 'ღ': 'gh', 'ყ': 'q', 'შ': 'sh', 'ჩ': 'ch', 'ც': 'ts', 'ძ': 'dz', 'წ': 'ts', 'ჭ': 'ch', 'ხ': 'kh', 'ჯ': 'j', 'ჰ': 'h' };
   // Names and addresses typed by users have no dictionary entry: romanize them (Georgian national system, simplified).
+  // Names and addresses the user typed (read from the loaded workspace) and lone initials are not interface copy.
+  var userWords = null, userWordsFor = null;
+  function isUserText(t) {
+    if (/^[Ⴀ-ჿᲐ-Ჿ]$/.test(t.trim())) return true;
+    var d = window.App && window.App.S && window.App.S.data;
+    if (!d) return false;
+    if (userWordsFor !== d) {
+      userWordsFor = d; userWords = [];
+      ['apartments', 'owners', 'members', 'deals'].forEach(function (k) {
+        (d[k] || []).forEach(function (x) { [x.name, x.display_name, x.address, x.city, x.district].forEach(function (v) { if (v && /[ა-ჰ]/.test(v) && v.length > 2) userWords.push(v); }); });
+      });
+    }
+    return userWords.some(function (w) { return t.indexOf(w) !== -1; });
+  }
   function translit(t) {
     return t.replace(/[ა-ჰ]+/g, function (w) {
       var o = '';
@@ -2635,6 +2660,8 @@
     var cur = n.nodeValue, o = origText.get(n);
     if (o !== undefined && cur === o) return;
     var r = p.nodeName === 'BUTTON' && cur.trim() === 'ვეთანხმები' ? D['@btn ვეთანხმები'] : tr(cur);
+    // User-entered proper names and addresses have no English translation; romanize only fields marked as user content.
+    if (r == null && appPage && ((p.closest && p.closest('[data-user-content]')) || isUserText(cur))) r = translit(cur);
     if (r != null && r !== cur) { origText.set(n, r); n.nodeValue = r; }
   }
   function attrs(el) {

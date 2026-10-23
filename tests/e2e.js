@@ -1200,6 +1200,22 @@ test('1s. a refresh starts at the top and tab strips scroll the selected tab int
   return page;
 });
 
+test('1v. pulling down at the top on a phone reloads the data', async (browser) => {
+  const page = await newPage(browser, { viewport: { width: 390, height: 844 }, login: USERS.manager });
+  await page.goto(BASE + '/app/');
+  await page.locator('#view').waitFor();
+  await page.waitForTimeout(800);
+  await page.evaluate(() => {
+    window.__pulled = 0;
+    const orig = App.refresh;
+    App.refresh = (...a) => { window.__pulled++; return orig(...a); };
+    const t = (type, y) => document.body.dispatchEvent(new TouchEvent(type, { bubbles: true, touches: type === 'touchend' ? [] : [new Touch({ identifier: 1, target: document.body, clientY: y, clientX: 100 })] }));
+    t('touchstart', 100); t('touchmove', 160); t('touchmove', 260); t('touchend', 260);
+  });
+  await page.waitForFunction(() => document.querySelector('.ptr'));
+  assert.deepStrictEqual(page.errors, [], 'no errors while pulling');
+});
+
 test('16. sales public listing: sales price, sqm price, no rental labels or internal owner data leak', async (browser) => {
   const page = await newPage(browser, { viewport: PHONE });
   await page.addInitScript(() => {
@@ -1721,6 +1737,21 @@ test('1t. phone category bar stays above headings and the new menu is in English
   await page.getByRole('switch', { name: 'Dark mode', exact: true }).waitFor();
   const menu = await page.locator('.ios-list').innerText();
   for (const label of ['Tools', 'Appearance', 'Property matching']) assert(menu.includes(label), `Missing English menu label: ${label}`);
+  return page;
+});
+
+test('1u. English property inventory has no Georgian interface or user-content script', async (browser) => {
+  const page = await newPage(browser, { viewport: PHONE, login: USERS.manager });
+  await page.addInitScript(() => localStorage.setItem('rigzea_lang', 'en'));
+  await page.goto(BASE + '/app/apartments/');
+  await page.locator('#view h1').waitFor();
+  await page.waitForFunction(() => document.querySelectorAll('[data-apt-row]').length >= 6);
+  await page.waitForFunction(() => !/[ა-ჰ]/.test(document.querySelector('#view')?.textContent || ''));
+  const attrs = await page.locator('#view [placeholder], #view [aria-label], #view [data-label]').evaluateAll(els =>
+    els.flatMap(el => ['placeholder', 'aria-label', 'data-label'].map(a => el.getAttribute(a)).filter(Boolean)));
+  assert(!attrs.some(v => /[ა-ჰ]/.test(v)), 'English inventory attributes contain Georgian: ' + attrs.filter(v => /[ა-ჰ]/.test(v)).join(' | '));
+  const text = await page.locator('#view').textContent();
+  assert(text.includes('Saburtalo') && text.includes('Tbilisi'), 'Georgian proper names and addresses are romanized');
   return page;
 });
 

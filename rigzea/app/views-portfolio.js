@@ -883,7 +883,7 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
       <div class="chips" role="group" aria-label="სტატუსი">${STATUS.map(([id, label]) => `<button type="button" class="chip" data-st="${id}" aria-pressed="${af.status === id}">${label} <span class="count">${base.filter(a => inStatus(a, id)).length}</span></button>`).join('')}</div>
       <div class="toolbar">
         <div class="search-input grow">${icon('search', 16)}<input class="input" type="search" id="af-q" value="${esc(af.q)}" placeholder="სახელი, ნომერი, მისამართი, უბანი, მფლობელი, ქალაქი" aria-label="ბინის ძებნა" /></div>
-        ${cities.length > 1 ? `<select class="input" id="af-city" aria-label="ქალაქი"><option value="">ყველა ქალაქი</option>${cities.map(c => `<option ${af.city === c ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select>` : ''}
+        ${cities.length > 1 ? `<select class="input" id="af-city" aria-label="ქალაქი"><option value="">ყველა ქალაქი</option>${cities.map(c => `<option data-user-content ${af.city === c ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select>` : ''}
       </div>
       <section class="card">${list.length ? `<div class="rows">
         <div class="rows-head" style="--cols:${cols}">
@@ -904,8 +904,8 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
           const tt = a.transaction_type || (a.rental_type === 'long_term' ? 'long_term' : 'daily');
           return `<a class="row ${colPicked.has(a.id) ? 'is-col-picked' : ''}" href="#/apartments/${a.id}" data-apt-row="${a.id}" style="--cols:${cols}">
             ${colMode ? `<span class="apt-select-cell"><input type="checkbox" class="apt-col-cb" data-col-id="${a.id}" ${colPicked.has(a.id) ? 'checked' : ''} aria-label="მონიშვნა: ${esc(a.name)}" /></span>` : ''}
-            <span class="cell-main"><strong>${esc(a.name)}</strong><span>${esc([a.address, a.city].filter(Boolean).join(', '))} · ${R.transactionBadge(tt)}${App.pausedApartmentIds().has(a.id) ? ' · <span class="t-warn">ბმული შეჩერებულია</span>' : ''}</span></span>
-            <span class="cell-meta" data-label="მფლობელი">${esc(H.owner(a.owner_id)?.name || '–')}</span>
+            <span class="cell-main"><strong data-user-content>${esc(a.name)}</strong><span data-user-content>${esc([a.address, a.city].filter(Boolean).join(', '))} · ${R.transactionBadge(tt)}${App.pausedApartmentIds().has(a.id) ? ' · <span class="t-warn">ბმული შეჩერებულია</span>' : ''}</span></span>
+            <span class="cell-meta" data-label="მფლობელი" data-user-content>${esc(H.owner(a.owner_id)?.name || '–')}</span>
             <span class="cell-meta" data-label="ფასი">${priceHtml}</span>
             <span class="cell-meta" data-label="საქმე">${open.length}</span>
             <span class="cell-meta" data-label="ჯავშანი">${next ? (next.check_in <= R.isoDate() ? `გასვლა ${esc(R.dayLabel(next.check_out))}` : `შესვლა ${esc(R.dayLabel(next.check_in))}`) : (isSale ? (viewings ? `${viewings} ნახვა` : '–') : '–')}</span>

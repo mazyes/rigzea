@@ -1850,3 +1850,10 @@ a.row:active, button.row:active, .row.clickable:active, .sched-row:active, .noti
 /* Off-screen cards and list rows skip layout and paint until they are near the viewport (big win on phones) */
 .dash-lower .card, .dashboard-support .card, .dash-analytics .card:not(:first-child) { content-visibility: auto; contain-intrinsic-size: auto 300px; }
 .rows > .row { content-visibility: auto; contain-intrinsic-size: auto 64px; }
+
+/* Pull to refresh (phone) and a quicker entrance on phones */
+.ptr { position: fixed; z-index: 60; top: calc(env(safe-area-inset-top) + 6px); left: 50%; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: var(--surface); color: var(--brand-ink); box-shadow: 0 6px 18px -6px rgba(0, 0, 0, .35); opacity: 0; transform: translate(-50%, 0); pointer-events: none; transition: opacity .2s ease, transform .3s var(--ease); }
+.ptr.is-spinning svg { animation: spin .7s linear infinite; }
+@media (max-width: 900px) {
+  .view-enter :is(.page-head, .chips, .dash-kpi, .card:not(.card .card), .stats, .table-wrap) { animation-duration: .3s; }
+}
