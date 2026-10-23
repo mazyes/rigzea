@@ -20,18 +20,24 @@ const attr = (s) => esc(s).replace(/"/g, '&quot;');
  * note: small print under the button. Text is escaped; URLs may hold Supabase
  * template variables such as {{ .ConfirmationURL }}.
  */
-export function renderEmail({ preheader = '', title, lines = [], button = null, rows = [], list = [], note = '' }) {
+const COPY = {
+  ka: { tagline: 'უძრავი ქონების აგენტის სამუშაო სივრცე', fallback: 'თუ ღილაკი არ მუშაობს, ჩასვი ეს ბმული ბრაუზერში:', footer: 'ეს წერილი ავტომატურად გამოიგზავნა. თუ შენ არ მოგითხოვია, უბრალოდ არ მიაქციო ყურადღება.' },
+  en: { tagline: 'The workspace for real estate agents', fallback: 'If the button does not work, paste this link into your browser:', footer: 'This email was sent automatically. If you did not expect it, you can ignore it.' },
+};
+
+export function renderEmail({ preheader = '', title, lines = [], button = null, rows = [], list = [], note = '', lang = 'ka' }) {
+  const T = COPY[lang] || COPY.ka;
   const p = (t) => `<p style="margin:0 0 14px;font-size:15px;line-height:1.6;color:${C.ink}">${esc(t)}</p>`;
   const summary = rows.length ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:6px 0 20px;border:1px solid ${C.line};border-radius:10px">${rows.map(([k, v], i) =>
     `<tr><td style="padding:11px 14px;font-size:13px;color:${C.muted};${i ? `border-top:1px solid ${C.line};` : ''}">${esc(k)}</td><td align="right" style="padding:11px 14px;font-size:14px;font-weight:600;color:${C.ink};${i ? `border-top:1px solid ${C.line};` : ''}">${esc(v)}</td></tr>`).join('')}</table>` : '';
   const bullets = list.length ? `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 18px">${list.map((t) =>
     `<tr><td valign="top" style="padding:0 10px 8px 0;font-size:15px;line-height:1.5;color:${C.emerald};font-weight:700">&#10003;</td><td style="padding:0 0 8px;font-size:15px;line-height:1.5;color:${C.ink}">${esc(t)}</td></tr>`).join('')}</table>` : '';
   const cta = button ? `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:8px 0 18px"><tr><td bgcolor="${C.emerald}" style="border-radius:10px"><a href="${attr(button.url)}" target="_blank" style="display:inline-block;padding:13px 26px;font-family:${FONT};font-size:15px;font-weight:700;color:#ffffff;text-decoration:none;border-radius:10px">${esc(button.label)}</a></td></tr></table>
-            <p style="margin:0 0 14px;font-size:12px;line-height:1.6;color:${C.muted}">თუ ღილაკი არ მუშაობს, ჩასვი ეს ბმული ბრაუზერში:<br><a href="${attr(button.url)}" style="color:${C.emerald};word-break:break-all">${esc(button.url)}</a></p>` : '';
+            <p style="margin:0 0 14px;font-size:12px;line-height:1.6;color:${C.muted}">${T.fallback}<br><a href="${attr(button.url)}" style="color:${C.emerald};word-break:break-all">${esc(button.url)}</a></p>` : '';
   const small = note ? `<p style="margin:0;font-size:13px;line-height:1.6;color:${C.muted}">${esc(note)}</p>` : '';
 
   return `<!doctype html>
-<html lang="ka">
+<html lang="${lang === 'en' ? 'en' : 'ka'}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -46,7 +52,7 @@ export function renderEmail({ preheader = '', title, lines = [], button = null, 
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px">
       <tr><td bgcolor="${C.dark}" style="background:${C.dark};border-radius:14px 14px 0 0;padding:22px 28px">
         <a href="${attr(BASE_APP_URL)}" target="_blank" style="font-family:${FONT};font-size:21px;font-weight:800;letter-spacing:-0.3px;color:#ffffff;text-decoration:none">Rigzea<span style="color:${C.mint}">.</span></a>
-        <div style="margin-top:3px;font-size:12px;color:#8ea398">უძრავი ქონების აგენტის სამუშაო სივრცე</div>
+        <div style="margin-top:3px;font-size:12px;color:#8ea398">${T.tagline}</div>
       </td></tr>
       <tr><td bgcolor="${C.card}" style="background:${C.card};border:1px solid ${C.line};border-top:0;border-radius:0 0 14px 14px;padding:28px">
         <h1 style="margin:0 0 14px;font-family:${FONT};font-size:21px;line-height:1.35;font-weight:800;color:${C.ink}">${esc(title)}</h1>
@@ -54,7 +60,7 @@ export function renderEmail({ preheader = '', title, lines = [], button = null, 
         ${summary}${bullets}${cta}${small}
       </td></tr>
       <tr><td align="center" style="padding:18px 20px 0;font-size:12px;line-height:1.6;color:${C.muted}">
-        Rigzea · <a href="${attr(BASE_APP_URL)}" style="color:${C.muted}">${esc(BASE_APP_URL.replace(/^https?:\/\//, ''))}</a><br>ეს წერილი ავტომატურად გამოიგზავნა. თუ შენ არ მოგითხოვია, უბრალოდ არ მიაქციო ყურადღება.
+        Rigzea · <a href="${attr(BASE_APP_URL)}" style="color:${C.muted}">${esc(BASE_APP_URL.replace(/^https?:\/\//, ''))}</a><br>${T.footer}
       </td></tr>
     </table>
   </td></tr>

@@ -2050,7 +2050,6 @@ a.row:active, button.row:active, .row.clickable:active, .sched-row:active, .noti
 .img-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .img-hint { margin: 0; font-size: 12.5px; color: var(--muted); }
 .img-error { margin: 0; }
-.org-static .org-logo { width: 22px; height: 22px; margin-right: 8px; object-fit: contain; vertical-align: -6px; border-radius: 5px; }
 .welcome-row .ios-label { display: flex; flex-direction: column; gap: 2px; }
 .welcome-row .ios-label small { color: var(--muted); font-size: 12.5px; line-height: 1.35; font-weight: 400; }
 
@@ -2199,3 +2198,18 @@ html, body { overscroll-behavior-y: contain; }
   .bottom-nav a:not([aria-current="page"]), .bottom-nav button:not([aria-current="page"]) { justify-content: center; padding-top: 0; }
   .bottom-nav a:not([aria-current="page"]) svg, .bottom-nav button:not([aria-current="page"]) svg { width: 24px; height: 24px; }
 }
+
+/* Company logo backdrop on the dashboard (syncBrandBg in app.js) */
+.shell { isolation: isolate; }
+#brand-bg { position: fixed; inset: var(--top) 0 0 0; z-index: -1; overflow: hidden; pointer-events: none; opacity: 0; transition: opacity 1.4s ease; }
+#brand-bg.is-on { opacity: 1; }
+#brand-bg .bb { position: absolute; display: block; transition: transform .9s cubic-bezier(.22, .8, .3, 1); will-change: transform; }
+#brand-bg .bb-a { right: -6vmin; top: 4vmin; width: min(64vmin, 620px); transform: translate3d(calc(var(--px, 0) * -28px), calc(var(--py, 0) * -20px - var(--sy, 0) * .08px), 0); }
+#brand-bg .bb-b { left: -8vmin; bottom: -6vmin; width: min(36vmin, 340px); transform: translate3d(calc(var(--px, 0) * 40px), calc(var(--py, 0) * 28px + var(--sy, 0) * .05px), 0); }
+#brand-bg img { display: block; width: 100%; height: auto; opacity: .07; animation: brandDrift 28s ease-in-out infinite alternate; }
+#brand-bg .bb-b img { opacity: .05; animation-duration: 36s; animation-direction: alternate-reverse; }
+:root[data-theme="dark"] #brand-bg img { opacity: .09; }
+@keyframes brandDrift { 0% { transform: translate3d(0, 0, 0) rotate(-6deg) scale(1); } 50% { transform: translate3d(-14px, 18px, 0) rotate(-2deg) scale(1.04); } 100% { transform: translate3d(10px, -12px, 0) rotate(-9deg) scale(1.02); } }
+.lite #brand-bg img, .motion-off #brand-bg img { animation: none; }
+@media (prefers-reduced-motion: reduce) { #brand-bg img { animation: none; } #brand-bg .bb { transition: none; } }
+@media (max-width: 900px) { #brand-bg .bb-a { width: 78vmin; top: 12vmin; } #brand-bg .bb-b { display: none; } }

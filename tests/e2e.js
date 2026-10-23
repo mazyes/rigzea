@@ -2048,6 +2048,26 @@ test('1zg. chat in English has no Georgian interface text; what people write sta
   await page.close();
 });
 
+test('1zh. the company logo is a faint moving backdrop of the dashboard, not part of the top bar', async (browser) => {
+  const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
+  await page.goto(BASE + '/app/');
+  await page.getByRole('heading', { name: /გამარჯობა,/ }).waitFor();
+  assert.strictEqual(await page.locator('#brand-bg').count(), 0, 'no logo yet, no backdrop');
+  await page.evaluate(() => { const d = JSON.parse(localStorage.getItem('rigzea_mockdb')); d.tables.organizations[0].logo_url = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><rect width="10" height="10" fill="green"/></svg>'); localStorage.setItem('rigzea_mockdb', JSON.stringify(d)); });
+  await page.reload();
+  await page.locator('#brand-bg.is-on').waitFor();
+  assert.strictEqual(await page.locator('.topbar img[src^="data:image/svg"]').count(), 0, 'the logo is not in the top bar');
+  const op = await page.evaluate(() => Number(getComputedStyle(document.querySelector('#brand-bg .bb-a img')).opacity));
+  assert(op > 0 && op <= 0.12, 'very faint: ' + op);
+  assert.strictEqual(await page.evaluate(() => getComputedStyle(document.getElementById('brand-bg')).pointerEvents), 'none', 'never blocks a click');
+  await page.mouse.move(100, 100); await page.mouse.move(900, 500);
+  await page.waitForFunction(() => document.getElementById('brand-bg').style.getPropertyValue('--px') !== '');
+  await page.goto(BASE + '/app/tasks/');
+  await page.locator('#view').waitFor();
+  assert.strictEqual(await page.locator('#brand-bg').count(), 0, 'only on the dashboard');
+  await page.close();
+});
+
 test('1x. the app opens offline from the service worker cache and says it is offline', async (browser) => {
   const context = await browser.newContext({ viewport: DESKTOP, locale: 'ka-GE' }); // real service worker, real files
   const page = await context.newPage();

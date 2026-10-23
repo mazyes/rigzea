@@ -67,7 +67,11 @@ export async function callRpcAs(token, functionName, params = {}) {
       headers: { apikey: key, Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify(params),
     });
-    return { ok: res.ok, status: res.status, data: res.ok ? await res.json().catch(() => null) : null };
+    const text = await res.text().catch(() => '');
+    let data = null;
+    try { data = text ? JSON.parse(text) : null; } catch { /* not JSON */ }
+    // on failure `error` carries PostgREST's message (for example the text of a RAISE EXCEPTION)
+    return res.ok ? { ok: true, status: res.status, data } : { ok: false, status: res.status, data: null, error: String((data && (data.message || data.error)) || text || '').slice(0, 300) };
   } catch (e) {
     console.error(`RPC ${functionName} error:`, e.message);
     return { ok: false, status: 0, data: null };
