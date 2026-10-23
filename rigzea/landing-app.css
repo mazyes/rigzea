@@ -9,9 +9,9 @@
   --la-hover: #222226;
   --la-line: #27272a;
   --la-line-strong: #3f3f46;
-  --la-ink: #f4f4f5;
-  --la-ink-2: #a1a1aa;
-  --la-muted: #94949c;
+  --la-ink: #ffffff;
+  --la-ink-2: #ffffff;
+  --la-muted: #ffffff;
   --la-brand: #047857;
   --la-brand-hover: #065f46;
   --la-brand-ink: #34d399;
@@ -35,6 +35,7 @@
   --lx-text-white: var(--la-ink);
   --lx-text-silver: var(--la-ink-2);
   --lx-text-muted: var(--la-muted);
+  --lx-text-dark: var(--la-muted);
   --lx-glow-card: none;
   --lx-glow-mint: none;
   --lx-glow-mint-lg: none;
@@ -168,3 +169,16 @@ body.luxury-theme::before, .lx-ambient-canvas, .lx-ambient-orb { display: none !
   .lx-hero-window { border-radius: 16px; }
 }
 @media (prefers-reduced-motion: reduce) { .lx-btn, .lx-theme-toggle, .lx-nav-link { transition: none; } }
+
+/* Dark theme: the list text in the Rigzea way card is white too */
+:root:not([data-theme="light"]) .lx-card-rigzea-way .lx-points-list li { color: #ffffff; }
+
+/* Menu: the open page is the app's green pill with white text (the page sets data-page on <html>; the menu markup stays identical on every page) */
+html[data-page="home"] .lx-nav-link[href="/#how-it-works"],
+html[data-page="features"] .lx-nav-link[href="/features/"],
+html[data-page="pricing"] .lx-nav-link[href="/pricing/"],
+html[data-page="faq"] .lx-nav-link[href="/faq/"] {
+  background-color: var(--la-brand); background-image: linear-gradient(180deg, rgba(255, 255, 255, .16), rgba(255, 255, 255, 0));
+  color: #ffffff; font-weight: 600;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .3), 0 8px 18px -8px rgba(4, 120, 87, .75);
+}
