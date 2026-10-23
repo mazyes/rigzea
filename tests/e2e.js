@@ -1010,6 +1010,22 @@ test('1j. pages animate in, and only fade when the system asks for less motion',
   return page;
 });
 
+test('1k. charts start at zero and fill when scrolled into view, even with reduced motion', async (browser) => {
+  const page = await newPage(browser, { viewport: PHONE, login: USERS.manager });
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto(BASE + '/app/');
+  await page.locator('.dash-donut').waitFor();
+  const donut = page.locator('.dash-donut');
+  assert.strictEqual(await donut.getAttribute('data-fill'), 'wait', 'ring waits below the fold');
+  assert.strictEqual(await page.locator('.dash-stage-track span').first().evaluate(el => getComputedStyle(el).transform), 'matrix(1, 0, 0, 0, 0, 0)', 'bars start flat');
+  await donut.scrollIntoViewIfNeeded();
+  await page.waitForFunction(() => document.querySelector('.dash-donut').dataset.fill === 'go');
+  const bar = await page.locator('.dash-stage-track span').first().evaluate(el => ({ name: getComputedStyle(el).animationName, duration: getComputedStyle(el).animationDuration }));
+  assert.strictEqual(bar.name, 'growY');
+  assert.strictEqual(bar.duration, '1s', 'chart animation is not cut by reduced motion');
+  return page;
+});
+
 test('16. sales public listing: sales price, sqm price, no rental labels or internal owner data leak', async (browser) => {
   const page = await newPage(browser, { viewport: PHONE });
   await page.addInitScript(() => {

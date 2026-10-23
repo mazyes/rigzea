@@ -877,6 +877,7 @@
     try {
       view(r);
       swipeIn(r.name);
+      armFills(r.name);
     } catch (err) {
       console.error(err);
       $('#view').innerHTML = `<div class="card"><div class="error-state"><p>გვერდის ჩვენება ვერ მოხერხდა: ${esc(err.message)}</p><a class="btn btn-secondary" href="#/today">მთავარზე დაბრუნება</a></div></div>`;
@@ -902,11 +903,28 @@
     setTimeout(() => v.classList.remove('view-enter'), 1600); // later re-renders (filters, saves) must not replay the reveal
   }
 
+  // Bars, progress bars and the ring start at zero and fill when they scroll into view. Only the first
+  // moments after a page opens: a later re-render (filter, save) keeps them full instead of replaying.
+  let fillView = null, fillAt = 0;
+  const fillSeen = new IntersectionObserver((entries) => entries.forEach((e) => {
+    if (e.isIntersecting) { e.target.dataset.fill = 'go'; fillSeen.unobserve(e.target); }
+  }), { threshold: 0.3 });
+  function armFills(name) {
+    if (fillView !== name) { fillView = name; fillAt = performance.now(); }
+    if (performance.now() - fillAt > 3000) return;
+    $$('#view .dash-stage-track span, #view .dash-donut, #view .meter > i, #view .fill-x').forEach((el) => {
+      const stage = el.closest('.dash-stage');
+      el.style.setProperty('--d', stage ? [...stage.parentNode.children].indexOf(stage) * 60 + 'ms' : '0ms');
+      el.dataset.fill = 'wait';
+      fillSeen.observe(el);
+    });
+  }
+
   // Big numbers count up once when a page opens; the text keeps its own separators and currency sign.
   function countUp(el) {
     const m = /\d(?:[\d,]|\s(?=\d))*/.exec(el.textContent);
     const end = m && Number(m[0].replace(/\D/g, ''));
-    if (!end || R.calm()) return;
+    if (!end) return;
     const sep = (/[\s,]/.exec(m[0]) || [''])[0];
     const pre = el.textContent.slice(0, m.index), post = el.textContent.slice(m.index + m[0].length);
     const fmt = (x) => sep ? String(x).replace(/\B(?=(\d{3})+(?!\d))/g, sep) : String(x);
