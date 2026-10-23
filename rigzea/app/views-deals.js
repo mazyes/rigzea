@@ -188,7 +188,7 @@
         <button type="button" class="btn btn-ghost btn-sm" data-export="csv">${icon('file', 14)} CSV</button>
         <button type="button" class="btn btn-ghost btn-sm" data-export="xlsx">${icon('file', 14)} Excel</button>
       </div>
-      ${deals.length ? '' : `<section class="card" style="margin-bottom:16px"><div class="empty">${icon('wallet', 28)}<h3>გარიგება ჯერ არ არის</h3><p>დაამატე კლიენტი, მიაბი ქონება და აქ დაინახავ ეტაპებს, ნახვებს, მოსალოდნელ და მიღებულ საკომისიოს.</p><button type="button" class="btn btn-primary" id="btn-deal-empty">${icon('plus', 16)} პირველი გარიგება</button></div></section>`}
+      ${deals.length ? '' : `<section class="card" style="margin-bottom:16px"><div class="empty">${icon('wallet', 28)}<h3>გარიგება ჯერ არ არის</h3><p>დაამატე კლიენტი და მიაბი ობიექტი.</p><button type="button" class="btn btn-primary" id="btn-deal-empty">${icon('plus', 16)} პირველი გარიგება</button></div></section>`}
       ${dealViewMode === 'table' && deals.length ? `
         <section class="card deal-table-wrap">
           <table class="deal-table">
@@ -489,7 +489,7 @@
                 <label class="field"><span class="field-label">პარტნიორი აგენტი (სახელი, სააგენტო)</span><input name="partner_agent" id="deal-partner" value="${esc(v.partner_agent || '')}" placeholder="მაგ.: დავითი (Remax)" /></label>
                 <label class="field"><span class="field-label">პარტნიორის წილი (%)</span><input type="number" id="deal-partner-split" name="cobroker_split" min="0" max="100" step="5" value="${esc(v.cobroker_split ?? 50)}" /><span class="field-hint">50 = თანაბრად გაყოფა</span></label>
                 <label class="field"><span class="field-label">პარტნიორის ტელეფონი</span><input type="tel" name="partner_phone" id="deal-partner-phone" value="${esc(v.partner_phone || '')}" placeholder="+995 5XX XX XX XX" /></label>
-                <label class="field"><span class="field-label">მესაკუთრის ბონუსი</span><input type="number" id="deal-bonus" name="owner_bonus" min="0" step="10" value="${esc(v.owner_bonus || 0)}" /><span class="field-hint">დამატებითი ბონუსი</span></label>
+                <label class="field"><span class="field-label">მესაკუთრის ბონუსი</span><input type="number" id="deal-bonus" name="owner_bonus" min="0" step="10" value="${esc(v.owner_bonus || 0)}" /></label>
               </div>
             </div>
           </div>
@@ -999,7 +999,7 @@
               <button type="button" class="btn btn-ghost btn-sm" data-sel-toggle="${s.id}">${s.is_active === false ? 'ჩართვა' : 'გათიშვა'}</button>
             </span>
           </div>`).join('')}
-      </div>` : `<div class="empty">${icon('link', 28)}<h3>შერჩევა ჯერ არ შეგიქმნია</h3><p>გახსენი „ბინების შერჩევა“, მონიშნე კლიენტისთვის შესაფერისი ბინები და გაუგზავნე ერთი ბმული.</p><button type="button" class="btn btn-primary" id="sel-new">${icon('sparkle', 16)} ბინების შერჩევა</button></div>`}</section>`;
+      </div>` : `<div class="empty">${icon('link', 28)}<h3>შერჩევა ჯერ არ შეგიქმნია</h3><p>მონიშნე ბინები და გაუგზავნე კლიენტს ერთი ბმული.</p><button type="button" class="btn btn-primary" id="sel-new">${icon('sparkle', 16)} ბინების შერჩევა</button></div>`}</section>`;
 
     $('#sel-new')?.addEventListener('click', () => openMatchmakerModal());
     $$('[data-sel-copy]').forEach(b => b.addEventListener('click', () => { const s = rows.find(x => x.id === b.dataset.selCopy); copyText(selectionUrl(s.slug), 'შერჩევის ბმული დაკოპირდა'); }));
@@ -1858,7 +1858,7 @@
       wide: true,
       submitLabel: 'ხელშეკრულების შედგენა',
       body: `
-        <div class="notice small">${icon('shield', 14)} ხელშეკრულების ტექსტი აგებულია საქართველოს სამოქალაქო კოდექსის მუხლებზე (531–575) და პროექტად გამოსაყენებლად არის განკუთვნილი: გაუგზავნე იურისტს გადასამოწმებლად. მოიცავს საგარანტიო დეპოზიტის დაცვას, ვადაგადაცილების პირგასამტეხლოს და მიღება-ჩაბარების აქტს მრიცხველების ჩვენებებით.</div>
+        <div class="notice small">${icon('shield', 14)} ქირავნობის შაბლონი (სსკ 531–575). მოიცავს დეპოზიტს, პირგასამტეხლოს და მიღება-ჩაბარების აქტს მრიცხველებით. ხელმოწერამდე გადაამოწმე იურისტთან.</div>
         <div class="form-section"><div class="form-section-title">საიდან შევავსო</div><div class="form-grid">
           <label class="field"><span class="field-label">გარიგება</span><select id="lease-deal"><option value="">არ არის არჩეული</option>${deals.map(x => `<option value="${x.id}" ${x.id === dl?.id ? 'selected' : ''}>${esc(x.client_name)}${x.apartment_id ? ' · ' + esc(H.aptName(x.apartment_id)) : ''}</option>`).join('')}</select></label>
           <label class="field"><span class="field-label">ობიექტი</span><select id="lease-apt"><option value="">არ არის არჩეული</option>${apts.map(x => `<option value="${x.id}" ${x.id === a?.id ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select></label>

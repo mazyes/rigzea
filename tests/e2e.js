@@ -1121,6 +1121,46 @@ test('1p. the notification panel opens on screen on desktop and phone', async (b
   return null;
 });
 
+test('1q. settings > ინტერფეისი: theme, menu position, animations and density apply at once, persist and reset', async (browser) => {
+  const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
+  await page.goto(BASE + '/app/settings/?id=ui');
+  await page.locator('[data-pref="theme"]').waitFor();
+  const html = (fn, arg) => page.evaluate(fn, arg);
+  const pressed = (pref, v) => page.locator(`[data-pref="${pref}"] [data-v="${v}"]`).getAttribute('aria-pressed');
+  await page.locator('[data-pref="theme"] [data-v="dark"]').click();
+  await page.waitForFunction(() => document.documentElement.dataset.theme === 'dark');
+  assert.strictEqual(await html(() => localStorage.getItem('rigzea_theme')), 'dark');
+  assert.strictEqual(await pressed('theme', 'dark'), 'true');
+  await page.waitForFunction(() => document.querySelector('#btn-theme').getAttribute('aria-label') === 'ღია თემა');
+  await page.locator('[data-pref="theme"] [data-v="light"]').click();
+  await page.waitForFunction(() => document.documentElement.dataset.theme === 'light');
+  await page.locator('[data-pref="nav"] [data-v="side"]').click();
+  assert(await html(() => document.documentElement.classList.contains('nav-side')), 'menu moves to the left');
+  await page.locator('[data-pref="nav"] [data-v="top"]').click();
+  assert(!(await html(() => document.documentElement.classList.contains('nav-side'))), 'menu moves back to the top');
+  await page.locator('[data-pref="motion"] [data-v="off"]').click();
+  assert.strictEqual(await html(() => localStorage.getItem('rigzea_motion')), 'off');
+  assert(await html(() => document.documentElement.classList.contains('motion-off') && R.calm()), 'animations are off');
+  await page.locator('[data-pref="motion"] [data-v="lite"]').click();
+  assert(await html(() => document.documentElement.classList.contains('lite') && !document.documentElement.classList.contains('motion-off')), 'light motion');
+  await page.locator('[data-pref="density"] [data-v="compact"]').click();
+  assert.strictEqual(await html(() => localStorage.getItem('rigzea_density')), 'compact');
+  assert(await html(() => document.documentElement.classList.contains('density-compact')), 'compact density');
+  await page.reload();
+  await page.locator('[data-pref="density"]').waitFor();
+  assert(await html(() => document.documentElement.classList.contains('density-compact') && document.documentElement.classList.contains('lite')), 'choices are remembered');
+  assert.strictEqual(await pressed('density', 'compact'), 'true');
+  assert.strictEqual(await pressed('motion', 'lite'), 'true');
+  await page.locator('[data-pref="theme"] [data-v="dark"]').click();
+  await page.locator('[data-pref="nav"] [data-v="side"]').click();
+  await page.locator('#ui-reset').click();
+  assert.deepStrictEqual(await html(() => ['rigzea_theme', 'rigzea_motion', 'rigzea_density'].map(k => localStorage.getItem(k))), [null, null, null], 'reset clears the keys');
+  assert(await html(() => !document.documentElement.classList.contains('density-compact') && !document.documentElement.classList.contains('nav-side') && !document.documentElement.classList.contains('motion-off')), 'reset restores the defaults');
+  assert.strictEqual(await pressed('theme', 'system'), 'true');
+  assert.strictEqual(await pressed('density', 'regular'), 'true');
+  return page;
+});
+
 test('16. sales public listing: sales price, sqm price, no rental labels or internal owner data leak', async (browser) => {
   const page = await newPage(browser, { viewport: PHONE });
   await page.addInitScript(() => {

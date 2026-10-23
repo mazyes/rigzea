@@ -438,8 +438,17 @@
   // Weak devices (2 cores or less, 2 GB or less, data saver) get the light motion set: no blur, no frosted glass.
   const root = document.documentElement;
   try { root.classList.toggle('nav-side', localStorage.getItem('rigzea_nav') === 'side'); } catch { /* storage blocked: top menu */ }
-  root.classList.toggle('lite', (navigator.hardwareConcurrency || 8) <= 2 || (navigator.deviceMemory || 8) <= 2 || !!navigator.connection?.saveData);
-  const calm = () => matchMedia('(prefers-reduced-motion: reduce)').matches || root.classList.contains('lite');
+  const weakDevice = (navigator.hardwareConcurrency || 8) <= 2 || (navigator.deviceMemory || 8) <= 2 || !!navigator.connection?.saveData;
+  // Settings > ინტერფეისი: animations 'auto' (device detection) | 'lite' | 'off', and 'compact' density. Per device.
+  function applyPrefs() {
+    let m = 'auto', d = '';
+    try { m = localStorage.getItem('rigzea_motion') || 'auto'; d = localStorage.getItem('rigzea_density'); } catch { /* storage blocked: defaults */ }
+    root.classList.toggle('lite', m === 'lite' || m === 'off' || (m === 'auto' && weakDevice));
+    root.classList.toggle('motion-off', m === 'off');
+    root.classList.toggle('density-compact', d === 'compact');
+  }
+  applyPrefs();
+  const calm = () => matchMedia('(prefers-reduced-motion: reduce)').matches || root.classList.contains('lite') || root.classList.contains('motion-off');
 
   // A wobbling liquid edge: the same 36-point polygon at growing radius, with the bulges drifting round.
   function blobFrames(x, y, rMax) {
@@ -485,7 +494,7 @@
     bindGeorgianName,
     sb, $, $$, esc, safeUrl, money, isDaily, listingUrl, toDate, isoDate, monthKey, time, date, dayLabel, dateTime, relative, elapsed, span, sameDay,
     MONTHS, WEEKDAYS, L, badge, taskBadge, approvalStatus, approvalBadge, expenseBadge, dealBadge, transactionBadge, contactBadge, icon,
-    friendlyError, phoneKey, CADASTRAL_RE, cadastralFormat, q, toast, run, dialog, confirm, ask, uploadFile, copyText, applyTheme, calm, uuid,
+    friendlyError, phoneKey, CADASTRAL_RE, cadastralFormat, q, toast, run, dialog, confirm, ask, uploadFile, copyText, applyTheme, applyPrefs, calm, uuid,
     whatsappUrl: (text) => `https://wa.me/?text=${encodeURIComponent(text)}`,
     telegramUrl: (text, url) => `https://t.me/share/url?url=${encodeURIComponent(url || '')}&text=${encodeURIComponent(text || '')}`,
   };

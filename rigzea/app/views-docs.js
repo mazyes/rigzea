@@ -199,7 +199,7 @@
           <button type="button" class="btn btn-primary" id="pz-print">${icon('printer', 16)} ჩამოტვირთვა (PDF)</button>
           <a class="btn btn-wa" id="pz-wa" href="${R.whatsappUrl(waText)}" target="_blank" rel="noopener">${icon('whatsapp', 16)} WhatsApp-ით გაგზავნა</a>
         </div>
-        <p class="small muted" style="margin-top:8px">PDF-ის შესანახად გახსნილ ფანჯარაში აირჩიე „Save as PDF“. WhatsApp-ში იგზავნება ობიექტის ბმული: ფაილს WhatsApp ბმულით ვერ მიიღებს, PDF ხელით მიამაგრე.</p>`,
+        <p class="small muted" style="margin-top:8px">PDF: აირჩიე „Save as PDF“. WhatsApp-ით იგზავნება ბმული; PDF ხელით მიამაგრე.</p>`,
       onOpen: (form) => {
         const box = $('#pz-preview', form);
         const draw = () => {
@@ -371,7 +371,7 @@
       wide: true,
       submitLabel: 'დოკუმენტის შედგენა',
       body: `
-        <div class="notice small">${icon('alert', 14)} ეს ზოგადი შაბლონია. ხელმოწერამდე სასურველია, ტექსტს იურისტმა გადახედოს. ცარიელი ველები დოკუმენტში ხაზად დარჩება ხელით შესავსებად.</div>
+        <div class="notice small">${icon('alert', 14)} ზოგადი შაბლონი. ხელმოწერამდე გადაამოწმე იურისტთან. ცარიელი ველები ხელით შეივსება.</div>
         <div class="form-section"><div class="form-section-title">საიდან შევავსო</div><div class="form-grid">
           <label class="field"><span class="field-label">გარიგება</span><select id="doc-deal"><option value="">არ არის არჩეული</option>${deals.map(x => `<option value="${x.id}" ${x.id === dl?.id ? 'selected' : ''}>${esc(x.client_name)}${x.apartment_id ? ' · ' + esc(H.aptName(x.apartment_id)) : ''}</option>`).join('')}</select></label>
           <label class="field"><span class="field-label">ობიექტი</span><select id="doc-apt"><option value="">არ არის არჩეული</option>${apts.map(x => `<option value="${x.id}" ${x.id === a?.id ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select></label>

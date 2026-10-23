@@ -137,7 +137,9 @@ export default async function handler(req, res) {
     out = out.replace(/<title>[\s\S]*?<\/title>/, '<title>განცხადება ვერ მოიძებნა</title>\n  <meta name="robots" content="noindex" />');
   }
   out = out.replace('</head>', `  ${boot}\n</head>`);
-  res.setHeader('Cache-Control', found ? 'public, max-age=0, s-maxage=60, stale-while-revalidate=300' : 'public, max-age=0, s-maxage=30');
+  // Only found listings are cached at the CDN (shared HTML has no per-user data); 60s staleness is fine because
+  // edits and unpublishing show within a minute. Not found / unpublished is never cached, so publishing shows at once.
+  res.setHeader('Cache-Control', found ? 'public, max-age=0, s-maxage=60, stale-while-revalidate=300' : 'no-store');
   return res.end(out);
 }
 

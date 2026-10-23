@@ -373,7 +373,7 @@
       if (name || ag.logo_url) {
         brand.removeAttribute('href');
         brand.setAttribute('aria-label', name || t().agency);
-        brand.innerHTML = (ag.logo_url ? `<img class="p-brand-logo" src="${esc(ag.logo_url)}" alt="" />` : `<span class="p-brand-mark">${esc((name || '·').trim().charAt(0).toUpperCase())}</span>`) + (name ? `<span>${esc(name)}</span>` : '');
+        brand.innerHTML = (ag.logo_url ? `<img class="p-brand-logo" src="${esc(ag.logo_url)}" alt="" />` : `<span class="p-brand-mark">${esc((name || '·').trim().replace(/^[a-z]/, c => c.toUpperCase()).charAt(0))}</span>`) + (name ? `<span>${esc(name)}</span>` : '');
       } else if (WL) {
         brand.removeAttribute('href');
         brand.innerHTML = '';
@@ -496,7 +496,7 @@
         </section>` : ''}
 
         ${!demo && (agentName || ag.name) ? `<section class="p-card"><div class="p-agent">
-          <div class="p-agent-avatar">${ag.logo_url && !agentName ? `<img src="${esc(ag.logo_url)}" alt="" />` : esc((agentName || ag.name || '·').trim().charAt(0).toUpperCase())}</div>
+          <div class="p-agent-avatar">${ag.logo_url && !agentName ? `<img src="${esc(ag.logo_url)}" alt="" />` : esc((agentName || ag.name || '·').trim().replace(/^[a-z]/, c => c.toUpperCase()).charAt(0))}</div>
           <div><strong>${esc(agentName || ag.name)}</strong><span>${esc(agentName && ag.name ? `${L.agent} · ${ag.name}` : agentName ? L.agent : L.agency)}</span></div>
         </div></section>` : ''}
 

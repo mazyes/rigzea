@@ -82,7 +82,7 @@
           <span class="cell-actions">${expenseAction(e)}</span>
         </div>`).join('')}
         <div class="row" style="--cols:minmax(0,1fr) auto"><span class="muted">ჯამი · ${list.length} ჩანაწერი</span><span class="num strong">${money(sum(list))}</span></div>
-      </div>` : `<div class="empty">${icon('wallet', 28)}<h3>ხარჯი ვერ მოიძებნა</h3><p>ჩაწერე ხარჯი ქვითრით, მაგ.: „დასუფთავება, ₾80“. თუ ხარჯს მფლობელის თანხმობა სჭირდება, აირჩიე „თანხმობის მოთხოვნა“.</p><button type="button" class="btn btn-primary" id="f-exp-empty">ხარჯის ჩაწერა</button></div>`}</section>`;
+      </div>` : `<div class="empty">${icon('wallet', 28)}<h3>ხარჯი ვერ მოიძებნა</h3><p>ჩაწერე ხარჯი ან აირჩიე „თანხმობის მოთხოვნა“.</p><button type="button" class="btn btn-primary" id="f-exp-empty">ხარჯის ჩაწერა</button></div>`}</section>`;
     $$('[data-fs]', root).forEach(b => b.addEventListener('click', () => { ff.status = b.dataset.fs; App.render(); }));
     $('#f-exp-empty')?.addEventListener('click', () => openExpenseForm({ apartmentId: ff.apt || null }));
     $$('[data-x]', root).forEach(b => b.addEventListener('click', () => {
@@ -213,7 +213,7 @@
       <section class="card">${inc.length ? `<div class="rows"><div class="rows-head" style="--cols:${cols}"><span>თარიღი</span><span>აღწერა</span><span>ბინა</span><span>წყარო</span><span class="cell-right">თანხა</span></div>
         ${inc.map(i => `<div class="row" style="--cols:${cols}"><span class="cell-meta cell-hide-m">${esc(R.date(i.income_date))}</span><span class="cell-main"><strong>${esc(i.description || 'შემოსავალი')}</strong><span>${esc(R.date(i.income_date))}</span></span><span class="cell-meta">${esc(H.aptName(i.apartment_id))}</span><span class="cell-meta">${esc(i.source || '–')}</span><span class="cell-right num strong t-ok">${money(i.amount)}</span></div>`).join('')}
         <div class="row" style="--cols:minmax(0,1fr) auto"><span class="muted">ჯამი · ${inc.length} ჩანაწერი</span><span class="num strong">${money(sum(inc))}</span></div></div>`
-      : `<div class="empty">${icon('wallet', 28)}<h3>შემოსავალი ვერ მოიძებნა</h3><p>ჩაწერე ჯავშნიდან მიღებული თანხა, მაგ.: „Airbnb, 4 ღამე, ₾1 450“.</p><button type="button" class="btn btn-primary" id="f-inc-empty">შემოსავლის ჩაწერა</button></div>`}</section>`;
+      : `<div class="empty">${icon('wallet', 28)}<h3>შემოსავალი ვერ მოიძებნა</h3><p>ჩაწერე ჯავშნიდან მიღებული თანხა.</p><button type="button" class="btn btn-primary" id="f-inc-empty">შემოსავლის ჩაწერა</button></div>`}</section>`;
     $('#f-inc-empty')?.addEventListener('click', () => openIncomeForm({ apartmentId: ff.apt || null }));
     $$('[data-rec]', root).forEach(b => b.addEventListener('click', () => {
       const r = S.data.reservations.find(x => x.id === b.dataset.rec);
@@ -273,7 +273,7 @@
     root.innerHTML = `<div class="toolbar"><button type="button" class="btn btn-primary btn-sm" id="st-new">ამონაწერის მომზადება</button><span class="small muted">ამონაწერი ითვლის თვის შემოსავალს, მფლობელზე დაკისრებულ ხარჯს და საკომისიოს. დასრულებისას მფლობელი შეტყობინებას მიიღებს.</span></div>
       <section class="card">${list.length ? `<div class="rows"><div class="rows-head" style="--cols:${cols}"><span>ბინა</span><span>თვე</span><span class="cell-right">შემოსავალი</span><span class="cell-right">მფლობელს</span><span>სტატუსი</span></div>
         ${list.map(s => `<a class="row" href="#/finance/statement/${s.id}" style="--cols:${cols}"><span class="cell-main"><strong>${esc(H.aptName(s.apartment_id))}</strong><span>${esc(H.owner(s.owner_id)?.name || '')}</span></span><span class="cell-meta">${esc(App.monthLabel(s.month_period))}</span><span class="cell-meta cell-right num">${money(s.total_income)}</span><span class="cell-right num strong">${money(s.net_result)}</span><span class="cell-status">${R.badge(L.statement[s.status], L.statementTone[s.status])}</span></a>`).join('')}</div>`
-      : `<div class="empty">${icon('file', 28)}<h3>ამონაწერი ჯერ არ არის</h3><p>მოამზადე თვიური ამონაწერი ბინისთვის. სისტემა თავად დაითვლის შემოსავალს, ხარჯს, საკომისიოს და მფლობელის წმინდა ანაზღაურებას.</p></div>`}</section>`;
+      : `<div class="empty">${icon('file', 28)}<h3>ამონაწერი ჯერ არ არის</h3><p>თვიური ამონაწერი ითვლის შემოსავალს, ხარჯს, საკომისიოს და მესაკუთრის ანაზღაურებას.</p></div>`}</section>`;
     $('#st-new').onclick = () => R.dialog({
       title: 'ამონაწერის მომზადება', submitLabel: 'მომზადება',
       body: `<div class="form-stack">${App.pickerHtml('apartment_id', 'ბინა')}<label class="field"><span class="field-label">თვე</span><input type="month" name="month" required value="${ff.month || prevMonth()}" /></label></div>`,
@@ -303,7 +303,7 @@
           ${s.status === 'draft' ? `<button type="button" class="btn btn-secondary" id="st-regen">${icon('refresh', 16)} ხელახლა დათვლა</button><button type="button" class="btn btn-primary" id="st-final">დასრულება</button>` : ''}
           <button type="button" class="btn btn-secondary" onclick="window.print()">${icon('printer', 16)} ბეჭდვა / PDF</button>
         </div></div>
-      ${s.status === 'draft' ? `<div class="notice" style="margin-bottom:16px">${icon('alert', 16)}<div>ეს მონახაზია. შეამოწმე ჩანაწერები და დააჭირე „დასრულებას“. ${owner?.user_id ? 'მფლობელი შეტყობინებას მიიღებს' : 'შემდეგ ამობეჭდე ან გაუგზავნე PDF მფლობელს'}. დასრულების შემდეგ ციფრები აღარ შეიცვლება.</div></div>` : ''}
+      ${s.status === 'draft' ? `<div class="notice" style="margin-bottom:16px">${icon('alert', 16)}<div>მონახაზი. დასრულებამდე გადაამოწმე ჩანაწერები. ${owner?.user_id ? 'მფლობელი შეტყობინებას მიიღებს' : 'შემდეგ ამობეჭდე ან გაუგზავნე PDF მფლობელს'}. დასრულების შემდეგ თანხები აღარ შეიცვლება.</div></div>` : ''}
       <section class="card">
         <div class="card-body">
           <div class="print-only" style="margin-bottom:12px"><strong>${esc(S.org.name)}</strong> · ამონაწერი · ${esc(App.monthLabel(s.month_period))}</div>

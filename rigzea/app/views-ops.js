@@ -72,7 +72,7 @@
       subtitle: `${task.title} · ${H.aptName(task.apartment_id)}`,
       submitLabel: 'დანიშვნა',
       body: `<label class="field"><span class="field-label">შემსრულებელი</span><select name="assigned_to" required data-error="აირჩიე შემსრულებელი."><option value="">აირჩიე…</option>${options}</select>
-        <span class="field-hint">შემსრულებელი შეტყობინებას მიიღებს და საქმე გამოჩნდება მის „ჩემს სამუშაოებში“.</span></label>`,
+        <span class="field-hint">შემსრულებელი მიიღებს შეტყობინებას და დავალებას.</span></label>`,
       onSubmit: async (_f, v) => {
         await updateTask(task, { assigned_to: v.assigned_to }, { event: { type: 'task_assigned', title: `დაინიშნა: ${task.title}`, description: H.memberName(v.assigned_to) } });
         toast(`დაინიშნა: ${H.memberName(v.assigned_to)}`, { type: 'success' });
@@ -227,10 +227,10 @@
   function openTelegramLink() {
     return R.dialog({
       title: 'Telegram-ის დაკავშირება',
-      subtitle: 'შეხსენებებს ბოტი პირდაპირ Telegram-ში გამოგიგზავნით',
-      body: `<p class="dlg-text">დააგენერირე ერთჯერადი კოდი და გამოუგზავნე ბოტს <a href="https://t.me/Rigzeabot" target="_blank" rel="noopener"><b>@Rigzeabot</b></a>. კოდი მოქმედებს 15 წუთის განმავლობაში.</p>
+      subtitle: 'შეხსენებები Telegram-ში',
+      body: `<p class="dlg-text">შექმენი კოდი და გაუგზავნე ბოტს <a href="https://t.me/Rigzeabot" target="_blank" rel="noopener"><b>@Rigzeabot</b></a>. კოდი მოქმედებს 15 წუთი.</p>
         <div id="tg-code" class="calc" style="font-size:22px;font-weight:600;letter-spacing:.12em;text-align:center;padding:14px" aria-live="polite">–</div>
-        <p class="field-hint" id="tg-hint">კოდის მისაღებად დააჭირე ღილაკს.</p>
+        <p class="field-hint" id="tg-hint"></p>
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px">
           <button type="button" class="btn btn-secondary" id="tg-gen">კოდის შექმნა</button>
           <a class="btn btn-primary" id="tg-open" href="https://t.me/Rigzeabot" target="_blank" rel="noopener" style="display:none">ბოტში გახსნა</a>
@@ -306,8 +306,8 @@
 
     return [
       { id: 'apt', done: hasApt, title: '1. დაამატე პირველი ბინა', desc: 'MyHome / SS.ge ლინკით ან ხელით', action: `<button class="btn btn-primary btn-sm" data-setup="apartment">${icon('spark', 14)} ბინის შემოტანა</button>` },
-      { id: 'wm', done: hasWatermark, title: '2. დაადე Watermark ფოტოს', desc: 'დაიცავი ფოტოები მოპარვისგან შენი ლოგოთი და ნომრით', action: `<button class="btn btn-secondary btn-sm" data-setup="watermark">${icon('shield', 14)} Watermark</button>` },
-      { id: 'col', done: hasCollection, title: '3. გააზიარე კოლექცია WhatsApp-ში', desc: 'მრავალბინიანი პრემიუმ კატალოგი კლიენტისთვის', action: `<button class="btn btn-secondary btn-sm" data-setup="collection">${icon('sparkle', 14)} კოლექციის შექმნა</button>` },
+      { id: 'wm', done: hasWatermark, title: '2. დაადე Watermark ფოტოს', desc: 'შენი ლოგო და ნომერი ფოტოებზე', action: `<button class="btn btn-secondary btn-sm" data-setup="watermark">${icon('shield', 14)} Watermark</button>` },
+      { id: 'col', done: hasCollection, title: '3. გააზიარე კოლექცია WhatsApp-ში', desc: 'რამდენიმე ბინა ერთ ბმულში', action: `<button class="btn btn-secondary btn-sm" data-setup="collection">${icon('sparkle', 14)} კოლექციის შექმნა</button>` },
       { id: 'lease', done: hasLease, title: '4. შექმენი ქირავნობის ხელშეკრულება', desc: 'სსკ 531–575 მუხლებზე დაფუძნებული ქირავნობის შაბლონი', action: `<button class="btn btn-secondary btn-sm" data-setup="lease">${icon('file', 14)} ხელშეკრულება</button>` },
     ];
   }
@@ -459,7 +459,7 @@
     $('#view').innerHTML = `
       <div class="dashboard">
       <div class="page-head dash-head">
-        <div><span class="dash-eyebrow">უძრავი ქონების აგენტის სამუშაო სივრცე</span><h1>გამარჯობა, ${esc(firstName)}!</h1><p class="page-sub">მართე ობიექტები, კლიენტები და საქმეები ერთ სივრცეში.</p></div>
+        <div><h1>გამარჯობა, ${esc(firstName)}!</h1></div>
         <div class="page-actions"><span class="dash-date">${icon('calendar', 16)} ${R.WEEKDAYS[now.getDay()]}, ${now.getDate()} ${R.MONTHS[now.getMonth()]}<time class="dash-clock" id="dash-clock"></time></span><button type="button" class="btn btn-secondary" id="btn-digest">${icon('telegram', 16)} დღის შეჯამება</button></div>
       </div>
       ${activeApts.length === 0 ? `
@@ -484,24 +484,24 @@
       </section>` : ''}
       <section class="dash-kpis" aria-label="უძრავი ქონების მიმოხილვა">
         <article class="dash-kpi"><span class="dash-kpi-icon green">${icon('building', 19)}</span><span class="dash-kpi-label">აქტიური ქონება</span><strong>${activeApts.length}</strong><small>${forSaleApts.length} იყიდება · ${forRentApts.length} ქირავდება</small></article>
-        <article class="dash-kpi"><span class="dash-kpi-icon blue">${icon('user', 19)}</span><span class="dash-kpi-label">ახალი მოთხოვნები</span><strong>${newLeads.length}</strong><small>კლიენტებს პასუხი გაეცი</small></article>
+        <article class="dash-kpi"><span class="dash-kpi-icon blue">${icon('user', 19)}</span><span class="dash-kpi-label">ახალი მოთხოვნები</span><strong>${newLeads.length}</strong></article>
         <article class="dash-kpi"><span class="dash-kpi-icon amber">${icon('wallet', 19)}</span><span class="dash-kpi-label">მიღებული საკომისიო</span><strong>${money(earnedComm)}</strong><small>მოლოდინში: ${money(expectedComm)}</small></article>
         <article class="dash-kpi"><span class="dash-kpi-icon rose">${icon('alert', 19)}</span><span class="dash-kpi-label">სასწრაფო საქმეები</span><strong>${att.length}</strong><small>${counts.today} საქმე დღეს</small></article>
       </section>
       <div class="chips dash-filters" role="group" aria-label="ჩემი საქმეების ფილტრი">${FILTERS.map(([id, label]) => `<button type="button" class="chip" data-filter="${id}" aria-pressed="${todayFilter === id}">${id === 'all' ? 'ჩემი საქმეები' : label}${id !== 'all' ? ` <span class="count">${counts[id]}</span>` : ''}</button>`).join('')}</div>
       <section class="dash-analytics">
         <article class="card dash-chart-card">
-          <div class="card-head"><div><h2>გარიგებების დინამიკა</h2><p class="dash-card-sub">გადაადგილე თითოეული მოთხოვნა შემდეგ ეტაპზე.</p></div><a class="link-btn small" href="#/deals">ყველა გარიგება ${icon('chevronRight', 14)}</a></div>
+          <div class="card-head"><div><h2>გარიგებების დინამიკა</h2></div><a class="link-btn small" href="#/deals">ყველა გარიგება ${icon('chevronRight', 14)}</a></div>
           <div class="dash-stage-chart" role="img" aria-label="გარიგებების რაოდენობა ეტაპების მიხედვით">${pipelineCounts.map(item => `<div class="dash-stage"><strong>${item.value}</strong><div class="dash-stage-track"><span style="height:${Math.max(item.value ? 8 : 0, item.value / pipelineMax * 100)}%"></span></div><small>${esc(item.label)}</small></div>`).join('')}</div>
           <div class="dash-chart-foot"><span><i></i> დათვალიერებები: ${counts.viewing} · მოლაპარაკებაში: ${deals.filter(d => ['offer', 'negotiation', 'deposit'].includes(d.stage)).length}</span><span>${deals.length} გარიგება</span></div>
         </article>
         <article class="card dash-mix-card">
-          <div class="card-head"><div><h2>ჩემი ობიექტები</h2><p class="dash-card-sub">გაყიდვა და გაქირავება</p></div><a class="link-btn small" href="#/apartments">ყველა</a></div>
+          <div class="card-head"><div><h2>ჩემი ობიექტები</h2></div><a class="link-btn small" href="#/apartments">ყველა</a></div>
           <div class="dash-mix-content"><div class="dash-donut" style="background:${donutBackground}" role="img" aria-label="ობიექტების განაწილება"><div><strong>${activeApts.length}</strong><small>აქტიური</small></div></div>
             <ul class="dash-legend">${propertyTypes.map(item => `<li><span><i style="background:${item.color}"></i>${item.label}</span><strong>${item.value}</strong><small>${propertyTypesTotal ? Math.round(item.value / propertyTypesTotal * 100) : 0}%</small></li>`).join('')}</ul></div>
         </article>
         <article class="card dash-actions-card">
-          <div class="card-head"><div><h2>გაიმარტივე ყოველდღიური საქმე</h2><p class="dash-card-sub">ყველაფერი საჭირო ერთ სივრცეში.</p></div></div>
+          <div class="card-head"><div><h2>სწრაფი მოქმედებები</h2></div></div>
           <div class="dash-action-list">
             <button type="button" class="dash-action green" data-qa="apartment"><span>${icon('plus', 17)}</span><strong>დაამატე ობიექტი</strong>${icon('chevronRight', 15)}</button>
             <button type="button" class="dash-action blue" data-qa="deal"><span>${icon('wallet', 17)}</span><strong>შექმენი გარიგება</strong>${icon('chevronRight', 15)}</button>
@@ -512,25 +512,25 @@
       </section>
       <div class="dash-lower">
         <section class="card dash-listings-card">
-          <div class="card-head"><div><h2>ბოლო დამატებული ობიექტები</h2><p class="dash-card-sub">შენი ახალი განცხადებები</p></div><a class="link-btn small" href="#/apartments">ყველა ნახე ${icon('chevronRight', 14)}</a></div>
+          <div class="card-head"><div><h2>ბოლო ობიექტები</h2></div><a class="link-btn small" href="#/apartments">ყველა ნახე ${icon('chevronRight', 14)}</a></div>
           ${recentApts.length ? `<div class="dash-listings">${recentApts.map(apt => {
             const photo = (Array.isArray(apt.photos) ? apt.photos : []).map(p => typeof p === 'string' ? p : p?.thumb || p?.url).find(Boolean);
             return `<a class="dash-listing" href="#/apartments/${encodeURIComponent(apt.id)}"><span class="dash-listing-photo">${photo ? `<img src="${R.safeUrl(photo)}" alt="" loading="lazy">` : icon('building', 20)}</span><span class="dash-listing-info"><strong>${esc(apt.name || 'ობიექტი')}</strong><small>${esc([apt.district, apt.city].filter(Boolean).join(', ') || 'მდებარეობა არ არის მითითებული')}</small><span>${apt.transaction_type === 'sale' ? 'იყიდება' : 'ქირავდება'}</span></span><strong class="dash-listing-price">${aptPrice(apt)}</strong></a>`;
-          }).join('')}</div>` : emptyInline('ჯერ ობიექტი არ დაგიმატებია. დაამატე პირველი და მართე შეთავაზებები ერთ სივრცეში.')}
+          }).join('')}</div>` : emptyInline('ობიექტი ჯერ არ გაქვს.')}
         </section>
         <section class="card dash-schedule-card">
-          <div class="card-head"><div><h2>${scheduleDay ? 'ხვალის' : 'დღის'} განრიგი</h2><p class="dash-card-sub">ნახვები და დაგეგმილი საქმეები.</p></div><span class="count">${sched.length}</span></div>
+          <div class="card-head"><div><h2>${scheduleDay ? 'ხვალის' : 'დღის'} განრიგი</h2></div><span class="count">${sched.length}</span></div>
           <div class="dash-schedule-toggle"><div class="seg" role="group" aria-label="დღის არჩევა"><label><input type="radio" name="sday" value="0" ${scheduleDay === 0 ? 'checked' : ''}><span>დღეს</span></label><label><input type="radio" name="sday" value="1" ${scheduleDay === 1 ? 'checked' : ''}><span>ხვალ · ${tomorrowCount}</span></label></div></div>
-          ${sched.length ? sched.map(s => `<a class="sched-row" href="${s.href}"><span class="sched-time">${R.time(s.ts)}</span><span class="kind">${icon(s.icon, 15)} ${esc(s.kind)}</span><span class="cell-main sched-apt"><strong>${esc(H.aptName(s.apt))}</strong>${s.title ? `<span>${esc(s.title)}</span>` : ''}</span><span class="sched-who">${s.who ? esc(s.who) : '<span class="t-warn">არ არის დანიშნული</span>'}</span><span class="sched-status">${s.status}</span></a>`).join('') : emptyInline(scheduleDay ? 'ხვალისთვის საქმე არ გაქვს დაგეგმილი.' : 'დღეს საქმე არ გაქვს დაგეგმილი. დრო გამონახე ახალ შეთავაზებებზე.')}
+          ${sched.length ? sched.map(s => `<a class="sched-row" href="${s.href}"><span class="sched-time">${R.time(s.ts)}</span><span class="kind">${icon(s.icon, 15)} ${esc(s.kind)}</span><span class="cell-main sched-apt"><strong>${esc(H.aptName(s.apt))}</strong>${s.title ? `<span>${esc(s.title)}</span>` : ''}</span><span class="sched-who">${s.who ? esc(s.who) : '<span class="t-warn">არ არის დანიშნული</span>'}</span><span class="sched-status">${s.status}</span></a>`).join('') : emptyInline(scheduleDay ? 'ხვალისთვის საქმე არ გაქვს დაგეგმილი.' : 'დღეს საქმე არ გაქვს დაგეგმილი.')}
           ${S.data.reservations.length === 0 ? `<div class="card-foot">დაამატე ჯავშანი და შესვლისა თუ გასვლის დროებიც გამოჩნდება.</div>` : ''}
         </section>
-        <section class="card dash-activity-card"><div class="card-head"><div><h2>ბოლო აქტივობა</h2><p class="dash-card-sub">შენი სამუშაო სივრცის სიახლეები.</p></div></div>${activityList(S.data.events.slice(0, 5))}</section>
+        <section class="card dash-activity-card"><div class="card-head"><div><h2>ბოლო აქტივობა</h2></div></div>${activityList(S.data.events.slice(0, 5))}</section>
       </div>
       <div class="cols dashboard-support">
         <div class="stack">
           ${showSetup ? `<section class="card onboarding-card" style="margin-bottom:16px;border:1px solid color-mix(in srgb, var(--brand-ink) 32%, var(--line));background:linear-gradient(180deg, var(--surface) 0%, color-mix(in srgb, var(--brand-soft) 38%, var(--surface)) 100%)">
             <div class="card-head">
-              <h2>${icon('sparkle', 16)} ახალი აგენტის Quick Start <span class="badge badge-neutral" style="font-size:12px;font-weight:700">${steps.filter(s => s.done).length} / ${steps.length} დასრულებულია</span></h2>
+              <h2>${icon('sparkle', 16)} პირველი ნაბიჯები <span class="badge badge-neutral" style="font-size:12px;font-weight:700">${steps.filter(s => s.done).length} / ${steps.length} დასრულებულია</span></h2>
               <button type="button" class="link-btn small" id="btn-hide-setup">დამალვა</button>
             </div>
             <div style="background:var(--line);height:6px;border-radius:99px;margin:8px 0 16px 0;overflow:hidden">
@@ -541,10 +541,10 @@
           ${focus || `
           <section class="card ${att.some(a => a.sev === 'danger') ? 'card-alert' : ''}">
             <div class="card-head"><h2>${icon('alert', 16)} სასწრაფო და ვადაგადაცილებული <span class="count ${att.some(a => a.sev === 'danger') ? 'count-danger' : ''}">${att.length}</span></h2></div>
-            ${att.length ? `<div>${att.map(alertRow).join('')}</div>` : emptyInline('სასწრაფო საკითხი არ არის. ვადაგადაცილებული, დაუნიშნავი და მფლობელის პასუხის მომლოდინე საქმეები აქ გამოჩნდება.')}
+            ${att.length ? `<div>${att.map(alertRow).join('')}</div>` : emptyInline('სასწრაფო საკითხი არ არის.')}
           </section>
           ${ren.length ? `<section class="card ${ren.some(x => x.days <= 3) ? 'card-alert' : ''}">
-            <div class="card-head"><h2>განახლებები <span class="count ${ren.some(x => x.days <= 3) ? 'count-danger' : ''}">${ren.length}</span></h2><span class="page-sub">ხელშეკრულებები, რომლებიც 30 დღეში იწურება</span></div>
+            <div class="card-head"><h2>განახლებები <span class="count ${ren.some(x => x.days <= 3) ? 'count-danger' : ''}">${ren.length}</span></h2><span class="page-sub">ვადა იწურება 30 დღეში</span></div>
             <div>${ren.map(renewalRow).join('')}</div>
           </section>` : ''}
           `}
@@ -568,7 +568,7 @@
           </section>
           <section class="card">
             <div class="card-head"><h2>Telegram შეხსენებები</h2></div>
-            <p class="calc">ხელშეკრულების ვადებისა და ვადაგადაცილებული საქმეების შეხსენებებს Telegram-შიც მიიღებ.<br><button type="button" class="link-btn" id="btn-tg-link">Telegram-ის დაკავშირება</button></p>
+            <p class="calc">ხელშეკრულების ვადები და ვადაგადაცილებული საქმეები Telegram-ში.<br><button type="button" class="link-btn" id="btn-tg-link">Telegram-ის დაკავშირება</button></p>
           </section>
         </div>
       </div>
@@ -747,7 +747,7 @@
         ${filtersOn ? '<button type="button" class="btn btn-ghost btn-sm" id="tf-clear">ფილტრის გასუფთავება</button>' : ''}
       </div>
       <section class="card">${list.length ? taskRows(list) : `<div class="empty">${icon('tasks', 28)}<h3>${filtersOn || tf.status !== 'active' ? 'ამ ფილტრით საქმე ვერ მოიძებნა' : 'აქტიური საქმე არ არის'}</h3>
-        <p>${filtersOn ? 'შეცვალე ან გაასუფთავე ფილტრი.' : 'საქმე არის ნებისმიერი სამუშაო ბინაში: დასუფთავება, რემონტი, ინსპექცია. შექმენი და დაუნიშნე გუნდის წევრს.'}</p>
+        <p>${filtersOn ? 'შეცვალე ან გაასუფთავე ფილტრი.' : 'შექმენი საქმე და დანიშნე შემსრულებელი.'}</p>
         ${filtersOn ? '' : '<button class="btn btn-primary" type="button" data-setup="task">საქმის შექმნა</button>'}</div>`}</section>`;
 
     $('#tf-type').value = tf.type; $('#tf-assignee').value = tf.assignee; $('#tf-apt').value = tf.apt;
@@ -865,7 +865,7 @@
         </div>
         <div>
           <div class="section-title"><span>ფოტოები</span><label class="btn btn-secondary btn-sm" style="cursor:pointer">${icon('camera', 15)} ატვირთვა<input type="file" accept="image/*" id="d-photo" hidden /></label></div>
-          ${photos.length ? `<div class="photos">${photos.map(p => `<a class="photo" href="${R.safeUrl(p.url)}" target="_blank" rel="noopener"><img src="${esc(p.url)}" alt="${esc(phaseLabel(p.phase))}" loading="lazy" /><span>${esc(phaseLabel(p.phase))}</span></a>`).join('')}</div>` : '<p class="muted small">ფოტო ჯერ არ არის. დამლაგებელი „მანამდე“ და „შემდეგ“ ფოტოებს ტელეფონიდან ატვირთავს.</p>'}
+          ${photos.length ? `<div class="photos">${photos.map(p => `<a class="photo" href="${R.safeUrl(p.url)}" target="_blank" rel="noopener"><img src="${esc(p.url)}" alt="${esc(phaseLabel(p.phase))}" loading="lazy" /><span>${esc(phaseLabel(p.phase))}</span></a>`).join('')}</div>` : '<p class="muted small">ფოტო ჯერ არ არის.</p>'}
         </div>
         ${isRepair || approvals.length || expenses.length ? `<div>
           <div class="section-title"><span>ხარჯი და თანხმობა</span>
@@ -975,7 +975,7 @@
 
   function openTaskForm({ task = null, apartmentId = null, type = null, dealId = null, prefill = {} } = {}) {
     if (!S.data.apartments.length) {
-      return R.dialog({ title: 'ჯერ დაამატე ბინა', body: '<p class="dlg-text">საქმე ყოველთვის კონკრეტულ ბინას ეკუთვნის. დაამატე პირველი ბინა და შემდეგ შექმენი საქმე.</p>', submitLabel: 'ბინის დამატება', onSubmit: async () => { setTimeout(() => App.openApartmentForm(), 0); } });
+      return R.dialog({ title: 'ჯერ დაამატე ბინა', body: '<p class="dlg-text">საქმის შესაქმნელად ჯერ დაამატე ბინა.</p>', submitLabel: 'ბინის დამატება', onSubmit: async () => { setTimeout(() => App.openApartmentForm(), 0); } });
     }
     const edit = Boolean(task);
     const t = task || { type: type || prefill.type || 'cleaning', priority: 'normal', apartment_id: apartmentId, deal_id: dealId || prefill.deal_id || null, ...prefill };

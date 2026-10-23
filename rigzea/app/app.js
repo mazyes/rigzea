@@ -888,7 +888,7 @@
     const name = S.member?.display_name || S.user.email;
     $('#user-name').textContent = name;
     $('#user-role').textContent = L.role[S.member?.role] || '';
-    $('#user-avatar').textContent = (name || '·').trim().charAt(0).toUpperCase();
+    $('#user-avatar').textContent = (name || '·').trim().replace(/^[a-z]/, c => c.toUpperCase()).charAt(0);
 
     const unread = S.data ? S.data.notifications.filter(n => !n.is_read).length : 0;
     $('#btn-notif').innerHTML = icon('bell') + (unread ? `<span class="dot">${unread > 9 ? '9+' : unread}</span>` : '');
@@ -965,17 +965,16 @@
   let lastViewName = null;
 
   // Blocks slide in from the right once per page, not on every re-render (filters, saves).
-  let swipedView = null;
+  let swipedView = null, enterTimer = 0;
   function swipeIn(name) {
     if (swipedView === name) return;
     swipedView = name;
     const v = $('#view');
     v.querySelectorAll('.page-head, .chips, .dash-kpi, .card:not(.card .card), .stats, .table-wrap').forEach((el, i) => el.style.setProperty('--i', Math.min(i, 9)));
-    v.classList.remove('view-enter');
-    void v.offsetWidth;
-    v.classList.add('view-enter');
+    clearTimeout(enterTimer);
+    v.classList.add('view-enter'); // new nodes animate on insert, so no forced reflow is needed to restart it
     v.querySelectorAll('.dash-kpi strong, .dash-donut strong').forEach(countUp);
-    setTimeout(() => v.classList.remove('view-enter'), 1600); // later re-renders (filters, saves) must not replay the reveal
+    enterTimer = setTimeout(() => v.classList.remove('view-enter'), 1600); // later re-renders (filters, saves) must not replay the reveal
   }
 
   // Bars, progress bars and the ring start at zero and fill when they scroll into view. Only the first
@@ -1029,7 +1028,7 @@
       <div style="max-height:min(420px,70vh);overflow-y:auto">${list.length ? list.map(n => `
         <button type="button" class="notif ${n.is_read ? '' : 'unread'}" data-id="${n.id}">
           <strong>${esc(n.title)}</strong>${n.message ? `<span>${esc(n.message)}</span>` : ''}<time>${esc(R.relative(n.created_at))}</time>
-        </button>`).join('') : '<div class="empty-inline">ახალი შეტყობინება არ არის. აქ გამოჩნდება დანიშვნები, ვადაგადაცილებები და მფლობელის პასუხები.</div>'}</div>`;
+        </button>`).join('') : '<div class="empty-inline">ახალი შეტყობინება არ არის.</div>'}</div>`;
     $('#btn-read-all')?.addEventListener('click', (e) => run(e.currentTarget, async () => {
       await q(sb.from('notifications').update({ is_read: true }).eq('user_id', S.user.id).eq('organization_id', S.org.id).eq('is_read', false));
       S.data.notifications.forEach(n => { n.is_read = true; });
@@ -1059,7 +1058,8 @@
   let railPos = null;
   function slideRailPill() {
     const rail = $('#rail'), act = rail?.querySelector('.nav-item[aria-current="page"]');
-    if (!rail || !act || !rail.offsetWidth) { railPos = null; return; }
+    // class check instead of reading offsetWidth: that read forced a full layout on every page change
+    if (!rail || !act || !document.documentElement.classList.contains('nav-side') || innerWidth <= 900) { railPos = null; return; }
     rail.insertAdjacentHTML('afterbegin', '<span class="rail-pill" aria-hidden="true"></span>');
     const pill = rail.querySelector('.rail-pill');
     const next = { y: act.offsetTop, h: act.offsetHeight };
@@ -1095,7 +1095,11 @@
       </div>`;
     $('#theme-select').value = theme;
     $$('[data-nav-mode]', $('#user-panel')).forEach(b => b.addEventListener('click', () => { setNavMode(b.dataset.navMode); renderUserPanel(); }));
-    $('#theme-select').onchange = (e) => { localStorage.setItem('rigzea_theme', e.target.value); R.applyTheme(e.target.value); };
+    $('#theme-select').onchange = (e) => setTheme(e.target.value);
+  }
+  function setTheme(t, from) {
+    localStorage.setItem('rigzea_theme', t);
+    R.applyTheme(t, from);
   }
 
   const syncThemeBtn = () => {
@@ -1113,6 +1117,7 @@
     syncThemeBtn();
   });
   syncThemeBtn();
+  new MutationObserver(syncThemeBtn).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] }); // theme set from settings or the account menu
   $('#btn-notif').addEventListener('click', (e) => { e.stopPropagation(); togglePopover('notif'); });
   $('#btn-user').addEventListener('click', (e) => { e.stopPropagation(); togglePopover('user'); });
   document.addEventListener('click', (e) => {
@@ -1971,7 +1976,7 @@
   }
 
   window.App = { S, H, views, aptSection, contactSection, isManager, isAdmin, isAgent, refresh, render, renderShell, go, route, toUrl, taskHref, closeTaskOverlay, upsertLocal, logEvent, loadMore,
-    openCommissionCalculator, openMatchmaker, openSocialPostGenerator,
+    openCommissionCalculator, openMatchmaker, openSocialPostGenerator, setTheme, setNavMode,
     openDocChooser: (...args) => ensureChunk('/app/views-docs.js', 'დოკუმენტები').then(() => window.App.openDocChooser?.(...args)),
     openPresentation: (...args) => ensureViewLoaded('apartments').then(() => window.App.openPresentation?.(...args)),
     monthLabel, PLANS, PLAN_ORDER, FEATURE_LABEL, CONTACT, planState, can, guardLimit, guardFeature, openUpgrade, planCardsHtml, waLink, activeApartments, pausedApartmentIds, seatsUsed, openKisaCheckoutModal, startKisaCheckout: openKisaCheckoutModal };

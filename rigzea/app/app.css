@@ -1771,3 +1771,30 @@ a.row:active, button.row:active, .row.clickable:active, .sched-row:active, .noti
 .topbar .icon-btn:hover, .topbar .search-trigger:hover, .topbar .topbar-tools-btn:hover { background: color-mix(in srgb, var(--ink) 11%, transparent); }
 .plan-banner { margin: 6px 24px 0; padding: 10px 14px 10px 18px; border: 0; border-radius: 16px; }
 @media (max-width: 900px) { .plan-banner { margin: 6px 12px 0; } }
+
+/* Settings > ინტერფეისი: one row per preference (text left, segmented control right), animations off, compact density */
+.ui-pref { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px 24px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.ui-pref:first-child { padding-top: 2px; }
+.ui-pref:last-child { padding-bottom: 2px; border-bottom: 0; }
+.ui-pref-text { flex: 1 1 220px; min-width: 0; }
+.ui-pref-text strong { font-weight: 600; }
+.ui-pref .seg2 { flex: 0 0 400px; max-width: 100%; }
+.ui-pref .seg2 button { padding: 0 4px; min-height: 34px; }
+@media (max-width: 900px) { .ui-pref .seg2 { flex-basis: 100%; } .ui-pref .seg2 button { min-height: 44px; } }
+.motion-off *, .motion-off *::before, .motion-off *::after { animation-duration: .01ms !important; animation-delay: 0s !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; transition-delay: 0s !important; scroll-behavior: auto !important; }
+.density-compact .main { padding-top: 14px; }
+.density-compact .page-head { margin-bottom: 12px; }
+.density-compact .card-head { padding: 8px 14px; min-height: 40px; }
+.density-compact .card-body { padding: 10px 14px; }
+.density-compact :is(.rows-head, .row) { padding-top: 5px; padding-bottom: 5px; }
+.density-compact .row { min-height: 40px; }
+.density-compact .deal-table :is(th, td) { padding-top: 7px; padding-bottom: 7px; }
+.density-compact :is(.stack, .cols) { gap: 12px; }
+@media (max-width: 900px) { .density-compact .row { min-height: 44px; } }
+
+/* Tablet widths use the stacked rows too; keep selects and inline controls a sensible size there */
+@media (min-width: 601px) and (max-width: 900px) {
+  .row select.input, .row .input { max-width: 280px; }
+  .row > .cell-actions { justify-content: flex-start; }
+  .page-head { flex-wrap: wrap; gap: 12px; }
+}

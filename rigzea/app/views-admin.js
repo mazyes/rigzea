@@ -109,7 +109,7 @@
   // SETTINGS
   // ===========================================================================
   App.views.settings = (r) => {
-    const tabs = [['org', 'კომპანია', '#/settings'], ['plan', 'პაკეტი', '#/settings/plan'], ['import', 'Excel/CSV იმპორტი', '#/settings/import'], ['export', 'ექსპორტი', '#/settings/export']];
+    const tabs = [['ui', 'ინტერფეისი', '#/settings/ui'], ['org', 'კომპანია', '#/settings'], ['plan', 'პაკეტი', '#/settings/plan'], ['import', 'Excel/CSV იმპორტი', '#/settings/import'], ['export', 'ექსპორტი', '#/settings/export']];
     if (S.platformAdmin) tabs.push(['platform', 'პლატფორმა', '#/settings/platform']);
     const tab = tabs.some(t => t[0] === r.id) ? r.id : 'org';
     $('#view').innerHTML = `
@@ -117,12 +117,51 @@
       <div class="tabs" role="tablist">${tabs.map(([id, label, href]) => `<a class="tab" role="tab" href="${href}" aria-selected="${tab === id}">${label}</a>`).join('')}</div>
       <div id="s-body"></div>`;
     const body = $('#s-body');
+    if (tab === 'ui') return renderUiTab(body);
     if (tab === 'import') return renderImport(body);
     if (tab === 'export') return renderExportTab(body);
     if (tab === 'plan') return renderPlanTab(body);
     if (tab === 'platform') return renderPlatformTab(body);
     renderOrgTab(body);
   };
+
+  // ---- interface tab: language, theme, menu position, animations, density. Kept per device in localStorage.
+  function renderUiTab(root) {
+    const ls = (k, d) => { try { return localStorage.getItem(k) || d; } catch { return d; } };
+    const PREFS = [
+      ['lang', 'ენა', 'ენის შეცვლა გვერდს თავიდან ჩატვირთავს.', [['ka', 'ქართული'], ['en', 'English']],
+        () => (window.RLang?.lang === 'en' ? 'en' : 'ka'), (v) => { localStorage.setItem('rigzea_lang', v); location.reload(); }],
+      ['theme', 'თემა', 'ღია, მუქი ან სისტემის მიხედვით.', [['system', 'სისტემა'], ['light', 'ღია'], ['dark', 'მუქი']],
+        () => ls('rigzea_theme', 'system'), (v, from) => App.setTheme(v, from)],
+      ['nav', 'მენიუს მდებარეობა', 'კომპიუტერზე: ზემოთ ან მარცხნივ. ტელეფონზე: ქვედა ზოლი.', [['top', 'ზემოთ'], ['side', 'მარცხნივ']],
+        () => (ls('rigzea_nav', 'top') === 'side' ? 'side' : 'top'), (v) => App.setNavMode(v)],
+      ['motion', 'ანიმაციები', 'ავტომატური: მსუბუქი ანიმაცია სუსტ მოწყობილობაზე.', [['auto', 'ავტომატური'], ['lite', 'მსუბუქი'], ['off', 'გამორთული']],
+        () => ls('rigzea_motion', 'auto'), (v) => { localStorage.setItem('rigzea_motion', v); R.applyPrefs(); }],
+      ['density', 'სიმჭიდროვე', 'კომპაქტური რეჟიმი ნაკლებ ადგილს იკავებს.', [['regular', 'ჩვეულებრივი'], ['compact', 'კომპაქტური']],
+        () => ls('rigzea_density', 'regular'), (v) => { localStorage.setItem('rigzea_density', v); R.applyPrefs(); }],
+    ];
+    root.innerHTML = `<section class="card" style="max-width:760px"><div class="card-body">
+      ${PREFS.map(([key, title, hint, opts]) => `<div class="ui-pref"><div class="ui-pref-text"><strong>${title}</strong><div class="field-hint">${hint}</div></div>
+        <div class="seg2" role="group" aria-label="${title}" data-pref="${key}">${opts.map(([v, label]) => `<button type="button" data-v="${v}" aria-pressed="false">${label}</button>`).join('')}</div></div>`).join('')}
+      <div class="ui-pref"><div class="ui-pref-text field-hint">მხოლოდ ამ მოწყობილობაზე. ენა არ იცვლება.</div><button type="button" class="btn btn-secondary btn-sm" id="ui-reset">ნაგულისხმევზე დაბრუნება</button></div>
+    </div></section>`;
+    const sync = () => PREFS.forEach(([key,,,, get]) => $$('button', $(`[data-pref="${key}"]`, root)).forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === get()))));
+    sync();
+    PREFS.forEach(([key,,,, , set]) => $(`[data-pref="${key}"]`, root).addEventListener('click', (e) => {
+      const b = e.target.closest('button');
+      if (!b) return;
+      const box = b.getBoundingClientRect();
+      set(b.dataset.v, { x: box.left + box.width / 2, y: box.top + box.height / 2 });
+      sync();
+    }));
+    $('#ui-reset').onclick = () => {
+      ['rigzea_theme', 'rigzea_motion', 'rigzea_density'].forEach(k => localStorage.removeItem(k));
+      R.applyPrefs();
+      R.applyTheme();
+      App.setNavMode('top');
+      sync();
+    };
+  }
 
   function renderOrgTab(root) {
     const o = S.org;
@@ -139,7 +178,7 @@
         ${admin ? '<div class="span-2"><button type="submit" class="btn btn-primary">შენახვა</button></div>' : ''}
       </form></div></section>
     <section class="card" style="max-width:640px" id="brand-card"><div class="card-head"><h2>ბრენდინგი</h2></div><div class="card-body">
-      <p class="muted" style="margin-top:0">ლოგო, სახელი და ფერი ჩანს კლიენტებისთვის გაგზავნილ საჯარო გვერდებზე.</p>
+      <p class="muted" style="margin-top:0">ჩანს კლიენტისთვის გაზიარებულ გვერდებზე.</p>
       ${!canProfile ? `<div class="notice notice-warn" style="margin-bottom:14px"><span>ბრენდინგი ხელმისაწვდომია „${esc(App.PLANS.pro.name)}“ პაკეტიდან. ფერისა და White-label ბრენდირებისთვის საჭიროა „${esc(App.PLANS.agency.name)}“.</span> <button type="button" class="btn btn-secondary btn-sm" id="b-upgrade">პაკეტების ნახვა</button></div>` : ''}
       <form id="s-brand" class="form-grid" novalidate>
         <div class="form-error span-2" role="alert" hidden></div>
@@ -151,7 +190,7 @@
         <div class="field span-2"><span class="field-label">ბრენდის ფერი</span>
           <div style="display:flex;gap:8px;align-items:center"><input type="color" id="b-color-pick" value="${esc(/^#[0-9a-f]{6}$/i.test(o.brand_color || '') ? o.brand_color : '#0a5c44')}" aria-label="ფერის არჩევა" ${admin && canBrand ? '' : 'disabled'} style="width:44px;padding:2px" />
             <input name="brand_color" id="b-color" placeholder="#0A5C44" maxlength="7" value="${esc(o.brand_color || '')}" pattern="#[0-9a-fA-F]{6}" data-error="ფერი ჩაწერე ფორმატით #0A5C44." ${admin && canBrand ? '' : 'disabled'} style="max-width:140px" /></div>
-          ${canProfile && !canBrand ? `<span class="field-hint">ფერი ხელმისაწვდომია „${esc(App.PLANS.agency.name)}“ პაკეტში.</span>` : '<span class="field-hint">დატოვე ცარიელი, თუ რიგზეას სტანდარტული ფერი გინდა.</span>'}</div>
+          ${canProfile && !canBrand ? `<span class="field-hint">ფერი ხელმისაწვდომია „${esc(App.PLANS.agency.name)}“ პაკეტში.</span>` : '<span class="field-hint">ცარიელი: რიგზეას ფერი</span>'}</div>
         ${admin && canProfile ? '<div class="span-2"><button type="submit" class="btn btn-primary">ბრენდინგის შენახვა</button></div>' : ''}
       </form></div></section>`;
 
@@ -393,7 +432,7 @@
     const d = S.data;
     const items = [['apartments', 'ბინები', d.apartments.length], ['owners', 'მფლობელები', d.owners.length], ['deals', 'გარიგებები', (d.deals || []).length], ['expenses', 'ხარჯები', d.expenses.length], ['income', 'შემოსავალი', d.income.length]];
     root.innerHTML = `<section class="card" style="max-width:640px"><div class="card-body form-stack">
-      <p class="muted" style="margin:0">ჩამოტვირთე შენი მონაცემები Excel-ში ან CSV-ში: სარეზერვო ასლისთვის, ბუღალტრისთვის ან სხვა სისტემაში გადასატანად.${App.can('export') ? '' : ` ექსპორტი ხელმისაწვდომია „${esc(App.PLANS.top.name)}“ პაკეტიდან.`}</p>
+      <p class="muted" style="margin:0">ჩამოტვირთე მონაცემები Excel/CSV ფორმატში.${App.can('export') ? '' : ` ექსპორტი ხელმისაწვდომია „${esc(App.PLANS.top.name)}“ პაკეტიდან.`}</p>
       <div class="rows">${items.map(([k, label, n]) => `<div class="row" style="--cols:minmax(0,1fr) auto"><span class="cell-main"><strong>${label}</strong><span>${n} ჩანაწერი</span></span><span class="cell-actions"><button type="button" class="btn btn-secondary btn-sm" data-export="${k}" ${n ? '' : 'disabled'}>${App.can('export') ? 'ჩამოტვირთვა' : 'ჩამოტვირთვა'}</button></span></div>`).join('')}</div>
       <div><button type="button" class="btn btn-primary" id="x-all">${icon('file', 16)} ყველაფრის ჩამოტვირთვა (Excel)</button></div>
     </div></section>`;
@@ -576,11 +615,11 @@
     const ok = rows ? rows.filter(r => r.row) : [];
     const bad = rows ? rows.filter(r => r.error) : [];
     root.innerHTML = `<section class="card"><div class="card-body form-stack">
-      <p class="muted">შემოიტანე არსებული სია Excel-დან (.xlsx) ან CSV-დან. ჯერ შემოიტანე მფლობელები, შემდეგ ბინები, შემდეგ გარიგებები და ხარჯები: ბინები მფლობელს სახელით უკავშირდება, გარიგებები და ხარჯები ბინას. შემოტანამდე ნახავ შედეგს და შეცდომებს.</p>
+      <p class="muted">Excel/CSV იმპორტი. რიგი: მესაკუთრეები → ბინები → გარიგებები და ხარჯები. ბინები მესაკუთრეს სახელით უკავშირდება; გარიგებები და ხარჯები ბინას. შემოტანამდე გადაამოწმებ შედეგსა და შეცდომებს.</p>
       <div class="seg" role="radiogroup" aria-label="რას შემოიტან">${Object.entries(IMPORTS).map(([k, d]) => `<label><input type="radio" name="kind" value="${k}" ${importState.kind === k ? 'checked' : ''}><span>${d.label}</span></label>`).join('')}</div>
       <div class="toolbar" style="margin:0"><label class="btn btn-primary" style="cursor:pointer">${icon('upload', 16)} ფაილის არჩევა<input type="file" id="imp-file" accept=".csv,.xlsx,.xls" hidden /></label>
         <button type="button" class="btn btn-secondary" id="imp-template">${icon('file', 16)} შაბლონის ჩამოტვირთვა (CSV)</button>
-        <span class="small muted">სვეტები: ${def.columns.map(([, l, r]) => r ? `<strong>${esc(l)}</strong>` : esc(l)).join(', ')} (მუქი: სავალდებულო)</span></div>
+        <span class="small muted">სვეტები: ${def.columns.map(([, l, r]) => r ? `<strong>${esc(l)}</strong>` : `<span>${esc(l)}</span>`).join(', ')} <span>(მუქი: სავალდებულო)</span></span></div>
     </div>
     ${rows ? `<div class="card-head"><h2>${esc(importState.fileName)} · ${ok.length} მზადაა${bad.length ? `, <span class="t-danger">${bad.length} შეცდომით</span>` : ''}</h2>
         <div style="display:flex;gap:8px"><button type="button" class="btn btn-ghost btn-sm" id="imp-clear">გასუფთავება</button><button type="button" class="btn btn-primary btn-sm" id="imp-go" ${ok.length ? '' : 'disabled'}>${ok.length} ჩანაწერის შემოტანა</button></div></div>

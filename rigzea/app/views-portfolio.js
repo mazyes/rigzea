@@ -497,7 +497,7 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
 
     return R.dialog({
       title: 'მესაკუთრის ყოველკვირეული რეპორტი',
-      subtitle: 'მოამზადე და 1 კლიკით გაუგზავნე მესაკუთრეს WhatsApp-ში ბინის სტატუსი',
+      subtitle: 'გაუგზავნე მესაკუთრეს ბინის სტატუსი WhatsApp-ით.',
       wide: true,
       body: `
         <div class="owner-report-modal">
@@ -639,7 +639,7 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
           <li>დააჭირე „Load unpacked“ და აირჩიე გახსნილი საქაღალდე.</li>
           <li>შედი შენს ანგარიშზე SS.ge-ზე და MyHome.ge-ზე, დაბრუნდი აქ და სცადე თავიდან.</li>
         </ol>
-        <p class="field-hint">გაფართოება ავსებს ფორმას. სტატუსს და მდგომარეობას შენ აირჩევ და გამოქვეყნებას თვითონ დააჭერ. თუ საიტი კაპჩას გკითხავს, ის შენ უნდა გაიარო.</p>`,
+        <p class="field-hint">გაფართოება ავსებს ფორმას. სტატუსს, მდგომარეობას და გამოქვეყნებას შენ ადასტურებ. კაპჩაც შენ უნდა გაიარო.</p>`,
     });
   }
 
@@ -649,7 +649,7 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
       subtitle: a.name,
       submitLabel: 'ფორმის შევსება',
       body: `
-        <p class="dlg-text">Rigzea-ს Chrome-ის გაფართოება გახსნის საიტს, ავტომატურად შეავსებს განცხადებას ამ ობიექტის მონაცემებით. საიტზე წინასწარ უნდა იყო შესული. სტატუსს და მდგომარეობას შენ აირჩევ, შემდეგ დააჭირე გამოქვეყნებას.</p>
+        <p class="dlg-text">ჯერ შედი საიტზე. გაფართოება შეავსებს ფორმას; სტატუსს, მდგომარეობას და გამოქვეყნებას შენ ადასტურებ.</p>
         <label class="field"><span class="field-label">სად გამოქვეყნდეს</span>
           <select name="target" class="input">
             <option value="both">SS.ge და MyHome.ge</option>
@@ -691,7 +691,7 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
           <button type="button" class="btn btn-ghost btn-sm" id="btn-apt-deal">+ გარიგება</button>
         </div>
         ${photos.length ? `<div class="listing-strip">${photos.slice(0, 6).map(p => `<img src="${esc(p.thumb || p.url)}" alt="" loading="lazy" />`).join('')}${photos.length > 6 ? `<span>+${photos.length - 6}</span>` : ''}</div>` : ''}
-        ${missing.length ? `<p class="field-hint listing-missing">${icon('alert', 14)}<span>განცხადებას აკლია: ${esc(missing.join(', '))}. შეავსე „რედაქტირებიდან“. სრული განცხადება კლიენტს მეტ ინფორმაციას აძლევს.</span></p>` : ''}
+        ${missing.length ? `<p class="field-hint listing-missing">${icon('alert', 14)}<span>აკლია: ${esc(missing.join(', '))}. შეავსე „რედაქტირებიდან“. </span></p>` : ''}
       </div>
       <div class="stats" data-link-stats data-apt="${esc(a.id)}">
         <div class="stat"><span class="stat-label">ნახვები</span><span class="stat-value" data-ls="views">…</span><span class="stat-note" data-ls="visitors"></span></div>
@@ -717,8 +717,8 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
       return;
     }
     return R.dialog({
-      title: 'მრავალბინიანი კოლექციის შექმნა',
-      subtitle: 'კლიენტისთვის გაგზავნილი პირადი პრემიუმ კატალოგი',
+      title: 'კოლექციის შექმნა',
+      subtitle: 'შერჩეული ბინები ერთ ბმულში',
       wide: true,
       body: `
         <div class="col-modal-form">
@@ -747,7 +747,7 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
             </div>
           </div>
           <div class="notice notice-ok" style="margin-top:14px">
-            ${icon('check', 16)} <span>კოლექციის ბმულზე განთავსებულია შენი საკონტაქტო მონაცემები, ბრენდინგი და WhatsApp-ის ღილაკი.</span>
+            ${icon('check', 16)} <span>ბმულზე ჩანს შენი ბრენდი, კონტაქტი და WhatsApp.</span>
           </div>
         </div>`,
       submitLabel: 'კოლექციის ბმულის შექმნა',
@@ -913,7 +913,7 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
             <span class="cell-actions"><button type="button" class="btn btn-ghost btn-sm" data-new-task="${a.id}">+ საქმე</button><button type="button" class="btn btn-ghost btn-sm" data-new-exp="${a.id}">+ ხარჯი</button><button type="button" class="btn btn-ghost btn-sm" data-share-apt="${a.id}" title="კოლეგასთან გაზიარება" aria-label="კოლეგასთან გაზიარება: ${esc(a.name)}">${icon('whatsapp', 14)}</button></span>
           </a>`;
         }).join('')}</div>` : `<div class="empty">${icon('building', 28)}<h3>${apts.length ? (inScope ? 'ობიექტი ვერ მოიძებნა' : (sec === 'sale' ? 'გასაყიდი ბინა ჯერ არ არის' : 'გასაქირავებელი ბინა ჯერ არ არის')) : 'ობიექტი ჯერ არ არის დამატებული'}</h3>
-          <p>${apts.length ? (inScope ? 'შეცვალე ძებნა ან ფილტრი.' : 'დაამატე ობიექტი ზედა ღილაკით.') : 'დაამატე ბინა ან კომერციული ფართი სახელით და მისამართით, მაგ.: „Orbi City · 1204“. ბევრი ობიექტი გაქვს? გამოიყენე Excel/CSV იმპორტი.'}</p>
+          <p>${apts.length ? (inScope ? 'შეცვალე ძებნა ან ფილტრი.' : 'დაამატე ობიექტი ზედა ღილაკით.') : 'დაამატე ობიექტი ან გამოიყენე Excel/CSV იმპორტი.'}</p>
           ${apts.length ? '' : '<button class="btn btn-primary" type="button" id="btn-apt-empty">ობიექტის დამატება</button>'}</div>`}
       </section>
       ${colMode ? `
@@ -1265,7 +1265,7 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
           <label class="field"><span class="field-label">${icon('link', 14)} განცხადების ლინკი (MyHome.ge / SS.ge / Place.ge)</span>
             <div class="import-row"><input type="url" id="apt-import-url" placeholder="https://www.myhome.ge/pr/..." inputmode="url" autocomplete="off" />
               <button type="button" class="btn btn-primary" id="apt-import-go">${icon('sparkle', 16)} 1-წამიანი შევსება</button></div></label>
-          <p class="small" id="apt-import-msg" role="status">ჩასვი ბმული და ველები თავისით შეივსება. შემდეგ გადახედე, მიუთითე მეპატრონე და შეინახე.</p>
+          <p class="small" id="apt-import-msg" role="status">ჩასვი ბმული, გადაამოწმე მონაცემები და მიუთითე მესაკუთრე.</p>
         </div>`}<div class="form-grid">
         <label class="field"><span class="field-label">დასახელება</span><input name="name" required maxlength="120" value="${esc(v.name || '')}" placeholder="მაგ.: Orbi City · 1204" data-error="ჩაწერე ობიექტის სახელი." /></label>
         <label class="field"><span class="field-label">ნომერი / ბინა</span><input name="unit_number" value="${esc(v.unit_number || '')}" placeholder="1204" /></label>
@@ -1364,7 +1364,7 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
             <label class="field span-2"><span class="field-label">აღწერა ინგლისურად <span class="muted">(არასავალდებულო)</span></span><textarea name="description_en" rows="3" lang="en" placeholder="Modern real estate listing...">${esc(v.description_en || '')}</textarea><span class="field-hint">უცხოელ კლიენტს ბმულზე ინგლისური ვერსია გამოუჩნდება.</span></label>
             ${sl ? `<label class="field span-2"><span class="field-label">ბმულის მისამართი</span>
               <div class="slug-input"><span class="muted small">${esc(location.host)}/p/</span><input name="slug" value="${esc(v.slug || '')}" maxlength="80" placeholder="vake-3-otakhiani" autocapitalize="off" spellcheck="false" data-error="ბმულში გამოიყენე მხოლოდ ლათინური ასოები, ციფრები და ტირე (მინიმუმ 3 სიმბოლო)." /></div>
-              <span class="field-hint">${edit ? 'მისამართის შეცვლის შემდეგ ძველი ბმული აღარ იმუშავებს.' : 'თუ ცარიელს დატოვებ, სახელიდან ავტომატურად შეიქმნება.'}</span></label>
+              <span class="field-hint">${edit ? 'მისამართის შეცვლით ძველი ბმული გაუქმდება.' : 'ცარიელი: შეიქმნება სახელიდან.'}</span></label>
             <label class="field"><span class="field-label">განედი (lat) <span class="muted">(არასავალდებულო)</span></span><input name="lat" type="number" step="any" min="-90" max="90" value="${numVal(v.lat)}" placeholder="41.7151" data-error="განედი უნდა იყოს −90-დან 90-მდე." /></label>
             <label class="field"><span class="field-label">გრძედი (lng) <span class="muted">(არასავალდებულო)</span></span><input name="lng" type="number" step="any" min="-180" max="180" value="${numVal(v.lng)}" placeholder="44.8271" data-error="გრძედი უნდა იყოს −180-დან 180-მდე." /><span class="field-hint">კოორდინატების გარეშე რუკა მისამართით განისაზღვრება.</span></label>` : ''}
             
@@ -1616,7 +1616,7 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
     const isOwner = type === 'owner';
     const tab = isOwner && r.params.get('tab') === 'approvals' ? 'approvals' : 'list';
     $('#view').innerHTML = `
-      <div class="page-head"><div><h1>${page.title}</h1><p class="page-sub">${count} ${page.one} · ${page.sub}</p></div>
+      <div class="page-head"><div><h1>${page.title}</h1><p class="page-sub">${count} ${page.one}</p></div>
         <div class="page-actions">${isOwner ? '<button type="button" class="btn btn-secondary" id="o-appr">თანხმობის მოთხოვნა</button>' : ''}<button type="button" class="btn btn-primary" id="o-new">${icon('plus', 16)} ${page.add}</button></div></div>
       ${isOwner ? `<div class="tabs" role="tablist"><a class="tab" role="tab" href="#/owners?type=owner" aria-selected="${tab === 'list'}">მეპატრონეები <span class="count">${count}</span></a><a class="tab" role="tab" href="#/owners?type=owner&tab=approvals" aria-selected="${tab === 'approvals'}">თანხმობები <span class="count">${pending.length}</span></a></div>` : ''}
       <div id="o-body"></div>`;
@@ -1664,7 +1664,7 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
           <span class="cell-status">${R.approvalBadge(a)}${exp && st === 'approved' ? `<div class="small muted">${exp.status === 'approved' ? 'ჯერ არ არის გაწეული' : L.expense[exp.status]}</div>` : ''}</span>
           <span class="cell-actions">${action}${st === 'pending' ? `<button type="button" class="btn btn-ghost btn-sm" data-cancel-appr="${a.id}">გაუქმება</button>` : ''}</span>
         </div>`;
-      }).join('')}</div>` : `<div class="empty">${icon('owner', 28)}<h3>${apprFilter === 'pending' ? 'პასუხის მომლოდინე მოთხოვნა არ არის' : 'ჩანაწერი არ არის'}</h3><p>თანხმობის მოთხოვნით მფლობელი ტელეფონიდან ერთი ბმულით დაადასტურებს ან უარყოფს ხარჯს, მაგ.: „ონკანის გამოცვლა, ₾180“.</p><button class="btn btn-primary" type="button" id="o-appr-empty">თანხმობის მოთხოვნა</button></div>`}</section>`;
+      }).join('')}</div>` : `<div class="empty">${icon('owner', 28)}<h3>${apprFilter === 'pending' ? 'პასუხის მომლოდინე მოთხოვნა არ არის' : 'ჩანაწერი არ არის'}</h3><p>მესაკუთრე ბმულით დაადასტურებს ან უარყოფს ხარჯს.</p><button class="btn btn-primary" type="button" id="o-appr-empty">თანხმობის მოთხოვნა</button></div>`}</section>`;
     $$('[data-af]', root).forEach(b => b.addEventListener('click', () => { apprFilter = b.dataset.af; App.render(); }));
     $$('[data-go]', root).forEach(rw => rw.addEventListener('click', (e) => { if (!e.target.closest('button,a')) App.go(rw.dataset.go); }));
     $('#o-appr-empty')?.addEventListener('click', () => App.openApprovalForm({}));
@@ -1716,7 +1716,7 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
           <span class="cell-meta">${esc([o.phone, o.email].filter(Boolean).join(' · ') || '–')}${budgetStr ? `<div class="small t-ok" style="font-weight:600">${esc(budgetStr)}</div>` : ''}</span>
           <span class="cell-meta" data-label="დეტალები">${apts.length ? esc(apts.map(a => a.name).join(', ')) : (prefStr ? esc(prefStr) : (typeof o.requirements === 'string' && o.requirements ? esc(o.requirements.slice(0, 40)) : '–'))}</span>
           <span class="cell-status">${pend ? R.badge(`${pend} ელოდება`, 'warn') : ''}</span></a>`;
-      }).join('')}</div>` : `<div class="empty">${icon('owner', 28)}<h3>${query ? 'შესაბამისი კონტაქტი ვერ მოიძებნა' : page ? `${page.one} ჯერ არ არის დამატებული` : 'კონტაქტი ჯერ არ არის დამატებული'}</h3><p>${query ? 'შეამოწმე სახელი, ტელეფონი ან ელფოსტა.' : 'დაამატე სახელი და ტელეფონი. დანარჩენის შევსება მოგვიანებითაც შეიძლება.'}</p>${query ? '<button class="btn btn-secondary" type="button" id="ow-q-clear">ძებნის გასუფთავება</button> <button class="btn btn-primary" type="button" id="o-new-empty">კონტაქტის დამატება</button>' : `<button class="btn btn-primary" type="button" id="o-new-empty">${page ? page.add : 'კონტაქტის დამატება'}</button>`}</div>`}</section>`;
+      }).join('')}</div>` : `<div class="empty">${icon('owner', 28)}<h3>${query ? 'შესაბამისი კონტაქტი ვერ მოიძებნა' : page ? `${page.one} ჯერ არ არის დამატებული` : 'კონტაქტი ჯერ არ არის დამატებული'}</h3><p>${query ? 'შეამოწმე სახელი, ტელეფონი ან ელფოსტა.' : 'დასაწყისისთვის სახელი და ტელეფონი საკმარისია.'}</p>${query ? '<button class="btn btn-secondary" type="button" id="ow-q-clear">ძებნის გასუფთავება</button> <button class="btn btn-primary" type="button" id="o-new-empty">კონტაქტის დამატება</button>' : `<button class="btn btn-primary" type="button" id="o-new-empty">${page ? page.add : 'კონტაქტის დამატება'}</button>`}</div>`}</section>`;
 
     let timer;
     $('#ow-q').addEventListener('input', (e) => { clearTimeout(timer); timer = setTimeout(() => { ownerQuery = e.target.value; renderOwnersList(root, fixedType); const i = $('#ow-q'); i.focus(); i.setSelectionRange(ownerQuery.length, ownerQuery.length); }, 150); });
@@ -1889,13 +1889,13 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
     const ids = { approval: R.uuid(), expense: R.uuid() };
     return R.dialog({
       title: 'მფლობელის თანხმობის მოთხოვნა', submitLabel: 'მოთხოვნის შექმნა',
-      subtitle: 'მფლობელი მიიღებს ბმულს და ტელეფონიდან დაადასტურებს ან უარყოფს. ხარჯი დადასტურებამდე „შეთავაზებულად“ დარჩება.',
+      subtitle: 'მესაკუთრე ბმულით დაადასტურებს ან უარყოფს ხარჯს. დადასტურებამდე ხარჯი „შეთავაზებულია“.',
       body: `<div class="form-stack">
         ${App.pickerHtml('apartment_id', 'ბინა')}
         <p class="field-hint" data-owner></p>
         <label class="field"><span class="field-label">რა საჭიროებს თანხმობას</span><input name="title" required maxlength="140" value="${esc(task?.title || '')}" placeholder="მაგ.: კონდიციონერის კომპრესორის გამოცვლა" data-error="აღწერე საკითხი." /></label>
         <label class="field"><span class="field-label">თანხა (₾)</span><input type="number" name="amount" required min="0.01" step="0.01" inputmode="decimal" data-error="ჩაწერე თანხა." /></label>
-        <label class="field"><span class="field-label">განმარტება მფლობელისთვის</span><textarea name="description" rows="3" placeholder="რა მოხდა, რატომ არის საჭირო, ვინ შეასრულებს">${esc(task?.description || '')}</textarea><span class="field-hint">ეს ტექსტი გამოჩნდება მფლობელის გვერდზე. ნუ ჩაწერ კარის კოდს ან შიდა შენიშვნებს.</span></label>
+        <label class="field"><span class="field-label">განმარტება მფლობელისთვის</span><textarea name="description" rows="3" placeholder="რა მოხდა, რატომ არის საჭირო, ვინ შეასრულებს">${esc(task?.description || '')}</textarea><span class="field-hint">მესაკუთრე ამ ტექსტს ნახავს. კარის კოდი და შიდა შენიშვნები არ ჩაწერო.</span></label>
         <label class="field"><span class="field-label">კატეგორია</span><select name="category">${['repair', 'maintenance', 'supplies', 'cleaning', 'other'].map(c => `<option value="${c}">${L.expenseCategory[c]}</option>`).join('')}</select></label>
         <label class="field"><span class="field-label">ფოტო <span class="muted">(არასავალდებულო)</span></span><input type="file" name="photo" accept="image/*" /></label>
       </div>`,
