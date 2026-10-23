@@ -476,7 +476,7 @@
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
               <label style="display:flex;align-items:center;gap:8px;font-weight:700;cursor:pointer;margin:0">
                 <input type="checkbox" id="deal-cobroker-toggle" ${hasPartner ? 'checked' : ''} />
-                <span>${icon('handshake', 14)} პარტნიორ აგენტთან გარიგება (Co-Broking)</span>
+                <span style="display:inline-flex;align-items:center;gap:6px">${icon('handshake', 18)} პარტნიორ აგენტთან გარიგება (Co-Broking)</span>
               </label>
               <div class="seg" id="cb-quick-split" style="margin:0">
                 <button type="button" class="btn btn-ghost btn-sm" data-cb-set="50">50/50</button>
