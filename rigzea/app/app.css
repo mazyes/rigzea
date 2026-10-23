@@ -2191,4 +2191,11 @@ html, body { overscroll-behavior-y: contain; }
   .bottom-nav a, .bottom-nav button { min-width: 0; padding-left: 0; padding-right: 0; }
   .bottom-nav a > span:not(.count), .bottom-nav button > span:not(.count) { max-width: 100%; overflow: hidden; text-overflow: clip; }
 }
-@media (max-width: 380px) { .bottom-nav a, .bottom-nav button { font-size: 9px; letter-spacing: -.01em; } .bottom-nav { left: 8px; right: 8px; } }
+/* On phones narrower than 410px six labels cannot sit side by side without touching: icons carry the bar and only the open tab shows its name, like the top bar. */
+@media (max-width: 410px) {
+  .bottom-nav { left: 10px; right: 10px; }
+  .bottom-nav a, .bottom-nav button { font-size: 10px; }
+  .bottom-nav a:not([aria-current="page"]) > span:not(.count), .bottom-nav button:not([aria-current="page"]) > span:not(.count) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .bottom-nav a:not([aria-current="page"]), .bottom-nav button:not([aria-current="page"]) { justify-content: center; padding-top: 0; }
+  .bottom-nav a:not([aria-current="page"]) svg, .bottom-nav button:not([aria-current="page"]) svg { width: 24px; height: 24px; }
+}
