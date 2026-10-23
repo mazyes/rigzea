@@ -48,7 +48,7 @@
 
     $('#f-month').onchange = (e) => { ff.month = e.target.value; App.render(); };
     $('#f-apt').onchange = (e) => { ff.apt = e.target.value; App.render(); };
-    $$('[data-tab]').forEach(b => b.addEventListener('click', () => { ff.tab = b.dataset.tab; App.render(); }));
+    $$('#view [data-tab]').forEach(b => b.addEventListener('click', () => { ff.tab = b.dataset.tab; App.render(); }));
     $('#f-export').onclick = () => App.exportFinance(exp, inc);
     $('#f-exp').onclick = () => openExpenseForm({ apartmentId: ff.apt || null });
     $('#f-inc').onclick = () => openIncomeForm({ apartmentId: ff.apt || null });

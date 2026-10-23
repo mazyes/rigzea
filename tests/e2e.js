@@ -2521,6 +2521,21 @@ test('1zr. the narrowest phone (320px) and landscape never scroll sideways; sect
   return page;
 });
 
+test('1zs. switching from Contacts or Finance to Chat renders the new page once, not the old one again first', async (browser) => {
+  const page = await newPage(browser, { viewport: PHONE, login: USERS.manager });
+  for (const from of ['owners', 'finance']) {
+    await page.goto(BASE + `/app/${from}/`);
+    await page.locator('#view h1').first().waitFor();
+    await page.waitForTimeout(2200);
+    await page.evaluate(() => { window.__draws = []; new MutationObserver(ms => ms.forEach(m => { if (m.addedNodes.length) window.__draws.push(document.querySelector('#view .chat') ? 'chat' : 'other'); })).observe(document.querySelector('#view'), { childList: true }); });
+    await page.locator('#bottom-nav [data-bn="chat"]').click();
+    await page.locator('#chat-root').waitFor();
+    await page.waitForTimeout(600);
+    assert.deepStrictEqual(await page.evaluate(() => window.__draws), ['chat'], `${from} -> chat drew something else first`);
+  }
+  return page;
+});
+
 (async () => {
   const server = await serve();
   const browser = await launch();

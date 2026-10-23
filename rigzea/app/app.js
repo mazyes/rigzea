@@ -2387,6 +2387,8 @@
     // if the socket is blocked (some company networks), look for news every 30 seconds instead
     chatTimer = setInterval(() => { if (!chatLive && document.visibilityState === 'visible') { window.dispatchEvent(new Event('rigzea-refresh')); refreshChatUnread(); } }, 30000);
     refreshChatUnread();
+    // Load the conversations quietly in the background so opening Chat is instant.
+    setTimeout(() => ensureViewLoaded('chat').then(() => App.chatWarm?.()).catch(() => {}), 1500);
   }
 
   // Number of overdue tasks on the installed app's icon (where the device supports it).

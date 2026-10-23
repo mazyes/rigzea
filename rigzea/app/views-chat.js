@@ -654,6 +654,8 @@
   }
 
   App.chatReady = () => st.ready;
+  // Called shortly after the app opens, so the first visit to Chat already has its conversations in memory.
+  App.chatWarm = () => { if (canChat() && !st.ready) load().catch(() => {}); };
   App.views.chat = (r) => {
     if (!canChat()) { $('#view').innerHTML = '<div class="card"><div class="empty-inline">ჩატი ხელმისაწვდომია მფლობელის, ადმინისტრატორის, მენეჯერისა და აგენტისთვის.</div></div>'; return; }
     const fast = $('#chat-root')?.isConnected && $('#chat-root').dataset.org === S.org.id;

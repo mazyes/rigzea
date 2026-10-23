@@ -1636,7 +1636,7 @@ ${agentName}${agentPhone ? ` (${agentPhone})` : ''}`;
         <div class="page-actions"><button type="button" class="btn btn-secondary" id="o-appr">თანხმობის მოთხოვნა</button><button type="button" class="btn btn-primary" id="o-new">${icon('plus', 16)} კონტაქტის დამატება</button></div></div>
       <div class="tabs" role="tablist"><button type="button" role="tab" class="tab" data-tab="owners" aria-selected="${tab === 'owners'}">კონტაქტები <span class="count">${S.data.owners.length}</span></button><button type="button" role="tab" class="tab" data-tab="approvals" aria-selected="${tab === 'approvals'}">თანხმობები <span class="count">${pending.length}</span></button></div>
       <div id="o-body"></div>`;
-    $$('[data-tab]').forEach(b => b.addEventListener('click', () => { App.go(b.dataset.tab === 'approvals' ? '#/owners?tab=approvals' : '#/owners'); }));
+    $$('#view [data-tab]').forEach(b => b.addEventListener('click', () => { App.go(b.dataset.tab === 'approvals' ? '#/owners?tab=approvals' : '#/owners'); }));
     $('#o-new').onclick = () => openOwnerForm();
     $('#o-appr').onclick = async () => { if (await App.openApprovalForm({})) App.go('#/owners?tab=approvals'); };
     if (tab === 'approvals') renderApprovals($('#o-body')); else renderOwnersList($('#o-body'));
