@@ -1751,7 +1751,6 @@ test('1w. sign up that needs email confirmation shows the code step and signs in
   await page.click('#form-signup [type=submit]');
   await page.locator('#form-check').waitFor();
   assert.strictEqual(await page.locator('#check-email').innerText(), 'confirm1@rigzea.test');
-  assert.strictEqual(await page.locator('#auth').getAttribute('data-mood'), 'mail', 'the orb waits for the code');
   await page.locator('.otp-box').first().focus();
   await page.keyboard.type('000000');
   await page.locator('#form-check .form-error').waitFor();

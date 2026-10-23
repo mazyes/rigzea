@@ -1858,8 +1858,8 @@ a.row:active, button.row:active, .row.clickable:active, .sched-row:active, .noti
   .view-enter :is(.page-head, .chips, .dash-kpi, .card:not(.card .card), .stats, .table-wrap) { animation-duration: .3s; }
 }
 
-/* ---- Sign in / sign up: split screen with a product showcase, a reacting orb and a code step ---- */
-.auth { --orb-a: #8ff0c4; --orb-b: #0a8a63; --orb-c: #064e3b; min-height: 100dvh; padding: 16px; gap: 0; background: var(--bg); }
+/* ---- Sign in / sign up: split screen with a product showcase and a code step ---- */
+.auth { : 100dvh; padding: 16px; gap: 0; background: var(--bg); }
 .auth-showcase { display: none; }
 .auth-card { position: relative; width: min(400px, 100%); padding: 8px 4px 24px; border: 0; border-radius: 0; background: none; box-shadow: none; }
 .auth-card .brand { margin-bottom: 8px; }
@@ -1884,26 +1884,6 @@ a.row:active, button.row:active, .row.clickable:active, .sched-row:active, .noti
 .auth-enter > *:nth-child(5) { animation-delay: .2s; }
 .auth-enter > *:nth-child(n+6) { animation-delay: .25s; }
 @keyframes authIn { from { opacity: 0; transform: translate3d(0, 14px, 0); } to { opacity: 1; transform: none; } }
-
-/* orb */
-.auth-orb { position: relative; width: 60px; height: 60px; margin: 6px 0 14px; transition: transform .6s var(--spring); }
-.orb-face { position: absolute; inset: 0; display: grid; place-items: center; border-radius: 50%; background: radial-gradient(circle at 32% 26%, #fff 0, var(--orb-a) 18%, var(--orb-b) 62%, var(--orb-c) 100%); box-shadow: 0 14px 28px -10px var(--orb-b), inset 0 -6px 12px rgba(0, 0, 0, .18); animation: orbBob 4s ease-in-out infinite; }
-.orb-face i { position: absolute; top: 24px; width: 8px; height: 13px; border-radius: 50%; background: #fff; transition: transform .35s var(--spring), height .25s ease, top .25s ease; animation: orbBlink 5s infinite; }
-.orb-face i:nth-child(1) { left: 17px; }
-.orb-face i:nth-child(2) { right: 17px; }
-.orb-face b { position: absolute; left: 50%; top: 40px; width: 16px; height: 8px; margin-left: -8px; border-bottom: 3px solid #fff; border-radius: 0 0 16px 16px; transition: width .3s var(--spring), margin .3s var(--spring), height .3s var(--spring); }
-.orb-bubble { position: absolute; left: calc(100% + 10px); top: 50%; z-index: 1; padding: 4px 10px; border-radius: 999px; background: var(--brand); color: #fff; font-size: 11.5px; font-weight: 600; white-space: nowrap; opacity: 0; transform: translate(-6px, -50%) scale(.9); transition: opacity .25s ease, transform .35s var(--spring); pointer-events: none; }
-.orb-bubble.on { opacity: 1; transform: translate(0, -50%) scale(1); }
-[data-mood="look"] .orb-face i { transform: translate(3px, 3px); }
-[data-mood="hide"] .orb-face i { height: 2px; top: 30px; animation: none; }
-[data-mood="hide"] .orb-face b { width: 10px; margin-left: -5px; height: 2px; border-bottom-width: 2px; border-radius: 4px; }
-[data-mood="busy"] .auth-orb { animation: orbSpin 1s linear infinite; }
-[data-mood="mail"] .orb-face b, [data-mood="ok"] .orb-face b { width: 22px; margin-left: -11px; height: 11px; }
-[data-mood="ok"] .auth-orb { transform: scale(1.12); }
-[data-mood="ok"] .orb-face { background: radial-gradient(circle at 32% 26%, #fff 0, #b6f5d6 18%, #12b981 62%, #047857 100%); }
-@keyframes orbBob { 50% { transform: translateY(-4px); } }
-@keyframes orbBlink { 0%, 46%, 50%, 100% { transform: scaleY(1); } 48% { transform: scaleY(.1); } }
-@keyframes orbSpin { to { transform: rotate(360deg); } }
 
 /* code boxes */
 .otp { display: flex; gap: 8px; }
@@ -1944,5 +1924,5 @@ a.row:active, button.row:active, .row.clickable:active, .sched-row:active, .noti
   .auth { align-items: start; padding-top: max(16px, env(safe-area-inset-top)); }
   .auth-card h1 { font-size: 24px; }
 }
-@media (prefers-reduced-motion: reduce) { .orb-face, .as-card, .orb-face i { animation: none !important; } }
-.lite .as-card, .lite .orb-face { animation: none; }
+@media (prefers-reduced-motion: reduce) { .as-card { animation: none !important; } }
+.lite .as-card { animation: none; }

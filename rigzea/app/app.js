@@ -154,7 +154,6 @@
       if (show && f.hidden) { f.classList.remove('auth-enter'); void f.offsetWidth; f.classList.add('auth-enter'); }
       f.hidden = !show;
     });
-    setMood(view === 'check' ? 'mail' : 'idle');
     const tabs = $('#auth-tabs');
     const oauthStack = $('#auth-oauth-stack');
     const divider = $('#auth-divider');
@@ -175,25 +174,6 @@
     $('#form-' + view)?.querySelector('input')?.focus();
   }
 
-  // The orb above the form reacts to what the person is doing: idle, typing, covering its eyes on a password, waiting, success.
-  function setMood(mood, bubble = '') {
-    const auth = $('#auth');
-    if (!auth) return;
-    auth.dataset.mood = mood;
-    const b = $('#orb-bubble');
-    if (b) { b.textContent = bubble; b.classList.toggle('on', !!bubble); }
-  }
-  (function bindOrb() {
-    const auth = $('#auth');
-    if (!auth) return;
-    auth.addEventListener('focusin', (e) => {
-      const el = e.target;
-      if (el.matches('input[type=password]')) setMood('hide');
-      else if (el.matches('.otp-box')) setMood('mail', 'ჩაწერე კოდი');
-      else if (el.matches('input')) setMood('look');
-    });
-    auth.addEventListener('focusout', () => setTimeout(() => { if (!auth.contains(document.activeElement) || !document.activeElement.matches('input')) setMood(currentAuthView === 'check' ? 'mail' : 'idle'); }, 0));
-  })();
 
   function bindForm(form, handler) {
     form.addEventListener('submit', async (e) => {
@@ -205,10 +185,9 @@
       if (invalid) { errBox.textContent = invalid.dataset.error || 'შეავსე სავალდებულო ველები.'; errBox.hidden = false; invalid.focus(); return; }
       if (btn.dataset.busy === '1') return;
       btn.dataset.busy = '1'; btn.disabled = true; btn.classList.add('is-busy');
-      const inAuth = !!form.closest('#auth'); if (inAuth) setMood('busy');
       try { await handler(Object.fromEntries(new FormData(form).entries()), form); }
       catch (err) { console.error(err); errBox.textContent = authError(err); errBox.hidden = false; }
-      finally { btn.dataset.busy = ''; btn.disabled = false; btn.classList.remove('is-busy'); if (inAuth && $('#auth').dataset.mood === 'busy') setMood(currentAuthView === 'check' ? 'mail' : 'idle'); }
+      finally { btn.dataset.busy = ''; btn.disabled = false; btn.classList.remove('is-busy'); }
     });
   }
 
@@ -277,11 +256,8 @@
   bindForm($('#form-check'), async () => {
     const token = otpValue();
     if (token.length !== otpBoxes.length) throw new Error('ჩაწერე წერილში მითითებული კოდი.');
-    setMood('busy');
     const { error } = await sb.auth.verifyOtp({ email: pendingEmail, token, type: 'signup' });
-    if (error) { setMood('mail'); otpBoxes.forEach(b => { b.value = ''; }); otpBoxes[0].focus(); throw new Error(/expired|invalid/i.test(error.message) ? 'კოდი არასწორია ან ვადაგასულია.' : error.message); }
-    setMood('ok', 'შენ შემოხვედი');
-    await new Promise(r => setTimeout(r, 700));
+    if (error) { otpBoxes.forEach(b => { b.value = ''; }); otpBoxes[0].focus(); throw new Error(/expired|invalid/i.test(error.message) ? 'კოდი არასწორია ან ვადაგასულია.' : error.message); }
     await boot();
   });
   let resendUntil = 0;
