@@ -124,6 +124,7 @@
   // ===========================================================================
   let todayFilter = 'all';
   let scheduleDay = 0; // 0 today, 1 tomorrow
+  let clockTimer = null;
 
   function turnoverFor(res) {
     // Previous reservation in the same apartment that ends on/just before this check-in
@@ -459,7 +460,7 @@
       <div class="dashboard">
       <div class="page-head dash-head">
         <div><span class="dash-eyebrow">უძრავი ქონების აგენტის სამუშაო სივრცე</span><h1>გამარჯობა, ${esc(firstName)}!</h1><p class="page-sub">მართე ობიექტები, კლიენტები და საქმეები ერთ სივრცეში.</p></div>
-        <div class="page-actions"><span class="dash-date">${icon('calendar', 16)} ${R.WEEKDAYS[now.getDay()]}, ${now.getDate()} ${R.MONTHS[now.getMonth()]}</span><button type="button" class="btn btn-secondary" id="btn-digest">${icon('telegram', 16)} დღის შეჯამება</button></div>
+        <div class="page-actions"><span class="dash-date">${icon('calendar', 16)} ${R.WEEKDAYS[now.getDay()]}, ${now.getDate()} ${R.MONTHS[now.getMonth()]}<time class="dash-clock" id="dash-clock"></time></span><button type="button" class="btn btn-secondary" id="btn-digest">${icon('telegram', 16)} დღის შეჯამება</button></div>
       </div>
       ${activeApts.length === 0 ? `
       <section class="card onboarding-hero-card" style="margin-bottom:16px;background:linear-gradient(135deg, var(--brand-soft) 0%, color-mix(in srgb, var(--brand-soft) 65%, var(--surface)) 100%);border:1px solid color-mix(in srgb, var(--brand-ink) 35%, var(--line));padding:24px;border-radius:var(--r)">
@@ -533,7 +534,7 @@
               <button type="button" class="link-btn small" id="btn-hide-setup">დამალვა</button>
             </div>
             <div style="background:var(--line);height:6px;border-radius:99px;margin:8px 0 16px 0;overflow:hidden">
-              <div style="background:var(--ok);height:100%;width:${(steps.filter(s => s.done).length / steps.length) * 100}%;border-radius:99px;transition:width 0.3s"></div>
+              <div class="fill-x" style="background:var(--ok);height:100%;width:${(steps.filter(s => s.done).length / steps.length) * 100}%;border-radius:99px;transition:width 0.3s"></div>
             </div>
             <ol class="setup">${steps.map(s => `<li class="${s.done ? 'done' : ''}"><div><div class="step-title">${esc(s.title)}</div><div class="step-desc">${esc(s.desc)}</div></div><div>${s.done ? `<span class="t-ok" style="font-weight:700;display:inline-flex;align-items:center;gap:4px">${icon('check', 14)} შესრულებულია</span>` : s.action || ''}</div></li>`).join('')}</ol>
           </section>` : ''}
@@ -579,6 +580,11 @@
     $$('[data-renew]').forEach(b => b.addEventListener('click', () => openRenew(S.data.apartments.find(a => a.id === b.dataset.renew))));
     $('#btn-tg-link')?.addEventListener('click', openTelegramLink);
     $('#btn-digest').onclick = openDailyDigest;
+    clearInterval(clockTimer);
+    const clock = $('#dash-clock');
+    const tick = () => { const d = new Date(); clock.textContent = [d.getHours(), d.getMinutes()].map(x => String(x).padStart(2, '0')).join(':'); };
+    tick();
+    clockTimer = setInterval(() => { if (clock.isConnected) tick(); else clearInterval(clockTimer); }, 1000);
     $('#btn-quick-import-hero')?.addEventListener('click', () => App.openApartmentForm());
     $('#btn-quick-manual-hero')?.addEventListener('click', () => App.openApartmentForm());
     $$('.dash-action[data-qa]').forEach(b => b.addEventListener('click', () => {

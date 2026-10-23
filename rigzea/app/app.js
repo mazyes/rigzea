@@ -899,6 +899,7 @@
     void v.offsetWidth;
     v.classList.add('view-enter');
     v.querySelectorAll('.dash-kpi strong, .dash-donut strong').forEach(countUp);
+    setTimeout(() => v.classList.remove('view-enter'), 1600); // later re-renders (filters, saves) must not replay the reveal
   }
 
   // Big numbers count up once when a page opens; the text keeps its own separators and currency sign.
