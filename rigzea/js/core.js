@@ -515,6 +515,26 @@
     pill.style.height = b.h + 'px';
     pill.style.opacity = '1';
   }
+  // The phone bar's tabs change width while they open and close, so the pill follows the new tab's live box every frame
+  // and the blend progress comes from that tab's own width: it uses the very same curve and is on the tab at the end.
+  function glidePill(root, pill, on) {
+    cancelAnimationFrame(root._pillRaf);
+    const live = () => ({ x: on.offsetLeft, y: on.offsetTop, w: on.offsetWidth, h: on.offsetHeight });
+    const from = root._pillBox, w0 = on.offsetWidth;
+    pill.classList.add('pill-snap');
+    if (!from || calm()) { root._pillBox = live(); placePill(pill, root._pillBox); return; }
+    const cs = getComputedStyle(root), cols = root.style.gridTemplateColumns.split(' ').map(parseFloat);
+    const inner = root.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - (parseFloat(cs.columnGap) || 0) * (cols.length - 1);
+    const w1 = inner * cols[[...root.children].filter(c => c !== pill).indexOf(on)] / cols.reduce((a, b) => a + b, 0), t0 = performance.now();
+    const tick = () => {
+      if (!on.isConnected) return;
+      const b = live(), p = Math.abs(w1 - w0) > 1 ? Math.min(1, Math.max(0, (b.w - w0) / (w1 - w0))) : 1;
+      root._pillBox = { x: from.x + (b.x - from.x) * p, y: b.y, w: from.w + (b.w - from.w) * p, h: b.h };
+      placePill(pill, root._pillBox);
+      if (performance.now() - t0 < 700 && p < 1) root._pillRaf = requestAnimationFrame(tick); else { root._pillBox = live(); placePill(pill, root._pillBox); }
+    };
+    tick();
+  }
   function syncPills() {
     pillQueued = false;
     const force = pillForce; pillForce = false;
@@ -537,11 +557,12 @@
           void pill.offsetWidth; // commit the starting spot, then let the move below animate
           pill.classList.remove('pill-snap');
         }
-        placePill(pill, box);
+        if (rootSel === '.bottom-nav') glidePill(root, pill, on);
+        else placePill(pill, box);
         pillMemory.set(key, box);
         if (root._pillOn) pillRo?.unobserve(root._pillOn);
         root._pillOn = on;
-        pillRo?.observe(on);
+        if (rootSel !== '.bottom-nav') pillRo?.observe(on);
       });
     }
   }

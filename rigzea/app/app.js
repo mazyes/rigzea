@@ -961,16 +961,32 @@
       + `<div class="rail-foot"><button type="button" class="rail-lang" data-lang-toggle>${icon('globe', 16)}<span>${window.RLang?.lang === 'en' ? 'ქართული' : 'English'}</span></button><div class="rail-stats">${S.data ? `${S.data.apartments.filter(a => a.status !== 'archived').length} ობიექტი · ${S.data.owners.length} კლიენტი · ${S.data.members.length} გუნდის წევრი` : ''}</div></div>`;
     slideRailPill();
 
-    // Phone: 4 primary workflows + More menu sheet.
-    const tab = (href, ic, label, active, count, id = '') => `<a href="${href}" ${id ? `data-tab="${id}"` : ''} ${active ? 'aria-current="page"' : ''}>${icon(ic, 20)}<span>${label}</span>${count ? `<span class="count ${count.danger ? 'count-danger' : ''}">${count.n}</span>` : ''}</a>`;
+    // Phone: 4 primary workflows + More menu sheet, icons only. The elements stay between renders (like the top menu), so the
+    // open tab grows and the old one shrinks with a transition; the bar itself never changes size.
     const inMore = ['tasks', 'finance', 'team', 'settings'].includes(key);
-    $('#bottom-nav').innerHTML = tab('#/today', 'today', 'ჩემთვის', key === 'today')
-      + tab('#/apartments', 'building', 'ობიექტები', key === 'apartments')
-      + tab('#/deals', 'wallet', 'გარიგებები', key === 'deals', counts.deals)
-      + tab('#/owners', 'user', 'კლიენტები', key === 'contacts', counts.contacts)
-      + tab('#/chat', 'chat', 'ჩატი', key === 'chat', counts.chat, 'chat')
-      + `<button type="button" id="btn-more" ${inMore ? 'aria-current="page"' : ''}>${icon('menu', 20)}<span>მენიუ</span>${counts.tasks ? `<span class="count count-danger">${counts.tasks.n}</span>` : ''}</button>`;
-    $('#btn-more').onclick = openMoreSheet;
+    const bnItems = [
+      ['today', '#/today', 'today', 'ჩემთვის', key === 'today'],
+      ['apartments', '#/apartments', 'building', 'ობიექტები', key === 'apartments'],
+      ['deals', '#/deals', 'wallet', 'გარიგებები', key === 'deals', counts.deals],
+      ['contacts', '#/owners', 'user', 'კლიენტები', key === 'contacts', counts.contacts],
+      ['chat', '#/chat', 'chat', 'ჩატი', key === 'chat', counts.chat],
+      ['more', null, 'menu', 'მენიუ', inMore, counts.tasks && { ...counts.tasks, danger: true }],
+    ];
+    const bn = $('#bottom-nav');
+    if (!bn.dataset.built) {
+      bn.dataset.built = '1';
+      bn.innerHTML = bnItems.map(([id, href, ic, label]) => (href
+        ? `<a href="${href}" data-bn="${id}" ${id === 'chat' ? 'data-tab="chat"' : ''} aria-label="${label}" title="${label}">${icon(ic, 22)}</a>`
+        : `<button type="button" id="btn-more" data-bn="${id}" aria-label="${label}" title="${label}">${icon(ic, 22)}</button>`)).join('');
+      $('#btn-more').onclick = openMoreSheet;
+    }
+    bn.style.gridTemplateColumns = bnItems.map(i => (i[4] ? '1.7fr' : '1fr')).join(' ');
+    bnItems.forEach(([id, , , , active, count]) => {
+      const el = bn.querySelector(`[data-bn="${id}"]`);
+      if (active) el.setAttribute('aria-current', 'page'); else el.removeAttribute('aria-current');
+      el.querySelector(':scope > .count')?.remove();
+      if (count) el.insertAdjacentHTML('beforeend', `<span class="count ${count.danger ? 'count-danger' : ''}">${count.n}</span>`);
+    });
 
     // Phone: quick filter bar right above the content for list views
     const bar = $('#section-bar');

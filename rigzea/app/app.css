@@ -2232,21 +2232,6 @@ html, body { overscroll-behavior-y: contain; }
 .lite .msg-in, .lite .msg-react, .motion-off .msg-in { animation: none; }
 @media (prefers-reduced-motion: reduce) { .msg-in, .msg-react, .chat-main { animation: none !important; } }
 
-/* Six phone tabs now (Chat sits next to Menu): equal columns, a touch smaller labels on narrow phones */
-@media (max-width: 900px) {
-  .bottom-nav { grid-template-columns: repeat(6, minmax(0, 1fr)); }
-  .bottom-nav a, .bottom-nav button { min-width: 0; padding-left: 0; padding-right: 0; }
-  .bottom-nav a > span:not(.count), .bottom-nav button > span:not(.count) { max-width: 100%; overflow: hidden; text-overflow: clip; }
-}
-/* On phones narrower than 410px six labels cannot sit side by side without touching: icons carry the bar and only the open tab shows its name, like the top bar. */
-@media (max-width: 410px) {
-  .bottom-nav { left: 10px; right: 10px; }
-  .bottom-nav a, .bottom-nav button { font-size: 10px; }
-  .bottom-nav a:not([aria-current="page"]) > span:not(.count), .bottom-nav button:not([aria-current="page"]) > span:not(.count) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-  .bottom-nav a:not([aria-current="page"]), .bottom-nav button:not([aria-current="page"]) { justify-content: center; padding-top: 0; }
-  .bottom-nav a:not([aria-current="page"]) svg, .bottom-nav button:not([aria-current="page"]) svg { width: 24px; height: 24px; }
-}
-
 /* Invitation link banner on the sign in and sign up screen */
 .invite-banner { display: flex; align-items: flex-start; gap: 12px; margin: 4px 0 16px; padding: 12px 14px; border: 1px solid color-mix(in srgb, var(--brand) 30%, var(--line)); border-radius: 14px; background: var(--brand-soft); color: var(--ink); animation: authIn .5s var(--ease) both; }
 .invite-banner[hidden] { display: none; }
@@ -2259,3 +2244,18 @@ html, body { overscroll-behavior-y: contain; }
 
 /* 320px phones: tighter top bar gaps so nothing pushes the page sideways (last, so it wins over the earlier top bar rules) */
 @media (max-width: 340px) { .shell .topbar { gap: 3px; } }
+
+/* Phone bar: the same motion as the top menu. Icons only, one size: the open tab grows a little (the grid columns
+   are set from app.js and animate), a green pill follows it, and the bar itself never changes size. */
+@media (max-width: 900px) {
+  .bottom-nav { grid-template-columns: repeat(6, 1fr); transition: grid-template-columns .5s cubic-bezier(.32, .72, 0, 1); }
+  .bottom-nav a, .bottom-nav button { flex-direction: row; justify-content: center; gap: 0; min-width: 0; padding: 0; overflow: hidden; color: var(--ink-2); }
+  .bottom-nav svg { flex: none; width: 22px; height: 22px; stroke-width: 1.8; }
+  .bottom-nav [aria-current="page"] { color: #fff; font-weight: 600; }
+  .bottom-nav .count { top: 5px; right: 5px; left: auto; }
+  .bottom-nav [aria-current="page"] .count { background: rgba(255, 255, 255, .28); color: #fff; }
+  .bottom-nav > .pill { background: linear-gradient(180deg, color-mix(in srgb, var(--brand) 84%, #fff), var(--brand)); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .3), 0 8px 18px -8px color-mix(in srgb, var(--brand) 75%, transparent); transition: opacity .25s ease; }
+  .lite .bottom-nav, .motion-off .bottom-nav { transition: none; }
+}
+@media (max-width: 900px) and (prefers-reduced-motion: reduce) { .bottom-nav { transition: none; } }
+@media (max-width: 360px) { .bottom-nav .count { top: 3px; right: 3px; } }

@@ -1300,7 +1300,7 @@ test('17. navigation: rentals and sales sections scope apartments, contacts and 
     assert(sw <= w, `${hash} overflows: ${sw} > ${w}`);
     assert.strictEqual(await phone.locator('#section-bar a').count(), tabCount[hash.slice(2).split('?')[0]], `${hash} shows the section tabs`);
   }
-  assert.strictEqual((await phone.locator('#bottom-nav [aria-current="page"]').innerText()).trim(), 'გარიგებები');
+  assert.strictEqual(await phone.locator('#bottom-nav [aria-current="page"]').getAttribute('aria-label'), 'გარიგებები');
   await phone.goto(BASE + '/app/owners/');
   await phone.locator('#section-bar a[href="/app/owners/?type=seller"]').click();
   await phone.getByRole('heading', { name: 'გამყიდველები', exact: true }).waitFor();
