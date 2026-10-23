@@ -86,6 +86,7 @@
     .pz-tag { background: var(--pz); color: #fff; padding: 3px 12px; border-radius: 999px; font-weight: 600; font-size: 11.5px; }
     .pz-photo { position: relative; overflow: hidden; border-radius: 6px; background: #e8ece9; }
     .pz-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .pz-wm img { max-width: 38%; max-height: 32%; object-fit: contain; opacity: .6; transform: rotate(-16deg); filter: drop-shadow(0 1px 2px rgba(0,0,0,.35)); }
     .pz-wm { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,.5); font-weight: 700; font-size: 20px; letter-spacing: 1px; transform: rotate(-18deg); text-shadow: 0 1px 2px rgba(0,0,0,.25); pointer-events: none; text-align: center; }
     .pz-hero { height: 92mm; }
     .pz-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3mm; height: 36mm; }
@@ -128,7 +129,7 @@
     const agentName = a.agent_name || S.member?.display_name || agency;
     const phone = a.agent_phone || S.member?.phone || S.org?.contact_phone || '';
     const photos = (Array.isArray(a.photos) ? a.photos : []).map(p => p.url || p.thumb).filter(Boolean);
-    const photo = (src, cls = '') => `<div class="pz-photo ${cls}">${src ? `<img src="${esc(src)}" alt="" />` : ''}${o.watermark && src ? `<span class="pz-wm">${esc(agency)}</span>` : ''}</div>`;
+    const photo = (src, cls = '') => `<div class="pz-photo ${cls}">${src ? `<img src="${esc(src)}" alt="" />` : ''}${o.watermark && src ? `<span class="pz-wm">${S.org?.logo_url ? `<img src="${esc(S.org.logo_url)}" alt="" />` : esc(agency)}</span>` : ''}</div>`;
     const where = [a.city, a.district, a.address].filter(Boolean).join(', ');
     const sqm = isSale ? (a.price_sqm || (price && a.area_sqm ? Math.round(price / a.area_sqm) : null)) : null;
     const facts = [
@@ -315,7 +316,7 @@
     const arts = docArticles(d.doc_type, d);
     if (String(d.extra_terms || '').trim()) arts.push(['დამატებითი პირობები', [esc(d.extra_terms.trim())]]);
     const sign = ([role, , name, pid, phone]) => `<div><strong>${role}</strong><div>${val(name)}</div><div>პ/ნ: ${val(pid)}${phone ? ` · ტელ.: ${esc(phone)}` : ''}</div><div class="ld-line"></div><small>ხელმოწერა</small></div>`;
-    return `<div class="lease-doc">
+    return `<div class="lease-doc">${App.docBrand()}
       <h2>${def.title}</h2>
       <div class="ld-place"><span>ქ. ${val(d.city)}</span><span>${val(dmy(d.contract_date))}</span></div>
       <div class="ld-parties"><p>ერთი მხრივ, ${p1[1]} (შემდგომში „${p1[0]}“), და მეორე მხრივ, ${p2[1]} (შემდგომში „${p2[0]}“), ${d.doc_type === 'handover' ? 'ადგენენ ამ აქტს შემდეგზე:' : 'დებენ ამ ხელშეკრულებას შემდეგზე:'}</p></div>

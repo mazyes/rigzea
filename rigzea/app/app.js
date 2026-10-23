@@ -42,7 +42,7 @@
   const isAdmin = () => ['owner', 'admin'].includes(S.member?.role);
   // Agents work with the shared inventory and their own deals; finances and team settings are closed to them.
   const isAgent = () => S.member?.role === 'agent';
-  const AGENT_CLOSED = ['finance', 'team', 'settings'];
+  const AGENT_CLOSED = ['finance', 'team']; // settings stays open to agents for their own profile and security tabs
 
   // ---------------------------------------------------------------------------
   // Screens
@@ -944,7 +944,7 @@
       sw.innerHTML = `<label class="sr-only" for="org-select">სამუშაო სივრცე</label><select id="org-select">${S.orgs.map(o => `<option value="${o.id}" ${o.id === S.org.id ? 'selected' : ''}>${esc(o.name)}</option>`).join('')}</select>`;
       $('#org-select').onchange = (e) => switchOrg(e.target.value);
     } else {
-      sw.innerHTML = `<span class="org-static" title="სამუშაო სივრცე">${esc(S.org.name)}</span>`;
+      sw.innerHTML = `<span class="org-static" title="სამუშაო სივრცე">${S.org.logo_url ? `<img class="org-logo" src="${esc(S.org.logo_url)}" alt="" />` : ''}${esc(S.org.name)}</span>`;
     }
 
     renderPlanBanner();
@@ -953,7 +953,9 @@
     const name = S.member?.display_name || S.user.email;
     $('#user-name').textContent = name;
     $('#user-role').textContent = L.role[S.member?.role] || '';
-    $('#user-avatar').textContent = (name || '·').trim().replace(/^[a-z]/, c => c.toUpperCase()).charAt(0);
+    const av = $('#user-avatar');
+    if (S.member?.avatar_url) av.innerHTML = `<img src="${esc(S.member.avatar_url)}" alt="" />`;
+    else av.textContent = (name || '·').trim().replace(/^[a-z]/, c => c.toUpperCase()).charAt(0);
 
     const unread = S.data ? S.data.notifications.filter(n => !n.is_read).length : 0;
     $('#btn-notif').innerHTML = icon('bell') + (unread ? `<span class="dot">${unread > 9 ? '9+' : unread}</span>` : '');
@@ -1048,6 +1050,7 @@
     if (isAgent() && AGENT_CLOSED.includes(r.name)) { go('#/today', { replace: true }); return; }
     renderShell();
     updateBadge();
+    maybeShowWelcome();
     const view = views[r.name];
     if (!view) {
       renderLoading();
@@ -1213,6 +1216,8 @@
           <select id="theme-select" class="input"><option value="system">სისტემის მიხედვით</option><option value="light">ღია</option><option value="dark">მუქი</option></select></label>
         <div class="field" style="padding:4px 10px 8px"><span class="field-label">მენიუს მდებარეობა</span>
           <div class="seg2" role="group" aria-label="მენიუს მდებარეობა"><button type="button" data-nav-mode="top" aria-pressed="${navMode === 'top'}">ზემოთ</button><button type="button" data-nav-mode="side" aria-pressed="${navMode === 'side'}">მარცხნივ</button></div></div>
+        <a class="menu-link" href="#/settings/profile">${icon('user')} პროფილი</a>
+        <button type="button" data-action="refresh">${icon('refresh')} განახლება</button>
         <button type="button" class="menu-lang" data-lang-toggle>${window.RLang?.lang === 'en' ? 'ქართული' : 'English'}</button>
         ${canInstall() ? `<button type="button" data-action="install">${icon('download')} აპის დაყენება</button>` : ''}
         <button type="button" data-action="signout">${icon('logout')} გამოსვლა</button>
@@ -2099,40 +2104,86 @@
     });
   }
 
-  window.App = { emptyInline: (text) => `<p class="empty-inline">${esc(text)}</p>`, S, H, views, aptSection, contactSection, isManager, isAdmin, isAgent, refresh, render, renderShell, go, route, toUrl, taskHref, closeTaskOverlay, upsertLocal, logEvent, loadMore,
+  window.App = {
+    openWelcome,
+    // The company logo at the top of a document, and faintly behind its text (screen and print)
+    docBrand: () => S.org?.logo_url ? `<img class="ld-logo" src="${esc(S.org.logo_url)}" alt="" /><div class="ld-wm" aria-hidden="true"><img src="${esc(S.org.logo_url)}" alt="" /></div>` : '',
+    emptyInline: (text) => `<p class="empty-inline">${esc(text)}</p>`, S, H, views, aptSection, contactSection, isManager, isAdmin, isAgent, refresh, render, renderShell, go, route, toUrl, taskHref, closeTaskOverlay, upsertLocal, logEvent, loadMore,
     openCommissionCalculator, openMatchmaker, openSocialPostGenerator, setTheme, setNavMode,
     openDocChooser: (...args) => ensureChunk('/app/views-docs.js', 'დოკუმენტები').then(() => window.App.openDocChooser?.(...args)),
     openPresentation: (...args) => ensureViewLoaded('apartments').then(() => window.App.openPresentation?.(...args)),
     monthLabel, PLANS, PLAN_ORDER, FEATURE_LABEL, CONTACT, planState, can, guardLimit, guardFeature, openUpgrade, planCardsHtml, waLink, activeApartments, pausedApartmentIds, seatsUsed, openKisaCheckoutModal, startKisaCheckout: openKisaCheckoutModal };
 
-  // Pull down at the top of the page on a phone to reload the data (iOS home screen apps have no browser refresh).
+  // Refreshing the page's data without leaving the page. One small indicator under the top bar appears while the
+  // person pulls down (touch, or a trackpad/wheel gesture that starts at the very top) or while the data reloads.
+  // The layout never moves: the page is only dimmed a little, its height is held, and the scroll position is put back.
+  let pageRefreshing = false;
+  const ptr = (() => {
+    let el = null;
+    return () => el || (el = (() => {
+      const n = document.createElement('div');
+      n.className = 'ptr'; n.setAttribute('aria-hidden', 'true'); n.innerHTML = icon('refresh', 17);
+      document.body.appendChild(n);
+      return n;
+    })());
+  })();
+  const ptrPull = (p) => { const n = ptr(); n.style.opacity = String(Math.min(1, p * 1.4)); n.style.transform = `translate(-50%, ${(-14 * (1 - p)).toFixed(1)}px) scale(${(0.88 + 0.12 * p).toFixed(3)})`; n.style.filter = `blur(${(3 * (1 - p)).toFixed(2)}px)`; n.firstChild.style.transform = `rotate(${Math.round(p * 220)}deg)`; };
+  const ptrHide = () => { const n = ptr(); n.classList.remove('is-active', 'is-spinning'); n.style.cssText = ''; n.firstChild.style.transform = ''; };
+  async function pageRefresh() {
+    if (pageRefreshing || !S.data) return;
+    pageRefreshing = true;
+    const root = document.documentElement, view = $('#view'), y = window.scrollY, n = ptr();
+    view.style.minHeight = view.offsetHeight + 'px'; // the page cannot get shorter and scroll under the finger
+    n.style.cssText = ''; n.firstChild.style.transform = ''; n.classList.add('is-active', 'is-spinning');
+    root.classList.add('is-refreshing');
+    const started = performance.now();
+    try { await refresh({ quiet: true }); } catch { /* refresh() reports its own failure */ } finally {
+      await new Promise(r => setTimeout(r, Math.max(0, 600 - (performance.now() - started)))); // a refresh that finishes instantly still reads as one
+      root.classList.remove('is-refreshing');
+      ptrHide();
+      view.style.minHeight = '';
+      if (Math.abs(window.scrollY - y) > 1) window.scrollTo(0, y);
+      pageRefreshing = false;
+    }
+  }
   (function pullToRefresh() {
-    let startY = 0, pull = 0, busy = false, armed = false, bar = null;
-    const THRESHOLD = 70;
-    const blocked = (t) => innerWidth > 900 || busy || document.querySelector('dialog[open]') || t.closest?.('.rows-scroll, .table-wrap, .tabs, .chips, .seg, input, textarea, select');
+    let startY = 0, pull = 0, armed = false;
+    const FULL = 150; // finger travel for a full pull
+    const blocked = (t) => pageRefreshing || document.querySelector('dialog[open]') || t.closest?.('.rows-scroll, .table-wrap, .tabs, .chips, .seg, .seg2, input, textarea, select, .popover');
     document.addEventListener('touchstart', (e) => {
-      armed = !blocked(e.target) && window.scrollY <= 0 && !!S.data;
+      armed = innerWidth <= 900 && !blocked(e.target) && window.scrollY <= 0 && !!S.data;
       startY = e.touches[0].clientY; pull = 0;
     }, { passive: true });
     document.addEventListener('touchmove', (e) => {
       if (!armed) return;
       pull = e.touches[0].clientY - startY;
-      if (pull <= 0 || window.scrollY > 0) { if (bar) bar.style.opacity = 0; return; }
-      if (!bar) { bar = document.createElement('div'); bar.className = 'ptr'; bar.setAttribute('aria-hidden', 'true'); bar.innerHTML = icon('refresh', 18); document.body.appendChild(bar); }
-      const d = Math.min(pull * .5, 64);
-      bar.style.opacity = Math.min(1, d / 40);
-      bar.style.transform = `translate(-50%, ${d}px) rotate(${d * 5}deg)`;
+      if (pull <= 8 || window.scrollY > 0) { ptrHide(); return; }
+      ptrPull(Math.min(1, pull / FULL));
     }, { passive: true });
-    document.addEventListener('touchend', async () => {
-      if (!armed || !bar) { armed = false; return; }
+    document.addEventListener('touchend', () => {
+      if (!armed) return;
       armed = false;
-      if (pull * .5 < THRESHOLD * .5) { bar.style.opacity = 0; return; }
-      busy = true; bar.classList.add('is-spinning'); bar.style.transform = 'translate(-50%, 48px)';
-      try { await refresh({ quiet: true }); } finally {
-        busy = false; bar.classList.remove('is-spinning'); bar.style.opacity = 0; bar.style.transform = 'translate(-50%, 0)';
-      }
+      if (pull / FULL >= 0.6) pageRefresh(); else ptrHide();
+      pull = 0;
+    }, { passive: true });
+    document.addEventListener('touchcancel', () => { armed = false; ptrHide(); }, { passive: true });
+
+    // Desktop: a deliberate two finger or wheel drag down that starts with the page already at the top.
+    let acc = 0, last = 0, burstAtTop = false, timer = 0;
+    window.addEventListener('wheel', (e) => {
+      if (innerWidth <= 900 || pageRefreshing || !S.data || e.ctrlKey || blocked(e.target)) return;
+      const now = performance.now();
+      if (now - last > 250) { burstAtTop = window.scrollY === 0; acc = 0; } // momentum from scrolling up must not count
+      last = now;
+      if (!burstAtTop || e.deltaY >= 0 || window.scrollY > 0) { if (e.deltaY > 0) { burstAtTop = false; acc = 0; ptrHide(); } return; }
+      acc += -e.deltaY;
+      ptrPull(Math.min(1, acc / 260));
+      clearTimeout(timer);
+      timer = setTimeout(() => { if (acc >= 260) pageRefresh(); else ptrHide(); acc = 0; burstAtTop = false; }, 140);
     }, { passive: true });
   })();
+  // The account menu has a plain "refresh" item for mouse users.
+  document.addEventListener('click', (e) => { if (e.target.closest('[data-action="refresh"]')) { const panel = $('#user-panel'); if (panel) panel.hidden = true; pageRefresh(); } });
 
   // ---------------------------------------------------------------------------
   // Installed app: install button, update notice, offline state, home screen hint, icon badge
@@ -2171,6 +2222,31 @@
     sync();
   })();
 
+  // A short welcome once, written for the person's role; it can be opened again from Settings > profile.
+  function openWelcome() {
+    const admin = App.isAdmin();
+    const steps = [
+      ['user', '#0d7f8f', 'პროფილის სურათი', 'დაამატე შენი ფოტო და სახელი, რომ გუნდმა და კლიენტებმა გიცნონ.', '#/settings/profile'],
+      ...(admin ? [['building', '#2f9e6b', 'კომპანიის ლოგო', 'ლოგო გამოჩნდება დოკუმენტებზე, პრეზენტაციებზე და კლიენტისთვის გაგზავნილ გვერდებზე.', '#/settings/org']] : []),
+      ['shield', '#5b6b84', 'უსაფრთხოება', 'შეცვალე პაროლი და საჭიროების შემთხვევაში გამოდი სხვა მოწყობილობებიდან.', '#/settings/security'],
+    ];
+    R.dialog({
+      title: 'მოდი, მოვაწყოთ შენი ანგარიში',
+      subtitle: admin ? 'სამი სწრაფი ნაბიჯი ადმინისტრატორისთვის' : 'ორი სწრაფი ნაბიჯი',
+      sheet: true,
+      body: `<div class="ios-list"><div class="ios-group">${steps.map(([ic, t, title, text, href]) => `<a class="ios-row welcome-row" href="${href}"><span class="ios-tile" style="--t:${t}">${icon(ic, 18)}</span><span class="ios-label"><strong>${title}</strong><small>${text}</small></span>${icon('chevronRight', 16)}</a>`).join('')}</div></div>`,
+      onOpen: (form, dlg) => { $$('a.welcome-row', form).forEach(a => a.addEventListener('click', () => dlg.close())); },
+    });
+  }
+  function maybeShowWelcome() {
+    if (welcomeChecked || window.RIGZEA_NO_WELCOME || !S.data || !S.member || !S.user) return;
+    welcomeChecked = true;
+    const key = `rigzea_welcome_${S.user.id}`;
+    try { if (localStorage.getItem(key)) return; localStorage.setItem(key, '1'); } catch { return; }
+    setTimeout(() => { if (!document.querySelector('dialog[open]')) openWelcome(); }, 1200);
+  }
+  let welcomeChecked = false;
+
   // Safari on iPhone and iPad cannot offer installation itself: show the two steps once, from the second visit.
   function maybeShowIosHint() {
     const ios = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
@@ -2194,21 +2270,6 @@
     (n ? navigator.setAppBadge(n) : navigator.clearAppBadge?.())?.catch?.(() => {});
   }
 
-  // The refresh button under the top bar: same reload as pull to refresh, then back to the top.
-  document.addEventListener('click', async (e) => {
-    const btn = e.target.closest('#btn-page-refresh');
-    if (!btn || btn.classList.contains('is-spinning') || !S.data) return;
-    const root = document.documentElement, y = window.scrollY;
-    btn.classList.remove('is-returning'); btn.classList.add('is-spinning'); root.classList.add('is-refreshing');
-    const started = performance.now();
-    try { await refresh({ quiet: true }); } catch { /* refresh() already reports the failure */ } finally {
-      // keep the motion readable even when the data arrives instantly
-      await new Promise(r => setTimeout(r, Math.max(0, 650 - (performance.now() - started))));
-      root.classList.remove('is-refreshing'); btn.classList.remove('is-spinning'); btn.classList.add('is-returning');
-      setTimeout(() => btn.classList.remove('is-returning'), 520);
-    }
-    if (y > 0) window.scrollTo({ top: 0, behavior: R.calm() ? 'auto' : 'smooth' });
-  });
 
   document.addEventListener('DOMContentLoaded', () => {
     if (legacyRedirect()) return;

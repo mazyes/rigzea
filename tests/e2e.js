@@ -245,7 +245,7 @@ test('7. manager records an expense with a receipt and sees it once', async (bro
   await rows.first().waitFor();
   assert.strictEqual(await rows.count(), 1);
   await page.waitForFunction(() => [...document.querySelectorAll('#f-body .row')].some(r => r.textContent.includes('სარეცხი საშუალებები') && r.textContent.includes('ნახვა')), null, { timeout: 5000 }); // the receipt link is signed after the row renders
-  assert((await rows.first().innerText()).includes('გადახდილი'));
+  await page.waitForFunction(() => [...document.querySelectorAll('#f-body .row')].some(r => r.textContent.includes('სარეცხი საშუალებები') && r.textContent.includes('გადახდილი')), null, { timeout: 5000 });
   // Proposed costs are not counted as expenses
   const calc = await page.locator('.calc').first().innerText();
   assert(calc.includes('შეთავაზებული და დადასტურებული'));
@@ -274,7 +274,7 @@ test('9. phone layout has no horizontal overflow on main screens', async (browse
   await page.goto(BASE + '/app/tasks/?task=eeeeeeee-0000-4000-8000-000000000002');
   await page.locator('.drawer').waitFor();
   await page.locator('.drawer-foot .btn').first().waitFor({ state: 'visible' });
-  const b = await page.locator('.drawer-foot .btn').first().boundingBox();
+  const b = await page.waitForFunction(() => { const r = document.querySelector('.drawer-foot .btn')?.getBoundingClientRect(); return r && r.width && r.height ? { x: r.x, height: r.height } : null; }).then(h => h.jsonValue()); // the drawer is still sliding in
   assert(b.height >= 44 && b.x >= 0, 'drawer actions reachable');
   return page;
 });
@@ -387,11 +387,12 @@ test('11. plans: trial banner, apartment cap upgrade modal, branding, export, pl
   await page.locator('#view h2', { hasText: 'გუნდი' }).waitFor();
   await page.screenshot({ path: process.env.SHOT_DIR ? process.env.SHOT_DIR + '/plan-tab.png' : undefined, fullPage: true });
   // Branding
-  await page.goto(BASE + '/app/settings/');
+  await page.goto(BASE + '/app/settings/?id=org');
   await page.locator('#s-brand').waitFor();
   assert.strictEqual(await page.locator('#s-brand input[name=brand_color]').isDisabled(), true, 'colour needs Agency');
   await page.fill('#s-brand input[name=agent_display_name]', 'ნინო ბერიძე · Batumi Stay');
   await page.setInputFiles('#s-brand input[name=logo]', FIXTURE);
+  await page.locator('#b-logo-pick .img-frame img').first().waitFor(); // the picture is checked and previewed first
   await page.click('#s-brand [type=submit]');
   await page.locator('.toast', { hasText: 'ბრენდინგი შენახულია' }).waitFor();
   const org = (await db(page)).tables.organizations[0];
@@ -1736,6 +1737,107 @@ test('1w. sign up that needs email confirmation shows the code step and signs in
   await page.keyboard.type('123456');
   await page.locator('#onboarding').waitFor({ timeout: 8000 }); // a new account has no workspace yet
   assert.deepStrictEqual(page.errors.filter(e => !/კოდი არასწორია/.test(e)), [], page.errors.join(' | ')); // the wrong code is logged on purpose
+});
+
+test('1y. profile: name and picture are saved, bad names and files are refused, the picture can be removed', async (browser) => {
+  const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
+  await page.goto(BASE + '/app/settings/');
+  await page.locator('#s-profile').waitFor();
+  assert.strictEqual(await page.locator('#s-profile [type=submit]').isDisabled(), true, 'nothing to save yet');
+  await page.fill('#s-profile input[name=name]', 'Nino');
+  await page.locator('#s-profile [type=submit]').click();
+  await page.locator('#s-profile .form-error', { hasText: 'ქართული ასოებით' }).waitFor();
+  await page.fill('#s-profile input[name=name]', 'ნინო');
+  assert.strictEqual(await page.evaluate(() => document.querySelector('#s-profile input[name=name]').checkValidity()), false, 'a first name alone is not enough');
+  await page.setInputFiles('#s-profile input[name=avatar]', { name: 'notes.txt', mimeType: 'text/plain', buffer: Buffer.from('hello') });
+  await page.locator('#p-pick .img-error', { hasText: 'ფორმატი' }).waitFor();
+  await page.fill('#s-profile input[name=name]', 'ნინო ბერიძე-მელაძე');
+  await page.setInputFiles('#s-profile input[name=avatar]', FIXTURE);
+  await page.locator('#p-pick .img-frame img').waitFor();
+  await page.locator('#s-profile [type=submit]').click();
+  await page.locator('.toast', { hasText: 'პროფილი შენახულია' }).waitFor();
+  let me = (await db(page)).tables.organization_members.find(m => m.user_id === USERS.manager.id);
+  assert.strictEqual(me.display_name, 'ნინო ბერიძე-მელაძე');
+  assert(me.avatar_url, 'picture saved');
+  assert.strictEqual(me.role, 'owner', 'the role is untouched');
+  await page.locator('#user-avatar img').waitFor(); // the top bar shows the picture
+  await page.locator('#p-pick [data-remove]').click();
+  await page.locator('#s-profile [type=submit]').click();
+  await page.waitForFunction(() => !document.querySelector('#user-avatar img'));
+  me = (await db(page)).tables.organization_members.find(m => m.user_id === USERS.manager.id);
+  assert.strictEqual(me.avatar_url, null, 'picture removed');
+  await page.close();
+});
+
+test('1z. security: password change checks the current password; other devices can be signed out', async (browser) => {
+  const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
+  await page.goto(BASE + '/app/settings/?id=security');
+  await page.locator('#s-pass').waitFor();
+  await page.fill('#s-pass input[name=current]', 'wrong-password');
+  await page.fill('#s-pass input[name=next]', 'brand-new-pass');
+  await page.fill('#s-pass input[name=again]', 'brand-new-pass');
+  await page.click('#s-pass [type=submit]');
+  await page.locator('.toast', { hasText: 'მიმდინარე პაროლი არასწორია' }).waitFor();
+  await page.fill('#s-pass input[name=current]', 'test1234');
+  await page.fill('#s-pass input[name=again]', 'different-pass');
+  await page.click('#s-pass [type=submit]');
+  await page.locator('#s-pass .form-error', { hasText: 'არ ემთხვევა' }).waitFor();
+  await page.fill('#s-pass input[name=again]', 'brand-new-pass');
+  await page.click('#s-pass [type=submit]');
+  await page.locator('.toast', { hasText: 'პაროლი შეიცვალა' }).waitFor();
+  assert.strictEqual((await db(page)).users.find(u => u.email === USERS.manager.email).password, 'brand-new-pass');
+  await page.click('#s-others');
+  await page.locator('dialog[open] [data-submit]').click();
+  await page.locator('.toast', { hasText: 'სხვა მოწყობილობები გამოვიდა' }).waitFor();
+  assert.strictEqual(await page.evaluate(() => window.__signOutScope), 'others');
+  await page.close();
+});
+
+test('1za. roles: an agent edits their own profile and sees no company settings', async (browser) => {
+  const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
+  await page.goto(BASE + '/app/');
+  await page.getByRole('heading', { name: /გამარჯობა,/ }).waitFor();
+  await page.evaluate(() => { // the signed in person becomes an agent
+    const d = JSON.parse(localStorage.getItem('rigzea_mockdb'));
+    d.tables.organization_members.find(m => m.user_id === 'aaaaaaaa-0000-4000-8000-000000000001').role = 'agent';
+    localStorage.setItem('rigzea_mockdb', JSON.stringify(d));
+  });
+  await page.goto(BASE + '/app/settings/');
+  await page.locator('#s-profile').waitFor();
+  await page.fill('#s-profile input[name=name]', 'ნინო ბერიძე-მელაძე');
+  await page.locator('#s-profile [type=submit]').click();
+  await page.locator('.toast', { hasText: 'პროფილი შენახულია' }).waitFor();
+  const rows = (await db(page)).tables.organization_members;
+  const mine = rows.find(m => m.user_id === USERS.manager.id);
+  assert.strictEqual(mine.display_name, 'ნინო ბერიძე-მელაძე');
+  assert.strictEqual(mine.role, 'agent', 'the role is untouched');
+  assert.strictEqual(rows.find(m => m.user_id === USERS.staff.id).display_name, 'მარიამ კაპანაძე', 'nobody else changed');
+  assert.deepStrictEqual(await page.locator('.tabs .tab').allInnerTexts(), ['პროფილი', 'უსაფრთხოება', 'ინტერფეისი'], 'an agent sees only personal tabs');
+  await page.goto(BASE + '/app/settings/?id=org');
+  await page.locator('#s-profile').waitFor();
+  assert.strictEqual(await page.locator('#s-brand').count(), 0, 'company branding is not offered to an agent');
+  await page.goto(BASE + '/app/finance/');
+  await page.getByRole('heading', { name: /გამარჯობა,/ }).waitFor(); // finance is still closed to agents
+  await page.close();
+});
+
+test('1zb. the welcome sheet shows once and speaks to the role', async (browser) => {
+  const page = await newPage(browser, { viewport: PHONE, login: USERS.manager });
+  await page.addInitScript(() => { window.RIGZEA_NO_WELCOME = false; });
+  await page.goto(BASE + '/app/');
+  const sheet = page.locator('dialog[open] .welcome-row');
+  await sheet.first().waitFor({ timeout: 8000 });
+  assert.strictEqual(await sheet.count(), 3, 'an owner gets profile, company logo and security');
+  const hrefs = await sheet.evaluateAll(els => els.map(a => a.getAttribute('href')));
+  assert(['profile', 'org', 'security'].every((id, i) => hrefs[i].includes(id)), hrefs.join(' '));
+  await page.locator('dialog[open] [data-close]').first().click();
+  await page.reload();
+  await page.waitForTimeout(2500);
+  assert.strictEqual(await page.locator('dialog[open]').count(), 0, 'it does not come back');
+  await page.goto(BASE + '/app/settings/');
+  await page.click('#p-welcome');
+  await page.locator('dialog[open] .welcome-row').first().waitFor();
+  await page.close();
 });
 
 test('1x. the app opens offline from the service worker cache and says it is offline', async (browser) => {

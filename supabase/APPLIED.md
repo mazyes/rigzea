@@ -44,6 +44,7 @@ repo, and then aligned with the app by patches 06-09.
 | 20_import_rate_limit | yes | migration `20_import_rate_limit`, 2026-10-15 (10 imports/hour per user) |
 | 21_kisa_payments | yes | run outside migrations (the `payments` table was live); reconciled by 22 |
 | 22_backend_security_hardening | yes | migration `22_backend_security_hardening`, 2026-10-22 (dry run first; advisor: no new findings) |
+| 23_profile_branding | yes | migration `23_profile_branding`, 2026-10-23 (dry run first, rolled back; advisor: only the expected "signed-in users can run a SECURITY DEFINER function" note for `update_my_profile`, which checks `auth.uid()`) |
 
 ## Rules for new patches
 

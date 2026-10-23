@@ -159,6 +159,18 @@
   }
 
   const rpcs = {
+    // mirrors supabase/patches/23_profile_branding.sql: own row only, role untouched, Georgian first and last name
+    update_my_profile({ p_org, p_name, p_avatar, p_clear_avatar }) {
+      const me = T('organization_members').find(m => m.organization_id === p_org && m.user_id === uid());
+      if (!me) throw new Error('not a member of this workspace');
+      const name = String(p_name || '').replace(/\s+/g, ' ').trim();
+      const ok = /^[ა-ჿ]{2,}(-[ა-ჿ]{2,})*( [ა-ჿ]{2,}(-[ა-ჿ]{2,})*)+$/.test(name);
+      const exempt = (db.users.find(u => u.id === uid()) || {}).email === 'akhalaianika44@gmail.com';
+      if (name && !ok && !exempt) throw new Error('name must be a first and last name in Georgian');
+      if (name) me.display_name = name;
+      if (p_clear_avatar) me.avatar_url = null; else if (p_avatar) me.avatar_url = p_avatar;
+      return me;
+    },
     create_user_organization(a) {
       const org = { id: uuid(), name: a.p_org_name, city: a.p_city, portfolio_size: a.p_portfolio_size, plan: 'trial', trial_ends_at: new Date(Date.now() + 14 * 864e5).toISOString(), created_at: now() };
       T('organizations').push(org);
@@ -385,9 +397,9 @@
         return { data: { user: s.user, session: s }, error: null };
       },
       async resend() { return { data: {}, error: null }; },
-      async signOut() { localStorage.removeItem('rigzea_mock_session'); return { error: null }; },
+      async signOut(opts) { window.__signOutScope = opts?.scope || 'local'; if (opts?.scope !== 'others') localStorage.removeItem('rigzea_mock_session'); return { error: null }; },
       async resetPasswordForEmail() { return { data: {}, error: null }; },
-      async updateUser(a) { const u = db.users.find(x => x.id === uid()); if (!u) return { data: null, error: { message: 'Auth session missing' } }; if (a.password) u.password = a.password; save(db); return { data: { user: u }, error: null }; },
+      async updateUser(a) { const u = db.users.find(x => x.id === uid()); if (!u) return { data: null, error: { message: 'Auth session missing' } }; if (a.password) u.password = a.password; if (a.data?.full_name) u.name = a.data.full_name; save(db); return { data: { user: u }, error: null }; },
       onAuthStateChange() { return { data: { subscription: { unsubscribe() {} } } }; },
     },
     storage: {

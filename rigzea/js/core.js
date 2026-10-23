@@ -552,8 +552,69 @@
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initPills); else initPills();
 
+  // ---------------------------------------------------------------------------
+  // Pictures for profiles and logos: checked by content (not just the file name), decoded in the browser and
+  // saved again as a clean, small PNG or WebP. That strips metadata, flattens SVG (no scripts survive) and
+  // keeps transparency for logos. Throws a Georgian message the form can show as it is.
+  // ---------------------------------------------------------------------------
+  const IMAGE_KINDS = {
+    avatar: { max: 512, square: true, types: ['png', 'jpeg', 'webp'], bytes: 8 * 1024 * 1024, label: 'PNG, JPG ან WebP' },
+    logo: { max: 1024, square: false, types: ['png', 'jpeg', 'webp', 'svg'], bytes: 2 * 1024 * 1024, label: 'PNG, JPG, WebP ან SVG' },
+  };
+  async function sniffImage(file) {
+    const head = new Uint8Array(await file.slice(0, 16).arrayBuffer());
+    const at = (i, ...b) => b.every((v, k) => head[i + k] === v);
+    if (at(0, 0x89, 0x50, 0x4e, 0x47)) return 'png';
+    if (at(0, 0xff, 0xd8, 0xff)) return 'jpeg';
+    if (at(0, 0x52, 0x49, 0x46, 0x46) && at(8, 0x57, 0x45, 0x42, 0x50)) return 'webp';
+    const text = await file.slice(0, 2048).text();
+    if (/<svg[\s>]/i.test(text)) return 'svg';
+    return null;
+  }
+  async function prepareImage(file, kind = 'avatar') {
+    const rule = IMAGE_KINDS[kind];
+    if (!file) throw new Error('აირჩიე სურათი.');
+    if (file.size > rule.bytes) throw new Error(`ფაილი ${Math.round(rule.bytes / 1048576)} მბ-ზე დიდია.`);
+    const type = await sniffImage(file);
+    if (!type || !rule.types.includes(type)) throw new Error(`ფორმატი არ ვარგა. გამოიყენე ${rule.label}.`);
+    let source, w, h;
+    try {
+      if (type === 'svg') {
+        const url = URL.createObjectURL(new Blob([await file.text()], { type: 'image/svg+xml' }));
+        source = await new Promise((resolve, reject) => { const img = new Image(); img.onload = () => resolve(img); img.onerror = reject; img.src = url; });
+        URL.revokeObjectURL(url);
+        w = source.naturalWidth || 512; h = source.naturalHeight || 512;
+      } else {
+        source = await createImageBitmap(file);
+        w = source.width; h = source.height;
+      }
+    } catch { throw new Error('სურათი ვერ წაიკითხა. სცადე სხვა ფაილი.'); }
+    if (!w || !h) throw new Error('სურათი ვერ წაიკითხა. სცადე სხვა ფაილი.');
+    let sx = 0, sy = 0, sw = w, sh = h;
+    if (rule.square) { const side = Math.min(w, h); sx = (w - side) / 2; sy = (h - side) / 2; sw = sh = side; }
+    const scale = Math.min(1, rule.max / Math.max(sw, sh));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(sw * scale));
+    canvas.height = Math.max(1, Math.round(sh * scale));
+    const ctx = canvas.getContext('2d');
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(source, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+    source.close?.();
+    const toBlob = (mime, quality) => new Promise(resolve => canvas.toBlob(resolve, mime, quality));
+    let blob = kind === 'avatar' ? await toBlob('image/webp', 0.88) : await toBlob('image/png');
+    if (!blob || (kind === 'avatar' && blob.type !== 'image/webp')) blob = await toBlob('image/png');
+    if (blob && blob.size > rule.bytes) blob = await toBlob('image/webp', 0.9) || blob;
+    if (!blob) throw new Error('სურათის დამუშავება ვერ მოხერხდა.');
+    return { blob, width: canvas.width, height: canvas.height, previewUrl: URL.createObjectURL(blob) };
+  }
+  // folder: 'avatars/<user id>' or 'branding'. Returns the public link.
+  function uploadImage(orgId, folder, prepared) {
+    const ext = prepared.blob.type === 'image/webp' ? 'webp' : 'png';
+    return uploadFile(orgId, folder, new File([prepared.blob], `image.${ext}`, { type: prepared.blob.type }));
+  }
+
   window.R = {
-    bindGeorgianName,
+    bindGeorgianName, prepareImage, uploadImage, IMAGE_KINDS,
     sb, $, $$, esc, safeUrl, money, isDaily, listingUrl, toDate, isoDate, monthKey, time, date, dayLabel, dateTime, relative, elapsed, span, sameDay,
     MONTHS, WEEKDAYS, L, badge, taskBadge, approvalStatus, approvalBadge, expenseBadge, dealBadge, transactionBadge, contactBadge, icon,
     friendlyError, phoneKey, CADASTRAL_RE, cadastralFormat, q, toast, run, dialog, confirm, ask, uploadFile, copyText, applyTheme, applyPrefs, calm, uuid,

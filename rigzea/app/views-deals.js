@@ -1650,7 +1650,11 @@
   }
 
   const LEASE_CSS = `
-    .lease-doc { font-family: 'FiraGO', system-ui, sans-serif; color: #111; background: #fff; font-size: 12px; line-height: 1.52; }
+    .lease-doc { position: relative; font-family: 'FiraGO', system-ui, sans-serif; color: #111; background: #fff; font-size: 12px; line-height: 1.52; }
+    .lease-doc .ld-logo { display: block; max-width: 180px; max-height: 48px; margin: 0 auto 8px; object-fit: contain; }
+    .lease-doc .ld-wm { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; z-index: 0; }
+    .lease-doc .ld-wm img { width: 46%; max-height: 60%; object-fit: contain; opacity: .06; transform: rotate(-24deg); }
+    .lease-doc > :not(.ld-wm) { position: relative; z-index: 1; }
     .lease-doc h2 { font-size: 15px; text-align: center; margin: 0 0 2px; text-transform: uppercase; letter-spacing: .3px; font-weight: 700; }
     .lease-doc .ld-law-ref { text-align: center; font-size: 11px; color: #475569; margin: 0 0 10px; font-style: italic; }
     .lease-doc .ld-sub { text-align: center; color: #334155; font-size: 12px; margin: 0 0 2px; font-weight: 600; }
@@ -1768,7 +1772,7 @@
       </div>
     </div>`;
 
-    return `<div class="lease-doc">
+    return `<div class="lease-doc">${App.docBrand()}
       ${showKa ? '<h2>საცხოვრებელი ბინის ქირავნობის ხელშეკრულება</h2><div class="ld-law-ref">(საქართველოს სამოქალაქო კოდექსის 531–575 მუხლების შესაბამისად)</div>' : ''}
       ${showEn ? `<${showKa ? 'p class="ld-sub"' : 'h2'}>Residential Lease Agreement</${showKa ? 'p' : 'h2'}><div class="ld-law-ref">(In accordance with Articles 531–575 of the Civil Code of Georgia)</div>` : ''}
       <div class="ld-place"><span>${showKa ? 'ქ.' : 'City:'} ${val(d.city)}</span><span>${val(dmy(d.contract_date))}</span></div>

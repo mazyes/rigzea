@@ -75,7 +75,7 @@
           const open = S.data.tasks.filter(t => t.assigned_to === m.id && H.isOpen(t));
           const overdue = open.filter(H.isOverdue).length;
           const self = m.user_id === S.user.id;
-          return `<div class="row" style="--cols:${cols}"><span class="cell-main"><strong>${esc(m.display_name || 'უსახელო')}${self ? ' <span class="muted">(შენ)</span>' : ''}</strong><span>წევრია ${esc(R.date(m.created_at))}-დან</span></span>
+          return `<div class="row" style="--cols:${cols}"><span class="cell-main cell-person"><span class="avatar avatar-sm">${m.avatar_url ? `<img src="${esc(m.avatar_url)}" alt="" />` : esc((m.display_name || '·').trim().charAt(0))}</span><span class="person-text"><strong>${esc(m.display_name || 'უსახელო')}${self ? ' <span class="muted">(შენ)</span>' : ''}</strong><span>წევრია ${esc(R.date(m.created_at))}-დან</span></span></span>
             <span class="cell-meta">${App.isAdmin() && !self && m.role !== 'owner' ? `<select class="input" data-role="${m.id}" aria-label="როლი" style="min-height:32px">${['admin', 'manager', 'agent', 'staff'].filter(r => r !== 'agent' || agentRole || m.role === 'agent').map(r => `<option value="${r}" ${m.role === r ? 'selected' : ''}>${L.role[r]}</option>`).join('')}</select>` : esc(L.role[m.role])}</span>
             <span class="cell-meta">${m.phone ? `<a href="tel:${esc(m.phone)}">${esc(m.phone)}</a>` : '–'}</span>
             <span class="cell-meta" data-label="საქმე"><a href="#/tasks" data-filter-assignee="${m.id}">${open.length}</a>${overdue ? ` <span class="t-danger">(${overdue} ვადაგადაც.)</span>` : ''}</span>
@@ -135,14 +135,18 @@
   // SETTINGS
   // ===========================================================================
   App.views.settings = (r) => {
-    const tabs = [['ui', 'ინტერფეისი', '#/settings/ui'], ['org', 'კომპანია', '#/settings'], ['plan', 'პაკეტი', '#/settings/plan'], ['import', 'Excel/CSV იმპორტი', '#/settings/import'], ['export', 'ექსპორტი', '#/settings/export']];
+    const tabs = [['profile', 'პროფილი', '#/settings/profile'], ['security', 'უსაფრთხოება', '#/settings/security'], ['ui', 'ინტერფეისი', '#/settings/ui'], ['org', 'კომპანია', '#/settings/org'], ['plan', 'პაკეტი', '#/settings/plan'], ['import', 'Excel/CSV იმპორტი', '#/settings/import'], ['export', 'ექსპორტი', '#/settings/export']];
     if (S.platformAdmin) tabs.push(['platform', 'პლატფორმა', '#/settings/platform']);
-    const tab = tabs.some(t => t[0] === r.id) ? r.id : 'org';
+    // An agent manages only their own profile, security and interface; company settings are for owners, admins and managers.
+    if (App.isAgent()) tabs.splice(0, tabs.length, ...tabs.filter(t => ['profile', 'security', 'ui'].includes(t[0])));
+    const tab = tabs.some(t => t[0] === r.id) ? r.id : 'profile';
     $('#view').innerHTML = `
       <div class="page-head"><div><h1>პარამეტრები</h1></div></div>
       <div class="tabs" role="tablist">${tabs.map(([id, label, href]) => `<a class="tab" role="tab" href="${href}" aria-selected="${tab === id}">${label}</a>`).join('')}</div>
       <div id="s-body"></div>`;
     const body = $('#s-body');
+    if (tab === 'profile') return renderProfileTab(body);
+    if (tab === 'security') return renderSecurityTab(body);
     if (tab === 'ui') return renderUiTab(body);
     if (tab === 'import') return renderImport(body);
     if (tab === 'export') return renderExportTab(body);
@@ -189,6 +193,151 @@
     };
   }
 
+  // ---- picture picker: choose or drop a file, check it, preview it, replace or remove it.
+  // Nothing is uploaded here; the form that owns the picker saves `pending` (or `removed`) with its other fields.
+  function imagePicker(host, { kind, shape, url, initials = '', name = '', disabled = false, onChange = () => {} }) {
+    const rule = R.IMAGE_KINDS[kind];
+    const mb = Math.round(rule.bytes / 1048576);
+    const accept = rule.types.map(t => 'image/' + (t === 'svg' ? 'svg+xml' : t)).join(',');
+    host.innerHTML = `<div class="img-pick img-pick-${shape}${disabled ? ' is-disabled' : ''}">
+      <button type="button" class="img-drop" ${disabled ? 'disabled' : ''} aria-label="${kind === 'avatar' ? 'პროფილის სურათის არჩევა' : 'ლოგოს არჩევა'}"><span class="img-frame"></span><span class="img-over">${icon('camera', 18)}</span></button>
+      <div class="img-side">
+        <div class="img-actions"><button type="button" class="btn btn-secondary btn-sm" data-pick ${disabled ? 'disabled' : ''}>${icon('upload', 15)}<span data-pick-label></span></button><button type="button" class="btn btn-ghost btn-sm" data-remove hidden>${icon('close', 15)} წაშლა</button></div>
+        <p class="img-hint">${rule.label} · მაქს. ${mb} მბ${kind === 'logo' ? ' · გამჭვირვალე PNG კარგად გამოჩნდება' : ' · იჭრება კვადრატად'}</p>
+        <p class="form-error img-error" role="alert" hidden></p>
+      </div>
+      <input type="file" ${name ? `name="${name}"` : ''} accept="${accept}" hidden />
+    </div>`;
+    const $$h = (sel) => host.querySelector(sel);
+    const input = $$h('input[type=file]'), frame = $$h('.img-frame'), err = $$h('.img-error'), pickBtn = $$h('[data-pick]'), rmBtn = $$h('[data-remove]');
+    let current = url || null, pending = null, removed = false;
+    const shown = () => pending ? pending.previewUrl : (removed ? null : current);
+    function draw() {
+      const src = shown();
+      if (kind === 'logo' && src) frame.innerHTML = `<span class="img-bgs"><span class="bg-light"><img src="${esc(src)}" alt="ლოგო" /></span><span class="bg-dark"><img src="${esc(src)}" alt="" /></span><span class="bg-check"><img src="${esc(src)}" alt="" /></span></span>`;
+      else if (src) frame.innerHTML = `<img src="${esc(src)}" alt="${esc(name || 'სურათი')}" />`;
+      else frame.innerHTML = kind === 'avatar' ? `<span class="img-initials">${esc(initials || '·')}</span>` : `<span class="img-empty">${icon('building', 26)}</span>`;
+      $$h('[data-pick-label]').textContent = src ? 'შეცვლა' : 'ატვირთვა';
+      rmBtn.hidden = disabled || !src;
+    }
+    async function take(file) {
+      err.hidden = true;
+      if (!file) return;
+      try {
+        const prepared = await R.prepareImage(file, kind);
+        if (pending) URL.revokeObjectURL(pending.previewUrl);
+        pending = prepared; removed = false;
+        draw(); onChange();
+      } catch (e) { err.textContent = e.message; err.hidden = false; }
+      input.value = '';
+    }
+    const open = () => { if (!disabled) input.click(); };
+    $$h('.img-drop').addEventListener('click', open);
+    pickBtn.addEventListener('click', open);
+    input.addEventListener('change', () => take(input.files[0]));
+    rmBtn.addEventListener('click', () => { if (pending) URL.revokeObjectURL(pending.previewUrl); pending = null; removed = true; err.hidden = true; draw(); onChange(); });
+    const drop = $$h('.img-drop');
+    ['dragenter', 'dragover'].forEach(ev => drop.addEventListener(ev, (e) => { if (disabled) return; e.preventDefault(); drop.classList.add('is-over'); }));
+    ['dragleave', 'drop'].forEach(ev => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove('is-over'); if (ev === 'drop' && !disabled) take(e.dataTransfer?.files?.[0]); }));
+    draw();
+    return {
+      get pending() { return pending; },
+      get removed() { return removed; },
+      get changed() { return !!pending || removed; },
+      get url() { return shown(); },
+      reset(next) { if (pending) URL.revokeObjectURL(pending.previewUrl); current = next || null; pending = null; removed = false; draw(); },
+    };
+  }
+
+  // ---- profile tab: every member edits their own name and picture
+  function renderProfileTab(root) {
+    const me = S.member || {};
+    const email = S.user.email || '';
+    root.innerHTML = `<section class="card" style="max-width:640px"><div class="card-head"><h2>ჩემი პროფილი</h2><span class="badge">${esc(L.role[me.role] || '')}</span></div><div class="card-body">
+      <form id="s-profile" class="form-grid" novalidate>
+        <div class="form-error span-2" role="alert" hidden></div>
+        <div class="field span-2"><span class="field-label">პროფილის სურათი</span><div id="p-pick"></div></div>
+        <label class="field span-2"><span class="field-label">სახელი და გვარი</span><input name="name" required autocomplete="name" maxlength="80" value="${esc(me.display_name || '')}" data-error="ჩაწერე ნამდვილი სახელი და გვარი ქართული ასოებით, მაგ.: გიორგი ბერიძე." placeholder="სახელი გვარი" /></label>
+        <label class="field span-2"><span class="field-label">ელფოსტა</span><input name="email" type="email" value="${esc(email)}" readonly /><span class="field-hint">შესასვლელი ელფოსტა</span></label>
+        <div class="span-2" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><button type="submit" class="btn btn-primary" disabled>შენახვა</button><button type="button" class="btn btn-ghost btn-sm" id="p-welcome">გზამკვლევის ნახვა</button></div>
+      </form></div></section>`;
+    $('#p-welcome').onclick = () => App.openWelcome();
+    const form = $('#s-profile');
+    const save = form.querySelector('[type=submit]');
+    R.bindGeorgianName(form);
+    const dirty = () => { save.disabled = !(picker.changed || form.name.value.trim() !== (me.display_name || '')); };
+    const initials = () => ((form.name.value || email).trim().charAt(0) || '·').replace(/^[a-z]/, c => c.toUpperCase());
+    const picker = imagePicker($('#p-pick'), { kind: 'avatar', shape: 'round', url: me.avatar_url, initials: initials(), name: 'avatar', onChange: dirty });
+    form.name.addEventListener('input', dirty);
+    form.onsubmit = (e) => {
+      e.preventDefault();
+      const err = $('.form-error', form);
+      err.hidden = true;
+      if (!form.name.checkValidity()) { err.textContent = form.name.dataset.error; err.hidden = false; form.name.focus(); return; }
+      run(save, async () => {
+        let avatar = null;
+        if (picker.pending) avatar = await R.uploadImage(S.org.id, `avatars/${S.user.id}`, picker.pending);
+        const row = await q(sb.rpc('update_my_profile', { p_org: S.org.id, p_name: form.name.value.trim(), p_avatar: avatar, p_clear_avatar: picker.removed }));
+        const saved = Array.isArray(row) ? row[0] : row;
+        Object.assign(S.member, saved);
+        App.upsertLocal('members', saved);
+        // The sign in account keeps the same name (used for the greeting and invitations).
+        await sb.auth.updateUser({ data: { full_name: saved.display_name } }).catch(() => {});
+        picker.reset(saved.avatar_url);
+        me.display_name = saved.display_name;
+        dirty();
+        App.renderShell();
+      }, { success: 'პროფილი შენახულია' });
+    };
+  }
+
+  // ---- security tab: password and sessions, only what the sign in system really supports
+  function renderSecurityTab(root) {
+    const hasPassword = (S.user.app_metadata?.providers || ['email']).includes('email');
+    const last = S.user.last_sign_in_at ? R.dateTime(S.user.last_sign_in_at) : null;
+    root.innerHTML = `<section class="card" style="max-width:640px;margin-bottom:16px"><div class="card-head"><h2>პაროლი</h2></div><div class="card-body">
+      <form id="s-pass" class="form-grid" novalidate>
+        <div class="form-error span-2" role="alert" hidden></div>
+        ${hasPassword ? '<label class="field span-2"><span class="field-label">მიმდინარე პაროლი</span><input type="password" name="current" autocomplete="current-password" required /></label>' : '<p class="muted span-2" style="margin:0">შესვლა Google-ით ხდება. შეგიძლია პაროლიც დაიყენო.</p>'}
+        <label class="field"><span class="field-label">ახალი პაროლი</span><input type="password" name="next" autocomplete="new-password" minlength="8" required /><span class="field-hint">მინიმუმ 8 სიმბოლო</span></label>
+        <label class="field"><span class="field-label">გაიმეორე პაროლი</span><input type="password" name="again" autocomplete="new-password" minlength="8" required /></label>
+        <div class="span-2"><button type="submit" class="btn btn-primary">პაროლის შეცვლა</button></div>
+      </form></div></section>
+      <section class="card" style="max-width:640px"><div class="card-head"><h2>მოწყობილობები</h2></div><div class="card-body">
+        <p class="muted" style="margin-top:0">${last ? `ბოლო შესვლა: ${esc(last)}. ` : ''}ამ მოწყობილობის სესია რჩება.</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn btn-secondary" id="s-others">${icon('logout', 16)} გამოსვლა სხვა მოწყობილობებიდან</button><button type="button" class="btn btn-ghost" id="s-all">გამოსვლა ყველგან</button></div>
+      </div></section>`;
+    const form = $('#s-pass');
+    form.onsubmit = (e) => {
+      e.preventDefault();
+      const err = $('.form-error', form);
+      err.hidden = true;
+      const fail = (m) => { err.textContent = m; err.hidden = false; };
+      if (form.next.value.length < 8) return fail('ახალი პაროლი მინიმუმ 8 სიმბოლო უნდა იყოს.');
+      if (form.next.value !== form.again.value) return fail('პაროლები ერთმანეთს არ ემთხვევა.');
+      if (hasPassword && !form.current.value) return fail('ჩაწერე მიმდინარე პაროლი.');
+      run(form.querySelector('[type=submit]'), async () => {
+        if (hasPassword) {
+          const { error } = await sb.auth.signInWithPassword({ email: S.user.email, password: form.current.value });
+          if (error) throw new Error('მიმდინარე პაროლი არასწორია.');
+        }
+        const { error } = await sb.auth.updateUser({ password: form.next.value });
+        if (error) throw new Error(/different from the old/i.test(error.message) ? 'ახალი პაროლი ძველისგან უნდა განსხვავდებოდეს.' : /weak|at least/i.test(error.message) ? 'პაროლი ძალიან სუსტია.' : error.message);
+        form.reset();
+      }, { success: 'პაროლი შეიცვალა' });
+    };
+    $('#s-others').onclick = async () => {
+      if (!await R.confirm({ title: 'გამოსვლა სხვა მოწყობილობებიდან', message: 'ყველა სხვა ტელეფონსა და კომპიუტერზე თავიდან მოგიწევს შესვლა. ეს მოწყობილობა დარჩება შესული.', confirmLabel: 'გამოსვლა' })) return;
+      run($('#s-others'), async () => { const { error } = await sb.auth.signOut({ scope: 'others' }); if (error) throw error; }, { success: 'სხვა მოწყობილობები გამოვიდა' });
+    };
+    $('#s-all').onclick = async () => {
+      if (!await R.confirm({ title: 'გამოსვლა ყველგან', message: 'ამ მოწყობილობიდანაც გახვალ და ყველგან თავიდან მოგიწევს შესვლა.', confirmLabel: 'გამოსვლა', danger: true })) return;
+      await sb.auth.signOut({ scope: 'global' });
+      location.href = '/app/#signin';
+      location.reload();
+    };
+  }
+
   function renderOrgTab(root) {
     const o = S.org;
     const admin = App.isAdmin();
@@ -210,9 +359,7 @@
         <div class="form-error span-2" role="alert" hidden></div>
         <div class="span-2 brand-preview" id="b-preview"></div>
         <label class="field span-2"><span class="field-label">აგენტის / სააგენტოს სახელი საჯარო გვერდებზე</span><input name="agent_display_name" maxlength="80" value="${esc(o.agent_display_name || '')}" placeholder="მაგ.: ნინო ბერიძე · Batumi Stay" ${admin && canProfile ? '' : 'disabled'} /></label>
-        <div class="field span-2"><span class="field-label">ლოგო</span>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><input type="file" name="logo" accept="image/png,image/jpeg,image/webp,image/svg+xml" ${admin && canProfile ? '' : 'disabled'} /><button type="button" class="btn btn-ghost btn-sm" id="b-logo-clear" ${admin && canProfile && o.logo_url ? '' : 'hidden'}>ლოგოს ამოშლა</button></div>
-          <span class="field-hint">PNG, JPG, WebP ან SVG, მაქსიმუმ 10 მბ. კვადრატული ან ჰორიზონტალური ლოგო საუკეთესოდ გამოჩნდება.</span></div>
+        <div class="field span-2"><span class="field-label">კომპანიის ლოგო</span><div id="b-logo-pick"></div></div>
         <div class="field span-2"><span class="field-label">ბრენდის ფერი</span>
           <div style="display:flex;gap:8px;align-items:center"><input type="color" id="b-color-pick" value="${esc(/^#[0-9a-f]{6}$/i.test(o.brand_color || '') ? o.brand_color : '#0a5c44')}" aria-label="ფერის არჩევა" ${admin && canBrand ? '' : 'disabled'} style="width:44px;padding:2px" />
             <input name="brand_color" id="b-color" placeholder="#0A5C44" maxlength="7" value="${esc(o.brand_color || '')}" pattern="#[0-9a-fA-F]{6}" data-error="ფერი ჩაწერე ფორმატით #0A5C44." ${admin && canBrand ? '' : 'disabled'} style="max-width:140px" /></div>
@@ -236,7 +383,7 @@
     // ---- branding
     const form = $('#s-brand');
     let logoUrl = o.logo_url || null;
-    let objectUrl = null;
+    const logoPick = imagePicker($('#b-logo-pick'), { kind: 'logo', shape: 'logo', url: o.logo_url, name: 'logo', disabled: !(admin && canProfile), onChange: () => { logoUrl = logoPick.url; preview(); } });
     const preview = () => {
       const col = /^#[0-9a-f]{6}$/i.test(form.brand_color.value) ? form.brand_color.value : null;
       $('#b-preview').innerHTML = `${logoUrl ? `<img src="${esc(logoUrl)}" alt="ლოგო" />` : `<span class="brand-mark" style="width:48px;height:48px;display:grid;place-items:center;border-radius:8px;background:${col || 'var(--brand)'};color:#fff;font-weight:700">${esc((form.agent_display_name.value || o.name || '·').trim().charAt(0).toUpperCase())}</span>`}
@@ -247,13 +394,6 @@
     form.agent_display_name.addEventListener('input', preview);
     form.brand_color.addEventListener('input', () => { if (/^#[0-9a-f]{6}$/i.test(form.brand_color.value)) $('#b-color-pick').value = form.brand_color.value; preview(); });
     $('#b-color-pick').addEventListener('input', (e) => { form.brand_color.value = e.target.value.toUpperCase(); preview(); });
-    form.logo.addEventListener('change', () => {
-      const file = form.logo.files[0];
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
-      if (file) { objectUrl = URL.createObjectURL(file); logoUrl = objectUrl; $('#b-logo-clear').hidden = false; }
-      preview();
-    });
-    $('#b-logo-clear').onclick = () => { form.logo.value = ''; logoUrl = null; form.dataset.clearLogo = '1'; $('#b-logo-clear').hidden = true; preview(); };
     $('#b-upgrade')?.addEventListener('click', () => App.openUpgrade({ kind: 'feature', feature: 'profile' }));
     form.onsubmit = (e) => {
       e.preventDefault();
@@ -265,16 +405,14 @@
       if (color && !App.guardFeature('whitelabel')) return;
       run(form.querySelector('[type=submit]'), async () => {
         const patch = { agent_display_name: form.agent_display_name.value.trim() || null, brand_color: color ? color.toUpperCase() : null };
-        const file = form.logo.files[0];
-        if (file) patch.logo_url = await R.uploadFile(S.org.id, 'branding', file);
-        else if (form.dataset.clearLogo === '1') patch.logo_url = null;
+        if (logoPick.pending) patch.logo_url = await R.uploadImage(S.org.id, 'branding', logoPick.pending);
+        else if (logoPick.removed) patch.logo_url = null;
         const row = await q(sb.from('organizations').update(patch).eq('id', o.id).select().single());
         Object.assign(S.org, row);
-        form.dataset.clearLogo = '';
         logoUrl = row.logo_url || null;
-        form.logo.value = '';
+        logoPick.reset(logoUrl);
         preview();
-        $('#b-logo-clear').hidden = !logoUrl;
+        App.renderShell();
       }, { success: 'ბრენდინგი შენახულია' });
     };
   }
