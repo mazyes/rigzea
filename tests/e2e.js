@@ -1419,6 +1419,7 @@ test('20. documents: PDF presentation templates, auto-filled sale contract, regi
   await dlg.locator('input[name=buyer_name]').fill('ნიკა ბერიძე');
   await dlg.locator('input[name=price]').fill('120000');
   await dlg.locator('input[name=deposit_amount]').fill('5000');
+  await dlg.locator('input[name=final_date]').fill('2030-01-01');
   await dlg.locator('[data-submit]').click();
   const paper = page.locator('dialog[open] #doc-paper');
   await paper.waitFor();
@@ -2337,6 +2338,166 @@ test('1u. English property inventory has no Georgian interface or user-content s
   assert(!attrs.some(v => /[ა-ჰ]/.test(v)), 'English inventory attributes contain Georgian: ' + attrs.filter(v => /[ა-ჰ]/.test(v)).join(' | '));
   const text = await page.locator('#view').textContent();
   assert(text.includes('Saburtalo') && text.includes('Tbilisi'), 'Georgian proper names and addresses are romanized');
+  return page;
+});
+
+
+// ---- Settings export, Settings layout and saved contracts ----
+const ORG = '11111111-1111-4111-8111-111111111111';
+// The seed only exists on a first visit, so a later navigation must not trip over it.
+const seedContracts = (page, rows) => page.addInitScript((rows) => { const t = window.__MOCK_SEED?.tables; if (t) (t.contracts ||= []).push(...rows); }, rows);
+const savedDeposit = (i, extra = {}) => ({ id: 'cccccccc-0000-4000-8000-' + String(i).padStart(12, '0'), organization_id: ORG, apartment_id: null, deal_id: null, created_by: USERS.manager.id, created_at: new Date(Date.now() - i * 60000).toISOString(),
+  data: { doc_type: 'deposit', owner_name: 'გამყიდველი ' + i, owner_id: '', buyer_name: 'მყიდველი ' + i, property_address: 'თბილისი, ვაკე', contract_date: '2026-10-01', price: 100000, currency: 'USD', deposit_amount: 5000, final_date: '2026-12-01', extra_terms: '' }, ...extra });
+const savedLease = (i) => ({ id: 'cccccccc-0000-4000-8000-' + String(i).padStart(12, '0'), organization_id: ORG, apartment_id: null, deal_id: null, created_by: USERS.manager.id, created_at: new Date(Date.now() - i * 60000).toISOString(),
+  data: { landlord_name: 'გამქირავებელი', tenant_name: 'დამქირავებელი', property_address: 'თბილისი, საბურთალო', contract_date: '2026-10-01', start_date: '2026-10-01', end_date: '2027-09-30', rent: 800, currency: 'USD', deposit: 800, pay_day: '5', penalty_pct: '0.1', notice_days: '30', keys_count: '2', pets: 'no', utilities: 'tenant' } });
+
+test('1zq. settings export counts and downloads every record, not the few loaded for the page', async (browser) => {
+  const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
+  await page.addInitScript(([org]) => {
+    const t = window.__MOCK_SEED.tables;
+    for (let i = 0; i < 1100; i++) t.expenses.push({ id: 'ee000000-0000-4000-8000-' + String(i).padStart(12, '0'), organization_id: org, apartment_id: null, amount: 10 + i, expense_date: '2026-03-01', description: 'ხარჯი ' + i, category: 'other', status: 'incurred', created_at: new Date().toISOString() });
+    for (let i = 0; i < 3; i++) t.income.push({ id: 'ff000000-0000-4000-8000-' + String(i).padStart(12, '0'), organization_id: org, apartment_id: null, amount: 100 + i, income_date: '2026-03-02', source: 'rent', created_at: new Date().toISOString() });
+  }, [ORG]);
+  await page.goto(BASE + '/app/settings/?id=export');
+  const row = (label) => page.locator('#s-body .row', { hasText: label });
+  const tables = (await db(page)).tables;
+  const nExp = tables.expenses.length, nInc = tables.income.length;
+  assert(nExp > 1000, 'more expenses than one fetch page');
+  await row('ხარჯები').locator(`text=${nExp} ჩანაწერი`).waitFor();
+  assert((await row('შემოსავალი').innerText()).includes(`${nInc} ჩანაწერი`), 'income count comes from the database');
+  await row('ხარჯები').locator('[data-export]').click();
+  const dlg = page.locator('dialog[open]');
+  await dlg.locator(`text=${nExp} ჩანაწერი`).waitFor();
+  await dlg.locator('input[name=format][value=csv]').check({ force: true });
+  const [download] = await Promise.all([page.waitForEvent('download'), dlg.locator('[data-submit]').click()]);
+  const csv = require('fs').readFileSync(await download.path(), 'utf8').trim().split(/\r?\n/);
+  assert.strictEqual(csv.length, nExp + 1, 'header plus every expense, past the 500 loaded for a page');
+  return page;
+});
+
+test('1zl. settings: grouped side navigation on desktop, tab strip on a phone, nothing overflows', async (browser) => {
+  const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
+  await page.goto(BASE + '/app/settings/');
+  await page.locator('.settings-tabs .tab').first().waitFor();
+  const boxes = await page.locator('.settings-tabs .tab').evaluateAll(els => els.map(e => { const r = e.getBoundingClientRect(); return [Math.round(r.left), Math.round(r.top)]; }));
+  assert(boxes.length >= 7, 'every tab is still there');
+  assert(boxes.every(b => b[0] === boxes[0][0]) && boxes[1][1] > boxes[0][1], 'tabs stack in a vertical rail on desktop');
+  assert.deepStrictEqual(await page.locator('.settings-tabs .tab-group').allInnerTexts(), ['პირადი', 'სამუშაო სივრცე', 'მონაცემები']);
+  for (const id of ['profile', 'security', 'ui', 'org', 'plan', 'import', 'export']) {
+    await page.goto(BASE + '/app/settings/?id=' + id);
+    await page.locator('.settings-tabs .tab[aria-selected=true]').waitFor();
+    assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), id + ' fits on desktop');
+  }
+  await page.setViewportSize(PHONE);
+  for (const id of ['profile', 'org', 'plan', 'export']) {
+    await page.goto(BASE + '/app/settings/?id=' + id);
+    await page.locator('.settings-tabs .tab[aria-selected=true]').waitFor();
+    assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), id + ' fits on a phone');
+    assert.strictEqual(await page.locator('.settings-tabs .tab-group').first().isVisible(), false, 'group labels are hidden in the phone strip');
+  }
+  return page;
+});
+
+test('1zm. contracts: own heading and actions, count with load more past 50', async (browser) => {
+  const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
+  await seedContracts(page, Array.from({ length: 120 }, (_, i) => savedDeposit(i + 1)));
+  await page.goto(BASE + '/app/deals/?id=documents');
+  assert.strictEqual((await page.locator('#view h1').innerText()).trim(), 'ხელშეკრულებები და რეესტრი');
+  assert.strictEqual(await page.locator('#btn-deal-new').count(), 0, 'deal actions are not offered on the contracts page');
+  assert.strictEqual(await page.locator('#btn-doc-new').count(), 1);
+  await page.locator('#doc-count', { hasText: '50 / 120' }).waitFor();
+  assert.strictEqual(await page.locator('[data-saved]').count(), 50);
+  await page.locator('#doc-more').click();
+  await page.locator('#doc-count', { hasText: '100 / 120' }).waitFor();
+  await page.locator('#doc-more').click();
+  await page.locator('#doc-count', { hasText: '120 / 120' }).waitFor();
+  assert.strictEqual(await page.locator('[data-saved]').count(), 120);
+  assert.strictEqual(await page.locator('#doc-more').count(), 0, 'no button once everything is shown');
+  return page;
+});
+
+test('1zn. contracts: a saved document and a saved lease are edited in place, bad dates are refused', async (browser) => {
+  const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
+  await seedContracts(page, [savedDeposit(1), savedLease(2)]);
+  await page.goto(BASE + '/app/deals/?id=documents');
+  await page.locator('[data-saved]').first().waitFor();
+  const before = (await db(page)).tables.contracts.map(c => ({ id: c.id, created_by: c.created_by, organization_id: c.organization_id }));
+
+  // sale document: the deposit must stay below the price, then a valid edit updates the same row
+  await page.locator('[data-saved]', { hasText: 'ბეს / წინარე' }).click();
+  await page.locator('dialog[open] #btn-edit-doc').click();
+  const dlg = page.locator('dialog[open]');
+  await dlg.locator('input[name=deposit_amount]').waitFor();
+  assert.strictEqual(await dlg.locator('input[name=price]').inputValue(), '100000', 'the saved values fill the form');
+  await dlg.locator('input[name=deposit_amount]').fill('100000');
+  await dlg.locator('[data-submit]').click();
+  await dlg.locator('.form-error', { hasText: 'ბეს ოდენობა ფასზე ნაკლები' }).waitFor();
+  assert.strictEqual((await db(page)).tables.contracts.find(c => c.id === before[0].id).data.deposit_amount, 5000, 'nothing saved');
+  await dlg.locator('input[name=deposit_amount]').fill('7000');
+  await dlg.locator('[data-submit]').click();
+  await page.locator('dialog[open] #doc-paper').waitFor();
+  let rows = (await db(page)).tables.contracts;
+  assert.strictEqual(rows.length, 2, 'no duplicate row');
+  assert.strictEqual(String(rows.find(c => c.id === before[0].id).data.deposit_amount), '7000');
+  await page.keyboard.press('Escape');
+
+  // lease: the end date must come after the start date
+  await page.locator('[data-saved]', { hasText: 'დამქირავებელი' }).click();
+  await page.locator('dialog[open] #btn-edit-lease').click();
+  const lease = page.locator('dialog[open]');
+  await lease.locator('input[name=rent]').waitFor();
+  await lease.locator('input[name=end_date]').fill('2026-09-01');
+  await lease.locator('[data-submit]').click();
+  await lease.locator('.form-error', { hasText: 'დასრულების თარიღი' }).waitFor();
+  await lease.locator('input[name=end_date]').fill('2027-10-31');
+  await lease.locator('input[name=rent]').fill('950');
+  await lease.locator('[data-submit]').click();
+  await page.locator('dialog[open] #lease-paper').waitFor();
+  rows = (await db(page)).tables.contracts;
+  assert.strictEqual(rows.length, 2, 'still no duplicate');
+  assert.strictEqual(rows.find(c => c.id === before[1].id).data.rent, 950);
+  assert.deepStrictEqual(rows.map(c => ({ id: c.id, created_by: c.created_by, organization_id: c.organization_id })), before, 'owner, creator and organization never change');
+  page.errors.splice(0); // the refused saves above are logged by the dialog on purpose
+  return page;
+});
+
+test('1zo. contracts: an agent sees and edits only the contracts they created', async (browser) => {
+  const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
+  const other = savedDeposit(2, { created_by: 'bbbbbbbb-0000-4000-8000-0000000000aa' });
+  await seedContracts(page, [savedDeposit(1), other]);
+  await page.goto(BASE + '/app/');
+  await page.getByRole('heading', { name: /გამარჯობა,/ }).waitFor();
+  await page.evaluate((me) => {
+    const d = JSON.parse(localStorage.getItem('rigzea_mockdb'));
+    d.tables.organization_members.find(m => m.user_id === me).role = 'agent';
+    localStorage.setItem('rigzea_mockdb', JSON.stringify(d));
+  }, USERS.manager.id);
+  await page.goto(BASE + '/app/deals/?id=documents');
+  await page.locator('#doc-count', { hasText: '1 / 1' }).waitFor();
+  assert.strictEqual(await page.locator('[data-saved]').count(), 1, 'only the agent\'s own contract is listed');
+  // the mock mirrors the contracts policies; this is the client side of the rule, the real RLS is not covered here
+  const hit = await page.evaluate(async (id) => { const r = await R.sb.from('contracts').update({ data: { hacked: true } }).eq('id', id).select(); return r.data; }, other.id);
+  assert.deepStrictEqual(hit, [], 'another person\'s contract cannot be updated');
+  assert.strictEqual(String((await db(page)).tables.contracts.find(c => c.id === other.id).data.hacked), 'undefined');
+  return page;
+});
+
+test('1zp. contracts on a phone: no overflow, optional fields are folded', async (browser) => {
+  const page = await newPage(browser, { viewport: PHONE, login: USERS.manager });
+  await seedContracts(page, [savedDeposit(1), savedLease(2)]);
+  await page.goto(BASE + '/app/deals/?id=documents');
+  await page.locator('[data-saved]').first().waitFor();
+  assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'documents page fits');
+  await page.locator('[data-doc="lease"]').click();
+  const dlg = page.locator('dialog[open]');
+  await dlg.locator('input[name=landlord_name]').waitFor();
+  assert(await dlg.locator('details.form-more').count() >= 4, 'optional lease fields are in folded sections');
+  assert.strictEqual(await dlg.locator('details.form-more[open]').count(), 0, 'all folded for a new lease');
+  assert.strictEqual(await dlg.locator('input[name=meter_gas]').isVisible(), false);
+  assert(await dlg.evaluate(el => el.scrollWidth <= el.clientWidth + 1), 'the form does not overflow');
+  await dlg.locator('[data-submit]').click(); // required names are empty: the message shows and nothing is saved
+  await dlg.locator('.form-error:not([hidden])').waitFor();
+  assert.strictEqual((await db(page)).tables.contracts.length, 2);
   return page;
 });
 

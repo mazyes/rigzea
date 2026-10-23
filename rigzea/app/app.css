@@ -2235,3 +2235,18 @@ html, body { overscroll-behavior-y: contain; }
 .invite-banner.is-bad { border-color: color-mix(in srgb, var(--warn, #b45309) 40%, var(--line)); background: color-mix(in srgb, var(--warn, #b45309) 10%, var(--surface)); }
 .invite-banner.is-bad .invite-ico { background: var(--warn, #b45309); }
 .auth .field input[readonly] { background: var(--surface-2); color: var(--ink-2); cursor: not-allowed; }
+
+/* Settings: grouped side rail on desktop, the usual scrolling tab strip on phones */
+.settings-shell { display: block; }
+.settings-tabs .tab-group { display: none; }
+.settings-shell #s-body { min-width: 0; }
+.settings-shell #s-body .card { margin-bottom: 12px; }
+.settings-shell #s-body .card-head { padding: 10px 14px; min-height: 42px; }
+.settings-shell #s-body .card-body { padding: 12px 14px; }
+@media (min-width: 900px) {
+  .settings-shell { display: grid; grid-template-columns: 200px minmax(0, 860px); gap: 20px; align-items: start; }
+  .settings-tabs { flex-direction: column; width: auto; overflow: visible; margin-bottom: 0; gap: 1px; position: sticky; top: 12px; }
+  .settings-tabs .tab-group { display: block; padding: 10px 14px 4px; font-size: 11.5px; font-weight: 600; letter-spacing: .02em; color: var(--muted); }
+  .settings-tabs .tab-group:first-child { padding-top: 4px; }
+  .settings-tabs .tab { justify-content: flex-start; }
+}

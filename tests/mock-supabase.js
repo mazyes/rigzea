@@ -100,6 +100,7 @@
     is(c, v) { this.filters.push(r => (r[c] ?? null) === v); return this; }
     order(c, o = {}) { this.orders.push([c, o.ascending !== false]); return this; }
     limit(n) { this.lim = n; return this; }
+    range(a, b) { this.rng = [a, b]; return this; }
     single() { this.mode = 'single'; return this; }
     maybeSingle() { this.mode = 'maybe'; return this; }
     then(res, rej) { return this.exec().then(res, rej); }
@@ -185,11 +186,14 @@
       if (shouldFail(`${this.op}:${this.table}`)) return netErr();
       if (this.table.startsWith('chat_')) return this.chatExec();
       const rows = T(this.table);
-      const match = rows.filter(r => this.filters.every(f => f(r)));
+      // Mirrors the contracts policies: owners, admins and managers see the whole organization, agents only what they created.
+      const seesContract = (r) => { const m = memberOf(r.organization_id); return !!m && (['owner', 'admin', 'manager'].includes(m.role) || (m.role === 'agent' && r.created_by === uid())); };
+      const match = rows.filter(r => this.filters.every(f => f(r)) && (this.table !== 'contracts' || this.op === 'insert' || seesContract(r)));
       let out;
       if (this.op === 'select') {
         out = match.slice();
         for (const [c, asc] of this.orders.slice().reverse()) out.sort((a, b) => ((a[c] ?? '') > (b[c] ?? '') ? 1 : (a[c] ?? '') < (b[c] ?? '') ? -1 : 0) * (asc ? 1 : -1));
+        if (this.rng) out = out.slice(this.rng[0], this.rng[1] + 1);
         if (this.lim) out = out.slice(0, this.lim);
         const join = /(\w+)\(\*\)/.exec(this.cols || '');
         if (join) out = out.map(r => ({ ...r, [join[1]]: T(join[1]).find(x => x.id === r[join[1].replace(/s$/, '') + '_id']) || null }));

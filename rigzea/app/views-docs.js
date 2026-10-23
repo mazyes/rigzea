@@ -350,19 +350,45 @@
     };
   }
 
-  App.openLegalDoc = (type, { apartment = null, deal = null } = {}) => {
+  // Money, date and term checks. Names and the address are checked by the form itself.
+  // Throwing keeps the dialog open and shows the message, so an incomplete document is never saved as ready.
+  function checkDoc(type, v) {
+    const def = DOCS[type];
+    const num = (x) => (String(x ?? '').trim() === '' ? NaN : Number(x));
+    if (!v.contract_date) throw new Error('მიუთითე ხელშეკრულების თარიღი.');
+    if (def.needs.includes('price') && !(num(v.price) > 0)) throw new Error('მიუთითე ფასი.');
+    if (def.needs.includes('commission') && !String(v.commission || '').trim()) throw new Error('მიუთითე საკომისიო.');
+    if (def.needs.includes('term')) {
+      if (!v.term_end) throw new Error('მიუთითე მოქმედების ვადა.');
+      if (v.term_end <= v.contract_date) throw new Error('მოქმედების ვადა ხელშეკრულების თარიღის შემდეგ უნდა იყოს.');
+    }
+    if (def.needs.includes('deposit')) {
+      if (!(num(v.deposit_amount) > 0)) throw new Error('მიუთითე ბეს ოდენობა.');
+      if (num(v.deposit_amount) >= num(v.price)) throw new Error('ბეს ოდენობა ფასზე ნაკლები უნდა იყოს.');
+      if (!v.final_date) throw new Error('მიუთითე ძირითადი ხელშეკრულების ბოლო ვადა.');
+      if (v.final_date < v.contract_date) throw new Error('ძირითადი ხელშეკრულების ვადა ხელშეკრულების თარიღზე ადრე ვერ იქნება.');
+    }
+  }
+
+  // `contract` is a saved row: the form opens with its data and saving updates that same row.
+  App.openLegalDoc = (type, { apartment = null, deal = null, contract = null } = {}) => {
+    if (contract) type = contract.data?.doc_type;
     const def = DOCS[type];
     if (!def || !App.guardFeature('contracts')) return undefined;
-    let a = apartment || H.apt(deal?.apartment_id) || null;
-    let dl = deal;
-    const d = docDefaults(type, a, dl);
+    let a = apartment || H.apt(contract ? contract.apartment_id : deal?.apartment_id) || null;
+    let dl = deal || (contract ? H.deal(contract.deal_id) : null) || null;
+    const d = contract ? { ...docDefaults(type, a, dl), ...contract.data } : docDefaults(type, a, dl);
+    const filled = (keys) => keys.some(k => String(d[k] ?? '').trim() !== '');
+    // Rarely filled fields stay folded; they open by themselves when they already hold a value.
+    const more = (title, keys, inner) => `<details class="form-more span-2" ${filled(keys) ? 'open' : ''}><summary>${title}</summary><div class="form-grid">${inner}</div></details>`;
     const has = (k) => def.needs.includes(k) || def.parties.includes(k);
     const f = (name, label, o = {}) => `<label class="field ${o.span ? 'span-2' : ''}"><span class="field-label">${label}</span>${o.textarea
       ? `<textarea name="${name}" rows="${o.rows || 2}" placeholder="${esc(o.ph || '')}">${esc(d[name] || '')}</textarea>`
       : `<input name="${name}" type="${o.type || 'text'}" ${o.required ? `required data-error="${esc(o.err || 'შეავსე სავალდებულო ველები.')}"` : ''} ${o.attrs || ''} value="${esc(d[name] ?? '')}" placeholder="${esc(o.ph || '')}" />`}${o.hint ? `<span class="field-hint">${o.hint}</span>` : ''}</label>`;
     const person = (key, title) => `<div class="form-section"><div class="form-section-title">${title}</div><div class="form-grid">
-      ${f(`${key}_name`, 'სახელი, გვარი', { required: true, err: `მიუთითე: ${title}.` })}${f(`${key}_id`, 'პირადი ნომერი', { attrs: 'inputmode="numeric" maxlength="20"' })}
-      ${f(`${key}_phone`, 'ტელეფონი', { type: 'tel' })}${f(`${key}_address`, 'მისამართი')}</div></div>`;
+      ${f(`${key}_name`, 'სახელი, გვარი', { required: true, err: `მიუთითე: ${title}.` })}
+      ${more('დამატებითი: პირადი ნომერი, ტელეფონი, მისამართი', [`${key}_id`, `${key}_phone`, `${key}_address`], `${f(`${key}_id`, 'პირადი ნომერი', { attrs: 'inputmode="numeric" maxlength="20"' })}
+      ${f(`${key}_phone`, 'ტელეფონი', { type: 'tel' })}${f(`${key}_address`, 'მისამართი')}`)}</div></div>`;
     const deals = (S.data.deals || []).filter(x => !['lost'].includes(x.stage));
     const apts = S.data.apartments.filter(x => x.status !== 'archived');
 
@@ -370,16 +396,17 @@
       title: def.title,
       subtitle: def.sub,
       wide: true,
-      submitLabel: 'დოკუმენტის შედგენა',
+      submitLabel: contract ? 'ცვლილებების შენახვა' : 'დოკუმენტის შედგენა',
       body: `
         <div class="notice small">${icon('alert', 14)} ზოგადი შაბლონი. ხელმოწერამდე გადაამოწმე იურისტთან. ცარიელი ველები ხელით შეივსება.</div>
         <div class="form-section"><div class="form-section-title">საიდან შევავსო</div><div class="form-grid">
-          <label class="field"><span class="field-label">გარიგება</span><select id="doc-deal"><option value="">არ არის არჩეული</option>${deals.map(x => `<option value="${x.id}" ${x.id === dl?.id ? 'selected' : ''}>${esc(x.client_name)}${x.apartment_id ? ' · ' + esc(H.aptName(x.apartment_id)) : ''}</option>`).join('')}</select></label>
-          <label class="field"><span class="field-label">ობიექტი</span><select id="doc-apt"><option value="">არ არის არჩეული</option>${apts.map(x => `<option value="${x.id}" ${x.id === a?.id ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select></label>
+          <label class="field"><span class="field-label">გარიგება</span><select id="doc-deal" ${contract ? 'disabled' : ''}><option value="">არ არის არჩეული</option>${deals.map(x => `<option value="${x.id}" ${x.id === dl?.id ? 'selected' : ''}>${esc(x.client_name)}${x.apartment_id ? ' · ' + esc(H.aptName(x.apartment_id)) : ''}</option>`).join('')}</select></label>
+          <label class="field"><span class="field-label">ობიექტი</span><select id="doc-apt" ${contract ? 'disabled' : ''}><option value="">არ არის არჩეული</option>${apts.map(x => `<option value="${x.id}" ${x.id === a?.id ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select></label>
         </div></div>
         ${has('agency') ? `<div class="form-section"><div class="form-section-title">სააგენტო</div><div class="form-grid">
-          ${f('agency_name', 'დასახელება', { required: true, err: 'მიუთითე სააგენტოს დასახელება.' })}${f('agency_code', 'საიდენტიფიკაციო კოდი', { attrs: 'inputmode="numeric" maxlength="20"' })}
-          ${f('agency_rep', 'წარმომადგენელი')}${f('agency_phone', 'ტელეფონი', { type: 'tel' })}</div></div>` : ''}
+          ${f('agency_name', 'დასახელება', { required: true, err: 'მიუთითე სააგენტოს დასახელება.' })}
+          ${more('დამატებითი: კოდი, წარმომადგენელი, ტელეფონი', ['agency_code', 'agency_rep', 'agency_phone'], `${f('agency_code', 'საიდენტიფიკაციო კოდი', { attrs: 'inputmode="numeric" maxlength="20"' })}
+          ${f('agency_rep', 'წარმომადგენელი')}${f('agency_phone', 'ტელეფონი', { type: 'tel' })}`)}</div></div>` : ''}
         ${has('owner') ? person('owner', type === 'exclusive' ? 'მესაკუთრე' : 'გამყიდველი') : ''}
         ${has('buyer') ? person('buyer', type === 'brokerage' ? 'კლიენტი' : 'მყიდველი') : ''}
         ${has('property') ? `<div class="form-section"><div class="form-section-title">ქონება</div><div class="form-grid">
@@ -394,8 +421,8 @@
           ${has('term') ? f('term_end', 'მოქმედების ვადა', { type: 'date' }) : ''}
           ${has('deposit') ? f('deposit_amount', 'ბეს ოდენობა', { type: 'number', attrs: 'min="0" step="100"', hint: 'ფასის ვალუტაში' }) + f('final_date', 'ძირითადი ხელშეკრულების ბოლო ვადა', { type: 'date' }) : ''}
           ${has('wish') ? f('wish', 'კლიენტის მოთხოვნები', { textarea: true, span: true, ph: 'მაგ.: 2-ოთახიანი ბინა საბურთალოზე, $150 000-მდე' }) : ''}
-          ${has('handover') ? f('keys', 'გასაღებების რაოდენობა', { type: 'number', attrs: 'min="0"' }) + f('meter_power', 'ელექტროენერგიის მრიცხველი') + f('meter_water', 'წყლის მრიცხველი') + f('meter_gas', 'გაზის მრიცხველი') + f('condition', 'მდგომარეობის შენიშვნები', { textarea: true, span: true }) : ''}
-          ${f('extra_terms', 'დამატებითი პირობები', { textarea: true, span: true, rows: 3, hint: 'არასავალდებულო. ცალკე მუხლად დაემატება.' })}
+          ${has('handover') ? f('keys', 'გასაღებების რაოდენობა', { type: 'number', attrs: 'min="0"' }) + more('დამატებითი: მრიცხველები და მდგომარეობა', ['meter_power', 'meter_water', 'meter_gas', 'condition'], f('meter_power', 'ელექტროენერგიის მრიცხველი') + f('meter_water', 'წყლის მრიცხველი') + f('meter_gas', 'გაზის მრიცხველი') + f('condition', 'მდგომარეობის შენიშვნები', { textarea: true, span: true })) : ''}
+          ${more('დამატებითი პირობები', ['extra_terms'], f('extra_terms', 'დამატებითი პირობები', { textarea: true, span: true, rows: 3, hint: 'არასავალდებულო. ცალკე მუხლად დაემატება.' }))}
         </div></div>`,
       onOpen: (form) => {
         // Choosing another deal or property refills the fields from the workspace data.
@@ -412,17 +439,21 @@
         $('#doc-napr', form)?.addEventListener('click', () => App.openNapr(cad.value));
       },
       onSubmit: async (_f, v) => {
+        checkDoc(type, v);
         const data = { ...d, ...v, doc_type: type };
-        const row = await App.insertOnce('contracts', { id: R.uuid(), organization_id: S.org.id, apartment_id: a?.id || null, deal_id: dl?.id || null, data, created_by: S.user.id });
+        // Editing sends only `data`: the owner, creator and links of a saved contract never change.
+        const row = contract
+          ? await q(sb.from('contracts').update({ data }).eq('id', contract.id).select().single())
+          : await App.insertOnce('contracts', { id: R.uuid(), organization_id: S.org.id, apartment_id: a?.id || null, deal_id: dl?.id || null, data, created_by: S.user.id });
         docCache.org = null;
         if (App.route().name === 'deals' && App.route().id === 'documents') App.render();
-        toast('დოკუმენტი შენახულია', { type: 'success' });
-        setTimeout(() => openDocPreview(row.data || data), 0);
+        toast(contract ? 'ცვლილებები შენახულია' : 'დოკუმენტი შენახულია', { type: 'success' });
+        setTimeout(() => openDocPreview(row.data || data, row), 0);
       },
     });
   };
 
-  function openDocPreview(d) {
+  function openDocPreview(d, row = null) {
     const def = DOCS[d.doc_type];
     return R.dialog({
       title: 'დოკუმენტი მზადაა',
@@ -430,9 +461,13 @@
       wide: true,
       body: `<style>${LEASE_CSS}</style>
         <div class="lease-toolbar"><span class="small muted lease-hint">${icon('alert', 13)} შაბლონი არ ცვლის იურიდიულ კონსულტაციას.</span>
+          ${row ? `<button type="button" class="btn btn-secondary" id="btn-edit-doc">${icon('edit', 16)} რედაქტირება</button>` : ''}
           <button type="button" class="btn btn-primary" id="btn-print-doc">${icon('printer', 16)} ბეჭდვა / PDF</button></div>
         <div class="lease-paper" id="doc-paper">${docHtml(d)}</div>`,
-      onOpen: (form) => { $('#btn-print-doc', form).onclick = () => printHtml(docHtml(d), { title: def.title, css: `body { padding: 0; } ${LEASE_CSS}` }); },
+      onOpen: (form, dlg) => {
+        $('#btn-print-doc', form).onclick = () => printHtml(docHtml(d), { title: def.title, css: `body { padding: 0; } ${LEASE_CSS}` });
+        $('#btn-edit-doc', form)?.addEventListener('click', () => { dlg.close(); setTimeout(() => App.openLegalDoc(null, { contract: row }), 0); });
+      },
     });
   }
 
@@ -460,13 +495,19 @@
   // ---------------------------------------------------------------------------
   // Documents tab (inside Deals): templates, saved documents, registry check
   // ---------------------------------------------------------------------------
-  const docCache = { org: null, rows: [], error: null, loading: false };
+  const DOC_PAGE = 50;
+  const docCache = { org: null, rows: [], total: 0, error: null, loading: false };
   // Called when a contract is saved elsewhere (lease form) so the Documents tab reloads.
   App.invalidateDocs = () => { docCache.org = null; };
-  async function loadDocs() {
+  // `more` appends the next page to the rows already shown.
+  async function loadDocs(more = false) {
     docCache.loading = true; docCache.error = null;
     try {
-      docCache.rows = await q(sb.from('contracts').select('*').eq('organization_id', S.org.id).order('created_at', { ascending: false }).limit(50));
+      const from = more ? docCache.rows.length : 0;
+      const { data, error, count } = await sb.from('contracts').select('*', { count: 'exact' }).eq('organization_id', S.org.id).order('created_at', { ascending: false }).order('id').range(from, from + DOC_PAGE - 1);
+      if (error) throw error;
+      docCache.rows = more ? [...docCache.rows, ...data] : data;
+      docCache.total = count ?? docCache.rows.length;
       docCache.org = S.org.id;
     } catch (err) { console.error(err); docCache.error = err; } finally { docCache.loading = false; }
     if (App.route().name === 'deals' && App.route().id === 'documents') App.render();
@@ -483,12 +524,13 @@
             <div class="row" style="--cols:minmax(0,1fr) auto"><span class="cell-main"><strong>ქირავნობის ხელშეკრულება (ორენოვანი)</strong><span>მეპატრონე ↔ მდგმური · სსკ 531–575 მუხლები და მიღება-ჩაბარების აქტი</span></span>
               <button type="button" class="btn btn-secondary btn-sm" data-doc="lease">შედგენა</button></div>
           </div></section>
-        <section class="card"><div class="card-head"><h2>შენახული დოკუმენტები</h2></div>
+        <section class="card"><div class="card-head"><h2>შენახული დოკუმენტები</h2>${saved ? `<span class="small muted" id="doc-count">${saved.length} / ${docCache.total}</span>` : ''}</div>
           ${docCache.error ? `<div class="error-state"><p>დოკუმენტები ვერ ჩაიტვირთა. ${esc(R.friendlyError(docCache.error))}</p><button type="button" class="btn btn-primary" id="doc-retry">${icon('refresh', 16)} ხელახლა ცდა</button></div>`
             : saved === null ? '<div class="skeleton" aria-label="იტვირთება"><i></i><i></i><i></i></div>'
             : saved.length ? `<div class="rows">${saved.map(c => { const t = c.data?.doc_type; const name = t ? DOCS[t]?.title : 'ქირავნობის ხელშეკრულება'; const who = t ? [c.data.owner_name, c.data.buyer_name].filter(Boolean).join(' · ') : [c.data?.landlord_name, c.data?.tenant_name].filter(Boolean).join(' · ');
               return `<button type="button" class="row" data-saved="${c.id}" style="--cols:minmax(0,1fr) auto"><span class="cell-main"><strong>${esc(name || 'დოკუმენტი')}</strong><span>${esc(who)}${c.apartment_id ? ' · ' + esc(H.aptName(c.apartment_id)) : ''}</span></span><span class="cell-meta">${esc(R.date(c.created_at))}</span></button>`; }).join('')}</div>`
             : App.emptyInline('შენახული დოკუმენტი ჯერ არ არის. აირჩიე შაბლონი და შეადგინე პირველი.')}
+          ${saved && saved.length < docCache.total ? `<div class="card-body"><button type="button" class="btn btn-secondary btn-block" id="doc-more" ${docCache.loading ? 'disabled' : ''}>კიდევ ჩატვირთვა (${docCache.total - saved.length})</button></div>` : ''}
         </section>
       </div><div class="stack">
         <section class="card"><div class="card-head"><h2>${icon('search', 18)} საჯარო რეესტრი (NAPR)</h2></div><div class="card-body">
@@ -504,9 +546,10 @@
     $$('[data-saved]', root).forEach(b => b.addEventListener('click', () => {
       const c = docCache.rows.find(x => x.id === b.dataset.saved);
       if (!c) return;
-      if (c.data?.doc_type) openDocPreview(c.data); else App.openLeasePreview?.(c.data, H.apt(c.apartment_id) || { name: c.data?.property_address || '' });
+      if (c.data?.doc_type) openDocPreview(c.data, c); else App.openLeasePreview?.(c.data, H.apt(c.apartment_id) || { name: c.data?.property_address || '' }, c);
     }));
     $('#doc-retry', root)?.addEventListener('click', () => { docCache.error = null; App.render(); });
+    $('#doc-more', root)?.addEventListener('click', (e) => { e.currentTarget.disabled = true; loadDocs(true); });
     const code = $('#napr-code', root);
     code.addEventListener('input', () => { code.value = R.cadastralFormat(code.value); });
     $('#napr-go', root).onclick = () => App.openNapr(code.value);
