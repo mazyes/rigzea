@@ -2194,6 +2194,15 @@
     (n ? navigator.setAppBadge(n) : navigator.clearAppBadge?.())?.catch?.(() => {});
   }
 
+  // The refresh button under the top bar: same reload as pull to refresh, then back to the top.
+  document.addEventListener('click', async (e) => {
+    const btn = e.target.closest('#btn-page-refresh');
+    if (!btn || btn.classList.contains('is-spinning') || !S.data) return;
+    btn.classList.add('is-spinning');
+    try { await refresh({ quiet: true }); } finally { btn.classList.remove('is-spinning'); }
+    window.scrollTo({ top: 0, behavior: R.calm() ? 'auto' : 'smooth' });
+  });
+
   document.addEventListener('DOMContentLoaded', () => {
     if (legacyRedirect()) return;
     rewriteLinks(document.body);

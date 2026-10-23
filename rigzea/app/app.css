@@ -2007,3 +2007,12 @@ a.row:active, button.row:active, .row.clickable:active, .sched-row:active, .noti
 .info-tip { display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; color: var(--muted); cursor: help; transition: background-color .2s ease, color .2s ease; }
 .info-tip:hover, .info-tip:focus-visible { background: var(--hover); color: var(--ink); }
 .card-foot .icon-btn { vertical-align: middle; margin-left: 4px; }
+
+/* Refresh button under the top bar: in the flow at the top of the page, then it stays pinned below the bar while scrolling */
+.page-refresh-dock { position: sticky; top: var(--top); z-index: 35; display: flex; justify-content: flex-end; height: 40px; padding: 4px 16px 0; pointer-events: none; }
+.page-refresh { pointer-events: auto; display: grid; place-items: center; width: 34px; height: 34px; border: 1px solid var(--line); border-radius: 50%; background: color-mix(in srgb, var(--surface) 88%, transparent); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); color: var(--ink-2); box-shadow: 0 6px 16px -10px rgba(0, 0, 0, .35); cursor: pointer; transition: transform .3s var(--spring), color .2s ease, background-color .2s ease; }
+.page-refresh svg { width: 16px; height: 16px; }
+.page-refresh:hover { color: var(--brand-ink); transform: rotate(40deg); }
+.page-refresh:active { transform: scale(.92); }
+.page-refresh.is-spinning svg { animation: spin .7s linear infinite; }
+@media (max-width: 900px) { .page-refresh-dock { height: 38px; padding-right: 12px; } }
