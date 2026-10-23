@@ -2206,10 +2206,16 @@ html, body { overscroll-behavior-y: contain; }
 #brand-bg .bb { position: absolute; display: block; transition: transform .9s cubic-bezier(.22, .8, .3, 1); will-change: transform; }
 #brand-bg .bb-a { right: -6vmin; top: 4vmin; width: min(64vmin, 620px); transform: translate3d(calc(var(--px, 0) * -28px), calc(var(--py, 0) * -20px - var(--sy, 0) * .08px), 0); }
 #brand-bg .bb-b { left: -8vmin; bottom: -6vmin; width: min(36vmin, 340px); transform: translate3d(calc(var(--px, 0) * 40px), calc(var(--py, 0) * 28px + var(--sy, 0) * .05px), 0); }
-#brand-bg img { display: block; width: 100%; height: auto; opacity: .07; animation: brandDrift 28s ease-in-out infinite alternate; }
-#brand-bg .bb-b img { opacity: .05; animation-duration: 36s; animation-direction: alternate-reverse; }
-:root[data-theme="dark"] #brand-bg img { opacity: .09; }
+#brand-bg :is(img, svg) { display: block; width: 100%; height: auto; opacity: .07; animation: brandDrift 28s ease-in-out infinite alternate; }
+#brand-bg .bb-b :is(img, svg) { opacity: .05; animation-duration: 36s; animation-direction: alternate-reverse; }
+#brand-bg.is-default .bb { color: #7d8883; }
+#brand-bg.is-default svg { width: 100%; height: auto; stroke-width: .9; opacity: .13; }
+#brand-bg.is-default .bb-b svg { opacity: .09; }
+:root[data-theme="dark"] #brand-bg.is-default .bb { color: #10b981; }
+:root[data-theme="dark"] #brand-bg.is-default svg { opacity: .14; }
+:root[data-theme="dark"] #brand-bg.is-default .bb-b svg { opacity: .09; }
+:root[data-theme="dark"] #brand-bg:not(.is-default) img { opacity: .09; }
 @keyframes brandDrift { 0% { transform: translate3d(0, 0, 0) rotate(-6deg) scale(1); } 50% { transform: translate3d(-14px, 18px, 0) rotate(-2deg) scale(1.04); } 100% { transform: translate3d(10px, -12px, 0) rotate(-9deg) scale(1.02); } }
-.lite #brand-bg img, .motion-off #brand-bg img { animation: none; }
-@media (prefers-reduced-motion: reduce) { #brand-bg img { animation: none; } #brand-bg .bb { transition: none; } }
+.lite #brand-bg :is(img, svg), .motion-off #brand-bg :is(img, svg) { animation: none; }
+@media (prefers-reduced-motion: reduce) { #brand-bg :is(img, svg) { animation: none; } #brand-bg .bb { transition: none; } }
 @media (max-width: 900px) { #brand-bg .bb-a { width: 78vmin; top: 12vmin; } #brand-bg .bb-b { display: none; } }

@@ -2052,9 +2052,11 @@ test('1zh. the company logo is a faint moving backdrop of the dashboard, not par
   const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
   await page.goto(BASE + '/app/');
   await page.getByRole('heading', { name: /გამარჯობა,/ }).waitFor();
-  assert.strictEqual(await page.locator('#brand-bg').count(), 0, 'no logo yet, no backdrop');
+  await page.locator('#brand-bg.is-default svg').first().waitFor(); // no company logo yet: Rigzea's own mark, grey
+  assert.strictEqual(await page.evaluate(() => getComputedStyle(document.querySelector('#brand-bg .bb')).color), 'rgb(125, 136, 131)');
   await page.evaluate(() => { const d = JSON.parse(localStorage.getItem('rigzea_mockdb')); d.tables.organizations[0].logo_url = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><rect width="10" height="10" fill="green"/></svg>'); localStorage.setItem('rigzea_mockdb', JSON.stringify(d)); });
   await page.reload();
+  await page.locator('#brand-bg:not(.is-default) img').first().waitFor();
   await page.locator('#brand-bg.is-on').waitFor();
   assert.strictEqual(await page.locator('.topbar img[src^="data:image/svg"]').count(), 0, 'the logo is not in the top bar');
   const op = await page.evaluate(() => Number(getComputedStyle(document.querySelector('#brand-bg .bb-a img')).opacity));

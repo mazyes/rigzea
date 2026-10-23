@@ -2274,17 +2274,23 @@
   let brandBgRaf = 0, brandBgBound = false;
   function syncBrandBg(name) {
     let el = $('#brand-bg');
-    const url = name === 'today' ? S.org?.logo_url : null;
-    if (!url) { el?.remove(); return; }
+    if (name !== 'today') { el?.remove(); return; }
+    // the company's own logo, or Rigzea's mark (grey in light mode, green in dark mode) until one is uploaded
+    const url = S.org?.logo_url || '';
+    const mode = url ? 'custom' : 'default';
+    if (el && el.dataset.mode !== mode) { el.remove(); el = null; }
     if (!el) {
       el = document.createElement('div');
       el.id = 'brand-bg';
+      el.dataset.mode = mode;
+      el.classList.toggle('is-default', mode === 'default');
       el.setAttribute('aria-hidden', 'true');
-      el.innerHTML = '<span class="bb bb-a"><img alt="" /></span><span class="bb bb-b"><img alt="" /></span>';
+      const art = mode === 'custom' ? '<img alt="" />' : icon('logo', 600);
+      el.innerHTML = `<span class="bb bb-a">${art}</span><span class="bb bb-b">${art}</span>`;
       $('#shell').prepend(el);
       requestAnimationFrame(() => el.classList.add('is-on'));
     }
-    $$('img', el).forEach(img => { if (img.getAttribute('src') !== url) img.src = url; });
+    if (url) $$('img', el).forEach(img => { if (img.getAttribute('src') !== url) img.src = url; });
     if (brandBgBound) return;
     brandBgBound = true;
     const move = (e) => {
