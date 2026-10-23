@@ -128,7 +128,8 @@
     }
     const m = String(error?.message || '');
     if (/another email/.test(m)) {
-      toast(`ეს მოწვევა სხვა ელფოსტისთვისაა. ახლა შესული ხარ როგორც ${S.user.email}. გამოდი და შედი მოწვეული ელფოსტით.`, { type: 'error', timeout: 20000, action: { label: 'გამოსვლა', fn: () => signOut() } });
+      forgetInvite();
+      toast(`ეს მოწვევა სხვა ელფოსტისთვისაა. ახლა შესული ხარ როგორც ${S.user.email}. გამოდი და შედი მოწვეული ელფოსტით.`, { type: 'error', timeout: 20000, action: { label: 'გამოსვლა', fn: () => { try { localStorage.setItem('rigzea_invite', token); } catch {} signOut(); } } });
       return null;
     }
     forgetInvite();
@@ -240,6 +241,7 @@
 
 
   function bindForm(form, handler) {
+    if (!form) return;
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const btn = form.querySelector('[type=submit]');

@@ -2020,6 +2020,107 @@ test('1zf. chat on a phone: list, conversation, back; bottom bar steps aside; no
   await page.close();
 });
 
+test('1zfa. mobile chat follows the visible viewport, keeps scroll, and handles emoji and failed reactions', async (browser) => {
+  const page = await newPage(browser, { viewport: PHONE, login: USERS.manager });
+  await page.goto(BASE + '/app/chat/');
+  await page.locator('.chat-item').first().click();
+  await page.locator('#chat-input').waitFor({ state: 'visible' });
+  await page.evaluate(() => {
+    const view = window.visualViewport;
+    Object.defineProperty(view, 'height', { configurable: true, value: 430 });
+    view.dispatchEvent(new Event('resize'));
+  });
+  const layout = await page.evaluate(() => {
+    const root = document.querySelector('#chat-root').getBoundingClientRect();
+    const head = document.querySelector('#chat-head').getBoundingClientRect();
+    const composer = document.querySelector('#chat-composer').getBoundingClientRect();
+    const history = document.querySelector('#chat-msgs').getBoundingClientRect();
+    const main = document.querySelector('.chat-main').getBoundingClientRect();
+    const style = getComputedStyle(document.querySelector('#chat-root'));
+    const mainStyle = getComputedStyle(document.querySelector('.chat-main'));
+    return { top: root.top, bottom: root.bottom, display: style.display, padding: style.padding, mainMargin: mainStyle.margin, mainTransform: mainStyle.transform, mainTop: main.top, mainBottom: main.bottom, mainHeight: main.height, head: head.top, history: history.height, composer: composer.bottom };
+  });
+  assert(layout.top <= layout.head && layout.history > 0, 'header and history stay inside the chat');
+  assert(layout.bottom <= 431 && layout.composer <= 431, 'composer stays above the emulated keyboard: ' + JSON.stringify(layout));
+  await page.locator('#chat-emoji-toggle').click();
+  await page.locator('#chat-emoji [data-emoji="🏠"]').click();
+  assert.strictEqual(await page.inputValue('#chat-input'), '🏠');
+  await page.fill('#chat-input', 'პირველი\nმეორე');
+  assert(await page.locator('#chat-input').evaluate(el => el.getBoundingClientRect().height > 42), 'multiline input grows');
+  await page.locator('#chat-emoji-toggle').click();
+  await page.locator('#chat-send').click();
+  await page.locator('.msg.is-own', { hasText: 'პირველი' }).waitFor();
+  await page.waitForFunction(() => !document.querySelector('.msg.is-pending'));
+  const msg = page.locator('.msg.is-own', { hasText: 'პირველი' });
+  await fail(page, 'insert:chat_reactions');
+  await msg.locator('[data-more]').click();
+  await page.locator('.chat-menu [data-m-react="👍"]').click();
+  await page.waitForFunction(() => !document.querySelector('.msg-react.is-mine'));
+  assert.strictEqual((await db(page)).tables.chat_reactions.length, 0, 'failed reaction rolls back');
+  await page.evaluate(() => {
+    delete window.visualViewport.height;
+    window.visualViewport.dispatchEvent(new Event('resize'));
+  });
+  assert(await page.evaluate(() => document.querySelector('#chat-root').getBoundingClientRect().bottom > 700), 'closed keyboard restores height');
+  assert((await page.evaluate(() => document.fonts.load('24px "Rigzea Emoji"', '👍'))).length > 0, 'chat emoji font loads');
+  for (const viewport of [{ width: 320, height: 640 }, { width: 393, height: 852 }, { width: 740, height: 375 }]) {
+    await page.setViewportSize(viewport);
+    await page.waitForFunction(() => document.querySelector('#chat-root').getBoundingClientRect().bottom <= window.visualViewport.height + 1);
+    const bounds = await page.evaluate(() => ({
+      composer: document.querySelector('#chat-composer').getBoundingClientRect().bottom,
+      width: document.documentElement.scrollWidth,
+      visible: window.visualViewport.height,
+      overflow: [...document.querySelectorAll('#chat-root *')].filter(el => el.getBoundingClientRect().right > innerWidth + 1).slice(0, 4).map(el => el.className),
+      outside: [...document.querySelectorAll('body *')].filter(el => el.getBoundingClientRect().right > innerWidth + 1).slice(0, 5).map(el => el.className),
+    }));
+    assert(bounds.composer <= bounds.visible + 1, 'composer fits ' + JSON.stringify(viewport) + ': ' + JSON.stringify(bounds));
+    assert(bounds.width <= viewport.width, 'no horizontal overflow at ' + viewport.width + ': ' + JSON.stringify(bounds));
+  }
+  await page.close();
+});
+
+test('1zfb. older and incoming chat messages preserve a reader’s position', async (browser) => {
+  const page = await newPage(browser, { viewport: PHONE, login: USERS.manager });
+  await page.goto(BASE + '/app/');
+  await page.getByRole('heading', { name: /გამარჯობა,/ }).waitFor();
+  await page.evaluate((CH) => {
+    const d = JSON.parse(localStorage.getItem('rigzea_mockdb'));
+    const org = d.tables.chat_channels.find(c => c.id === CH).organization_id;
+    for (let i = 0; i < 210; i++) d.tables.chat_messages.push({
+      id: 'dddd0000-0000-4000-8000-' + String(i).padStart(12, '0'),
+      channel_id: CH, organization_id: org, sender_id: 'aaaaaaaa-0000-4000-8000-000000000001',
+      body: 'შეტყობინება ' + i, attachments: [], reply_to: null, created_at: new Date(Date.now() - (210 - i) * 60000).toISOString(),
+      edited_at: null, deleted_at: null,
+    });
+    localStorage.setItem('rigzea_mockdb', JSON.stringify(d));
+  }, CHAT_CH);
+  await page.goto(BASE + '/app/chat/');
+  await page.locator('.chat-item').first().click();
+  await page.locator('.msg').first().waitFor();
+  await page.locator('#chat-msgs').evaluate(el => { el.scrollTop = 350; });
+  const before = await page.locator('#chat-msgs').evaluate(el => ({ top: el.scrollTop, height: el.scrollHeight, client: el.clientHeight }));
+  await chatIncoming(page, 'ახალი შეტყობინება');
+  await page.locator('.msg', { hasText: 'ახალი შეტყობინება' }).waitFor();
+  const after = await page.locator('#chat-msgs').evaluate(el => ({ top: el.scrollTop, height: el.scrollHeight, client: el.clientHeight }));
+  assert(Math.abs(after.top - before.top) < 3, 'incoming message leaves older reading position in place');
+  await page.locator('#chat-older').click();
+  await page.waitForFunction(() => document.querySelectorAll('#chat-msgs .msg').length > 190);
+  const older = await page.locator('#chat-msgs').evaluate(el => ({ top: el.scrollTop, height: el.scrollHeight, client: el.clientHeight }));
+  assert(older.top > after.top, 'prepending older messages keeps the same content in view: ' + JSON.stringify({ before, after, older }));
+  await page.close();
+});
+
+test('1zfc. a failed chat load can be retried on a phone', async (browser) => {
+  const page = await newPage(browser, { viewport: PHONE, login: USERS.manager });
+  await page.goto(BASE + '/app/');
+  await page.getByRole('heading', { name: /გამარჯობა,/ }).waitFor();
+  await fail(page, 'select:chat_channels');
+  await page.goto(BASE + '/app/chat/');
+  await page.locator('#chat-list [data-chat-retry]').click();
+  await page.locator('.chat-item').first().waitFor();
+  await page.close();
+});
+
 test('1zg. chat in English has no Georgian interface text; what people write stays as written', async (browser) => {
   const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
   await page.addInitScript(() => localStorage.setItem('rigzea_lang', 'en'));

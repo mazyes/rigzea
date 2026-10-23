@@ -2555,6 +2555,8 @@
     "შეტყობინება": "Message",
     "გაგზავნა": "Send",
     "ფაილის მიმაგრება": "Attach a file",
+    "ემოჯი": "Emoji",
+    "ჩატი ვერ ჩაიტვირთა.": "Chat could not load.",
     "ბოლო შეტყობინება": "Latest message",
     "აირჩიე საუბარი": "Choose a conversation",
     "ჯერ შეტყობინება არ არის": "No messages yet",

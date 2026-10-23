@@ -10,7 +10,7 @@
 const SHELL = '/app/';
 const CACHE = 'rigzea-app-v3';
 const ASSET_RE = /^\/(app|js)\/[^/]+\.(js|css)$/;
-const STATIC_RE = /\.(png|jpe?g|svg|webp|ico|webmanifest|woff2?)$/;
+const STATIC_RE = /\.(png|jpe?g|svg|webp|ico|webmanifest|woff2?|ttf)$/;
 
 // Every asset URL the shell page names, with its ?v= hash.
 function assetsIn(html) {

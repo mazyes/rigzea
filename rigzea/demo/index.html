@@ -54,6 +54,16 @@
         <p class="auth-foot">უკვე გაქვს ანგარიში? <button type="button" class="link-btn" data-auth="signin">შესვლა</button></p>
       </form>
 
+      <form id="form-check" class="form-stack" novalidate hidden>
+        <div><h1>შეამოწმე ელფოსტა</h1><p class="page-sub">დადასტურების წერილი გაიგზავნა მისამართზე <strong id="check-email"></strong>. გახსენი ბმული ან ჩაწერე წერილში მითითებული კოდი.</p></div>
+        <div class="form-error" role="alert" hidden></div>
+        <div class="otp" id="otp" role="group" aria-label="დადასტურების კოდი">
+          <input class="otp-box" inputmode="numeric" autocomplete="one-time-code" maxlength="1" aria-label="ციფრი 1" /><input class="otp-box" inputmode="numeric" maxlength="1" aria-label="ციფრი 2" /><input class="otp-box" inputmode="numeric" maxlength="1" aria-label="ციფრი 3" /><input class="otp-box" inputmode="numeric" maxlength="1" aria-label="ციფრი 4" /><input class="otp-box" inputmode="numeric" maxlength="1" aria-label="ციფრი 5" /><input class="otp-box" inputmode="numeric" maxlength="1" aria-label="ციფრი 6" />
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">დადასტურება და გაგრძელება</button>
+        <p class="auth-foot"><button type="button" class="link-btn" id="otp-resend">კოდის ხელახლა გაგზავნა</button> · <button type="button" class="link-btn" data-auth="signup">არასწორი ელფოსტა?</button></p>
+      </form>
+
       <form id="form-reset" class="form-stack" novalidate hidden>
         <div><h1>პაროლის აღდგენა</h1><p class="page-sub">გამოგიგზავნით ბმულს ახალი პაროლის დასაყენებლად.</p></div>
         <div class="form-error" role="alert" hidden></div>
@@ -169,5 +179,6 @@
   <script src="/app/views-docs.js"></script>
   <script src="/app/views-finance.js"></script>
   <script src="/app/views-admin.js"></script>
+  <script src="/app/views-chat.js"></script>
 </body>
 </html>

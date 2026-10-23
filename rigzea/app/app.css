@@ -2146,6 +2146,11 @@ html, body { overscroll-behavior-y: contain; }
 .chat-composer { padding: 8px 12px calc(10px + env(safe-area-inset-bottom)); border-top: 1px solid var(--line); background: var(--surface); }
 .chat-row { display: flex; align-items: flex-end; gap: 8px; }
 .chat-row textarea { flex: 1; min-width: 0; max-height: 140px; padding: 10px 14px; border: 1px solid var(--line-strong); border-radius: 20px; background: var(--surface-2); color: var(--ink); font: inherit; font-size: 15px; line-height: 1.4; resize: none; transition: border-color .2s ease, box-shadow .25s var(--ease); }
+.chat-emoji-picker { display: grid; grid-template-columns: repeat(auto-fill, minmax(42px, 1fr)); gap: 2px; max-height: min(220px, 32dvh); overflow-y: auto; padding: 8px 0 0; overscroll-behavior: contain; }
+.chat-emoji-picker[hidden] { display: none; }
+.chat-emoji-picker button { min-width: 42px; min-height: 42px; border: 0; border-radius: 10px; background: none; font: 26px 'Rigzea Emoji', 'Apple Color Emoji', 'Segoe UI Emoji', sans-serif; cursor: pointer; }
+.chat-emoji-picker button:active { background: var(--brand-soft); }
+.chat-emoji-toggle { flex: none; font-size: 24px; }
 .chat-row textarea:focus { outline: 0; border-color: var(--brand); box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 16%, transparent); }
 .chat-send { flex: none; display: grid; place-items: center; width: 42px; height: 42px; border: 0; border-radius: 50%; background: var(--brand); color: #fff; cursor: pointer; transition: transform .3s var(--spring), opacity .2s ease, background-color .2s ease; }
 .chat-send:hover:not(:disabled) { background: var(--brand-hover); }
@@ -2165,7 +2170,7 @@ html, body { overscroll-behavior-y: contain; }
 .chat-menu button:hover { background: var(--hover); }
 .chat-menu .is-danger { color: var(--danger); }
 .chat-menu-emoji { display: flex; gap: 2px; padding: 2px 2px 6px; border-bottom: 1px solid var(--line); margin-bottom: 4px; }
-.chat-menu-emoji button { justify-content: center; width: 34px; min-height: 34px; padding: 0; font-size: 18px; border-radius: 50%; transition: transform .25s var(--spring); }
+.chat-menu-emoji button { justify-content: center; width: 42px; min-height: 42px; padding: 0; font-size: 21px; border-radius: 50%; transition: transform .25s var(--spring); }
 .chat-menu-emoji button:hover { transform: scale(1.18); }
 .chat-lightbox { display: block; max-width: 100%; max-height: 70dvh; margin: 0 auto; border-radius: 12px; }
 @media (max-width: 900px) {
@@ -2173,14 +2178,31 @@ html, body { overscroll-behavior-y: contain; }
   .chat > .card { border-radius: 20px; }
   .chat[data-pane="list"] .chat-main, .chat[data-pane="conv"] .chat-side { display: none; }
   .chat[data-pane="list"] .chat-side { min-height: calc(100dvh - var(--top) - var(--bottom-nav) - 56px); }
-  .chat[data-pane="conv"] { position: fixed; z-index: 45; inset: var(--top) 0 0; background: var(--bg); padding: 0; }
-  .chat[data-pane="conv"] .chat-main { height: 100%; border-radius: 0; border: 0; animation: chatPane .35s var(--ease) both; }
+  .chat[data-pane="conv"] { position: fixed; z-index: 45; top: var(--chat-visible-top, var(--top)); left: 0; right: 0; height: var(--chat-visible-height, calc(100dvh - var(--top))); background: var(--bg); padding: 0; overflow: hidden; }
+  .chat[data-pane="conv"] .chat-main { height: 100%; border-radius: 0; border: 0; animation: none !important; }
+  .chat-head { flex: none; min-height: 56px; padding: 7px max(12px, env(safe-area-inset-right)) 7px max(8px, env(safe-area-inset-left)); }
+  .chat-head-text { overflow: hidden; }
+  .chat-head-text strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .chat-msgs { padding: 10px max(10px, env(safe-area-inset-right)) 8px max(10px, env(safe-area-inset-left)); overflow-anchor: none; -webkit-overflow-scrolling: touch; }
+  .chat-composer { flex: none; padding: 7px max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left)); }
+  .chat-composer:has(#chat-input:focus) { padding-bottom: 8px; }
+  .chat-row { gap: 4px; }
+  .chat-row textarea { font-size: 16px; }
+  .chat-row .icon-btn, .chat-row .chat-send { width: 42px; min-width: 42px; height: 42px; }
+  .msg-more { opacity: .7; width: 36px; height: 36px; }
+  .msg-col { max-width: calc(100% - 88px); }
+  .msg-react { min-height: 32px; }
+  .chat-jump { bottom: 78px; }
   .chat-back { display: inline-grid; }
   .msg-more { opacity: .55; }
   .msg-col { max-width: 84%; }
   body:has(.chat[data-pane="conv"]) .bottom-nav, body:has(.chat[data-pane="conv"]) .page-refresh-dock { display: none; }
+  body:has(.chat[data-pane="conv"]) .topbar-user { display: none; }
+  html:has(.chat[data-pane="conv"]), body:has(.chat[data-pane="conv"]) { overflow: hidden; }
 }
-@keyframes chatPane { from { opacity: 0; transform: translate3d(24px, 0, 0); } to { opacity: 1; transform: none; } }
+@font-face { font-family: 'Rigzea Emoji'; src: url('/app/ios-emoji-chat.ttf') format('truetype'); font-display: swap; }
+.chat-menu-emoji, .msg-react, .chat-emoji-toggle { font-family: 'Rigzea Emoji', 'Apple Color Emoji', 'Segoe UI Emoji', sans-serif; }
+.chat .msg-text, .chat .chat-prev, .chat-row textarea { font-family: 'FiraGO', 'Rigzea Emoji', 'Apple Color Emoji', 'Segoe UI Emoji', sans-serif; }
 .lite .msg-in, .lite .msg-react, .motion-off .msg-in { animation: none; }
 @media (prefers-reduced-motion: reduce) { .msg-in, .msg-react, .chat-main { animation: none !important; } }
 
