@@ -558,6 +558,11 @@
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initPills); else initPills();
 
+  // Prevent unintended zoom gestures in standalone PWA / mobile browser
+  document.addEventListener('gesturestart', (e) => e.preventDefault(), { passive: false });
+  document.addEventListener('gesturechange', (e) => e.preventDefault(), { passive: false });
+  document.addEventListener('gestureend', (e) => e.preventDefault(), { passive: false });
+
   // ---------------------------------------------------------------------------
   // Pictures for profiles and logos: checked by content (not just the file name), decoded in the browser and
   // saved again as a clean, small PNG or WebP. That strips metadata, flattens SVG (no scripts survive) and
