@@ -1107,6 +1107,20 @@ test('1o. the menu can move to the left side and the English switch stays', asyn
   return page;
 });
 
+test('1p. the notification panel opens on screen on desktop and phone', async (browser) => {
+  for (const viewport of [DESKTOP, PHONE]) {
+    const page = await newPage(browser, { viewport, login: USERS.manager });
+    await page.goto(BASE + '/app/');
+    await page.locator('#btn-notif').click();
+    await page.locator('#notif-panel').waitFor({ state: 'visible' });
+    await page.waitForTimeout(700);
+    const r = await page.locator('#notif-panel').evaluate((el) => { const b = el.getBoundingClientRect(); return { top: b.top, left: b.left, right: b.right, bottom: b.bottom, iw: innerWidth, ih: innerHeight }; });
+    assert(r.top >= 0 && r.left >= 0 && r.right <= r.iw && r.bottom <= r.ih, `panel is fully on screen: ${JSON.stringify(r)}`);
+    await page.context().close();
+  }
+  return null;
+});
+
 test('16. sales public listing: sales price, sqm price, no rental labels or internal owner data leak', async (browser) => {
   const page = await newPage(browser, { viewport: PHONE });
   await page.addInitScript(() => {

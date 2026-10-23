@@ -256,7 +256,7 @@ img { max-width: 100%; display: block; }
   color: var(--ink-2);
   text-decoration: none;
   white-space: nowrap;
-  transition: all .15s ease;
+  transition: background-color .15s ease, border-color .15s ease, color .15s ease, box-shadow .15s ease;
   user-select: none;
 }
 .topbar-tab:hover {
@@ -305,7 +305,7 @@ img { max-width: 100%; display: block; }
   border-radius: var(--r-sm);
   cursor: pointer;
   white-space: nowrap;
-  transition: all .15s ease;
+  transition: background-color .15s ease, border-color .15s ease, color .15s ease, box-shadow .15s ease;
 }
 .topbar-tools-btn:hover {
   background: var(--hover);
@@ -726,7 +726,7 @@ button.row { width: 100%; border: 0; border-bottom: 1px solid var(--line); backg
   border: none;
   color: var(--muted);
   cursor: pointer;
-  transition: all .15s ease;
+  transition: background-color .15s ease, border-color .15s ease, color .15s ease, box-shadow .15s ease;
 }
 .auth-tab:hover { color: var(--ink); }
 .auth-tab.active {
@@ -755,7 +755,7 @@ button.row { width: 100%; border: 0; border-bottom: 1px solid var(--line); backg
   font-size: 13.5px;
   font-weight: 600;
   cursor: pointer;
-  transition: all .15s ease;
+  transition: background-color .15s ease, border-color .15s ease, color .15s ease, box-shadow .15s ease;
 }
 .btn-oauth:hover {
   background: var(--surface-2);
@@ -1232,7 +1232,7 @@ details.form-more[open] summary { margin-bottom: 14px; padding-bottom: 8px; bord
   cursor: pointer;
   opacity: 0.65;
   flex-shrink: 0;
-  transition: all .15s ease;
+  transition: background-color .15s ease, border-color .15s ease, color .15s ease, box-shadow .15s ease;
 }
 .wm-thumb.active {
   border-color: var(--brand);
@@ -1470,8 +1470,8 @@ details.form-more[open] summary { margin-bottom: 14px; padding-bottom: 8px; bord
 .main .card { overflow: clip; border-radius: 21px; box-shadow: 0 5px 18px rgba(0, 0, 0, .035); }
 .main .page-head h1 { font-size: clamp(24px, 2.2vw, 30px); letter-spacing: -.025em; }
 .main .btn { border-radius: 12px; }
-@keyframes swipeIn { from { opacity: 0; transform: translate3d(0, 20px, 0); filter: blur(5px); } to { opacity: 1; transform: none; filter: none; } }
-.view-enter :is(.page-head, .chips, .dash-kpi, .card:not(.card .card), .stats, .table-wrap) { animation: swipeIn .6s var(--ease) both; animation-delay: calc(var(--i, 0) * 45ms); }
+@keyframes swipeIn { from { opacity: 0; transform: translate3d(0, 20px, 0); } to { opacity: 1; transform: none; } }
+.view-enter :is(.page-head, .chips, .dash-kpi, .card:not(.card .card), .stats, .table-wrap) { animation: swipeIn .55s var(--ease) both; animation-delay: calc(var(--i, 0) * 35ms); will-change: transform, opacity; }
 
 /* Apple-style finish in Rigzea green: frosted bars, spring easing, tinted buttons, pressed states */
 :root { --ease: cubic-bezier(.32, .72, 0, 1); --focus: #1a7f5f; }
@@ -1564,7 +1564,7 @@ html, body, button, input, select, textarea, option, optgroup, dialog, summary, 
 ::view-transition-new(root) { z-index: 2; }
 
 /* Phones: the same reveal, rising from below with a lighter blur (horizontal movement is clipped on a narrow screen) */
-@keyframes swipeInPhone { from { opacity: 0; transform: translate3d(0, 18px, 0); filter: blur(3px); } to { opacity: 1; transform: none; filter: none; } }
+@keyframes swipeInPhone { from { opacity: 0; transform: translate3d(0, 18px, 0); } to { opacity: 1; transform: none; } }
 @media (max-width: 900px) {
   .view-enter :is(.page-head, .chips, .dash-kpi, .card:not(.card .card), .stats, .table-wrap) { animation-name: swipeInPhone; animation-duration: .5s; }
 }
@@ -1651,7 +1651,7 @@ html, body, button, input, select, textarea, option, optgroup, dialog, summary, 
 
 /* iOS Safari: the frosted layers must never take taps, and the phone sheets use a plain surface (blur plus transform animation can fail to paint there) */
 .shell .topbar::before, .bottom-nav::before { pointer-events: none; }
-.topbar > *, .topbar-icons > *, #quick-add-wrap > button { position: relative; z-index: 1; }
+.topbar > :not(.popover), .topbar-icons > :not(.popover), #quick-add-wrap > button { position: relative; z-index: 1; }
 @media (max-width: 900px) {
   .popover, .popover[style] { -webkit-backdrop-filter: none; backdrop-filter: none; background: var(--surface); }
 }
