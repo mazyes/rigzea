@@ -2014,5 +2014,30 @@ a.row:active, button.row:active, .row.clickable:active, .sched-row:active, .noti
 .page-refresh svg { width: 16px; height: 16px; }
 .page-refresh:hover { color: var(--brand-ink); transform: rotate(40deg); }
 .page-refresh:active { transform: scale(.92); }
+/* While refreshing the button drops from its spot, passes under the bar and the page below dims; the bar stays untouched */
+.page-refresh { position: relative; z-index: 1; }
+.page-refresh.is-spinning { z-index: 0; transform: translateY(30px); animation: refreshDrop .5s var(--ease) both; }
 .page-refresh.is-spinning svg { animation: spin .7s linear infinite; }
+.page-refresh.is-returning { animation: refreshReturn .5s var(--ease) both; }
+@keyframes refreshDrop { 0% { transform: translateY(0); filter: blur(0); } 35% { filter: blur(2.5px); } 100% { transform: translateY(30px); filter: blur(0); } }
+@keyframes refreshReturn { 0% { transform: translateY(30px); filter: blur(0); } 40% { filter: blur(2.5px); } 100% { transform: translateY(0); filter: blur(0); } }
+.refresh-dim { position: fixed; z-index: 30; left: 0; right: 0; top: var(--top); bottom: 0; background: rgba(32, 38, 36, .26); -webkit-backdrop-filter: grayscale(.5); backdrop-filter: grayscale(.5); opacity: 0; pointer-events: none; transition: opacity .35s var(--ease); }
+.is-refreshing .refresh-dim { opacity: 1; }
+:root[data-theme="dark"] .refresh-dim { background: rgba(0, 0, 0, .38); }
+.lite .refresh-dim { -webkit-backdrop-filter: none; backdrop-filter: none; }
+@media (prefers-reduced-motion: reduce) { .page-refresh.is-spinning, .page-refresh.is-returning { animation: none; } }
 @media (max-width: 900px) { .page-refresh-dock { height: 38px; padding-right: 12px; } }
+
+/* iPhone notch and Dynamic Island: --top (the sticky bar height used by everything pinned below it) includes the top safe area,
+   and the bar pads its content below the status bar. Devices without a cutout report 0, so nothing changes there. */
+:root { --safe-top: env(safe-area-inset-top, 0px); --top: calc(56px + var(--safe-top)); }
+@media (max-width: 900px) {
+  :root { --top: calc(52px + var(--safe-top)); }
+  .shell .topbar { padding-top: var(--safe-top); padding-left: max(10px, env(safe-area-inset-left)); padding-right: max(4px, env(safe-area-inset-right)); }
+  .shell .main { padding-bottom: calc(var(--bottom-nav) + 24px + env(safe-area-inset-bottom)); padding-left: max(12px, env(safe-area-inset-left)); padding-right: max(12px, env(safe-area-inset-right)); }
+  #toast-host { bottom: calc(var(--bottom-nav) + 12px + env(safe-area-inset-bottom)); }
+  .bottom-nav { left: max(12px, env(safe-area-inset-left)); right: max(12px, env(safe-area-inset-right)); }
+  .offline-pill { top: calc(var(--top) + 8px); }
+  .page-refresh-dock { padding-right: max(12px, env(safe-area-inset-right)); }
+}
+@media (min-width: 901px) { :root { --top: calc(68px + var(--safe-top)); } .shell .topbar { padding-top: var(--safe-top); } }

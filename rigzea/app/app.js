@@ -2198,9 +2198,16 @@
   document.addEventListener('click', async (e) => {
     const btn = e.target.closest('#btn-page-refresh');
     if (!btn || btn.classList.contains('is-spinning') || !S.data) return;
-    btn.classList.add('is-spinning');
-    try { await refresh({ quiet: true }); } finally { btn.classList.remove('is-spinning'); }
-    window.scrollTo({ top: 0, behavior: R.calm() ? 'auto' : 'smooth' });
+    const root = document.documentElement, y = window.scrollY;
+    btn.classList.remove('is-returning'); btn.classList.add('is-spinning'); root.classList.add('is-refreshing');
+    const started = performance.now();
+    try { await refresh({ quiet: true }); } catch { /* refresh() already reports the failure */ } finally {
+      // keep the motion readable even when the data arrives instantly
+      await new Promise(r => setTimeout(r, Math.max(0, 650 - (performance.now() - started))));
+      root.classList.remove('is-refreshing'); btn.classList.remove('is-spinning'); btn.classList.add('is-returning');
+      setTimeout(() => btn.classList.remove('is-returning'), 520);
+    }
+    if (y > 0) window.scrollTo({ top: 0, behavior: R.calm() ? 'auto' : 'smooth' });
   });
 
   document.addEventListener('DOMContentLoaded', () => {
