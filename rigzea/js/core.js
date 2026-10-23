@@ -438,15 +438,29 @@
   root.classList.toggle('lite', (navigator.hardwareConcurrency || 8) <= 2 || (navigator.deviceMemory || 8) <= 2 || !!navigator.connection?.saveData);
   const calm = () => matchMedia('(prefers-reduced-motion: reduce)').matches || root.classList.contains('lite');
 
-  // `from` ({x, y}) makes the new theme spread out as a circle from that point (View Transitions).
+  // A wobbling liquid edge: the same 36-point polygon at growing radius, with the bulges drifting round.
+  function blobFrames(x, y, rMax) {
+    const N = 36, steps = 12, frames = [];
+    for (let k = 0; k <= steps; k++) {
+      const p = k / steps, R = rMax * 1.3 * (1 - (1 - p) ** 3) + 1, pts = [];
+      for (let i = 0; i < N; i++) {
+        const a = (i / N) * Math.PI * 2, w = 1 + 0.09 * Math.sin(3 * a + p * 6) + 0.05 * Math.sin(5 * a - p * 9);
+        pts.push(`${(x + Math.cos(a) * R * w).toFixed(1)}px ${(y + Math.sin(a) * R * w).toFixed(1)}px`);
+      }
+      frames.push(`polygon(${pts.join(',')})`);
+    }
+    return frames;
+  }
+
+  // `from` ({x, y}) makes the new theme spread out as a liquid blob from that point (View Transitions).
   function applyTheme(t = localStorage.getItem('rigzea_theme') || 'system', from = null) {
     const dark = t === 'dark' || (t === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
     const set = () => { root.dataset.theme = dark ? 'dark' : 'light'; };
     if (!from || !document.startViewTransition || calm()) return set();
-    const r = Math.hypot(Math.max(from.x, innerWidth - from.x), Math.max(from.y, innerHeight - from.y));
+    const rMax = Math.hypot(Math.max(from.x, innerWidth - from.x), Math.max(from.y, innerHeight - from.y));
     document.startViewTransition(set).ready.then(() => root.animate(
-      { clipPath: [`circle(0 at ${from.x}px ${from.y}px)`, `circle(${r}px at ${from.x}px ${from.y}px)`] },
-      { duration: 650, easing: 'cubic-bezier(.32, .72, 0, 1)', pseudoElement: '::view-transition-new(root)' })).catch(() => {});
+      { clipPath: blobFrames(from.x, from.y, rMax) },
+      { duration: 950, easing: 'linear', pseudoElement: '::view-transition-new(root)' })).catch(() => {});
   }
   applyTheme();
 

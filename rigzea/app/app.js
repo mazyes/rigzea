@@ -721,7 +721,25 @@
     if (!bar || !nav) return;
     bar.classList.remove('tabs-compact');
     if (nav.scrollWidth > nav.clientWidth + 1) bar.classList.add('tabs-compact');
+    placePill();
   }
+  // The green pill slides to the active tab, starting from where it was before the page changed.
+  let pillPos = null;
+  function placePill() {
+    const nav = $('#topbar-nav'), pill = nav?.querySelector('.nav-pill'), tab = nav?.querySelector('.topbar-tab.is-active');
+    if (!pill) return;
+    if (!tab || !tab.offsetWidth) { pill.style.opacity = '0'; return; }
+    const next = { x: tab.offsetLeft, w: tab.offsetWidth };
+    const set = (q) => { pill.style.width = q.w + 'px'; pill.style.transform = `translateX(${q.x}px)`; };
+    pill.style.transition = 'none';
+    set(pillPos || next);
+    pill.style.opacity = '1';
+    void pill.offsetWidth;
+    pill.style.transition = '';
+    set(next);
+    pillPos = next;
+  }
+  document.fonts?.ready.then(() => { pillPos = null; placePill(); });
   let fitQueued = false;
   window.addEventListener('resize', () => {
     if (fitQueued) return;
@@ -734,19 +752,13 @@
     const counts = navCounts();
     const topNav = $('#topbar-nav');
     if (topNav) {
-      const topItems = [
-        { id: 'today', label: 'ჩემთვის', icon: 'today', href: '#/today' },
-        { id: 'apartments', label: 'ჩემი ობიექტები', icon: 'building', href: '#/apartments' },
-        { id: 'deals', label: 'ჩემი გარიგებები', icon: 'wallet', href: '#/deals', count: counts.deals },
-        { id: 'contacts', label: 'ჩემი კლიენტები', icon: 'user', href: '#/owners', count: counts.contacts },
-        { id: 'tasks', label: 'ჩემი საქმეები', icon: 'tasks', href: '#/tasks', count: counts.tasks },
-        { id: 'finance', label: 'ჩემი ფინანსები', icon: 'wallet', href: '#/finance' },
-      ];
-      topNav.innerHTML = topItems.map(item => {
+      const topItems = navGroups().flatMap(g => g.items);
+      topNav.innerHTML = '<span class="nav-pill" aria-hidden="true"></span>' + topItems.map(item => {
         const active = key === item.id;
-        const c = item.count;
+        const c = counts[item.id];
         const badge = c ? `<span class="topbar-tab-count ${c.danger ? 'count-danger' : ''}" title="${esc(c.label)}">${c.n}</span>` : '';
-        return `<a class="topbar-tab ${active ? 'is-active' : ''}" href="${item.href}" ${active ? 'aria-current="page"' : ''} title="${esc(item.label)}">${icon(item.icon, 15)}<span>${item.label}</span>${badge}</a>`;
+        const short = item.label.replace(/^ჩემი\s+/, '');
+        return `<a class="topbar-tab ${active ? 'is-active' : ''}" href="${item.href}" ${active ? 'aria-current="page"' : ''} title="${esc(item.label)}">${icon(item.icon, 15)}<span>${esc(short)}</span>${badge}</a>`;
       }).join('');
       fitTopbarTabs();
     }

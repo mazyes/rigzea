@@ -908,7 +908,7 @@ test('1e. dashboard layout fits phone viewport', async (browser) => {
   return page;
 });
 
-test('1f. dark mode stays green and floats the sidebar', async (browser) => {
+test('1f. dark mode stays green and the navbar is a pill menu', async (browser) => {
   const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
   await page.addInitScript(() => localStorage.setItem('rigzea_theme', 'dark'));
   await page.goto(BASE + '/app/');
@@ -919,24 +919,20 @@ test('1f. dark mode stays green and floats the sidebar', async (browser) => {
     logo: getComputedStyle(document.querySelector('#shell .brand-mark')).backgroundColor,
     chart: getComputedStyle(document.querySelector('.dash-stage-track span')).backgroundImage,
     button: getComputedStyle(document.querySelector('#btn-new-task')).backgroundColor,
-    activeNav: getComputedStyle(document.querySelector('#rail a[aria-current="page"]')).backgroundColor,
+    pill: getComputedStyle(document.querySelector('#topbar-nav .nav-pill')).backgroundColor,
+    activeText: getComputedStyle(document.querySelector('#topbar-nav a[aria-current="page"]')).color,
     success: getComputedStyle(document.querySelector('#shell')).getPropertyValue('--ok').trim(),
-    rail: {
-      position: getComputedStyle(document.querySelector('#rail')).position,
-      borderWidth: getComputedStyle(document.querySelector('#rail')).borderTopWidth,
-      radius: getComputedStyle(document.querySelector('#rail')).borderTopLeftRadius,
-    },
+    navRadius: getComputedStyle(document.querySelector('#topbar-nav')).borderTopLeftRadius,
   }));
   assert.strictEqual(colors.theme, 'dark', 'dark theme is active');
   assert.strictEqual(colors.brand, '#047857', 'dark-mode brand is green');
   assert.strictEqual(colors.logo, 'rgb(4, 120, 87)', 'logo tile is brand green');
   assert(colors.chart.includes('52, 211, 153'), 'dashboard chart bars use green');
   assert.strictEqual(colors.button, 'rgb(4, 120, 87)', 'primary buttons are green');
-  assert(colors.activeNav.includes('4, 120, 87'), 'active navigation is green');
+  assert.strictEqual(colors.pill, 'rgb(4, 120, 87)', 'sliding nav pill is green');
+  assert.strictEqual(colors.activeText, 'rgb(255, 255, 255)', 'active tab text is white');
   assert.strictEqual(colors.success, '#34d399', 'success accents are green');
-  assert.strictEqual(colors.rail.position, 'relative', 'sidebar is not sticky');
-  assert.strictEqual(colors.rail.borderWidth, '0px', 'sidebar has no border');
-  assert.strictEqual(colors.rail.radius, '22px', 'sidebar has rounded corners');
+  assert.strictEqual(colors.navRadius, '999px', 'nav is a pill');
   return page;
 });
 
@@ -979,7 +975,7 @@ test('1i. switching areas swaps the page in place without a reload', async (brow
   await page.getByRole('heading', { name: /გამარჯობა,/ }).waitFor();
   await page.evaluate(() => { window.__noReload = true; });
   for (const [href, title] of [['/app/deals/', 'გარიგებები'], ['/app/apartments/', 'ბინები'], ['/app/', 'მთავარი']]) {
-    await page.locator(`#rail a[href="${href}"]`).click();
+    await page.locator(`#topbar-nav a[href="${href}"]`).click();
     await page.waitForFunction((t) => document.title === `Rigzea: ${t}`, title);
     assert.strictEqual(new URL(page.url()).pathname, href);
     assert(await page.evaluate(() => window.__noReload === true), `${href} reloaded the page`);
@@ -1064,7 +1060,7 @@ test('17. navigation: rentals and sales sections scope apartments, contacts and 
   await page.getByRole('heading', { name: 'მყიდველები', exact: true }).waitFor();
   await page.locator('#o-body .row', { hasText: 'გიორგი მაისურაძე' }).waitFor();
   assert.strictEqual(await page.locator('#o-body .row', { hasText: 'დავით მამულაშვილი' }).count(), 0, 'landlord is not listed among buyers');
-  assert.strictEqual(await page.locator('#rail [aria-current="page"]').getAttribute('href'), '/app/owners/');
+  assert.strictEqual(await page.locator('#topbar-nav [aria-current="page"]').getAttribute('href'), '/app/owners/');
 
   await go('#/owners?type=owner');
   await page.getByRole('heading', { name: 'მეპატრონეები', exact: true }).waitFor();
@@ -1086,7 +1082,7 @@ test('17. navigation: rentals and sales sections scope apartments, contacts and 
   // The contact's own page keeps the section highlighted
   await page.locator('#o-body .row', { hasText: 'ლიკა თოდუა' }).click();
   await page.getByRole('heading', { name: 'ლიკა თოდუა' }).waitFor();
-  assert.strictEqual(await page.locator('#rail [aria-current="page"]').getAttribute('href'), '/app/owners/');
+  assert.strictEqual(await page.locator('#topbar-nav [aria-current="page"]').getAttribute('href'), '/app/owners/');
 
   // Apartments and deals follow the section
   await go('#/apartments?type=sale');
@@ -1333,8 +1329,8 @@ test('22. team: commission split, payout marks, leaderboard and the agent role',
   });
   await agent.goto(BASE + '/app/finance/');
   await agent.getByRole('heading', { name: /გამარჯობა,/ }).waitFor();
-  assert.strictEqual(await agent.locator('#rail a[href="/app/finance/"], #rail a[href="/app/team/"], #rail a[href="/app/settings/"]').count(), 0, 'management pages are not in the menu');
-  assert.strictEqual(await agent.locator('#rail a[href="/app/deals/"]').count(), 1);
+  assert.strictEqual(await agent.locator('#topbar-nav a[href="/app/finance/"], #topbar-nav a[href="/app/team/"], #topbar-nav a[href="/app/settings/"]').count(), 0, 'management pages are not in the menu');
+  assert.strictEqual(await agent.locator('#topbar-nav a[href="/app/deals/"]').count(), 1);
   await agent.goto(BASE + '/app/apartments/?id=dddddddd-0000-4000-8000-000000000001');
   await agent.locator('#a-owner-masked').waitFor();
   assert(!(await agent.locator('#view').innerText()).includes('577 00 11 22'), 'owner phone is not shown');

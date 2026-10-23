@@ -1620,3 +1620,31 @@ html, body, button, input, select, textarea, option, optgroup, dialog, summary, 
   .view-enter :is(.page-head, .chips, .dash-kpi, .card:not(.card .card), .stats, .table-wrap) { animation: fadeIn .4s ease both !important; animation-delay: calc(var(--i, 0) * 30ms) !important; }
 }
 .dash-clock { margin-left: 4px; padding-left: 10px; border-left: 1px solid var(--line); color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+/* Floating navbar: pill menu in the middle, a green pill that slides under the active tab, round buttons on the right */
+.layout { grid-template-columns: minmax(0, 1fr); }
+.rail { display: none !important; }
+.shell .main { width: 100%; max-width: 1680px; margin-inline: auto; }
+@media (min-width: 901px) { :root { --top: 68px; } }
+.shell .topbar { gap: 10px; padding: 0 24px; border-bottom: 0; }
+.topbar-spacer { display: none; }
+.topbar .topbar-nav { position: relative; flex: 0 1 auto; margin: 0 auto; padding: 4px; gap: 2px; border-radius: 999px; background: var(--surface); border: 1px solid color-mix(in srgb, var(--line) 70%, transparent); box-shadow: 0 6px 20px -12px rgba(20, 43, 35, .25); }
+.topbar .topbar-tab { position: relative; z-index: 1; height: 36px; padding: 0 16px; border-radius: 999px; font-size: 13.5px; background: none; transition: color .25s var(--ease), background-color .2s; }
+.topbar .topbar-tab svg { display: none; }
+.topbar.tabs-compact .topbar-tab svg { display: block; width: 17px; height: 17px; }
+.topbar.tabs-compact .topbar-tab { padding: 0 12px; }
+.topbar .topbar-tab:hover { background: color-mix(in srgb, var(--ink) 6%, transparent); }
+.topbar .topbar-tab.is-active, .topbar .topbar-tab[aria-current="page"], .topbar .topbar-tab.is-active:hover { background: none; color: #fff; }
+.topbar .topbar-tab.is-active .topbar-tab-count { background: rgba(255, 255, 255, .28); color: #fff; }
+.nav-pill { position: absolute; z-index: 0; left: 0; top: 4px; bottom: 4px; width: 0; border-radius: 999px; background: var(--brand); box-shadow: 0 8px 18px -8px color-mix(in srgb, var(--brand) 75%, transparent); transition: transform .55s var(--spring), width .55s var(--spring); will-change: transform, width; }
+.topbar .icon-btn, .topbar .search-trigger, .topbar .topbar-tools-btn, .topbar #btn-new-task {
+  width: 42px; height: 42px; min-width: 42px; min-height: 42px; padding: 0; justify-content: center; border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--line) 70%, transparent); background: var(--surface); color: var(--ink);
+}
+.topbar .icon-btn:hover, .topbar .search-trigger:hover, .topbar .topbar-tools-btn:hover { background: var(--hover); }
+.topbar .search-trigger .label, .topbar .search-trigger kbd, .topbar .tools-btn-label, .topbar .tools-btn-arrow, .topbar .new-task-label, .topbar .user-meta { display: none; }
+.topbar #btn-new-task { background: var(--brand); border-color: transparent; color: #fff; }
+.topbar #btn-new-task:hover { background: var(--brand-hover); }
+.topbar-icons { gap: 8px; }
+.topbar .user-btn { padding: 3px; border-radius: 50%; }
+@media (max-width: 900px) { .topbar .topbar-nav { display: none; } .shell .topbar { padding: 0 8px 0 12px; } }
