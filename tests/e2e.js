@@ -1996,6 +1996,71 @@ test('1ze. chat permissions are enforced by the data layer, not the screen', asy
   await page.close();
 });
 
+test('1zde. private chats between CRM roles: owner, admin, manager, agent; picker excludes staff; direct routing', async (browser) => {
+  const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
+  await page.goto(BASE + '/app/');
+  await page.getByRole('heading', { name: /გამარჯობა,/ }).waitFor();
+  await page.evaluate(({ CH }) => {
+    const d = JSON.parse(localStorage.getItem('rigzea_mockdb'));
+    const org = d.tables.chat_channels.find(c => c.id === CH).organization_id;
+    const now = new Date().toISOString();
+    const members = [
+      { id: 'bbbbbbbb-0000-4000-8000-000000000010', organization_id: org, user_id: 'aaaaaaaa-0000-4000-8000-000000000010', role: 'admin', display_name: 'დავით ადმინი', created_at: now },
+      { id: 'bbbbbbbb-0000-4000-8000-000000000020', organization_id: org, user_id: 'aaaaaaaa-0000-4000-8000-000000000020', role: 'manager', display_name: 'სალომე მენეჯერი', created_at: now },
+      { id: 'bbbbbbbb-0000-4000-8000-000000000030', organization_id: org, user_id: 'aaaaaaaa-0000-4000-8000-000000000030', role: 'agent', display_name: 'გიორგი აგენტი', created_at: now },
+      { id: 'bbbbbbbb-0000-4000-8000-000000000040', organization_id: org, user_id: 'aaaaaaaa-0000-4000-8000-000000000040', role: 'agent', display_name: 'ლუკა აგენტი', created_at: now },
+    ];
+    members.forEach(m => {
+      d.tables.organization_members.push(m);
+      d.tables.chat_channel_members.push({ channel_id: CH, organization_id: org, user_id: m.user_id, last_read_at: now, joined_at: now });
+      d.users.push({ id: m.user_id, email: `${m.role}@test.ge`, password: 'test', name: m.display_name });
+    });
+    localStorage.setItem('rigzea_mockdb', JSON.stringify(d));
+  }, { CH: CHAT_CH });
+
+  await page.goto(BASE + '/app/chat/');
+  await page.locator('#chat-input').waitFor();
+  await page.click('#chat-new');
+  await page.locator('dialog[open]').waitFor();
+  const pickerLabels = await page.locator('dialog[open] [data-person]').evaluateAll(btns => btns.map(b => b.innerText.replace(/\s+/g, ' ').trim()));
+  assert(!pickerLabels.some(t => t.includes('მარიამ კაპანაძე') || t.includes('ტექნიკოსი')), 'staff accounts excluded from conversation picker');
+  assert(pickerLabels.some(t => t.includes('დავით ადმინი') && t.includes('ადმინისტრატორი')), 'admin shown');
+  assert(pickerLabels.some(t => t.includes('სალომე მენეჯერი') && t.includes('მენეჯერი')), 'manager shown');
+  assert(pickerLabels.some(t => t.includes('გიორგი აგენტი') && t.includes('აგენტი')), 'agent 1 shown');
+  assert(pickerLabels.some(t => t.includes('ლუკა აგენტი') && t.includes('აგენტი')), 'agent 2 shown');
+
+  await page.locator('dialog[open] [data-person="aaaaaaaa-0000-4000-8000-000000000030"]').click();
+  await page.locator('#chat-head strong', { hasText: 'გიორგი აგენტი' }).waitFor();
+  assert.strictEqual(await page.locator('#chat-head small').innerText(), 'აგენტი');
+  await page.fill('#chat-input', 'გიორგი, ახალი ობიექტი შეამოწმე');
+  await page.keyboard.press('Enter');
+  await page.locator('.msg.is-own', { hasText: 'ახალი ობიექტი შეამოწმე' }).waitFor();
+
+  const rpcResults = await page.evaluate(async () => {
+    const sb = R.sb, org = App.S.org.id;
+    const res = {};
+    const roles = {
+      owner: 'aaaaaaaa-0000-4000-8000-000000000001',
+      admin: 'aaaaaaaa-0000-4000-8000-000000000010',
+      manager: 'aaaaaaaa-0000-4000-8000-000000000020',
+      agent1: 'aaaaaaaa-0000-4000-8000-000000000030',
+      agent2: 'aaaaaaaa-0000-4000-8000-000000000040',
+      staff: 'aaaaaaaa-0000-4000-8000-000000000002',
+    };
+    res.toAdmin = (await sb.rpc('chat_open_direct', { p_org: org, p_other: roles.admin })).data;
+    res.toManager = (await sb.rpc('chat_open_direct', { p_org: org, p_other: roles.manager })).data;
+    res.toAgent = (await sb.rpc('chat_open_direct', { p_org: org, p_other: roles.agent1 })).data;
+    res.toStaffError = (await sb.rpc('chat_open_direct', { p_org: org, p_other: roles.staff })).error?.message;
+    return res;
+  });
+  assert(rpcResults.toAdmin, 'direct chat with admin created');
+  assert(rpcResults.toManager, 'direct chat with manager created');
+  assert(rpcResults.toAgent, 'direct chat with agent created');
+  assert(/cannot use chat/.test(rpcResults.toStaffError), 'direct chat with staff rejected');
+
+  await page.close();
+});
+
 test('1zf. chat on a phone: list, conversation, back; bottom bar steps aside; nothing overflows', async (browser) => {
   const page = await newPage(browser, { viewport: PHONE, login: USERS.manager });
   await page.goto(BASE + '/app/');

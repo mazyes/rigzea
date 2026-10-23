@@ -685,7 +685,7 @@
   const PAGE_ROUTES = location.pathname.startsWith('/app/');
   const AREAS = ['today', 'tasks', 'apartments', 'owners', 'deals', 'finance', 'team', 'settings', 'chat'];
   // Same labels scripts/stamp-assets.mjs puts in each page's <title>.
-  const AREA_TITLES = { today: 'მთავარი', tasks: 'საქმეები', apartments: 'ბინები', owners: 'კონტაქტები', deals: 'გარიგებები', finance: 'ფინანსები', team: 'გუნდი', settings: 'პარამეტრები' };
+  const AREA_TITLES = { today: 'მთავარი', tasks: 'საქმეები', apartments: 'ბინები', owners: 'კონტაქტები', deals: 'გარიგებები', finance: 'ფინანსები', team: 'გუნდი', settings: 'პარამეტრები', chat: 'ჩატი' };
   const areaPath = (name) => `/app/${name === 'today' ? '' : name + '/'}`;
   function toUrl(hash) {
     if (!PAGE_ROUTES) return '#' + String(hash).replace(/^#/, '');
@@ -1009,11 +1009,12 @@
 
     // Organization switcher
     const sw = $('#org-switch');
+    const logoHtml = S.org?.logo_url ? `<img class="org-logo" src="${esc(S.org.logo_url)}" alt="" />` : '';
     if (S.orgs.length > 1) {
-      sw.innerHTML = `<label class="sr-only" for="org-select">სამუშაო სივრცე</label><select id="org-select">${S.orgs.map(o => `<option value="${o.id}" ${o.id === S.org.id ? 'selected' : ''}>${esc(o.name)}</option>`).join('')}</select>`;
+      sw.innerHTML = `${logoHtml}<label class="sr-only" for="org-select">სამუშაო სივრცე</label><select id="org-select">${S.orgs.map(o => `<option value="${o.id}" ${o.id === S.org.id ? 'selected' : ''}>${esc(o.name)}</option>`).join('')}</select>`;
       $('#org-select').onchange = (e) => switchOrg(e.target.value);
     } else {
-      sw.innerHTML = `<span class="org-static" title="სამუშაო სივრცე">${esc(S.org.name)}</span>`;
+      sw.innerHTML = `${logoHtml}<span class="org-static" title="სამუშაო სივრცე">${esc(S.org?.name || '')}</span>`;
     }
 
     renderPlanBanner();
@@ -1121,7 +1122,6 @@
     updateBadge();
     maybeShowWelcome();
     ensureChat();
-    syncBrandBg(r.name);
     const view = views[r.name];
     if (!view) {
       renderLoading();
@@ -2333,44 +2333,6 @@
         <div class="ios-row"><span class="ios-tile" style="--t:#0d7f8f">${icon('share', 18)}</span><span class="ios-label">დააჭირე გაზიარებას</span></div>
         <div class="ios-row"><span class="ios-tile" style="--t:#2f9e6b">${icon('addSquare', 18)}</span><span class="ios-label">მთავარ ეკრანზე დამატება</span></div></div></div>` });
     }, 6000);
-  }
-
-  // The company logo as a soft, slowly drifting backdrop of the dashboard. It follows the pointer a little and the page scroll
-  // a little (two copies at different depths), stays very faint and sits behind every card. Nothing moves with reduced motion.
-  let brandBgRaf = 0, brandBgBound = false;
-  function syncBrandBg(name) {
-    let el = $('#brand-bg');
-    if (name !== 'today') { el?.remove(); return; }
-    // the company's own logo, or Rigzea's mark (grey in light mode, green in dark mode) until one is uploaded
-    const url = S.org?.logo_url || '';
-    const mode = url ? 'custom' : 'default';
-    if (el && el.dataset.mode !== mode) { el.remove(); el = null; }
-    if (!el) {
-      el = document.createElement('div');
-      el.id = 'brand-bg';
-      el.dataset.mode = mode;
-      el.classList.toggle('is-default', mode === 'default');
-      el.setAttribute('aria-hidden', 'true');
-      const art = mode === 'custom' ? '<img alt="" />' : icon('logo', 600);
-      el.innerHTML = `<span class="bb bb-a">${art}</span><span class="bb bb-b">${art}</span>`;
-      $('#shell').prepend(el);
-      requestAnimationFrame(() => el.classList.add('is-on'));
-    }
-    if (url) $$('img', el).forEach(img => { if (img.getAttribute('src') !== url) img.src = url; });
-    if (brandBgBound) return;
-    brandBgBound = true;
-    const move = (e) => {
-      if (brandBgRaf || R.calm()) return;
-      brandBgRaf = requestAnimationFrame(() => {
-        brandBgRaf = 0;
-        const bg = $('#brand-bg');
-        if (!bg) return;
-        if (e) { bg.style.setProperty('--px', ((e.clientX / innerWidth - .5) * 2).toFixed(3)); bg.style.setProperty('--py', ((e.clientY / innerHeight - .5) * 2).toFixed(3)); }
-        bg.style.setProperty('--sy', String(Math.min(scrollY, 1200)));
-      });
-    };
-    window.addEventListener('pointermove', (e) => { if (e.pointerType !== 'touch') move(e); }, { passive: true });
-    window.addEventListener('scroll', () => move(null), { passive: true });
   }
 
   // Chat: unread count for the badge and one realtime subscription per workspace. The conversation screens live in

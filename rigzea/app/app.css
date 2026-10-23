@@ -238,6 +238,7 @@ img { max-width: 100%; display: block; }
 .org-switch select { border: 1px solid transparent; background: transparent; font-weight: 600; padding: 6px 4px; border-radius: var(--r-sm); max-width: 220px; cursor: pointer; }
 .org-switch select:hover { background: var(--hover); }
 .org-switch .org-static { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px; }
+.org-switch .org-logo { width: 22px; height: 22px; border-radius: 6px; object-fit: contain; flex: none; }
 .topbar-nav {
   display: flex;
   align-items: center;
@@ -939,8 +940,8 @@ button.row { width: 100%; border: 0; border-bottom: 1px solid var(--line); backg
 .plan-tag-cur { background: var(--neutral-bg); color: var(--neutral); }
 .plan-tag-unlimited { background: rgba(4, 120, 87, 0.18); color: var(--brand-ink); border: 1px solid rgba(4, 120, 87, 0.3); }
 .plan-card-actions { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
-.plan-wa { text-align: center; font-size: 12px; color: var(--muted); }
-.plan-wa .icon { vertical-align: -2px; }
+.plan-wa { display: inline-flex; align-items: center; justify-content: center; gap: 6px; width: 100%; text-align: center; font-size: 12px; color: var(--muted); text-decoration: underline; margin-top: 6px; }
+.plan-wa .icon { flex: none; vertical-align: middle; }
 
 /* Agency Wide Banner Card */
 .plan-card.plan-card-agency {
@@ -2151,7 +2152,10 @@ html, body { overscroll-behavior-y: contain; }
 .chat-emoji-picker[hidden] { display: none; }
 .chat-emoji-picker button { min-width: 42px; min-height: 42px; border: 0; border-radius: 10px; background: none; font: 26px 'Rigzea Emoji', 'Apple Color Emoji', 'Segoe UI Emoji', sans-serif; cursor: pointer; }
 .chat-emoji-picker button:active { background: var(--brand-soft); }
-.chat-emoji-toggle { flex: none; font-size: 24px; }
+.chat-emoji-toggle { flex: none; display: inline-flex; align-items: center; justify-content: center; }
+.chat-emoji-toggle .chat-emoji-svg { display: block; width: 22px; height: 22px; transition: transform .18s var(--spring); }
+.chat-emoji-toggle:hover .chat-emoji-svg { transform: scale(1.1); }
+.chat-emoji-toggle:active .chat-emoji-svg { transform: scale(.92); }
 .chat-row textarea:focus { outline: 0; border-color: var(--brand); box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 16%, transparent); }
 .chat-send { flex: none; display: grid; place-items: center; width: 42px; height: 42px; border: 0; border-radius: 50%; background: var(--brand); color: #fff; cursor: pointer; transition: transform .3s var(--spring), opacity .2s ease, background-color .2s ease; }
 .chat-send:hover:not(:disabled) { background: var(--brand-hover); }
@@ -2202,7 +2206,7 @@ html, body { overscroll-behavior-y: contain; }
   html:has(.chat[data-pane="conv"]), body:has(.chat[data-pane="conv"]) { overflow: hidden; }
 }
 @font-face { font-family: 'Rigzea Emoji'; src: url('/app/ios-emoji-chat.ttf') format('truetype'); font-display: swap; }
-.chat-menu-emoji, .msg-react, .chat-emoji-toggle { font-family: 'Rigzea Emoji', 'Apple Color Emoji', 'Segoe UI Emoji', sans-serif; }
+.chat-menu-emoji, .msg-react { font-family: 'Rigzea Emoji', 'Apple Color Emoji', 'Segoe UI Emoji', sans-serif; }
 .chat .msg-text, .chat .chat-prev, .chat-row textarea { font-family: 'FiraGO', 'Rigzea Emoji', 'Apple Color Emoji', 'Segoe UI Emoji', sans-serif; }
 .lite .msg-in, .lite .msg-react, .motion-off .msg-in { animation: none; }
 @media (prefers-reduced-motion: reduce) { .msg-in, .msg-react, .chat-main { animation: none !important; } }
@@ -2221,27 +2225,6 @@ html, body { overscroll-behavior-y: contain; }
   .bottom-nav a:not([aria-current="page"]), .bottom-nav button:not([aria-current="page"]) { justify-content: center; padding-top: 0; }
   .bottom-nav a:not([aria-current="page"]) svg, .bottom-nav button:not([aria-current="page"]) svg { width: 24px; height: 24px; }
 }
-
-/* Company logo backdrop on the dashboard (syncBrandBg in app.js) */
-.shell { isolation: isolate; }
-#brand-bg { position: fixed; inset: var(--top) 0 0 0; z-index: -1; overflow: hidden; pointer-events: none; opacity: 0; transition: opacity 1.4s ease; }
-#brand-bg.is-on { opacity: 1; }
-#brand-bg .bb { position: absolute; display: block; transition: transform .9s cubic-bezier(.22, .8, .3, 1); will-change: transform; }
-#brand-bg .bb-a { right: -6vmin; top: 4vmin; width: min(64vmin, 620px); transform: translate3d(calc(var(--px, 0) * -28px), calc(var(--py, 0) * -20px - var(--sy, 0) * .08px), 0); }
-#brand-bg .bb-b { left: -8vmin; bottom: -6vmin; width: min(36vmin, 340px); transform: translate3d(calc(var(--px, 0) * 40px), calc(var(--py, 0) * 28px + var(--sy, 0) * .05px), 0); }
-#brand-bg :is(img, svg) { display: block; width: 100%; height: auto; opacity: .07; animation: brandDrift 28s ease-in-out infinite alternate; }
-#brand-bg .bb-b :is(img, svg) { opacity: .05; animation-duration: 36s; animation-direction: alternate-reverse; }
-#brand-bg.is-default .bb { color: #7d8883; }
-#brand-bg.is-default svg { width: 100%; height: auto; stroke-width: .9; opacity: .13; }
-#brand-bg.is-default .bb-b svg { opacity: .09; }
-:root[data-theme="dark"] #brand-bg.is-default .bb { color: #10b981; }
-:root[data-theme="dark"] #brand-bg.is-default svg { opacity: .14; }
-:root[data-theme="dark"] #brand-bg.is-default .bb-b svg { opacity: .09; }
-:root[data-theme="dark"] #brand-bg:not(.is-default) img { opacity: .09; }
-@keyframes brandDrift { 0% { transform: translate3d(0, 0, 0) rotate(-6deg) scale(1); } 50% { transform: translate3d(-14px, 18px, 0) rotate(-2deg) scale(1.04); } 100% { transform: translate3d(10px, -12px, 0) rotate(-9deg) scale(1.02); } }
-.lite #brand-bg :is(img, svg), .motion-off #brand-bg :is(img, svg) { animation: none; }
-@media (prefers-reduced-motion: reduce) { #brand-bg :is(img, svg) { animation: none; } #brand-bg .bb { transition: none; } }
-@media (max-width: 900px) { #brand-bg .bb-a { width: 78vmin; top: 12vmin; } #brand-bg .bb-b { display: none; } }
 
 /* Invitation link banner on the sign in and sign up screen */
 .invite-banner { display: flex; align-items: flex-start; gap: 12px; margin: 4px 0 16px; padding: 12px 14px; border: 1px solid color-mix(in srgb, var(--brand) 30%, var(--line)); border-radius: 14px; background: var(--brand-soft); color: var(--ink); animation: authIn .5s var(--ease) both; }

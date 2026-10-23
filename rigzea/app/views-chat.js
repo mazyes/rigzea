@@ -10,6 +10,17 @@
   const ROLES = ['owner', 'admin', 'manager', 'agent'];
   const EMOJI = ['👍', '❤️', '😂', '🎉', '🙏', '👀'];
   const PICKER = ['😀','😃','😄','😁','😆','😅','😂','🤣','😊','😍','🥰','😘','😎','🤔','😢','😭','😡','🥳','👍','👎','👏','🙌','🙏','❤️','🧡','💛','💚','💙','💜','🖤','💯','🔥','✨','🎉','👀','💪','🤝','✅','❌','🏠','🏡','🔑','📍','📷','📎','💬','👋','☀️'];
+  const EMOJI_ICON = '<svg class="chat-emoji-svg" width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">'
+    + '<defs><radialGradient id="chat-emoji-grad" cx="35%" cy="30%" r="70%"><stop offset="0%" stop-color="#FFE47A"/><stop offset="80%" stop-color="#FFB834"/><stop offset="100%" stop-color="#FFA41C"/></radialGradient></defs>'
+    + '<circle cx="12" cy="12" r="10" fill="url(#chat-emoji-grad)"/>'
+    + '<circle cx="6.2" cy="13.8" r="2.2" fill="#FF5E62" opacity="0.45"/>'
+    + '<circle cx="17.8" cy="13.8" r="2.2" fill="#FF5E62" opacity="0.45"/>'
+    + '<path d="M6.4 7.6c.9-.8 2.3-.8 3.2 0" stroke="#7A4A00" stroke-width="1.1" stroke-linecap="round"/>'
+    + '<path d="M14.4 7.6c.9-.8 2.3-.8 3.2 0" stroke="#7A4A00" stroke-width="1.1" stroke-linecap="round"/>'
+    + '<path d="M6.8 11c.7-1.4 2.3-1.4 3 0" stroke="#5C3800" stroke-width="1.6" stroke-linecap="round"/>'
+    + '<path d="M14.2 11c.7-1.4 2.3-1.4 3 0" stroke="#5C3800" stroke-width="1.6" stroke-linecap="round"/>'
+    + '<path d="M8.2 14.8c1 2.4 6.6 2.4 7.6 0" stroke="#5C3800" stroke-width="1.7" stroke-linecap="round"/>'
+    + '</svg>';
   const PAGE = 50;
   const MAX_FILES = 5, MAX_BYTES = 10 * 1024 * 1024;
   const FILE_OK = /^(image\/(png|jpe?g|webp|gif)|application\/pdf|application\/(msword|vnd\.openxmlformats-officedocument\.(wordprocessingml\.document|spreadsheetml\.sheet|presentationml\.presentation)|vnd\.ms-excel)|text\/plain)$/;
@@ -31,7 +42,15 @@
     return `<span class="avatar avatar-sm ${cls}">${p.avatar ? `<img src="${esc(p.avatar)}" alt="" />` : esc(p.name.trim().charAt(0).toUpperCase())}</span>`;
   };
   const chanOf = (id) => st.channels.find(c => c.id === id);
-  const otherOf = (ch) => st.members.filter(m => m.channel_id === ch.id && m.user_id !== me()).map(m => m.user_id)[0] || null;
+  const otherOf = (ch) => {
+    const fromMembers = st.members.filter(m => m.channel_id === ch.id && m.user_id !== me()).map(m => m.user_id)[0];
+    if (fromMembers) return fromMembers;
+    if (ch.kind === 'direct' && ch.dm_key) {
+      const parts = ch.dm_key.split(':');
+      return parts.find(u => u !== me()) || null;
+    }
+    return null;
+  };
   const titleOf = (ch) => (ch.kind === 'company' ? 'კომპანიის ჩატი' : person(otherOf(ch)).name);
   const msgsOf = (id) => st.msgs.get(id) || [];
   const lastOf = (id) => { const l = msgsOf(id); return l[l.length - 1] || null; };
@@ -216,10 +235,12 @@
     const head = $('#chat-head');
     if (!head) return;
     if (!ch) { head.innerHTML = ''; return; }
-    const sub = ch.kind === 'company' ? `${st.members.filter(m => m.channel_id === ch.id).length} წევრი` : esc(L_role(person(otherOf(ch)).role));
+    const otherId = otherOf(ch);
+    const otherRole = otherId ? person(otherId).role : null;
+    const sub = ch.kind === 'company' ? `${st.members.filter(m => m.channel_id === ch.id).length} წევრი` : esc(L_role(otherRole) || '');
     head.innerHTML = `<a class="icon-btn chat-back" href="#/chat" aria-label="უკან">${icon('back', 18)}</a>
-      ${ch.kind === 'company' ? `<span class="avatar chat-av-company">${icon('team', 18)}</span>` : avatar(otherOf(ch), 'avatar-lg')}
-      <div class="chat-head-text"><strong>${esc(titleOf(ch))}</strong><small>${sub}</small></div>`;
+      ${ch.kind === 'company' ? `<span class="avatar chat-av-company">${icon('team', 18)}</span>` : avatar(otherId, 'avatar-lg')}
+      <div class="chat-head-text"><strong>${esc(titleOf(ch))}</strong>${sub ? `<small>${sub}</small>` : ''}</div>`;
   }
   const L_role = (r) => R.L?.role?.[r] || '';
 
@@ -424,7 +445,10 @@
   }
 
   async function newChat() {
-    const people = (S.data.members || []).filter(m => m.user_id !== me() && ROLES.includes(m.role));
+    const seen = new Set();
+    const people = (S.data?.members || [])
+      .filter(m => m.user_id && m.user_id !== me() && ROLES.includes(m.role) && !seen.has(m.user_id) && seen.add(m.user_id))
+      .sort((a, b) => (a.display_name || '').localeCompare(b.display_name || ''));
     const dlg = R.dialog({
       title: 'ახალი შეტყობინება', sheet: true,
       body: `<div class="ios-list"><div class="ios-group">${people.map(m => `<button type="button" class="ios-row" data-person="${m.user_id}">${avatar(m.user_id)}<span class="ios-label"><strong>${esc(m.display_name || 'უსახელო')}</strong><small class="muted">${esc(L_role(m.role))}</small></span>${icon('chevronRight', 16)}</button>`).join('') || '<p class="empty-inline">სხვა წევრი ჯერ არ არის.</p>'}</div></div>`,
@@ -474,6 +498,7 @@
       if (!cm?.channel_id) return;
       const i = st.members.findIndex(x => x.channel_id === cm.channel_id && x.user_id === cm.user_id);
       if (i >= 0) st.members[i] = { ...st.members[i], ...cm }; else st.members.push(cm);
+      if (!chanOf(cm.channel_id)) { load().then(drawList); }
       if (cm.user_id !== me() && st.active === cm.channel_id) { const last = [...msgsOf(cm.channel_id)].reverse().find(x => x.sender_id === me() && !x.deleted_at); if (last) patchMessage(last); } // the "seen" mark moves
     }
   }
@@ -519,7 +544,7 @@
             <button type="button" class="icon-btn" id="chat-attach" aria-label="ფაილის მიმაგრება" title="ფაილის მიმაგრება">${icon('paperclip', 20)}</button>
             <input type="file" id="chat-file" hidden multiple accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt" />
             <textarea id="chat-input" rows="1" maxlength="4000" placeholder="დაწერე შეტყობინება" aria-label="შეტყობინება"></textarea>
-            <button type="button" class="icon-btn chat-emoji-toggle" id="chat-emoji-toggle" aria-label="ემოჯი" aria-expanded="false" aria-controls="chat-emoji">☺</button>
+            <button type="button" class="icon-btn chat-emoji-toggle" id="chat-emoji-toggle" aria-label="ემოჯი" aria-expanded="false" aria-controls="chat-emoji">${EMOJI_ICON}</button>
             <button type="submit" class="chat-send" id="chat-send" aria-label="გაგზავნა" disabled>${icon('send', 18)}</button>
           </div>
           <div class="chat-emoji-picker" id="chat-emoji" hidden role="group" aria-label="ემოჯი">${PICKER.map(e => `<button type="button" data-emoji="${e}" aria-label="${e}">${e}</button>`).join('')}</div>
