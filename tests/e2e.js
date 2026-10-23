@@ -1168,6 +1168,7 @@ test('1r. phone menu is an iOS style sheet with a dark switch, language control 
   await page.locator('dialog[open] .ios-list').waitFor();
   await page.waitForTimeout(500);
   assert.strictEqual(await page.locator('dialog[open] .dlg-body').evaluate(el => el.scrollTop), 0, 'sheet opens at the top');
+  assert.notStrictEqual(await page.evaluate(() => document.activeElement.id), 'sheet-dark', 'opening the menu does not focus its last switch');
   assert.strictEqual(await page.locator('dialog[open] a.ios-row').count(), 8, 'all eight areas are listed');
   const before = await page.evaluate(() => document.documentElement.dataset.theme);
   await page.locator('dialog[open] .ios-switch').click();

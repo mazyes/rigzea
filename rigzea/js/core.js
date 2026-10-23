@@ -354,7 +354,8 @@
       });
       dlg.showModal();
       opts.onOpen?.(form, dlg);
-      const first = $('[autofocus], input:not([type=hidden]), select, textarea', form);
+      // A sheet is a menu: focusing its last switch would scroll the list down and hide the first rows.
+      const first = opts.sheet ? null : $('[autofocus], input:not([type=hidden]), select, textarea', form);
       first?.focus();
     });
   }

@@ -927,6 +927,20 @@
   // Phone menu: an iOS "Settings" style sheet with grouped rows, a dark mode switch and a language control.
   const TILE = { today: '#0a8a63', apartments: '#0d7f8f', deals: '#d39213', contacts: '#8d62bd', tasks: '#cf4452', finance: '#2f9e6b', team: '#5b6b84', settings: '#6b7280' };
   const SHEET_TOOLS = [['calculator', 'wallet', 'საკომისიოს კალკულატორი'], ['matchmaker', 'search', 'კლიენტის სელექცია'], ['social-post', 'sparkle', 'პოსტის გენერატორი'], ['templates', 'file', 'ხელშეკრულებები']];
+  // Safari can keep an out-of-date app.css next to a newer app.js. Fetch it again past the cache and swap it in.
+  let stylesHealed = false;
+  function healStyles() {
+    const link = document.querySelector('link[href*="/app/app.css"]');
+    if (stylesHealed || !link) return;
+    stylesHealed = true;
+    fetch(link.href, { cache: 'reload' }).then(() => {
+      const fresh = link.cloneNode();
+      fresh.href += '&r=' + Date.now();
+      fresh.onload = () => link.remove();
+      link.after(fresh);
+    }).catch(() => {});
+  }
+
   function openMoreSheet() {
     const key = navKey();
     const counts = navCounts();
@@ -950,7 +964,7 @@
         <div class="ios-group"><button type="button" class="ios-row ios-danger" data-action="signout">${icon('logout', 18)}<span class="ios-label">გამოსვლა</span></button></div>
       </div>`,
       onOpen: (form, dlg) => {
-        requestAnimationFrame(() => { const body = form.querySelector('.dlg-body'); if (body) body.scrollTop = 0; }); // focus must not leave the sheet scrolled down
+        requestAnimationFrame(() => { if (getComputedStyle(form.querySelector('.ios-row')).display !== 'flex') healStyles(); });
         $$('a.ios-row', form).forEach(a => a.addEventListener('click', () => dlg.close()));
         $$('[data-sheet-tool]', form).forEach(b => b.addEventListener('click', () => { dlg.close(); $(`#tools-panel [data-tool="${b.dataset.sheetTool}"]`)?.click(); }));
         $('#sheet-dark', form).addEventListener('change', (e) => {
