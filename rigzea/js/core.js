@@ -214,6 +214,7 @@
     spark: '<path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/>',
     infinity: '<path d="M12 12c-2-2.67-4-4-6-4a4 4 0 1 0 0 8c2 0 4-1.33 6-4Zm0 0c2 2.67 4 4 6 4a4 4 0 0 0 0-8c-2 0-4 1.33-6 4Z"/>',
     handshake: '<path d="m11 17 2 2a1 1 0 0 0 1.4 0l4.3-4.3a1 1 0 0 0 0-1.4l-3-3"/><path d="m18 10 3-3a2 2 0 0 0 0-2.8l-1.2-1.2a2 2 0 0 0-2.8 0l-5 5"/><path d="m2 14 5 5a2 2 0 0 0 2.8 0l1.2-1.2a2 2 0 0 0 0-2.8l-3-3"/>',
+    deal: '<path d="M2 8h3v8H2z"/><path d="M22 8h-3v8h3z"/><path d="M5 9.5 8.5 8.2 12 7.5l4 1.6 3 .9"/><path d="m5 14.5 5 4.3a1.5 1.5 0 0 0 2.2-2"/><path d="m12.2 16.8 1.3 1.1a1.5 1.5 0 0 0 2.2-2.1"/><path d="m15.7 15.8.9.8a1.5 1.5 0 0 0 2.4-1.6"/><path d="M8.5 8.2 12 11.7a1.6 1.6 0 0 0 2.3-2.2l-2.3-2"/>',
   };
   const icon = (name, size = 18) => `<svg class="icon" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${name === 'logo' ? '2.4' : '1.8'}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name] || ''}</svg>`;
 

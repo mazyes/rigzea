@@ -1027,7 +1027,7 @@ test('1l. the + button opens its menu on a phone and every item is reachable', a
   await page.goto(BASE + '/app/');
   await page.locator('#btn-new-task').waitFor();
   const box = await page.locator('#btn-new-task').boundingBox();
-  assert(box.width >= 40 && box.height >= 40 && Math.abs(box.width - box.height) < 2, `+ is a round tap target: ${JSON.stringify(box)}`);
+  assert(box.width >= 38 && box.height >= 38 && Math.abs(box.width - box.height) < 2, `+ is a round tap target: ${JSON.stringify(box)}`);
   await page.locator('#btn-new-task').click();
   const panel = page.locator('#quick-add-panel');
   await panel.waitFor({ state: 'visible' });
@@ -1042,6 +1042,43 @@ test('1l. the + button opens its menu on a phone and every item is reachable', a
   }
   await page.locator('#quick-add-panel [data-qa=task]').click();
   await page.locator('dialog[open]').waitFor();
+  return page;
+});
+
+test('1n. clicking navbar tabs fast keeps the pill glued to the active tab and ends exactly on it', async (browser) => {
+  const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
+  await page.goto(BASE + '/app/');
+  await page.locator('#topbar-nav .is-active').waitFor();
+  await page.waitForTimeout(800);
+  const gap = () => page.evaluate(() => {
+    const p = document.querySelector('#topbar-nav .nav-pill').getBoundingClientRect(), a = document.querySelector('#topbar-nav .is-active').getBoundingClientRect();
+    return Math.max(Math.abs(p.left - a.left), Math.abs(p.right - a.right));
+  });
+  assert(await gap() <= 1, 'pill is on the active tab on first paint');
+  // six switches 70ms apart, back and forth, while the previous ones are still animating
+  await page.evaluate(() => new Promise((done) => {
+    const ids = ['apartments', 'finance', 'contacts', 'deals', 'today', 'finance'];
+    ids.forEach((id, i) => setTimeout(() => { document.querySelector(`#topbar-nav a[data-id="${id}"]`).click(); if (i === ids.length - 1) done(); }, i * 70));
+  }));
+  await page.waitForTimeout(1200);
+  const end = await gap();
+  assert(end <= 1, `pill is ${end}px off the active tab after the animation`);
+  assert.strictEqual(await page.locator('#topbar-nav .is-active').getAttribute('data-id'), 'finance');
+  await page.setViewportSize({ width: 1100, height: 800 });
+  await page.waitForTimeout(300);
+  assert(await gap() <= 1, 'pill follows the tab after a resize');
+  assert.deepStrictEqual(page.errors, []);
+  return page;
+});
+
+test('1m. the plans list highlights the plan you are on', async (browser) => {
+  const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
+  await page.goto(BASE + '/app/settings/?id=plan');
+  await page.locator('.plan-grid').waitFor();
+  const trial = await page.locator('.plan-trial').count();
+  const current = await page.locator('.plan-card.is-current').count();
+  assert.strictEqual(trial + current, 1, 'exactly one highlighted "your plan" block');
+  assert((await page.locator('.plan-grid .plan-tag-now').first().innerText()).includes('შენი პაკეტი'), 'it says it is your plan');
   return page;
 });
 

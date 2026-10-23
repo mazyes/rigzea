@@ -623,12 +623,16 @@
     lastViewName = r.name;
     if (PAGE_ROUTES) document.title = `Rigzea: ${AREA_TITLES[r.name]}`;
     clearTimeout(leaveTimer);
-    if (!changed || !S.data || R.calm()) { if (changed) window.scrollTo(0, 0); render(); return; }
-    // Smooth page change: the nav starts moving at once, the old page fades out, then the new one swipes in.
-    renderShell();
     const v = $('#view');
+    // A fade-out still pending for the previous page must never leave this one invisible.
+    const leaving = v.classList.contains('view-leave');
+    v.classList.remove('view-leave');
+    if (!changed || !S.data || R.calm()) { if (changed || leaving) window.scrollTo(0, 0); render(); return; }
+    // Smooth page change: the nav starts moving at once, the old page lifts and fades out, then the new one rises in.
+    try { renderShell(); } catch (err) { console.error(err); }
     v.classList.add('view-leave');
-    leaveTimer = setTimeout(() => { v.classList.remove('view-leave'); window.scrollTo(0, 0); render(); }, 140);
+    // The scroll reset happens while the page is fully faded out, so it is never seen.
+    leaveTimer = setTimeout(() => { v.classList.remove('view-leave'); window.scrollTo(0, 0); render(); }, 130);
   }
   let leaveTimer = 0;
   window.addEventListener('popstate', onRoute);
@@ -721,48 +725,70 @@
     return group.items.map(n => `<a class="${cls}" href="${n.href}" ${key === n.id ? 'aria-current="page"' : ''}>${icon(n.icon)}<span>${n.label}</span>${countHtml(counts[n.id])}</a>`).join('');
   }
 
-  // Tab labels show only when every tab fits; otherwise the tabs become icons. Measured rather
-  // than set by breakpoints because the organization name, counts and language change the width.
-  function fitTopbarTabs() {
-    const bar = $('.topbar'), nav = $('#topbar-nav');
-    if (!bar || !nav) return;
-    bar.classList.remove('tabs-compact');
-    if (nav.scrollWidth > nav.clientWidth + 1) bar.classList.add('tabs-compact');
-    placePill();
+  // The green pill is positioned from JS, never by a CSS transition, so it can not drift from the tabs.
+  // pillBox is where it was last drawn (in the nav's own coordinates, which do not depend on the nav being centred).
+  let pillRaf = 0, pillBox = null;
+  const tabLabel = (tab) => tab?.querySelector(':scope > span:not(.topbar-tab-count)');
+  function drawPill(x, w) {
+    const pill = $('#topbar-nav .nav-pill');
+    if (!pill) return;
+    pillBox = { x, w };
+    pill.style.width = w + 'px';
+    pill.style.transform = `translate3d(${x}px,0,0)`;
   }
-  // Places the green pill under the active tab without animating (first paint, resize, fonts).
+  // Puts the pill exactly on the active tab (first paint, resize, fonts). Does nothing while a switch is animating:
+  // that loop follows the live tab by itself.
   function placePill() {
+    if (pillRaf) return;
     const nav = $('#topbar-nav'), pill = nav?.querySelector('.nav-pill'), tab = nav?.querySelector('.topbar-tab.is-active');
     if (!pill) return;
-    if (!tab || !tab.offsetWidth) { pill.style.opacity = '0'; return; }
-    pill.style.transition = 'none';
+    if (!tab || !tab.offsetWidth) { pill.style.opacity = '0'; pillBox = null; return; }
     pill.style.opacity = '1';
-    pill.style.width = tab.offsetWidth + 'px';
-    pill.style.transform = `translateX(${tab.offsetLeft}px)`;
-    void pill.offsetWidth;
-    pill.style.transition = '';
+    drawPill(tab.offsetLeft, tab.offsetWidth);
   }
-  // Moves the active state to another tab so everything animates together: measure the end layout first
-  // (transitions off), put the old state back, then switch with transitions on and send the pill to the measured spot.
+  // Each tab gets its label's real width as --lw, so the label opens with a transition that ends exactly at the text
+  // (a guessed max-width would make the tab finish early and the pill with it). Idle only: widths snap, no transition.
+  function fitTopbarTabs() {
+    const nav = $('#topbar-nav');
+    if (!nav || pillRaf) return;
+    const changes = [];
+    nav.querySelectorAll('.topbar-tab').forEach(t => {
+      const s = tabLabel(t), v = s ? Math.ceil(s.scrollWidth) + 'px' : '';
+      if (s && t.style.getPropertyValue('--lw') !== v) changes.push([t, v]);
+    });
+    if (changes.length) {
+      nav.classList.add('no-anim');
+      changes.forEach(([t, v]) => t.style.setProperty('--lw', v));
+      void nav.offsetWidth;
+      nav.classList.remove('no-anim');
+    }
+    placePill();
+  }
+  // Moves the active state to another tab. The CSS opens the new label and closes the old one (same duration and
+  // curve). The pill is blended from its old box to the new tab's live box, and the blend progress is read from the
+  // new label's own width, so it uses the very same easing and is on the tab again at the last frame.
   function moveActiveTab(nav, key) {
     const prev = nav.querySelector('.topbar-tab.is-active'), next = nav.querySelector(`[data-id="${key}"]`);
     if (prev === next) return;
-    const pill = nav.querySelector('.nav-pill');
+    const label = tabLabel(next), from = pillBox, start = label ? label.offsetWidth : 0;
     const mark = (tab, on) => { tab?.classList.toggle('is-active', on); if (on) tab.setAttribute('aria-current', 'page'); else tab?.removeAttribute('aria-current'); };
-    nav.classList.add('no-anim');
     mark(prev, false); mark(next, true);
-    const end = next ? { x: next.offsetLeft, w: next.offsetWidth } : null;
-    mark(next, false); mark(prev, true);
-    void nav.offsetWidth;
-    nav.classList.remove('no-anim');
-    mark(prev, false); mark(next, true);
-    if (!pill) return;
-    if (!end) { pill.style.opacity = '0'; return; }
-    pill.style.opacity = '1';
-    pill.style.width = end.w + 'px';
-    pill.style.transform = `translateX(${end.x}px)`;
+    cancelAnimationFrame(pillRaf);
+    pillRaf = 0;
+    if (!next || !from || !next.offsetWidth || R.calm()) { placePill(); return; }
+    const end = parseFloat(next.style.getPropertyValue('--lw')) || label.scrollWidth, t0 = performance.now();
+    $('#topbar-nav .nav-pill').style.opacity = '1';
+    const tick = () => {
+      pillRaf = 0; // so an error below can never leave placePill blocked
+      if (!next.isConnected || !next.classList.contains('is-active')) { placePill(); return; }
+      const p = end - start > 1 ? Math.min(1, Math.max(0, (label.offsetWidth - start) / (end - start))) : 1;
+      drawPill(from.x + (next.offsetLeft - from.x) * p, from.w + (next.offsetWidth - from.w) * p);
+      if (performance.now() - t0 < 560) pillRaf = requestAnimationFrame(tick);
+      else placePill();
+    };
+    tick();
   }
-  document.fonts?.ready.then(placePill);
+  document.fonts?.ready.then(fitTopbarTabs);
   let fitQueued = false;
   window.addEventListener('resize', () => {
     if (fitQueued) return;
@@ -775,12 +801,13 @@
     const counts = navCounts();
     const topNav = $('#topbar-nav');
     if (topNav) {
-      const TAB_ICONS = { deals: 'key', finance: 'chart' }; // deals and finance would otherwise both show the wallet
+      const TAB_ICONS = { deals: 'deal', finance: 'chart' }; // deals and finance would otherwise both show the wallet
       const topItems = navGroups().flatMap(g => g.items);
       const badgeOf = (c) => c ? `<span class="topbar-tab-count ${c.danger ? 'count-danger' : ''}" title="${esc(c.label)}">${c.n}</span>` : '';
       const sig = topItems.map(item => item.id).join();
       if (topNav.dataset.sig !== sig) {
         topNav.dataset.sig = sig;
+        cancelAnimationFrame(pillRaf); pillRaf = 0; pillBox = null; // the pill element is replaced below
         topNav.innerHTML = '<span class="nav-pill" aria-hidden="true"></span>' + topItems.map(item => {
           const active = key === item.id;
           const short = item.label.replace(/^ჩემი\s+/, '');
@@ -1392,19 +1419,24 @@
   }
 
   function planCardsHtml(recId, currentId) {
-    return `<div class="plan-grid">${PLAN_ORDER.map(id => {
+    const st = planState();
+    const status = st.end && !st.lapsed && !st.trialEnded ? `აქტიურია ${R.date(st.end)}-მდე (დარჩენილია ${st.daysLeft} დღე)` : 'უფასო პაკეტი';
+    const trialBar = currentId === 'trial'
+      ? `<div class="plan-trial"><span class="plan-tag plan-tag-now">${icon('check', 14)} შენი პაკეტი</span><strong>საცდელი პერიოდი</strong><span>ყველა ფუნქცია ღიაა${st.daysLeft !== null ? ` · დარჩენილია ${st.daysLeft} დღე` : ''}</span></div>`
+      : '';
+    return `<div class="plan-grid">${trialBar}${PLAN_ORDER.map(id => {
       const p = PLANS[id];
       const cur = id === currentId, rec = id === recId && !cur;
       const isAgency = id === 'agency';
       return `<div class="plan-card ${isAgency ? 'plan-card-agency' : ''} ${rec ? 'is-rec' : ''} ${cur ? 'is-current' : ''}">
         <div class="plan-card-main">
-          ${isAgency ? '<span class="plan-tag plan-tag-unlimited"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-4px;margin-right:6px"><path d="M12 12c-2-2.67-4-4-6-4a4 4 0 1 0 0 8c2 0 4-1.33 6-4Zm0 0c2 2.67 4 4 6 4a4 4 0 0 0 0-8c-2 0-4 1.33-6 4Z"/></svg>სრულიად ულიმიტო პაკეტი</span>' : rec ? '<span class="plan-tag">შენთვის შესაფერისი</span>' : cur ? '<span class="plan-tag plan-tag-cur">შენი პაკეტი</span>' : ''}
+          ${isAgency ? '<span class="plan-tag plan-tag-unlimited"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-4px;margin-right:6px"><path d="M12 12c-2-2.67-4-4-6-4a4 4 0 1 0 0 8c2 0 4-1.33 6-4Zm0 0c2 2.67 4 4 6 4a4 4 0 0 0 0-8c-2 0-4 1.33-6 4Z"/></svg>სრულიად ულიმიტო პაკეტი</span>' : rec ? '<span class="plan-tag">შენთვის შესაფერისი</span>' : cur ? `<span class="plan-tag plan-tag-now">${icon('check', 14)} შენი პაკეტი</span>` : ''}
           <h3>${esc(p.name)}</h3>
           ${p.desc ? `<p class="plan-desc" style="font-size:12px;color:var(--muted);margin:4px 0 0">${esc(p.desc)}</p>` : ''}
           <div class="plan-price">${p.price ? `${p.price} ₾<small> / 30 დღე</small>` : '0 ₾<small> / უფასო</small>'}</div>
         </div>
         <ul>${p.bullets.map(b => `<li>${esc(b)}</li>`).join('')}</ul>
-        ${cur ? '' : p.price ? `<div class="plan-card-actions">
+        ${cur ? `<div class="plan-current-note">${esc(status)}</div>` : p.price ? `<div class="plan-card-actions">
           <button type="button" class="btn ${rec || isAgency ? 'btn-primary' : 'btn-secondary'} btn-sm" data-kisa-checkout="${id}">${icon('card', 16)} ბარათით გადახდა</button>
           <a class="plan-wa" href="${esc(waLink(p))}" target="_blank" rel="noopener">${icon('whatsapp', 13)} WhatsApp-ით შეკვეთა</a>
         </div>` : ''}
@@ -1469,7 +1501,7 @@
     }
     return R.dialog({
       title, subtitle: text, wide: true,
-      body: `${planCardsHtml(rec, st.trial || st.noTrial ? null : st.eff)}
+      body: `${planCardsHtml(rec, st.trial ? 'trial' : st.noTrial ? null : st.eff)}
         <p class="plan-contact">გააქტიურება ავტომატურია ბარათით (KISA), ან მოგვწერე WhatsApp-ში / დარეკე <a href="tel:${CONTACT.phone}">${CONTACT.phone}</a> და დაგეხმარებით.</p>
         <div class="plan-cta"><a class="btn btn-secondary" href="${esc(waLink(PLANS[rec]))}" target="_blank" rel="noopener">${icon('whatsapp', 16)} მოგვწერე WhatsApp-ში</a><button type="button" class="btn btn-ghost" data-close>მოგვიანებით</button></div>`,
     });
