@@ -2501,6 +2501,26 @@ test('1zp. contracts on a phone: no overflow, optional fields are folded', async
   return page;
 });
 
+test('1zr. the narrowest phone (320px) and landscape never scroll sideways; section tabs are 44px tall', async (browser) => {
+  const page = await newPage(browser, { viewport: { width: 320, height: 640 }, login: USERS.manager });
+  for (const url of ['/app/', '/app/tasks/', '/app/apartments/', '/app/deals/?id=documents', '/app/settings/?id=org', '/app/chat/']) {
+    await page.goto(BASE + url);
+    await page.locator('#view h1, .chat').first().waitFor();
+    await page.waitForTimeout(150);
+    assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), url + ' scrolls sideways at 320px');
+  }
+  await page.goto(BASE + '/app/apartments/');
+  const tabs = page.locator('a.section-tab');
+  await tabs.first().waitFor({ state: 'visible' });
+  await page.waitForFunction(() => document.querySelector('a.section-tab')?.getBoundingClientRect().height > 0);
+  assert(await page.evaluate(() => document.querySelector('a.section-tab').getBoundingClientRect().height >= 44), 'section tabs reach the 44px touch size');
+  await page.setViewportSize({ width: 740, height: 360 });
+  await page.goto(BASE + '/app/settings/?id=profile');
+  await page.locator('#view h1').waitFor();
+  assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'landscape phone fits');
+  return page;
+});
+
 (async () => {
   const server = await serve();
   const browser = await launch();

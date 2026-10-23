@@ -1743,6 +1743,27 @@ a.row:active, button.row:active, .row.clickable:active, .sched-row:active, .noti
   .check input { margin: 0; }
 }
 
+/* Settings: grouped side rail on desktop, the usual scrolling tab strip on phones */
+.settings-shell { display: block; }
+.settings-tabs .tab-group { display: none; }
+.settings-shell #s-body { min-width: 0; }
+.settings-shell #s-body .card { margin-bottom: 12px; }
+.settings-shell #s-body .card-head { padding: 10px 14px; min-height: 42px; }
+.settings-shell #s-body .card-body { padding: 12px 14px; }
+@media (min-width: 900px) {
+  .settings-shell { display: grid; grid-template-columns: 200px minmax(0, 860px); gap: 20px; align-items: start; }
+  .settings-tabs { flex-direction: column; width: auto; overflow: visible; margin-bottom: 0; gap: 1px; position: sticky; top: 12px; }
+  .settings-tabs .tab-group { display: block; padding: 10px 14px 4px; font-size: 11.5px; font-weight: 600; letter-spacing: .02em; color: var(--muted); }
+  .settings-tabs .tab-group:first-child { padding-top: 4px; }
+  .settings-tabs .tab { justify-content: flex-start; }
+}
+
+/* Phones: the section tabs, plan links and filled inputs reach the 44px touch size; the narrowest phones (320px) keep the top bar inside the screen */
+@media (max-width: 900px) {
+  .section-tab, .plan-wa { min-height: 44px; }
+  select.input, input.input { min-height: 44px; }
+}
+
 /* ==== AGENT-B-APPEND-HERE: agent B adds new CSS above this line only, with the Edit tool ==== */
 
 /* Left menu (account menu > მენიუს მდებარეობა). Desktop only: phones keep the bottom bar */
@@ -2236,17 +2257,5 @@ html, body { overscroll-behavior-y: contain; }
 .invite-banner.is-bad .invite-ico { background: var(--warn, #b45309); }
 .auth .field input[readonly] { background: var(--surface-2); color: var(--ink-2); cursor: not-allowed; }
 
-/* Settings: grouped side rail on desktop, the usual scrolling tab strip on phones */
-.settings-shell { display: block; }
-.settings-tabs .tab-group { display: none; }
-.settings-shell #s-body { min-width: 0; }
-.settings-shell #s-body .card { margin-bottom: 12px; }
-.settings-shell #s-body .card-head { padding: 10px 14px; min-height: 42px; }
-.settings-shell #s-body .card-body { padding: 12px 14px; }
-@media (min-width: 900px) {
-  .settings-shell { display: grid; grid-template-columns: 200px minmax(0, 860px); gap: 20px; align-items: start; }
-  .settings-tabs { flex-direction: column; width: auto; overflow: visible; margin-bottom: 0; gap: 1px; position: sticky; top: 12px; }
-  .settings-tabs .tab-group { display: block; padding: 10px 14px 4px; font-size: 11.5px; font-weight: 600; letter-spacing: .02em; color: var(--muted); }
-  .settings-tabs .tab-group:first-child { padding-top: 4px; }
-  .settings-tabs .tab { justify-content: flex-start; }
-}
+/* 320px phones: tighter top bar gaps so nothing pushes the page sideways (last, so it wins over the earlier top bar rules) */
+@media (max-width: 340px) { .shell .topbar { gap: 3px; } }

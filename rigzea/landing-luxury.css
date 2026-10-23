@@ -3629,3 +3629,9 @@ html[lang="en"] :is(h1, h2, h3, .lx-nav-link, .lx-badge, .lx-btn, .lx-plan-name,
 /* Home: sections and steps flow without divider lines; spacing alone separates them. */
 .lx-home :is(.lx-how-it-works-section, .lx-how-it-works-header, .lx-story-section) { border: 0; }
 .luxury-theme.lx-home .lx-steps-grid-3 > .lx-step-card { border: 0; }
+
+/* Phones: footer links, buttons and the billing switch reach the 44px touch size */
+@media (max-width: 900px) {
+  .lx-footer-links a { display: inline-flex; align-items: center; min-height: 44px; }
+  .lx-btn, .lx-billing-toggle-pill button { min-height: 44px; }
+}
