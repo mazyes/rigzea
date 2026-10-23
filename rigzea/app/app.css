@@ -1470,7 +1470,7 @@ details.form-more[open] summary { margin-bottom: 14px; padding-bottom: 8px; bord
 .main .card { overflow: clip; border-radius: 21px; box-shadow: 0 5px 18px rgba(20, 43, 35, .035); }
 .main .page-head h1 { font-size: clamp(24px, 2.2vw, 30px); letter-spacing: -.025em; }
 .main .btn { border-radius: 12px; }
-@keyframes swipeIn { from { opacity: 0; transform: translate3d(28px, 0, 0) scale(.99); } to { opacity: 1; transform: none; } }
+@keyframes swipeIn { from { opacity: 0; transform: translate3d(20px, 12px, 0); filter: blur(6px); } to { opacity: 1; transform: none; filter: none; } }
 .view-enter :is(.page-head, .chips, .dash-kpi, .card:not(.card .card), .stats, .table-wrap) { animation: swipeIn .6s var(--ease) both; animation-delay: calc(var(--i, 0) * 45ms); }
 
 /* Apple-style finish in Rigzea green: frosted bars, spring easing, tinted buttons, pressed states */
@@ -1557,3 +1557,17 @@ h1, h2, h3 { letter-spacing: -.02em; }
 html, body, button, input, select, textarea, option, optgroup, dialog, summary, kbd, code, pre, samp, table { font-family: 'FiraGO', system-ui, sans-serif; }
 ::placeholder { font-family: inherit; }
 @media (max-width: 900px) { .bottom-nav a, .bottom-nav button { justify-content: flex-start; padding-top: 8px; white-space: nowrap; } }
+
+/* Circular theme reveal (View Transitions): the new theme is animated from the toggle, see applyTheme in core.js */
+::view-transition-old(root), ::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
+::view-transition-old(root) { z-index: 1; }
+::view-transition-new(root) { z-index: 2; }
+
+/* Low-end devices: transform and opacity only, no blur, no frosted glass, no big shadows */
+@keyframes swipeInLite { from { opacity: 0; transform: translate3d(0, 10px, 0); } to { opacity: 1; transform: none; } }
+.lite .view-enter :is(.page-head, .chips, .dash-kpi, .card:not(.card .card), .stats, .table-wrap) { animation-name: swipeInLite; animation-duration: .3s; animation-delay: calc(var(--i, 0) * 25ms); }
+.lite .shell .topbar::before, .lite .popover, .lite .popover[style], .lite .bottom-nav, .lite .dlg::backdrop { -webkit-backdrop-filter: none; backdrop-filter: none; }
+.lite .shell .topbar::before, .lite .popover, .lite .popover[style], .lite .bottom-nav { background: var(--surface); }
+.lite .dlg::backdrop { background: rgba(12, 18, 24, .5); }
+.lite .popover, .lite .popover[style], .lite .main .card, .lite .dash-kpi, .lite .dash-kpi:hover { box-shadow: none; }
+.lite .dash-kpi:hover, .lite .dash-action:hover { transform: none; }

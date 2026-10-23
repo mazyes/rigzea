@@ -75,6 +75,17 @@ async function run() {
       await page.locator('#form-signup').waitFor();
       assert.strictEqual(await page.locator('#form-signup h1').innerText(), 'ანგარიშის შექმნა');
       assert.strictEqual(page.errors.length, 0, `Errors on /signup/: ${page.errors.join('; ')}`);
+      // The name must be written in Georgian letters, except for the owner's address.
+      const nameOk = async (name, email) => {
+        await page.fill('#form-signup [name=name]', name);
+        await page.fill('#form-signup [name=email]', email);
+        return page.$eval('#form-signup [name=name]', el => el.checkValidity());
+      };
+      assert.strictEqual(await nameOk('Giorgi Beridze', 'new@example.com'), false, 'Latin name is rejected');
+      assert.strictEqual(await nameOk('გიორგი 7', 'new@example.com'), false, 'digits are rejected');
+      assert.strictEqual(await nameOk('გიორგი ბერიძე', 'new@example.com'), true, 'Georgian name is accepted');
+      assert.strictEqual(await nameOk('ნინო ბერიძე-მელაძე', 'new@example.com'), true, 'double surname is accepted');
+      assert.strictEqual(await nameOk('Nika', 'akhalaianika44@gmail.com'), true, 'owner is exempt');
       await page.close();
       console.log('✓ 5. /signup/ renders registration form cleanly');
     }

@@ -203,6 +203,7 @@
     await boot();
   });
 
+  R.bindGeorgianName($('#form-signup'));
   bindForm($('#form-signup'), async (v) => {
     const { data, error } = await sb.auth.signUp({
       email: v.email.trim(),
@@ -897,6 +898,23 @@
     v.classList.remove('view-enter');
     void v.offsetWidth;
     v.classList.add('view-enter');
+    v.querySelectorAll('.dash-kpi strong, .dash-donut strong').forEach(countUp);
+  }
+
+  // Big numbers count up once when a page opens; the text keeps its own separators and currency sign.
+  function countUp(el) {
+    const m = /\d(?:[\d,]|\s(?=\d))*/.exec(el.textContent);
+    const end = m && Number(m[0].replace(/\D/g, ''));
+    if (!end || R.calm()) return;
+    const sep = (/[\s,]/.exec(m[0]) || [''])[0];
+    const pre = el.textContent.slice(0, m.index), post = el.textContent.slice(m.index + m[0].length);
+    const fmt = (x) => sep ? String(x).replace(/\B(?=(\d{3})+(?!\d))/g, sep) : String(x);
+    const t0 = performance.now();
+    (function tick(t) {
+      const p = Math.min(1, (t - t0) / 700);
+      el.textContent = pre + fmt(Math.round(end * (1 - (1 - p) ** 3))) + post;
+      if (p < 1) requestAnimationFrame(tick);
+    })(t0);
   }
 
   // ---------------------------------------------------------------------------
@@ -963,10 +981,11 @@
     b.innerHTML = icon(dark ? 'sun' : 'moon');
     b.setAttribute('aria-label', dark ? 'ღია თემა' : 'მუქი თემა');
   };
-  $('#btn-theme')?.addEventListener('click', () => {
+  $('#btn-theme')?.addEventListener('click', (e) => {
     const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
     localStorage.setItem('rigzea_theme', next);
-    R.applyTheme(next);
+    const box = e.currentTarget.getBoundingClientRect();
+    R.applyTheme(next, { x: box.left + box.width / 2, y: box.top + box.height / 2 });
     syncThemeBtn();
   });
   syncThemeBtn();

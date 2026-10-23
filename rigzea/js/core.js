@@ -433,18 +433,42 @@
   // ---------------------------------------------------------------------------
   // Theme
   // ---------------------------------------------------------------------------
-  function applyTheme(t = localStorage.getItem('rigzea_theme') || 'system') {
+  // Low-end devices (few cores, little memory, data saver) get the light motion set: no blur, no frosted glass.
+  const root = document.documentElement;
+  root.classList.toggle('lite', (navigator.hardwareConcurrency || 8) <= 4 || (navigator.deviceMemory || 8) <= 4 || !!navigator.connection?.saveData);
+  const calm = () => matchMedia('(prefers-reduced-motion: reduce)').matches || root.classList.contains('lite');
+
+  // `from` ({x, y}) makes the new theme spread out as a circle from that point (View Transitions).
+  function applyTheme(t = localStorage.getItem('rigzea_theme') || 'system', from = null) {
     const dark = t === 'dark' || (t === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
-    document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+    const set = () => { root.dataset.theme = dark ? 'dark' : 'light'; };
+    if (!from || !document.startViewTransition || calm()) return set();
+    const r = Math.hypot(Math.max(from.x, innerWidth - from.x), Math.max(from.y, innerHeight - from.y));
+    document.startViewTransition(set).ready.then(() => root.animate(
+      { clipPath: [`circle(0 at ${from.x}px ${from.y}px)`, `circle(${r}px at ${from.x}px ${from.y}px)`] },
+      { duration: 650, easing: 'cubic-bezier(.32, .72, 0, 1)', pseudoElement: '::view-transition-new(root)' })).catch(() => {});
   }
   applyTheme();
 
   const uuid = () => (crypto.randomUUID ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => { const r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16); }));
 
+  // New accounts must give a Georgian-letter name; the owner is exempt. Existing accounts never pass through
+  // sign-up again, so they keep their names. shortcut: browser-side only, a direct API sign-up skips it.
+  const NAME_EXEMPT = ['akhalaianika44@gmail.com'];
+  const GEORGIAN_NAME = /^[ა-ჿᲐ-Ჿ]+(?:[ -][ა-ჿᲐ-Ჿ]+)*$/;
+  function bindGeorgianName(form) {
+    const name = form.elements.name, email = form.elements.email;
+    const check = () => name.setCustomValidity(NAME_EXEMPT.includes(email.value.trim().toLowerCase()) || GEORGIAN_NAME.test(name.value.trim()) ? '' : 'ka');
+    name.addEventListener('input', check);
+    email.addEventListener('input', check);
+    check();
+  }
+
   window.R = {
+    bindGeorgianName,
     sb, $, $$, esc, safeUrl, money, isDaily, listingUrl, toDate, isoDate, monthKey, time, date, dayLabel, dateTime, relative, elapsed, span, sameDay,
     MONTHS, WEEKDAYS, L, badge, taskBadge, approvalStatus, approvalBadge, expenseBadge, dealBadge, transactionBadge, contactBadge, icon,
-    friendlyError, phoneKey, CADASTRAL_RE, cadastralFormat, q, toast, run, dialog, confirm, ask, uploadFile, copyText, applyTheme, uuid,
+    friendlyError, phoneKey, CADASTRAL_RE, cadastralFormat, q, toast, run, dialog, confirm, ask, uploadFile, copyText, applyTheme, calm, uuid,
     whatsappUrl: (text) => `https://wa.me/?text=${encodeURIComponent(text)}`,
     telegramUrl: (text, url) => `https://t.me/share/url?url=${encodeURIComponent(url || '')}&text=${encodeURIComponent(text || '')}`,
   };
