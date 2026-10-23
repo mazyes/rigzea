@@ -919,7 +919,7 @@ test('1f. dark mode stays green and the navbar is a pill menu', async (browser) 
     logo: getComputedStyle(document.querySelector('#shell .brand-mark')).backgroundColor,
     chart: getComputedStyle(document.querySelector('.dash-stage-track span')).backgroundImage,
     button: getComputedStyle(document.querySelector('#btn-new-task')).backgroundColor,
-    pill: getComputedStyle(document.querySelector('#topbar-nav .nav-pill')).backgroundColor,
+    pill: getComputedStyle(document.querySelector('#topbar-nav .nav-pill')).backgroundImage,
     activeText: getComputedStyle(document.querySelector('#topbar-nav a[aria-current="page"]')).color,
     success: getComputedStyle(document.querySelector('#shell')).getPropertyValue('--ok').trim(),
     navRadius: getComputedStyle(document.querySelector('#topbar-nav')).borderTopLeftRadius,
@@ -929,7 +929,7 @@ test('1f. dark mode stays green and the navbar is a pill menu', async (browser) 
   assert.strictEqual(colors.logo, 'rgb(4, 120, 87)', 'logo tile is brand green');
   assert(colors.chart.includes('52, 211, 153'), 'dashboard chart bars use green');
   assert.strictEqual(colors.button, 'rgb(4, 120, 87)', 'primary buttons are green');
-  assert.strictEqual(colors.pill, 'rgb(4, 120, 87)', 'sliding nav pill is green');
+  assert(colors.pill.includes('4, 120, 87'), 'sliding nav pill is green');
   assert.strictEqual(colors.activeText, 'rgb(255, 255, 255)', 'active tab text is white');
   assert.strictEqual(colors.success, '#34d399', 'success accents are green');
   assert.strictEqual(colors.navRadius, '999px', 'nav is a pill');

@@ -619,11 +619,18 @@
 
   function onRoute() {
     const r = route();
-    if (r.name !== lastViewName) window.scrollTo(0, 0);
+    const changed = r.name !== lastViewName;
     lastViewName = r.name;
     if (PAGE_ROUTES) document.title = `Rigzea: ${AREA_TITLES[r.name]}`;
-    render();
+    clearTimeout(leaveTimer);
+    if (!changed || !S.data || R.calm()) { if (changed) window.scrollTo(0, 0); render(); return; }
+    // Smooth page change: the nav starts moving at once, the old page fades out, then the new one swipes in.
+    renderShell();
+    const v = $('#view');
+    v.classList.add('view-leave');
+    leaveTimer = setTimeout(() => { v.classList.remove('view-leave'); window.scrollTo(0, 0); render(); }, 140);
   }
+  let leaveTimer = 0;
   window.addEventListener('popstate', onRoute);
   // An old #/ address typed or pasted into an open page changes only the hash, so no page loads.
   window.addEventListener('hashchange', () => { if (!PAGE_ROUTES) onRoute(); else if (!legacyRedirect()) onRoute(); });
@@ -723,23 +730,39 @@
     if (nav.scrollWidth > nav.clientWidth + 1) bar.classList.add('tabs-compact');
     placePill();
   }
-  // The green pill slides to the active tab, starting from where it was before the page changed.
-  let pillPos = null;
+  // Places the green pill under the active tab without animating (first paint, resize, fonts).
   function placePill() {
     const nav = $('#topbar-nav'), pill = nav?.querySelector('.nav-pill'), tab = nav?.querySelector('.topbar-tab.is-active');
     if (!pill) return;
     if (!tab || !tab.offsetWidth) { pill.style.opacity = '0'; return; }
-    const next = { x: tab.offsetLeft, w: tab.offsetWidth };
-    const set = (q) => { pill.style.width = q.w + 'px'; pill.style.transform = `translateX(${q.x}px)`; };
     pill.style.transition = 'none';
-    set(pillPos || next);
     pill.style.opacity = '1';
+    pill.style.width = tab.offsetWidth + 'px';
+    pill.style.transform = `translateX(${tab.offsetLeft}px)`;
     void pill.offsetWidth;
     pill.style.transition = '';
-    set(next);
-    pillPos = next;
   }
-  document.fonts?.ready.then(() => { pillPos = null; placePill(); });
+  // Moves the active state to another tab so everything animates together: measure the end layout first
+  // (transitions off), put the old state back, then switch with transitions on and send the pill to the measured spot.
+  function moveActiveTab(nav, key) {
+    const prev = nav.querySelector('.topbar-tab.is-active'), next = nav.querySelector(`[data-id="${key}"]`);
+    if (prev === next) return;
+    const pill = nav.querySelector('.nav-pill');
+    const mark = (tab, on) => { tab?.classList.toggle('is-active', on); if (on) tab.setAttribute('aria-current', 'page'); else tab?.removeAttribute('aria-current'); };
+    nav.classList.add('no-anim');
+    mark(prev, false); mark(next, true);
+    const end = next ? { x: next.offsetLeft, w: next.offsetWidth } : null;
+    mark(next, false); mark(prev, true);
+    void nav.offsetWidth;
+    nav.classList.remove('no-anim');
+    mark(prev, false); mark(next, true);
+    if (!pill) return;
+    if (!end) { pill.style.opacity = '0'; return; }
+    pill.style.opacity = '1';
+    pill.style.width = end.w + 'px';
+    pill.style.transform = `translateX(${end.x}px)`;
+  }
+  document.fonts?.ready.then(placePill);
   let fitQueued = false;
   window.addEventListener('resize', () => {
     if (fitQueued) return;
@@ -752,14 +775,26 @@
     const counts = navCounts();
     const topNav = $('#topbar-nav');
     if (topNav) {
+      const TAB_ICONS = { deals: 'key', finance: 'chart' }; // deals and finance would otherwise both show the wallet
       const topItems = navGroups().flatMap(g => g.items);
-      topNav.innerHTML = '<span class="nav-pill" aria-hidden="true"></span>' + topItems.map(item => {
-        const active = key === item.id;
-        const c = counts[item.id];
-        const badge = c ? `<span class="topbar-tab-count ${c.danger ? 'count-danger' : ''}" title="${esc(c.label)}">${c.n}</span>` : '';
-        const short = item.label.replace(/^ჩემი\s+/, '');
-        return `<a class="topbar-tab ${active ? 'is-active' : ''}" href="${item.href}" ${active ? 'aria-current="page"' : ''} title="${esc(item.label)}">${icon(item.icon, 15)}<span>${esc(short)}</span>${badge}</a>`;
-      }).join('');
+      const badgeOf = (c) => c ? `<span class="topbar-tab-count ${c.danger ? 'count-danger' : ''}" title="${esc(c.label)}">${c.n}</span>` : '';
+      const sig = topItems.map(item => item.id).join();
+      if (topNav.dataset.sig !== sig) {
+        topNav.dataset.sig = sig;
+        topNav.innerHTML = '<span class="nav-pill" aria-hidden="true"></span>' + topItems.map(item => {
+          const active = key === item.id;
+          const short = item.label.replace(/^ჩემი\s+/, '');
+          return `<a class="topbar-tab ${active ? 'is-active' : ''}" data-id="${item.id}" href="${item.href}" ${active ? 'aria-current="page"' : ''} title="${esc(item.label)}" aria-label="${esc(item.label)}">${icon(TAB_ICONS[item.id] || item.icon, 21)}<span>${esc(short)}</span>${badgeOf(counts[item.id])}</a>`;
+        }).join('');
+      } else {
+        // Same tabs as before: keep the elements so the active tab opens and the old one closes with a transition.
+        topItems.forEach(item => {
+          const a = topNav.querySelector(`[data-id="${item.id}"]`);
+          a.querySelector('.topbar-tab-count')?.remove();
+          a.insertAdjacentHTML('beforeend', badgeOf(counts[item.id]));
+        });
+        moveActiveTab(topNav, key);
+      }
       fitTopbarTabs();
     }
     $('#rail').innerHTML = navGroups().map(g => `${g.label ? `<div class="nav-group">${g.label}</div>` : ''}${navLinks(g, key, counts)}`).join('')
