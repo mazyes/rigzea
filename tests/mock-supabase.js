@@ -372,10 +372,19 @@
       async signUp({ email, password, options }) {
         const u = { id: uuid(), email, password, name: options?.data?.full_name };
         db.users.push(u); save(db);
+        if (/^confirm/.test(email)) return { data: { user: { id: u.id, email }, session: null }, error: null }; // email confirmation required: the code step
         const s = { access_token: 'mock', user: { id: u.id, email, user_metadata: { full_name: u.name } } };
         localStorage.setItem('rigzea_mock_session', JSON.stringify(s));
         return { data: { user: s.user, session: s }, error: null };
       },
+      async verifyOtp({ email, token }) {
+        const u = db.users.find(x => x.email === email);
+        if (!u || token !== '123456') return { data: null, error: { message: 'Token has expired or is invalid' } };
+        const s = { access_token: 'mock', user: { id: u.id, email, user_metadata: { full_name: u.name } } };
+        localStorage.setItem('rigzea_mock_session', JSON.stringify(s));
+        return { data: { user: s.user, session: s }, error: null };
+      },
+      async resend() { return { data: {}, error: null }; },
       async signOut() { localStorage.removeItem('rigzea_mock_session'); return { error: null }; },
       async resetPasswordForEmail() { return { data: {}, error: null }; },
       async updateUser(a) { const u = db.users.find(x => x.id === uid()); if (!u) return { data: null, error: { message: 'Auth session missing' } }; if (a.password) u.password = a.password; save(db); return { data: { user: u }, error: null }; },

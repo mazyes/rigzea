@@ -147,10 +147,14 @@
   function showAuth(view) {
     currentAuthView = view;
     showScreen('auth');
-    ['signin', 'signup', 'reset', 'newpass'].forEach(v => {
+    ['signin', 'signup', 'check', 'reset', 'newpass'].forEach(v => {
       const f = $('#form-' + v);
-      if (f) f.hidden = v !== view;
+      if (!f) return;
+      const show = v === view;
+      if (show && f.hidden) { f.classList.remove('auth-enter'); void f.offsetWidth; f.classList.add('auth-enter'); }
+      f.hidden = !show;
     });
+    setMood(view === 'check' ? 'mail' : 'idle');
     const tabs = $('#auth-tabs');
     const oauthStack = $('#auth-oauth-stack');
     const divider = $('#auth-divider');
@@ -171,6 +175,26 @@
     $('#form-' + view)?.querySelector('input')?.focus();
   }
 
+  // The orb above the form reacts to what the person is doing: idle, typing, covering its eyes on a password, waiting, success.
+  function setMood(mood, bubble = '') {
+    const auth = $('#auth');
+    if (!auth) return;
+    auth.dataset.mood = mood;
+    const b = $('#orb-bubble');
+    if (b) { b.textContent = bubble; b.classList.toggle('on', !!bubble); }
+  }
+  (function bindOrb() {
+    const auth = $('#auth');
+    if (!auth) return;
+    auth.addEventListener('focusin', (e) => {
+      const el = e.target;
+      if (el.matches('input[type=password]')) setMood('hide');
+      else if (el.matches('.otp-box')) setMood('mail', 'ჩაწერე კოდი');
+      else if (el.matches('input')) setMood('look');
+    });
+    auth.addEventListener('focusout', () => setTimeout(() => { if (!auth.contains(document.activeElement) || !document.activeElement.matches('input')) setMood(currentAuthView === 'check' ? 'mail' : 'idle'); }, 0));
+  })();
+
   function bindForm(form, handler) {
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -181,9 +205,10 @@
       if (invalid) { errBox.textContent = invalid.dataset.error || 'შეავსე სავალდებულო ველები.'; errBox.hidden = false; invalid.focus(); return; }
       if (btn.dataset.busy === '1') return;
       btn.dataset.busy = '1'; btn.disabled = true; btn.classList.add('is-busy');
+      const inAuth = !!form.closest('#auth'); if (inAuth) setMood('busy');
       try { await handler(Object.fromEntries(new FormData(form).entries()), form); }
       catch (err) { console.error(err); errBox.textContent = authError(err); errBox.hidden = false; }
-      finally { btn.dataset.busy = ''; btn.disabled = false; btn.classList.remove('is-busy'); }
+      finally { btn.dataset.busy = ''; btn.disabled = false; btn.classList.remove('is-busy'); if (inAuth && $('#auth').dataset.mood === 'busy') setMood(currentAuthView === 'check' ? 'mail' : 'idle'); }
     });
   }
 
@@ -221,11 +246,51 @@
     });
     if (error) throw error;
     if (!data.session) {
-      showAuth('signin');
-      toast('ანგარიში შეიქმნა. დაადასტურე ელფოსტა წერილიდან და შემდეგ შედი.', { type: 'success', timeout: 9000 });
+      pendingEmail = v.email.trim();
+      $('#check-email').textContent = pendingEmail;
+      showAuth('check');
       return;
     }
     await boot();
+  });
+
+  // After sign up the email holds a confirmation link; if the template also carries the code, it can be typed here.
+  let pendingEmail = '';
+  const otpBoxes = $$('#otp .otp-box');
+  const otpValue = () => otpBoxes.map(b => b.value).join('');
+  otpBoxes.forEach((box, i) => {
+    box.addEventListener('input', () => {
+      box.value = box.value.replace(/\D/g, '').slice(-1);
+      if (box.value && otpBoxes[i + 1]) otpBoxes[i + 1].focus();
+      if (otpValue().length === otpBoxes.length) $('#form-check').requestSubmit();
+    });
+    box.addEventListener('keydown', (e) => { if (e.key === 'Backspace' && !box.value && otpBoxes[i - 1]) otpBoxes[i - 1].focus(); });
+    box.addEventListener('paste', (e) => {
+      const digits = (e.clipboardData.getData('text') || '').replace(/\D/g, '').slice(0, otpBoxes.length);
+      if (!digits) return;
+      e.preventDefault();
+      otpBoxes.forEach((b, k) => { b.value = digits[k] || ''; });
+      otpBoxes[Math.min(digits.length, otpBoxes.length - 1)].focus();
+      if (digits.length === otpBoxes.length) $('#form-check').requestSubmit();
+    });
+  });
+  bindForm($('#form-check'), async () => {
+    const token = otpValue();
+    if (token.length !== otpBoxes.length) throw new Error('ჩაწერე წერილში მითითებული კოდი.');
+    setMood('busy');
+    const { error } = await sb.auth.verifyOtp({ email: pendingEmail, token, type: 'signup' });
+    if (error) { setMood('mail'); otpBoxes.forEach(b => { b.value = ''; }); otpBoxes[0].focus(); throw new Error(/expired|invalid/i.test(error.message) ? 'კოდი არასწორია ან ვადაგასულია.' : error.message); }
+    setMood('ok', 'შენ შემოხვედი');
+    await new Promise(r => setTimeout(r, 700));
+    await boot();
+  });
+  let resendUntil = 0;
+  $('#otp-resend')?.addEventListener('click', async (e) => {
+    if (Date.now() < resendUntil || !pendingEmail) return;
+    resendUntil = Date.now() + 30000;
+    e.target.disabled = true; setTimeout(() => { e.target.disabled = false; }, 30000);
+    const { error } = await sb.auth.resend({ type: 'signup', email: pendingEmail });
+    toast(error ? authError(error) : 'წერილი ხელახლა გაიგზავნა.', { type: error ? 'error' : 'success' });
   });
 
   bindForm($('#form-reset'), async (v) => {

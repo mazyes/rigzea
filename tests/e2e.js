@@ -1740,6 +1740,27 @@ test('1t. phone category bar stays above headings and the new menu is in English
   return page;
 });
 
+test('1w. sign up that needs email confirmation shows the code step and signs in with the code', async (browser) => {
+  const page = await newPage(browser, { viewport: DESKTOP });
+  await page.goto(BASE + '/app/#signup');
+  await page.locator('#form-signup').waitFor();
+  await page.fill('#form-signup [name=name]', 'ნინო ბერიძე');
+  await page.fill('#form-signup [name=email]', 'confirm1@rigzea.test');
+  await page.fill('#form-signup [name=password]', 'test1234');
+  await page.locator('#signup-agree').check();
+  await page.click('#form-signup [type=submit]');
+  await page.locator('#form-check').waitFor();
+  assert.strictEqual(await page.locator('#check-email').innerText(), 'confirm1@rigzea.test');
+  assert.strictEqual(await page.locator('#auth').getAttribute('data-mood'), 'mail', 'the orb waits for the code');
+  await page.locator('.otp-box').first().focus();
+  await page.keyboard.type('000000');
+  await page.locator('#form-check .form-error').waitFor();
+  assert.strictEqual(await page.locator('.otp-box').first().inputValue(), '', 'a wrong code clears the boxes');
+  await page.keyboard.type('123456');
+  await page.locator('#onboarding').waitFor({ timeout: 8000 }); // a new account has no workspace yet
+  assert.deepStrictEqual(page.errors.filter(e => !/კოდი არასწორია/.test(e)), [], page.errors.join(' | ')); // the wrong code is logged on purpose
+});
+
 test('1u. English property inventory has no Georgian interface or user-content script', async (browser) => {
   const page = await newPage(browser, { viewport: PHONE, login: USERS.manager });
   await page.addInitScript(() => localStorage.setItem('rigzea_lang', 'en'));

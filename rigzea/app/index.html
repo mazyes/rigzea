@@ -33,7 +33,7 @@
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:image" content="https://rigzea.com/img/og-preview.jpg?v=3" />
 
-  <link rel="stylesheet" href="/app/app.css?v=5ff8d344" />
+  <link rel="stylesheet" href="/app/app.css?v=834a42e1" />
 <link rel="stylesheet" href="/js/site-tools.css?v=2d31c4da" />
 <script>window.__RIGZEA_ASSET_VERSIONS={"/app/views-ops.js":"b2a541f2","/app/views-portfolio.js":"d78f3e07","/app/views-deals.js":"a8d2a746","/app/views-docs.js":"013525ae","/app/views-finance.js":"9b2e2ee2","/app/views-admin.js":"c32e038a"};</script></head>
 <body>
@@ -58,9 +58,27 @@
   <div id="boot" class="boot" role="status">იტვირთება…</div>
 
   <!-- Sign in / sign up / reset -->
-  <main id="auth" class="auth" hidden>
+  <main id="auth" class="auth" data-mood="idle" hidden>
+    <aside class="auth-showcase" aria-hidden="true">
+      <span class="as-logo"><span class="brand-mark" data-icon="logo"></span></span>
+      <div class="as-stage">
+        <div class="as-card as-balance">
+          <div class="as-row"><span class="as-dot"></span><span class="as-small">ამ თვის შემოსავალი</span></div>
+          <strong class="as-amount">₾48,290<small>.50</small> <em>+12.4%</em></strong>
+          <svg class="as-spark" viewBox="0 0 220 60" preserveAspectRatio="none"><path d="M0 52 C25 50 35 38 58 40 S95 52 120 34 S165 30 185 16 S210 14 220 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
+        </div>
+        <div class="as-card as-chip as-pay"><span class="as-av">ნბ</span><span><span class="as-small">ახალი ჯავშანი</span><b>საბურთალო · 3 ოთახი</b></span><b class="as-money">₾860</b></div>
+        <div class="as-card as-chip as-ring"><svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="14" fill="none" stroke="currentColor" stroke-opacity=".18" stroke-width="4"/><circle cx="18" cy="18" r="14" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-dasharray="86.4 88" transform="rotate(-90 18 18)"/></svg><span><b>98.6%</b><span class="as-small">დაკავებულობა</span></span></div>
+        <div class="as-card as-chip as-pill"><span class="as-dot"></span><b>საქმე შესრულდა</b></div>
+      </div>
+      <div class="as-copy">
+        <span class="as-kicker">უძრავი ქონების CRM</span>
+        <h2 class="as-title">მართე ბინები, კლიენტები და გარიგებები ერთ სივრცეში.</h2>
+      </div>
+    </aside>
     <div class="auth-card">
       <a class="brand" href="/" aria-label="Rigzea: მთავარი გვერდი"><span class="brand-mark" data-icon="logo"></span><span class="brand-text">რიგზეა<i>.</i></span></a>
+      <div class="auth-orb" id="auth-orb" aria-hidden="true"><span class="orb-bubble" id="orb-bubble"></span><span class="orb-face"><i></i><i></i><b></b></span></div>
 
       <div class="auth-tabs" id="auth-tabs" role="tablist">
         <button type="button" class="auth-tab active" data-auth="signup" id="tab-auth-signup"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:5px"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>რეგისტრაცია (14 დღე უფასოდ)</button>
@@ -113,6 +131,16 @@
           <a class="btn btn-secondary btn-block" href="/demo/"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:6px"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>სცადე დემო (რეგისტრაციის გარეშე)</a>
         </div>
         <p class="auth-foot">უკვე გაქვს ანგარიში? <button type="button" class="link-btn" data-auth="signin">შესვლა</button></p>
+      </form>
+
+      <form id="form-check" class="form-stack" novalidate hidden>
+        <div><h1>შეამოწმე ელფოსტა</h1><p class="page-sub">დადასტურების წერილი გაიგზავნა მისამართზე <strong id="check-email"></strong>. გახსენი ბმული ან ჩაწერე წერილში მითითებული კოდი.</p></div>
+        <div class="form-error" role="alert" hidden></div>
+        <div class="otp" id="otp" role="group" aria-label="დადასტურების კოდი">
+          <input class="otp-box" inputmode="numeric" autocomplete="one-time-code" maxlength="1" aria-label="ციფრი 1" /><input class="otp-box" inputmode="numeric" maxlength="1" aria-label="ციფრი 2" /><input class="otp-box" inputmode="numeric" maxlength="1" aria-label="ციფრი 3" /><input class="otp-box" inputmode="numeric" maxlength="1" aria-label="ციფრი 4" /><input class="otp-box" inputmode="numeric" maxlength="1" aria-label="ციფრი 5" /><input class="otp-box" inputmode="numeric" maxlength="1" aria-label="ციფრი 6" />
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">დადასტურება და გაგრძელება</button>
+        <p class="auth-foot"><button type="button" class="link-btn" id="otp-resend">კოდის ხელახლა გაგზავნა</button> · <button type="button" class="link-btn" data-auth="signup">არასწორი ელფოსტა?</button></p>
       </form>
 
       <form id="form-reset" class="form-stack" novalidate hidden>
@@ -247,7 +275,7 @@
   <script>(function(){var en=false;try{en=localStorage.getItem('rigzea_lang')==='en'}catch(e){}window.RLang={lang:en?'en':'ka'};if(en){var s=document.createElement('script');s.src='/js/i18n.js';document.head.appendChild(s);return}document.addEventListener('click',function(e){if(!(e.target.closest&&e.target.closest('[data-lang-toggle]')))return;try{localStorage.setItem('rigzea_lang','en')}catch(x){}location.reload()})})()</script>
   <script src="/js/plans.js?v=6a07db8f"></script>
   <script src="/js/site-tools.js?v=edea3b4a"></script>
-  <script src="/app/app.js?v=bc8664aa"></script>
+  <script src="/app/app.js?v=49fb1e86"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
       window.addEventListener('load', () => {
