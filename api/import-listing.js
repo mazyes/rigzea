@@ -88,6 +88,39 @@ async function fetchPage(url, site) {
   } finally { clearTimeout(timer); }
 }
 
+// MyHome.ge and SS.ge answer Vercel's datacenter addresses with a Cloudflare challenge (HTTP 403, in every region),
+// so a plain fetch can never read them. With FIRECRAWL_API_KEY set, those two sites are read through Firecrawl's
+// unblocking proxy instead; without the key the direct fetch is tried and a block gives the manual-entry message.
+const BLOCKED = [401, 403, 429, 503];
+const PROXY_TIMEOUT_MS = 35000;
+async function fetchViaFirecrawl(url, key) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), PROXY_TIMEOUT_MS);
+  try {
+    const res = await fetch('https://api.firecrawl.dev/v1/scrape', { method: 'POST', signal: ctrl.signal,
+      headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url, formats: ['rawHtml'], proxy: 'stealth', onlyMainContent: false, timeout: 30000 }) });
+    if (!res.ok) { console.error('import-listing: firecrawl', res.status); return { status: 502 }; }
+    const html = (await res.json())?.data?.rawHtml;
+    return html ? { status: 200, html: String(html).slice(0, MAX_BYTES * 2) } : { status: 502 };
+  } catch (err) { console.error('import-listing: firecrawl', err && err.message); return { status: 502 }; }
+  finally { clearTimeout(timer); }
+}
+
+async function readListingPage(target) {
+  const key = process.env.FIRECRAWL_API_KEY;
+  if (key && target.site !== 'place.ge') {
+    const proxied = await fetchViaFirecrawl(target.url, key);
+    if (proxied.status === 200) return proxied;
+  }
+  const direct = await fetchPage(target.url, target.site);
+  if (key && target.site === 'place.ge' && BLOCKED.includes(direct.status)) {
+    const proxied = await fetchViaFirecrawl(target.url, key);
+    if (proxied.status === 200) return proxied;
+  }
+  return direct;
+}
+
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   if (req.method !== 'POST') return res.status(405).json({ ok: false, error: 'method' });
@@ -107,9 +140,9 @@ export default async function handler(req, res) {
   if (!importAllowed) return res.status(429).json({ ok: false, error: 'rate_limit', message: 'საათში მაქსიმუმ 10 განცხადების ჩატვირთვა შეიძლება. სცადე ცოტა ხანში ან შეავსე ველები ხელით.' });
 
   try {
-    const page = await fetchPage(target.url, target.site);
+    const page = await readListingPage(target);
     if (page.status !== 200) {
-      const blocked = [401, 403, 429, 503].includes(page.status);
+      const blocked = BLOCKED.includes(page.status);
       const gone = [404, 410].includes(page.status);
       return res.status(502).json({ ok: false, error: blocked ? 'blocked' : gone ? 'gone' : 'fetch', source_status: page.status,
         message: blocked ? 'საიტმა ავტომატური წაკითხვა დაბლოკა. შეავსე ველები ხელით ან სცადე მოგვიანებით.'

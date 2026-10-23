@@ -74,6 +74,31 @@ try {
   assert.equal(importResult.statusCode, 503, 'import fails closed when the shared limiter is unavailable');
   assert.equal(importResult.body.error, 'rate_limit_unavailable');
 
+  // MyHome.ge blocks datacenter fetches with a Cloudflare challenge: without a proxy key that is a clear message, with one the page is read through Firecrawl.
+  const mhHtml = '<html><body>proxied page</body></html>'; // the parser itself is covered by import-parse.test.js
+  let proxyCalls = 0;
+  const importBody = { org: '00000000-0000-4000-8000-000000000001', url: 'https://www.myhome.ge/pr/23991315/' };
+  const challenge = async (url, init) => {
+    const value = String(url);
+    if (value.includes('/auth/v1/user')) return new Response(JSON.stringify({ id: 'user-1' }), { status: 200 });
+    if (value.includes('/rpc/my_org_has_feature') ) return new Response('true', { status: 200 });
+    if (value.includes('/rpc/register_import')) return new Response('true', { status: 200 });
+    if (value.includes('api.firecrawl.dev')) { proxyCalls++; assert.equal(JSON.parse(init.body).url, importBody.url, 'only the validated listing url is sent to the proxy'); return new Response(JSON.stringify({ success: true, data: { rawHtml: mhHtml } }), { status: 200 }); }
+    return new Response('Just a moment...', { status: 403 });
+  };
+  const originalFirecrawl = process.env.FIRECRAWL_API_KEY;
+  delete process.env.FIRECRAWL_API_KEY;
+  globalThis.fetch = challenge;
+  const blockedImport = await call(importListing, { method: 'POST', headers: { authorization: 'Bearer test-user-token' }, body: importBody });
+  assert.equal(blockedImport.statusCode, 502, 'a Cloudflare challenge without a proxy key is reported');
+  assert.equal(blockedImport.body.error, 'blocked');
+  assert.equal(proxyCalls, 0, 'no proxy request without a key');
+  process.env.FIRECRAWL_API_KEY = 'test-firecrawl-key';
+  const proxiedImport = await call(importListing, { method: 'POST', headers: { authorization: 'Bearer test-user-token' }, body: importBody });
+  assert.equal(proxyCalls, 1, 'a blocked site is read through the proxy when a key is set');
+  assert.notEqual(proxiedImport.body.error, 'blocked', 'the proxy result is used instead of the block message');
+  if (originalFirecrawl === undefined) delete process.env.FIRECRAWL_API_KEY; else process.env.FIRECRAWL_API_KEY = originalFirecrawl;
+
   console.log('Backend security tests passed.');
 } finally {
   globalThis.fetch = originalFetch;

@@ -9,6 +9,7 @@
       "includeFiles": "rigzea/{p/index.html,js/config.js}"
     },
     "api/import-listing.js": {
+      "maxDuration": 60,
       "includeFiles": "rigzea/js/config.js"
     },
     "api/plan-email.js": {
