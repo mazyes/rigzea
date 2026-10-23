@@ -2153,7 +2153,7 @@ html, body { overscroll-behavior-y: contain; }
 .chat-emoji-picker button { min-width: 42px; min-height: 42px; border: 0; border-radius: 10px; background: none; font: 26px 'Rigzea Emoji', 'Apple Color Emoji', 'Segoe UI Emoji', sans-serif; cursor: pointer; }
 .chat-emoji-picker button:active { background: var(--brand-soft); }
 .chat-emoji-toggle { flex: none; display: inline-flex; align-items: center; justify-content: center; }
-.chat-emoji-toggle .chat-emoji-svg { display: block; width: 22px; height: 22px; transition: transform .18s var(--spring); }
+.chat-emoji-toggle .chat-emoji-svg { display: block; width: 20px; height: 20px; transition: transform .18s var(--spring); }
 .chat-emoji-toggle:hover .chat-emoji-svg { transform: scale(1.1); }
 .chat-emoji-toggle:active .chat-emoji-svg { transform: scale(.92); }
 .chat-row textarea:focus { outline: 0; border-color: var(--brand); box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 16%, transparent); }

@@ -10,16 +10,11 @@
   const ROLES = ['owner', 'admin', 'manager', 'agent'];
   const EMOJI = ['👍', '❤️', '😂', '🎉', '🙏', '👀'];
   const PICKER = ['😀','😃','😄','😁','😆','😅','😂','🤣','😊','😍','🥰','😘','😎','🤔','😢','😭','😡','🥳','👍','👎','👏','🙌','🙏','❤️','🧡','💛','💚','💙','💜','🖤','💯','🔥','✨','🎉','👀','💪','🤝','✅','❌','🏠','🏡','🔑','📍','📷','📎','💬','👋','☀️'];
-  const EMOJI_ICON = '<svg class="chat-emoji-svg" width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">'
-    + '<defs><radialGradient id="chat-emoji-grad" cx="35%" cy="30%" r="70%"><stop offset="0%" stop-color="#FFE47A"/><stop offset="80%" stop-color="#FFB834"/><stop offset="100%" stop-color="#FFA41C"/></radialGradient></defs>'
-    + '<circle cx="12" cy="12" r="10" fill="url(#chat-emoji-grad)"/>'
-    + '<circle cx="6.2" cy="13.8" r="2.2" fill="#FF5E62" opacity="0.45"/>'
-    + '<circle cx="17.8" cy="13.8" r="2.2" fill="#FF5E62" opacity="0.45"/>'
-    + '<path d="M6.4 7.6c.9-.8 2.3-.8 3.2 0" stroke="#7A4A00" stroke-width="1.1" stroke-linecap="round"/>'
-    + '<path d="M14.4 7.6c.9-.8 2.3-.8 3.2 0" stroke="#7A4A00" stroke-width="1.1" stroke-linecap="round"/>'
-    + '<path d="M6.8 11c.7-1.4 2.3-1.4 3 0" stroke="#5C3800" stroke-width="1.6" stroke-linecap="round"/>'
-    + '<path d="M14.2 11c.7-1.4 2.3-1.4 3 0" stroke="#5C3800" stroke-width="1.6" stroke-linecap="round"/>'
-    + '<path d="M8.2 14.8c1 2.4 6.6 2.4 7.6 0" stroke="#5C3800" stroke-width="1.7" stroke-linecap="round"/>'
+  const EMOJI_ICON = '<svg class="chat-emoji-svg" width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">'
+    + '<circle cx="12" cy="12" r="9.5" stroke="currentColor" stroke-width="2"/>'
+    + '<line x1="8.5" y1="8.5" x2="8.5" y2="11.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>'
+    + '<line x1="15.5" y1="8.5" x2="15.5" y2="11.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>'
+    + '<path d="M7.5 14.5c1.2 2.8 7.8 2.8 9 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>'
     + '</svg>';
   const PAGE = 50;
   const MAX_FILES = 5, MAX_BYTES = 10 * 1024 * 1024;
