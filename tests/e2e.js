@@ -1093,7 +1093,7 @@ test('1o. the menu can move to the left side and the English switch stays', asyn
   await page.locator('[data-nav-mode="side"]').click();
   await page.locator('#rail .nav-item').first().waitFor({ state: 'visible' });
   assert(await page.locator('#topbar-nav').isHidden(), 'top menu is hidden in left mode');
-  assert.strictEqual(await page.locator('#rail .nav-item').count(), 8, 'all eight areas are in the left menu');
+  assert.strictEqual(await page.locator('#rail .nav-item').count(), 9, 'all nine areas are in the left menu');
   assert(await page.locator('#rail [data-lang-toggle]').isVisible(), 'English switch is in the left menu');
   assert(await page.locator('#btn-lang').isVisible(), 'English switch is also in the top bar');
   const right = await page.locator('#btn-user').boundingBox();
@@ -1171,7 +1171,7 @@ test('1r. phone menu is an iOS style sheet with a dark switch, language control 
   await page.waitForTimeout(500);
   assert.strictEqual(await page.locator('dialog[open] .dlg-body').evaluate(el => el.scrollTop), 0, 'sheet opens at the top');
   assert.notStrictEqual(await page.evaluate(() => document.activeElement.id), 'sheet-dark', 'opening the menu does not focus its last switch');
-  assert.strictEqual(await page.locator('dialog[open] a.ios-row').count(), 8, 'all eight areas are listed');
+  assert.strictEqual(await page.locator('dialog[open] a.ios-row').count(), 9, 'all nine areas are listed');
   const before = await page.evaluate(() => document.documentElement.dataset.theme);
   await page.locator('dialog[open] .ios-switch').click();
   await page.waitForFunction((b) => document.documentElement.dataset.theme !== b, before);
@@ -1189,9 +1189,7 @@ test('1s. a refresh starts at the top and tab strips scroll the selected tab int
   const page = await newPage(browser, { viewport: { width: 390, height: 844 }, login: USERS.manager });
   await page.goto(BASE + '/app/settings/?id=export');
   await page.locator('#view .tabs').waitFor();
-  await page.waitForTimeout(600);
-  const inside = await page.evaluate(() => { const b = document.querySelector('#view .tabs'), a = b.querySelector('[aria-selected="true"]').getBoundingClientRect(), r = b.getBoundingClientRect(); return a.left >= r.left - 1 && a.right <= r.right + 1; });
-  assert(inside, 'the selected tab is fully inside the strip');
+  await page.waitForFunction(() => { const b = document.querySelector('#view .tabs'), a = b.querySelector('[aria-selected="true"]').getBoundingClientRect(), r = b.getBoundingClientRect(); return a.left >= r.left - 1 && a.right <= r.right + 1; }, null, { timeout: 5000 }); // the selected tab is fully inside the strip
   await page.goto(BASE + '/app/apartments/');
   await page.locator('#view .rows .row').first().waitFor();
   await page.evaluate(() => window.scrollTo(0, 600));
@@ -1837,6 +1835,216 @@ test('1zb. the welcome sheet shows once and speaks to the role', async (browser)
   await page.goto(BASE + '/app/settings/');
   await page.click('#p-welcome');
   await page.locator('dialog[open] .welcome-row').first().waitFor();
+  await page.close();
+});
+
+// ---- chat ---------------------------------------------------------------------------------------------------------
+const CHAT_CH = 'cccc0000-0000-4000-8000-000000000001', MATE = 'aaaaaaaa-0000-4000-8000-000000000009';
+async function chatMate(page, role = 'agent') { // a teammate with the given role joins the workspace (the chat membership trigger is mirrored here)
+  await page.evaluate(({ role, MATE, CH }) => {
+    const d = JSON.parse(localStorage.getItem('rigzea_mockdb'));
+    const org = d.tables.organizations[0].id;
+    d.tables.organization_members.push({ id: 'bbbbbbbb-0000-4000-8000-000000000009', organization_id: org, user_id: MATE, role, display_name: 'გიორგი ბერიძე', created_at: new Date().toISOString() });
+    if (['owner', 'admin', 'manager', 'agent'].includes(role)) d.tables.chat_channel_members.push({ channel_id: CH, organization_id: org, user_id: MATE, last_read_at: new Date().toISOString(), joined_at: new Date().toISOString() });
+    localStorage.setItem('rigzea_mockdb', JSON.stringify(d));
+  }, { role, MATE, CH: CHAT_CH });
+}
+async function chatIncoming(page, body, extra = {}) { // the teammate writes: stored in the mock database and announced like a realtime event
+  return page.evaluate(({ body, extra, MATE, CH }) => {
+    const d = JSON.parse(localStorage.getItem('rigzea_mockdb'));
+    const org = d.tables.organizations[0].id;
+    const row = { id: crypto.randomUUID(), channel_id: CH, organization_id: org, sender_id: MATE, body, reply_to: null, attachments: [], edited_at: null, deleted_at: null, deleted_by: null, created_at: new Date().toISOString(), ...extra };
+    d.tables.chat_messages.push(row);
+    localStorage.setItem('rigzea_mockdb', JSON.stringify(d));
+    window.dispatchEvent(new CustomEvent('mock-realtime', { detail: { table: 'chat_messages', eventType: 'INSERT', new: row, old: null } }));
+    return row.id;
+  }, { body, extra, MATE, CH: CHAT_CH });
+}
+async function chatMenu(page, text, item) {
+  const msg = page.locator('.msg', { hasText: text }).first();
+  await msg.hover();
+  await msg.locator('[data-more]').click();
+  await page.locator(`.chat-menu [data-m="${item}"]`).click();
+}
+
+test('1zc. chat: write, reply, edit, react, attach, delete (own and as owner) with a teammate', async (browser) => {
+  const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
+  await page.goto(BASE + '/app/');
+  await page.getByRole('heading', { name: /გამარჯობა,/ }).waitFor();
+  await chatMate(page);
+  await page.goto(BASE + '/app/chat/');
+  await page.locator('#chat-input').waitFor();
+  assert.strictEqual(await page.locator('#chat-head strong').innerText(), 'კომპანიის ჩატი', 'the company chat opens first');
+  await chatIncoming(page, 'გამარჯობა გუნდო! https://rigzea.com');
+  await page.locator('.msg', { hasText: 'გამარჯობა გუნდო' }).waitFor();
+  assert.strictEqual(await page.locator('.msg-text a[href^="https://rigzea.com"]').count(), 1, 'links are clickable');
+  // write
+  await page.fill('#chat-input', 'მოვალ 15:00-ზე');
+  await page.keyboard.press('Enter');
+  await page.locator('.msg.is-own', { hasText: 'მოვალ 15:00-ზე' }).waitFor();
+  await page.waitForFunction(() => !document.querySelector('.msg.is-pending'));
+  let rows = (await db(page)).tables.chat_messages;
+  assert(rows.some(m => m.body === 'მოვალ 15:00-ზე' && m.sender_id === USERS.manager.id), 'saved');
+  // reply to the teammate
+  await chatMenu(page, 'გამარჯობა გუნდო', 'reply');
+  await page.locator('#chat-ctx').waitFor({ state: 'visible' });
+  await page.fill('#chat-input', 'მივიღე');
+  await page.keyboard.press('Enter');
+  await page.locator('.msg-quote', { hasText: 'გამარჯობა გუნდო' }).waitFor();
+  // react
+  const mine = page.locator('.msg.is-own', { hasText: 'მოვალ 15:00-ზე' });
+  await mine.hover(); await mine.locator('[data-more]').click();
+  await page.locator('.chat-menu [data-m-react="👍"]').click();
+  await page.locator('.msg-react.is-mine').waitFor();
+  await page.waitForFunction(() => JSON.parse(localStorage.getItem('rigzea_mockdb')).tables.chat_reactions.length === 1);
+  // edit
+  await chatMenu(page, 'მოვალ 15:00-ზე', 'edit');
+  assert.strictEqual(await page.inputValue('#chat-input'), 'მოვალ 15:00-ზე', 'the text comes back into the box');
+  await page.fill('#chat-input', 'მოვალ 16:00-ზე');
+  await page.keyboard.press('Enter');
+  await page.locator('.msg.is-own', { hasText: 'მოვალ 16:00-ზე' }).waitFor();
+  await page.locator('.msg.is-own .msg-meta', { hasText: 'შეცვლილია' }).waitFor();
+  await page.waitForFunction(() => JSON.parse(localStorage.getItem('rigzea_mockdb')).tables.chat_messages.some(m => m.body === 'მოვალ 16:00-ზე' && m.edited_at)); // saved and marked as edited
+  // attach a picture
+  await page.setInputFiles('#chat-file', FIXTURE);
+  await page.locator('.chat-chip').waitFor();
+  await page.keyboard.press('Control+End');
+  await page.click('#chat-send');
+  await page.locator('.msg-img').waitFor();
+  await page.waitForFunction(() => JSON.parse(localStorage.getItem('rigzea_mockdb')).tables.chat_messages.some(m => (m.attachments || []).length));
+  await page.locator('a.msg-img[data-att-path]').waitFor(); // after sending, the stored file replaces the local preview
+  rows = (await db(page)).tables.chat_messages;
+  const withFile = rows.find(m => (m.attachments || []).length);
+  assert(withFile.attachments[0].path.startsWith(`${withFile.organization_id}/chat/${CHAT_CH}/`), 'stored in the conversation folder');
+  // the owner may delete a teammate's message, an own message too
+  await chatMenu(page, 'გამარჯობა გუნდო', 'delete');
+  await page.locator('dialog[open] [data-submit]').click();
+  await page.locator('.msg-bubble.is-deleted').first().waitFor();
+  await page.waitForFunction((MATE) => JSON.parse(localStorage.getItem('rigzea_mockdb')).tables.chat_messages.some(m => m.sender_id === MATE && m.deleted_at), MATE);
+  rows = (await db(page)).tables.chat_messages;
+  const gone = rows.find(m => m.sender_id === MATE);
+  assert(gone.deleted_at && gone.body === '' && gone.deleted_by === USERS.manager.id, 'wiped and marked');
+  await chatMenu(page, 'მოვალ 16:00-ზე', 'delete');
+  await page.locator('dialog[open] [data-submit]').click();
+  await page.waitForFunction(() => document.querySelectorAll('.msg-bubble.is-deleted').length === 2);
+  await page.close();
+});
+
+test('1zd. chat: unread badge appears elsewhere, reading clears it, a direct chat can be started', async (browser) => {
+  const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
+  await page.goto(BASE + '/app/');
+  await page.getByRole('heading', { name: /გამარჯობა,/ }).waitFor();
+  await chatMate(page);
+  await page.reload(); // the new teammate is part of the loaded data
+  await page.getByRole('heading', { name: /გამარჯობა,/ }).waitFor();
+  await chatIncoming(page, 'ახალი ამბავი');
+  await page.locator('[data-id="chat"] .topbar-tab-count').waitFor();
+  assert.strictEqual(await page.locator('[data-id="chat"] .topbar-tab-count').innerText(), '1');
+  await page.locator('[data-id="chat"]').click();
+  await page.locator('.msg', { hasText: 'ახალი ამბავი' }).waitFor();
+  await page.locator('.chat-new').waitFor(); // the new messages divider
+  await page.waitForFunction(() => !document.querySelector('[data-id="chat"] .topbar-tab-count'));
+  await page.waitForFunction(() => JSON.parse(localStorage.getItem('rigzea_mockdb')).tables.chat_channel_members.find(m => m.user_id === 'aaaaaaaa-0000-4000-8000-000000000001').last_read_at > new Date(Date.now() - 60000).toISOString()); // the read mark moved
+  // a direct chat
+  await page.click('#chat-new');
+  await page.locator('dialog[open] [data-person]').first().click();
+  await page.locator('#chat-head strong', { hasText: 'გიორგი ბერიძე' }).waitFor();
+  await page.fill('#chat-input', 'პირადი ჩანაწერი');
+  await page.keyboard.press('Enter');
+  await page.locator('.msg.is-own', { hasText: 'პირადი ჩანაწერი' }).waitFor();
+  const d = await db(page);
+  const dm = d.tables.chat_channels.find(c => c.kind === 'direct');
+  assert.strictEqual(dm.dm_key, [USERS.manager.id, MATE].sort().join(':'));
+  assert.strictEqual(d.tables.chat_channel_members.filter(m => m.channel_id === dm.id).length, 2);
+  assert.strictEqual(await page.locator('.chat-item').count(), 2, 'the company chat and the direct chat');
+  await page.close();
+});
+
+test('1ze. chat permissions are enforced by the data layer, not the screen', async (browser) => {
+  const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
+  await page.goto(BASE + '/app/chat/');
+  await page.locator('#chat-input').waitFor();
+  await chatMate(page);
+  const mateMsg = await chatIncoming(page, 'მხოლოდ ავტორი ცვლის');
+  const res = await page.evaluate(async ({ MATE, CH, mateMsg }) => {
+    const sb = R.sb, org = App.S.org.id, out = {};
+    const flip = (role) => { const d = JSON.parse(localStorage.getItem('rigzea_mockdb')); d.tables.organization_members.find(m => m.user_id === 'aaaaaaaa-0000-4000-8000-000000000001').role = role; localStorage.setItem('rigzea_mockdb', JSON.stringify(d)); };
+    const insert = (sender) => sb.from('chat_messages').insert({ channel_id: CH, organization_id: org, sender_id: sender, body: 'x' });
+    out.asSelf = (await insert('aaaaaaaa-0000-4000-8000-000000000001')).error;
+    out.asSomeoneElse = (await insert(MATE)).error?.code;
+    flip('agent');
+    out.agentEditsOther = (await sb.from('chat_messages').update({ body: 'ჰაკი' }).eq('id', mateMsg).select()).data?.length;
+    out.agentDeletesOther = (await sb.from('chat_messages').update({ deleted_at: new Date().toISOString() }).eq('id', mateMsg).select()).data?.length;
+    out.agentHardDelete = (await sb.from('chat_messages').delete().eq('id', mateMsg)).error?.code;
+    flip('staff');
+    out.staffRead = (await sb.from('chat_messages').select('*')).data.length;
+    out.staffWrite = (await insert('aaaaaaaa-0000-4000-8000-000000000001')).error?.code;
+    out.staffDm = (await sb.rpc('chat_open_direct', { p_org: org, p_other: MATE })).error?.message;
+    flip('owner');
+    out.stranger = (await sb.rpc('chat_open_direct', { p_org: org, p_other: 'aaaaaaaa-0000-4000-8000-0000000000ff' })).error?.message;
+    return out;
+  }, { MATE, CH: CHAT_CH, mateMsg });
+  assert.strictEqual(res.asSelf, null, 'a member writes as themselves');
+  assert.strictEqual(res.asSomeoneElse, '42501', 'nobody writes in another person\'s name');
+  assert.strictEqual(res.agentEditsOther, 0, 'an agent cannot edit another person\'s message');
+  assert.strictEqual(res.agentDeletesOther, 0, 'an agent cannot delete another person\'s message');
+  assert.strictEqual(res.agentHardDelete, '42501', 'messages are never hard deleted');
+  assert.strictEqual(res.staffRead, 0, 'staff see no messages');
+  assert.strictEqual(res.staffWrite, '42501', 'staff cannot write');
+  assert(/not available/.test(res.staffDm), 'staff cannot start a direct chat');
+  assert(/cannot use chat/.test(res.stranger), 'only chat members can be messaged');
+  await page.close();
+});
+
+test('1zf. chat on a phone: list, conversation, back; bottom bar steps aside; nothing overflows', async (browser) => {
+  const page = await newPage(browser, { viewport: PHONE, login: USERS.manager });
+  await page.goto(BASE + '/app/');
+  await page.getByRole('heading', { name: /გამარჯობა,/ }).waitFor();
+  await chatMate(page);
+  await chatIncoming(page, 'ტელეფონიდან');
+  await page.goto(BASE + '/app/chat/');
+  await page.locator('.chat-item').first().waitFor();
+  assert.strictEqual(await page.locator('#chat-root').getAttribute('data-pane'), 'list', 'the list first on a phone');
+  assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'no horizontal overflow');
+  await page.locator('.chat-item').first().click();
+  await page.locator('#chat-input').waitFor({ state: 'visible' });
+  assert.strictEqual(await page.locator('#chat-root').getAttribute('data-pane'), 'conv');
+  assert.strictEqual(await page.locator('.bottom-nav').isVisible(), false, 'the composer takes the bottom of the screen');
+  await page.locator('.msg', { hasText: 'ტელეფონიდან' }).waitFor();
+  await page.fill('#chat-input', 'მივიღე');
+  await page.click('#chat-send');
+  await page.locator('.msg.is-own', { hasText: 'მივიღე' }).waitFor();
+  assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'no overflow in the conversation');
+  await page.locator('.chat-back').click();
+  await page.waitForFunction(() => document.querySelector('#chat-root').dataset.pane === 'list');
+  await page.close();
+});
+
+test('1zg. chat in English has no Georgian interface text; what people write stays as written', async (browser) => {
+  const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
+  await page.addInitScript(() => localStorage.setItem('rigzea_lang', 'en'));
+  await page.goto(BASE + '/app/');
+  await page.waitForSelector('#view h1');
+  await chatMate(page);
+  await chatIncoming(page, 'გამარჯობა გუნდო');
+  await page.goto(BASE + '/app/chat/');
+  await page.locator('.msg', { hasText: 'გამარჯობა გუნდო' }).waitFor();
+  await page.fill('#chat-input', 'მადლობა');
+  await page.keyboard.press('Enter');
+  await page.locator('.msg.is-own', { hasText: 'მადლობა' }).waitFor();
+  await page.waitForTimeout(400);
+  const left = await page.evaluate(() => {
+    const out = new Set();
+    document.querySelectorAll('#chat-root *').forEach(el => {
+      if (el.closest('[data-keep]')) return;
+      [...el.childNodes].forEach(n => { if (n.nodeType === 3 && /[ა-ჰ]/.test(n.nodeValue)) out.add(n.nodeValue.trim()); });
+      ['placeholder', 'aria-label', 'title'].forEach(a => { const v = el.getAttribute(a); if (v && /[ა-ჰ]/.test(v)) out.add(a + ':' + v); });
+    });
+    return [...out];
+  });
+  assert.deepStrictEqual(left, [], 'Georgian left in the chat: ' + left.join(' | '));
+  assert.strictEqual(await page.locator('.msg-text', { hasText: 'გამარჯობა გუნდო' }).count(), 1, 'the message itself is unchanged');
+  assert.strictEqual(await page.locator('#chat-input').getAttribute('placeholder'), 'Write a message');
   await page.close();
 });
 

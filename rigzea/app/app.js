@@ -585,7 +585,7 @@
     today: '/app/views-ops.js', tasks: '/app/views-ops.js',
     apartments: '/app/views-portfolio.js', owners: '/app/views-portfolio.js',
     deals: '/app/views-deals.js', finance: '/app/views-finance.js',
-    team: '/app/views-admin.js', settings: '/app/views-admin.js',
+    team: '/app/views-admin.js', settings: '/app/views-admin.js', chat: '/app/views-chat.js',
   };
   // Chunks an area needs besides its own while it renders.
   const VIEW_DEPS = {};
@@ -617,7 +617,7 @@
     return Promise.all([head, ...(VIEW_DEPS[name] || []).map(src => ensureChunk(src, name))]);
   }
   const PAGE_ROUTES = location.pathname.startsWith('/app/');
-  const AREAS = ['today', 'tasks', 'apartments', 'owners', 'deals', 'finance', 'team', 'settings'];
+  const AREAS = ['today', 'tasks', 'apartments', 'owners', 'deals', 'finance', 'team', 'settings', 'chat'];
   // Same labels scripts/stamp-assets.mjs puts in each page's <title>.
   const AREA_TITLES = { today: 'მთავარი', tasks: 'საქმეები', apartments: 'ბინები', owners: 'კონტაქტები', deals: 'გარიგებები', finance: 'ფინანსები', team: 'გუნდი', settings: 'პარამეტრები' };
   const areaPath = (name) => `/app/${name === 'today' ? '' : name + '/'}`;
@@ -738,6 +738,7 @@
       { id: 'deals', label: 'ჩემი გარიგებები', icon: 'wallet', href: '#/deals' },
       { id: 'contacts', label: 'ჩემი კლიენტები', icon: 'user', href: '#/owners' },
       { id: 'tasks', label: 'ჩემი საქმეები', icon: 'tasks', href: '#/tasks' },
+      { id: 'chat', label: 'ჩატი', icon: 'chat', href: '#/chat' },
     ] },
     { id: 'manage', label: 'ჩემი სააგენტოსთვის', items: [
       { id: 'finance', label: 'ჩემი ფინანსები', icon: 'wallet', href: '#/finance' },
@@ -769,6 +770,7 @@
       tasks: overdue ? { n: overdue, danger: true, label: `${overdue} ვადაგადაცილებული` } : null,
       contacts: pending ? { n: pending, label: `${pending} თანხმობა პასუხს ელოდება` } : null,
       deals: open ? { n: open, label: `${open} აქტიური გარიგება` } : null,
+      chat: S.chatUnread ? { n: S.chatUnread, label: `${S.chatUnread} წაუკითხავი შეტყობინება` } : null,
     };
   }
 
@@ -895,12 +897,12 @@
 
     // Phone: 4 primary workflows + More menu sheet.
     const tab = (href, ic, label, active, count) => `<a href="${href}" ${active ? 'aria-current="page"' : ''}>${icon(ic, 20)}<span>${label}</span>${count ? `<span class="count ${count.danger ? 'count-danger' : ''}">${count.n}</span>` : ''}</a>`;
-    const inMore = ['tasks', 'finance', 'team', 'settings'].includes(key);
+    const inMore = ['tasks', 'chat', 'finance', 'team', 'settings'].includes(key);
     $('#bottom-nav').innerHTML = tab('#/today', 'today', 'ჩემთვის', key === 'today')
       + tab('#/apartments', 'building', 'ობიექტები', key === 'apartments')
       + tab('#/deals', 'wallet', 'გარიგებები', key === 'deals', counts.deals)
       + tab('#/owners', 'user', 'კლიენტები', key === 'contacts', counts.contacts)
-      + `<button type="button" id="btn-more" ${inMore ? 'aria-current="page"' : ''}>${icon('menu', 20)}<span>მენიუ</span>${counts.tasks ? `<span class="count count-danger">${counts.tasks.n}</span>` : ''}</button>`;
+      + `<button type="button" id="btn-more" ${inMore ? 'aria-current="page"' : ''}>${icon('menu', 20)}<span>მენიუ</span>${counts.tasks || counts.chat ? `<span class="count ${counts.tasks ? 'count-danger' : ''}">${(counts.tasks?.n || 0) + (counts.chat?.n || 0)}</span>` : ''}</button>`;
     $('#btn-more').onclick = openMoreSheet;
 
     // Phone: quick filter bar right above the content for list views
@@ -1051,6 +1053,7 @@
     renderShell();
     updateBadge();
     maybeShowWelcome();
+    ensureChat();
     const view = views[r.name];
     if (!view) {
       renderLoading();
@@ -2105,7 +2108,7 @@
   }
 
   window.App = {
-    openWelcome,
+    openWelcome, setChatUnread,
     // The company logo at the top of a document, and faintly behind its text (screen and print)
     docBrand: () => S.org?.logo_url ? `<img class="ld-logo" src="${esc(S.org.logo_url)}" alt="" /><div class="ld-wm" aria-hidden="true"><img src="${esc(S.org.logo_url)}" alt="" /></div>` : '',
     emptyInline: (text) => `<p class="empty-inline">${esc(text)}</p>`, S, H, views, aptSection, contactSection, isManager, isAdmin, isAgent, refresh, render, renderShell, go, route, toUrl, taskHref, closeTaskOverlay, upsertLocal, logEvent, loadMore,
@@ -2144,6 +2147,7 @@
       view.style.minHeight = '';
       if (Math.abs(window.scrollY - y) > 1) window.scrollTo(0, y);
       pageRefreshing = false;
+      window.dispatchEvent(new Event('rigzea-refresh')); // pages with their own live data (chat) reload it too
     }
   }
   (function pullToRefresh() {
@@ -2261,6 +2265,44 @@
         <div class="ios-row"><span class="ios-tile" style="--t:#0d7f8f">${icon('share', 18)}</span><span class="ios-label">დააჭირე გაზიარებას</span></div>
         <div class="ios-row"><span class="ios-tile" style="--t:#2f9e6b">${icon('addSquare', 18)}</span><span class="ios-label">მთავარ ეკრანზე დამატება</span></div></div></div>` });
     }, 6000);
+  }
+
+  // Chat: unread count for the badge and one realtime subscription per workspace. The conversation screens live in
+  // views-chat.js; this part works on every page so the badge stays right wherever the person is.
+  S.chatUnread = 0;
+  function setChatUnread(n) {
+    n = Math.max(0, n | 0);
+    if (n === S.chatUnread) return;
+    const was = S.chatUnread;
+    S.chatUnread = n;
+    if (!was || !n) { renderShell(); return; } // a badge appears or disappears: draw the bars again
+    $$('[data-id="chat"] .count, [data-id="chat"] .topbar-tab-count, #btn-more .count').forEach(el => { if (el.closest('#btn-more')) el.textContent = String(n + (navCounts().tasks?.n || 0)); else el.textContent = String(n > 99 ? '99+' : n); });
+  }
+  let chatOrg = null, chatChannel = null, chatLive = false, chatTimer = 0;
+  const chatEligible = () => ['owner', 'admin', 'manager', 'agent'].includes(S.member?.role);
+  let unreadSoon = 0;
+  function refreshChatUnread() {
+    clearTimeout(unreadSoon);
+    unreadSoon = setTimeout(async () => {
+      if (window.App?.chatReady?.() || !S.org) return; // once the chat page has loaded it keeps the number itself
+      const { data } = await sb.rpc('chat_unread_counts', { p_org: S.org.id });
+      if (Array.isArray(data)) setChatUnread(data.reduce((a, r) => a + Number(r.unread || 0), 0));
+    }, 350);
+  }
+  function ensureChat() {
+    if (!S.data || !S.org || !chatEligible() || chatOrg === S.org.id || typeof sb.channel !== 'function') return;
+    chatOrg = S.org.id;
+    S.chatUnread = 0;
+    if (chatChannel) { try { sb.removeChannel(chatChannel); } catch { /* the old socket is gone anyway */ } }
+    clearInterval(chatTimer);
+    const org = S.org.id;
+    const forward = (p) => { window.dispatchEvent(new CustomEvent('rigzea-chat', { detail: { table: p.table, eventType: p.eventType, new: p.new, old: p.old } })); if (p.table === 'chat_messages') refreshChatUnread(); };
+    chatChannel = sb.channel('chat-' + org);
+    ['chat_messages', 'chat_reactions', 'chat_channel_members'].forEach(table => chatChannel.on('postgres_changes', { event: '*', schema: 'public', table, filter: `organization_id=eq.${org}` }, forward));
+    chatChannel.subscribe((status) => { chatLive = status === 'SUBSCRIBED'; });
+    // if the socket is blocked (some company networks), look for news every 30 seconds instead
+    chatTimer = setInterval(() => { if (!chatLive && document.visibilityState === 'visible') { window.dispatchEvent(new Event('rigzea-refresh')); refreshChatUnread(); } }, 30000);
+    refreshChatUnread();
   }
 
   // Number of overdue tasks on the installed app's icon (where the device supports it).

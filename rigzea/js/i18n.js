@@ -2545,6 +2545,38 @@
     "ახალი ვერსია მზადაა": "A new version is ready",
     "კავშირი აღდგა": "Back online",
     "გვერდის განახლება": "Refresh the page",
+    "ჩატი": "Chat",
+    "კომპანიის ჩატი": "Company chat",
+    "ახალი შეტყობინება": "New message",
+    "საუბრის ძებნა": "Search conversations",
+    "საუბრები": "Conversations",
+    "საუბარი": "Conversation",
+    "დაწერე შეტყობინება": "Write a message",
+    "შეტყობინება": "Message",
+    "გაგზავნა": "Send",
+    "ფაილის მიმაგრება": "Attach a file",
+    "ბოლო შეტყობინება": "Latest message",
+    "აირჩიე საუბარი": "Choose a conversation",
+    "ჯერ შეტყობინება არ არის": "No messages yet",
+    "შეტყობინება წაშლილია": "Message deleted",
+    "უფრო ძველი შეტყობინებები": "Older messages",
+    "ახალი შეტყობინებები": "New messages",
+    "ნანახია": "Seen",
+    "ვერ გაიგზავნა": "Not sent",
+    "ხელახლა": "Retry",
+    "პასუხი": "Reply",
+    "შეტყობინების შეცვლა": "Editing message",
+    "შეტყობინების წაშლა": "Delete message",
+    "შეტყობინება ყველასთვის წაიშლება.": "The message will be deleted for everyone.",
+    "ძველი შეტყობინება": "Older message",
+    "📎 ფაილი": "📎 File",
+    "შენ:": "You:",
+    "მეტი": "More",
+    "უკან": "Back",
+    "სურათი": "Image",
+    "ჩატი ხელმისაწვდომია მფლობელის, ადმინისტრატორის, მენეჯერისა და აგენტისთვის.": "Chat is available to owners, admins, managers and agents.",
+    "სხვა წევრი ჯერ არ არის.": "There is no other member yet.",
+    "საუბარი ვერ მოიძებნა.": "No conversation found.",
     "ჯავშანი": "Booking",
     "სწრაფი მოქმედებები": "Quick actions",
     "ბოლო ობიექტები": "Recent properties",
@@ -2820,6 +2852,11 @@
     [/^ფაილი (\d+) მბ-ზე დიდია\.$/, function (m) { return 'The file is larger than ' + m[1] + ' MB.'; }],
     [/^ფორმატი არ ვარგა\. გამოიყენე (.+)\.$/, function (m) { return 'Wrong format. Use ' + m[1].replace(/ ან /, ' or ') + '.'; }],
     [/^(?:ბოლო შესვლა: (.+)\. )?ამ მოწყობილობის სესია რჩება\.$/, function (m) { return (m[1] ? 'Last sign in: ' + m[1] + '. ' : '') + 'This device stays signed in.'; }],
+    [/^(\d+) წევრი$/, function (m) { return plural(m[1], 'member', 'members'); }],
+    [/^მაქსიმუმ (\d+) ფაილი\.$/, function (m) { return 'At most ' + m[1] + ' files.'; }],
+    [/^(.+): ფაილი (\d+) მბ-ზე დიდია\.$/, function (m) { return m[1] + ': the file is larger than ' + m[2] + ' MB.'; }],
+    [/^(.+): ამ ტიპის ფაილი არ ეგზავნება\.$/, function (m) { return m[1] + ': this type of file cannot be sent.'; }],
+    [/^(\d+) წაუკითხავი შეტყობინება$/, function (m) { return plural(m[1], 'unread message', 'unread messages'); }],
     [/^გამარჯობა, (.+)!$/, function (m) { return 'Hello, ' + translit(m[1]) + '!'; }],
     [/^(\d+) საქმე დღეს$/, function (m) { return plural(m[1], 'task', 'tasks') + ' today'; }],
     [/^(\d+) (ობიექტი|მეპატრონე|მდგმური|მყიდველი|გამყიდველი)$/, function (m) { var nouns = { 'ობიექტი': ['property', 'properties'], 'მეპატრონე': ['owner', 'owners'], 'მდგმური': ['tenant', 'tenants'], 'მყიდველი': ['buyer', 'buyers'], 'გამყიდველი': ['seller', 'sellers'] }; return plural(m[1], nouns[m[2]][0], nouns[m[2]][1]); }],
@@ -2943,7 +2980,7 @@
   }
   function text(n) {
     var p = n.parentNode;
-    if (!p || SKIP.test(p.nodeName) || (p.closest && p.closest('.lease-paper'))) return;
+    if (!p || SKIP.test(p.nodeName) || (p.closest && p.closest('.lease-paper, [data-keep]'))) return; // data-keep: text a person wrote, shown as written
     var cur = n.nodeValue, o = origText.get(n);
     if (o !== undefined && cur === o) return;
     var r = p.nodeName === 'BUTTON' && cur.trim() === 'ვეთანხმები' ? D['@btn ვეთანხმები'] : tr(cur);
@@ -2960,11 +2997,11 @@
   function walk(root) {
     if (root.nodeType === 3) return text(root);
     if (root.nodeType !== 1 && root.nodeType !== 9 && root.nodeType !== 11) return;
-    if (root.nodeType === 1) { if (SKIP.test(root.nodeName)) return; attrs(root); }
+    if (root.nodeType === 1) { if (SKIP.test(root.nodeName)) { if (root.nodeName === 'TEXTAREA') attrs(root); return; } attrs(root); } // a textarea's content is the person's own, its placeholder is ours
     var w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT, null);
     var n;
     while ((n = w.nextNode())) {
-      if (n.nodeType === 3) text(n); else if (!SKIP.test(n.nodeName)) attrs(n);
+      if (n.nodeType === 3) text(n); else if (!SKIP.test(n.nodeName) || n.nodeName === 'TEXTAREA') attrs(n);
     }
   }
   // Page title and meta tags (description, Open Graph, Twitter) follow the language too.

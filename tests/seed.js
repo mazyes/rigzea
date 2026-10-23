@@ -71,6 +71,9 @@
         { id: uuidish(4), organization_id: ORG, user_id: MGR, title: 'ვადაგადაცილებული: სარეცხი მანქანის შემოწმება', message: 'ვაკე · ჭავჭავაძე 33', type: 'overdue', link: '/app/?view=tasks', is_read: false, created_at: at(-1 * H) },
       ],
       monthly_reports: [], invitations: [], repairs: [], deals: [],
+      chat_channels: [{ id: 'cccc0000-0000-4000-8000-000000000001', organization_id: ORG, kind: 'company', dm_key: null, created_by: null, created_at: at(-60 * D) }],
+      chat_channel_members: [{ channel_id: 'cccc0000-0000-4000-8000-000000000001', organization_id: ORG, user_id: MGR, last_read_at: at(-1 * D), joined_at: at(-60 * D) }],
+      chat_messages: [], chat_reactions: [],
     },
   };
   function uuidish(n) { return '66666666-0000-4000-8000-00000000000' + n; }

@@ -78,6 +78,7 @@
     owners: { contact_type: 'owner' },
     reservations: { status: 'confirmed', source: 'airbnb' },
     notifications: { is_read: false },
+    chat_messages: { body: '', attachments: [], reply_to: null, edited_at: null, deleted_at: null, deleted_by: null },
     monthly_reports: { status: 'draft' },
     invitations: { status: 'pending' },
   };
@@ -102,6 +103,79 @@
     single() { this.mode = 'single'; return this; }
     maybeSingle() { this.mode = 'maybe'; return this; }
     then(res, rej) { return this.exec().then(res, rej); }
+    // Chat tables mirror supabase/patches/24_chat.sql: read and write only inside conversations the signed in member belongs to,
+    // staff cannot chat, authors edit their own text, owners and admins can delete any message.
+    chatExec() {
+      const me = uid();
+      const rows = T(this.table);
+      const ROLES = ['owner', 'admin', 'manager', 'agent'];
+      const eligible = (org) => { const m = memberOf(org); return !!m && ROLES.includes(m.role); };
+      const mine = new Set(T('chat_channel_members').filter(m => m.user_id === me && eligible(m.organization_id)).map(m => m.channel_id));
+      const channelOf = (r) => (this.table === 'chat_channels' ? r.id : r.channel_id);
+      const visible = (r) => mine.has(channelOf(r));
+      const fail = (message, code = '42501') => ({ data: null, error: { message, code } });
+      const emit = (eventType, row, old = null) => window.dispatchEvent(new CustomEvent('mock-realtime', { detail: { table: this.table, eventType, new: row, old } }));
+      let out = [];
+      if (this.op === 'select') {
+        out = rows.filter(r => visible(r) && this.filters.every(f => f(r)));
+        for (const [c, asc] of this.orders.slice().reverse()) out.sort((a, b) => ((a[c] ?? '') > (b[c] ?? '') ? 1 : (a[c] ?? '') < (b[c] ?? '') ? -1 : 0) * (asc ? 1 : -1));
+        if (this.lim) out = out.slice(0, this.lim);
+      } else if (this.op === 'insert' && this.table === 'chat_messages') {
+        const p = structuredClone(this.payload);
+        const ch = T('chat_channels').find(c => c.id === p.channel_id);
+        if (p.sender_id !== me || !ch || !visible(p) || p.organization_id !== ch.organization_id) return fail('new row violates row-level security policy for table "chat_messages"');
+        const body = String(p.body || '').trim();
+        const att = p.attachments || [];
+        if (!Array.isArray(att) || att.length > 5) return fail('at most 5 attachments', '22023');
+        if (!body && !att.length) return fail('empty message', '22023');
+        if (body.length > 4000) return fail('value too long', '22001');
+        if (att.some(a => !String(a.path || '').startsWith(`${p.organization_id}/chat/${p.channel_id}/`))) return fail('attachment must be in this conversation folder', '22023');
+        if (p.reply_to && !rows.some(r => r.id === p.reply_to && r.channel_id === p.channel_id)) return fail('reply must be in the same conversation', '22023');
+        if (rows.filter(r => r.sender_id === me && Date.now() - new Date(r.created_at).getTime() < 60000).length >= 30) return fail('too many messages, wait a moment', '54000');
+        const row = { id: uuid(), body: '', attachments: [], reply_to: null, edited_at: null, deleted_at: null, deleted_by: null, created_at: now(), ...p, body };
+        rows.push(row); emit('INSERT', row); out = [row];
+      } else if (this.op === 'insert' && this.table === 'chat_reactions') {
+        const p = structuredClone(this.payload);
+        const msg = T('chat_messages').find(m => m.id === p.message_id);
+        if (p.user_id !== me || !msg || !visible(msg) || msg.deleted_at || p.channel_id !== msg.channel_id || p.organization_id !== msg.organization_id) return fail('new row violates row-level security policy for table "chat_reactions"');
+        if (!['👍', '❤️', '😂', '🎉', '🙏', '👀'].includes(p.emoji)) return fail('invalid emoji', '23514');
+        if (rows.some(r => r.message_id === p.message_id && r.user_id === me && r.emoji === p.emoji)) return fail('duplicate key value violates unique constraint', '23505');
+        const row = { created_at: now(), ...p };
+        rows.push(row); emit('INSERT', row); out = [row];
+      } else if (this.op === 'update' && this.table === 'chat_messages') {
+        const admin = (org) => { const m = memberOf(org); return !!m && ['owner', 'admin'].includes(m.role); };
+        for (const r of rows.filter(r => visible(r) && this.filters.every(f => f(r)))) {
+          if (r.sender_id !== me && !admin(r.organization_id)) continue; // the update policy hides these rows
+          const old = structuredClone(r), patch = structuredClone(this.payload), next = { ...r, ...patch };
+          if (['id', 'channel_id', 'organization_id', 'sender_id', 'created_at'].some(k => next[k] !== old[k]) || next.reply_to !== old.reply_to) return fail('this part of a message cannot change');
+          if (old.deleted_at) return fail('a deleted message cannot change');
+          if (next.deleted_at) { next.deleted_by = me; next.body = ''; next.attachments = []; }
+          else {
+            if (JSON.stringify(next.attachments) !== JSON.stringify(old.attachments) || next.deleted_by !== old.deleted_by) return fail('this part of a message cannot change');
+            if (next.body !== old.body) {
+              if (old.sender_id !== me) return fail('only the author edits a message');
+              next.body = String(next.body).trim();
+              if (!next.body && !(old.attachments || []).length) return fail('empty message', '22023');
+              next.edited_at = now();
+            }
+          }
+          Object.assign(r, next); emit('UPDATE', structuredClone(r), old); out.push(r);
+        }
+      } else if (this.op === 'delete' && this.table === 'chat_reactions') {
+        const gone = rows.filter(r => r.user_id === me && visible(r) && this.filters.every(f => f(r)));
+        db.tables[this.table] = rows.filter(r => !gone.includes(r));
+        gone.forEach(r => emit('DELETE', null, structuredClone(r)));
+        out = gone;
+      } else {
+        return fail(`permission denied for table ${this.table}`);
+      }
+      save(db);
+      if (this.op !== 'select' && !this.ret) return { data: null, error: null };
+      const data = structuredClone(out);
+      if (this.mode === 'single') return data.length === 1 ? { data: data[0], error: null } : { data: null, error: { message: 'JSON object requested, multiple (or no) rows returned', code: 'PGRST116' } };
+      if (this.mode === 'maybe') return { data: data[0] || null, error: null };
+      return { data, error: null, count: this.wantCount ? data.length : null };
+    }
     async exec() {
       await delay();
       // Slow one table down: localStorage.rigzea_mock_slow = JSON {"tasks": 2500}
@@ -109,6 +183,7 @@
       if (slow) await new Promise(r => setTimeout(r, slow));
       db = load();
       if (shouldFail(`${this.op}:${this.table}`)) return netErr();
+      if (this.table.startsWith('chat_')) return this.chatExec();
       const rows = T(this.table);
       const match = rows.filter(r => this.filters.every(f => f(r)));
       let out;
@@ -159,6 +234,30 @@
   }
 
   const rpcs = {
+    chat_open_direct({ p_org, p_other }) {
+      const ROLES = ['owner', 'admin', 'manager', 'agent'];
+      const meM = memberOf(p_org);
+      if (!meM || !ROLES.includes(meM.role)) throw new Error('chat is not available for this account');
+      const other = T('organization_members').find(m => m.organization_id === p_org && m.user_id === p_other);
+      if (!p_other || p_other === uid()) throw new Error('pick another member');
+      if (!other || !ROLES.includes(other.role)) throw new Error('that person cannot use chat');
+      const key = [uid(), p_other].sort().join(':');
+      let ch = T('chat_channels').find(c => c.organization_id === p_org && c.kind === 'direct' && c.dm_key === key);
+      if (!ch) { ch = { id: uuid(), organization_id: p_org, kind: 'direct', dm_key: key, created_by: uid(), created_at: now() }; T('chat_channels').push(ch); }
+      for (const u of [uid(), p_other]) if (!T('chat_channel_members').some(m => m.channel_id === ch.id && m.user_id === u)) T('chat_channel_members').push({ channel_id: ch.id, organization_id: p_org, user_id: u, last_read_at: now(), joined_at: now() });
+      return ch.id;
+    },
+    chat_mark_read({ p_channel }) {
+      const m = T('chat_channel_members').find(x => x.channel_id === p_channel && x.user_id === uid());
+      if (m) m.last_read_at = now();
+      return null;
+    },
+    chat_unread_counts({ p_org }) {
+      return T('chat_channel_members').filter(cm => cm.user_id === uid() && cm.organization_id === p_org).map(cm => ({
+        channel_id: cm.channel_id,
+        unread: T('chat_messages').filter(m => m.channel_id === cm.channel_id && m.created_at > cm.last_read_at && m.sender_id !== cm.user_id && !m.deleted_at).length,
+      })).filter(x => x.unread > 0);
+    },
     // mirrors supabase/patches/23_profile_branding.sql: own row only, role untouched, Georgian first and last name
     update_my_profile({ p_org, p_name, p_avatar, p_clear_avatar }) {
       const me = T('organization_members').find(m => m.organization_id === p_org && m.user_id === uid());
@@ -402,10 +501,28 @@
       async updateUser(a) { const u = db.users.find(x => x.id === uid()); if (!u) return { data: null, error: { message: 'Auth session missing' } }; if (a.password) u.password = a.password; if (a.data?.full_name) u.name = a.data.full_name; save(db); return { data: { user: u }, error: null }; },
       onAuthStateChange() { return { data: { subscription: { unsubscribe() {} } } }; },
     },
+    // Realtime stub: handlers registered with channel().on('postgres_changes', ...) hear the mock database's own writes (and anything a test dispatches as 'mock-realtime').
+    channel(name) {
+      const handlers = [];
+      const listener = (e) => handlers.forEach(h => {
+        const d = e.detail;
+        if (h.filter.table && h.filter.table !== d.table) return;
+        if (h.filter.event && h.filter.event !== '*' && h.filter.event !== d.eventType) return;
+        const m = /^(\w+)=eq\.(.+)$/.exec(h.filter.filter || '');
+        const row = d.new || d.old;
+        if (m && String(row?.[m[1]]) !== m[2]) return;
+        h.cb({ eventType: d.eventType, new: d.new || {}, old: d.old || {}, table: d.table });
+      });
+      window.addEventListener('mock-realtime', listener);
+      const ch = { on(type, filter, cb) { handlers.push({ filter, cb }); return ch; }, subscribe(cb) { setTimeout(() => cb && cb('SUBSCRIBED'), 0); return ch; }, unsubscribe() { window.removeEventListener('mock-realtime', listener); return Promise.resolve('ok'); } };
+      return ch;
+    },
+    removeChannel(ch) { return ch?.unsubscribe?.(); },
     storage: {
       from: () => ({
         async upload(path) { await delay(); if (shouldFail('upload:storage')) return netErr(); return { data: { path }, error: null }; },
         async createSignedUrl(path) { await delay(); return { data: { signedUrl: 'https://mock.storage.local/signed/' + path }, error: null }; },
+        async createSignedUrls(paths) { await delay(); return { data: paths.map(path => ({ path, signedUrl: 'https://mock.storage.local/signed/' + path })), error: null }; },
         getPublicUrl(path) { return { data: { publicUrl: 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="120" height="90"><rect width="120" height="90" fill="#cbd5e1"/><text x="10" y="50" font-size="10">' + path.split('/').pop() + '</text></svg>') } }; },
       }),
     },
