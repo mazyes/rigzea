@@ -3,9 +3,8 @@
   "short_name": "Rigzea",
   "description": "უძრავი ქონების სააგენტოების და აგენტების სამუშაო სისტემა",
   "start_url": "/app/",
-  "scope": "/",
+  "scope": "/app/",
   "display": "standalone",
-  "orientation": "portrait",
   "background_color": "#0a5c44",
   "theme_color": "#0a5c44",
   "icons": [
@@ -43,5 +42,82 @@
     "business",
     "productivity"
   ],
-  "id": "/app/"
+  "id": "/app/",
+  "lang": "ka",
+  "dir": "ltr",
+  "display_override": [
+    "window-controls-overlay",
+    "standalone",
+    "minimal-ui"
+  ],
+  "prefer_related_applications": false,
+  "launch_handler": {
+    "client_mode": "focus-existing"
+  },
+  "shortcuts": [
+    {
+      "name": "საქმეები",
+      "short_name": "საქმეები",
+      "url": "/app/tasks/",
+      "icons": [
+        {
+          "src": "/favicon-192x192.png?v=6",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "ბინები",
+      "short_name": "ბინები",
+      "url": "/app/apartments/",
+      "icons": [
+        {
+          "src": "/favicon-192x192.png?v=6",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "გარიგებები",
+      "short_name": "გარიგებები",
+      "url": "/app/deals/",
+      "icons": [
+        {
+          "src": "/favicon-192x192.png?v=6",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "კონტაქტები",
+      "short_name": "კონტაქტები",
+      "url": "/app/owners/",
+      "icons": [
+        {
+          "src": "/favicon-192x192.png?v=6",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/img/pwa/screenshot-wide.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "მთავარი გვერდი"
+    },
+    {
+      "src": "/img/pwa/screenshot-narrow.png",
+      "sizes": "540x960",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "მთავარი გვერდი ტელეფონზე"
+    }
+  ]
 }

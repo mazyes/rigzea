@@ -198,6 +198,11 @@
     refresh: '<path d="M21 12a9 9 0 1 1-2.6-6.4L21 8"/><path d="M21 3v5h-5"/>',
     mapPin: '<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/>',
     printer: '<path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/>',
+    info: '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>',
+    download: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>',
+    wifiOff: '<path d="M2 2l20 20M8.5 16.4a5 5 0 0 1 7 0M2 8.8a15 15 0 0 1 4.2-2.6M10.7 5.1a15 15 0 0 1 11.3 3.7M5 12.9a10 10 0 0 1 5.2-2.7M15 10.4a10 10 0 0 1 4 2.5M12 20h.01"/>',
+    share: '<path d="M12 3v12M8 7l4-4 4 4M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/>',
+    addSquare: '<rect x="3" y="3" width="18" height="18" rx="4"/><path d="M12 8v8M8 12h8"/>',
     upload: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>',
     login: '<path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"/>',
     wrench: '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.8-3.8a6 6 0 0 1-7.9 7.9l-6.9 6.9a2.1 2.1 0 0 1-3-3l6.9-6.9a6 6 0 0 1 7.9-7.9z"/>',
@@ -491,6 +496,61 @@
     email.addEventListener('input', check);
     check();
   }
+
+  // One sliding highlight for every segmented control: tab strips, chips, segments, the sign in tabs and the bottom bar
+  // all share the navbar's motion. A group that is redrawn (filters re-render the page) slides from where it last was.
+  const PILLS = [['.tabs', '.tab', '[aria-selected="true"]'], ['.seg2', 'button', '[aria-pressed="true"]'], ['.chips', '.chip', '[aria-pressed="true"]'], ['.auth-tabs', '.auth-tab', '.active'], ['.bottom-nav', 'a, button', '[aria-current="page"]']];
+  const pillMemory = new Map();
+  let pillQueued = false, pillForce = false;
+  const pillRo = typeof ResizeObserver === 'function' ? new ResizeObserver(() => schedulePills(true)) : null;
+  function placePill(pill, b) {
+    pill.style.transform = `translate(${b.x}px, ${b.y}px)`;
+    pill.style.width = b.w + 'px';
+    pill.style.height = b.h + 'px';
+    pill.style.opacity = '1';
+  }
+  function syncPills() {
+    pillQueued = false;
+    const force = pillForce; pillForce = false;
+    for (const [rootSel, itemSel, onSel] of PILLS) {
+      document.querySelectorAll(rootSel).forEach(root => {
+        const on = [...root.children].find(el => el.matches(onSel) && el.matches(itemSel));
+        let pill = root.querySelector(':scope > .pill');
+        if (!on) { if (pill) pill.style.opacity = '0'; root._pillOn = null; return; }
+        if (!force && pill && root._pillOn === on) return;
+        if (!on.offsetWidth) return; // hidden for now: try again when it shows
+        const box = { x: on.offsetLeft, y: on.offsetTop, w: on.offsetWidth, h: on.offsetHeight };
+        const key = rootSel + '|' + (root.getAttribute('aria-label') || root.id || root.parentElement?.className || '') + '|' + location.pathname;
+        if (!pill) {
+          pill = document.createElement('i');
+          pill.className = 'pill pill-snap';
+          pill.setAttribute('aria-hidden', 'true');
+          root.classList.add('pill-ready');
+          root.prepend(pill);
+          placePill(pill, pillMemory.get(key) || box);
+          void pill.offsetWidth; // commit the starting spot, then let the move below animate
+          pill.classList.remove('pill-snap');
+        }
+        placePill(pill, box);
+        pillMemory.set(key, box);
+        if (root._pillOn) pillRo?.unobserve(root._pillOn);
+        root._pillOn = on;
+        pillRo?.observe(on);
+      });
+    }
+  }
+  function schedulePills(force) {
+    if (force) pillForce = true;
+    if (pillQueued) return;
+    pillQueued = true;
+    requestAnimationFrame(syncPills);
+  }
+  function initPills() {
+    new MutationObserver(() => schedulePills()).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['aria-pressed', 'aria-selected', 'aria-current', 'class', 'hidden'] });
+    window.addEventListener('resize', () => schedulePills(true));
+    schedulePills(true);
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initPills); else initPills();
 
   window.R = {
     bindGeorgianName,

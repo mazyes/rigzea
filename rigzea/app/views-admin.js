@@ -31,7 +31,7 @@
         ${invitations === null ? '<div class="skeleton"><i></i><i></i></div>' : invitationsError ? `<div class="error-state"><p>მოწვევები ვერ ჩაიტვირთა. ${esc(R.friendlyError(invitationsError))}</p><button class="btn btn-secondary btn-sm" id="t-inv-retry">ხელახლა ცდა</button></div>`
           : pendingInv.length ? `<div class="rows">${pendingInv.map(i => `<div class="row" style="--cols:minmax(0,1fr) 150px auto"><span class="cell-main"><strong>${esc(i.email)}</strong><span>გაიგზავნა ${esc(R.date(i.created_at))}</span></span><span class="cell-meta">${esc(L.role[i.role])}</span><span class="cell-actions">${App.isAdmin() ? `<button type="button" class="btn btn-ghost btn-sm" data-cancel-inv="${i.id}">გაუქმება</button>` : ''}</span></div>`).join('')}</div>`
           : App.emptyInline('ღია მოწვევა არ არის.')}
-        <div class="card-foot">მოწვეული ადამიანი რეგისტრირდება მისამართზე <strong>${esc(location.origin)}/app/</strong> იმავე ელფოსტით. სამუშაო სივრცე ავტომატურად დაემატება. ელფოსტით ავტომატური გაგზავნა ჯერ არ არის ჩართული, ამიტომ ბმული თავად გაუგზავნე. <button type="button" class="link-btn" id="t-copy">ბმულის კოპირება</button></div>
+        <div class="card-foot">მოწვეული ადამიანი დარეგისტრირდება ამავე ელფოსტით აქ: <strong>${esc(location.origin)}/app/</strong> <button type="button" class="icon-btn" id="t-copy" title="ბმულის კოპირება" aria-label="ბმულის კოპირება">${icon('copy', 16)}</button></div>
       </section>`
   }
 
@@ -68,7 +68,7 @@
     const members = S.data.members.slice().sort((a, b) => (a.display_name || '').localeCompare(b.display_name || ''));
     const cols = 'minmax(0,1.6fr) 170px minmax(0,1fr) 130px 160px';
     $('#view').innerHTML = `
-      <div class="page-head"><div><h1>გუნდი</h1><p class="page-sub">${members.length} წევრი · სამუშაო ადგილი: ${App.seatsUsed()}${App.PLANS[App.planState().eff].seats === null ? '' : ' / ' + App.PLANS[App.planState().eff].seats} · თანამშრომლები ხედავენ მხოლოდ თავიანთ დანიშნულ საქმეებს ტელეფონიდან.</p></div>
+      <div class="page-head"><div><h1>გუნდი</h1><p class="page-sub">${members.length} წევრი · სამუშაო ადგილი: ${App.seatsUsed()}${App.PLANS[App.planState().eff].seats === null ? '' : ' / ' + App.PLANS[App.planState().eff].seats}</p></div>
         <div class="page-actions">${App.isAdmin() ? `<button type="button" class="btn btn-primary" id="t-invite">${icon('plus', 16)} წევრის მოწვევა</button>` : ''}</div></div>
       <section class="card" style="margin-bottom:16px"><div class="rows"><div class="rows-head" style="--cols:${cols}"><span>წევრი</span><span>როლი</span><span>ტელეფონი</span><span>აქტიური საქმე</span><span></span></div>
         ${members.map(m => {

@@ -89,7 +89,7 @@
         return showAuth(wantsSignin ? 'signin' : 'signup');
       }
       if (recovery) return showAuth('newpass');
-      ALL_CHUNKS.forEach(src => ensureChunk(src).catch(() => {})); // download the view code while the data loads
+      chunkOrder(route().name).forEach(src => ensureChunk(src).catch(() => {})); // download the view code while the data loads, this area's file first
       const handed = await dataCache.takeHandoff();
       if (handed) {
         S.orgs = handed.handoff.orgs;
@@ -587,6 +587,8 @@
     deals: '/app/views-deals.js', finance: '/app/views-finance.js',
     team: '/app/views-admin.js', settings: '/app/views-admin.js',
   };
+  // Chunks an area needs besides its own while it renders.
+  const VIEW_DEPS = {};
   const viewLoads = new Map();
   function ensureChunk(src, name = 'გვერდი') {
     if (viewLoads.has(src)) return viewLoads.get(src);
@@ -605,7 +607,15 @@
   // area loads all of them (in parallel, cached). Split per area again only once those shared
   // helpers live in the shell.
   const ALL_CHUNKS = [...new Set([...Object.values(VIEW_CHUNKS), '/app/views-docs.js'])];
-  function ensureViewLoaded(name) { return Promise.all(ALL_CHUNKS.map(src => ensureChunk(src, name))); }
+  // The area being opened goes first (scripts run in request order), so its first screen waits for one file, not six.
+  // The others keep downloading and are ready long before anyone clicks into them.
+  function chunkOrder(name) { const first = VIEW_CHUNKS[name]; return first ? [first, ...ALL_CHUNKS.filter(src => src !== first)] : ALL_CHUNKS; }
+  function ensureViewLoaded(name) {
+    const [first, ...rest] = chunkOrder(name);
+    const head = ensureChunk(first, name);
+    rest.forEach(src => ensureChunk(src, name).catch(() => {}));
+    return Promise.all([head, ...(VIEW_DEPS[name] || []).map(src => ensureChunk(src, name))]);
+  }
   const PAGE_ROUTES = location.pathname.startsWith('/app/');
   const AREAS = ['today', 'tasks', 'apartments', 'owners', 'deals', 'finance', 'team', 'settings'];
   // Same labels scripts/stamp-assets.mjs puts in each page's <title>.
@@ -1037,6 +1047,7 @@
     const r = route();
     if (isAgent() && AGENT_CLOSED.includes(r.name)) { go('#/today', { replace: true }); return; }
     renderShell();
+    updateBadge();
     const view = views[r.name];
     if (!view) {
       renderLoading();
@@ -1203,6 +1214,7 @@
         <div class="field" style="padding:4px 10px 8px"><span class="field-label">მენიუს მდებარეობა</span>
           <div class="seg2" role="group" aria-label="მენიუს მდებარეობა"><button type="button" data-nav-mode="top" aria-pressed="${navMode === 'top'}">ზემოთ</button><button type="button" data-nav-mode="side" aria-pressed="${navMode === 'side'}">მარცხნივ</button></div></div>
         <button type="button" class="menu-lang" data-lang-toggle>${window.RLang?.lang === 'en' ? 'ქართული' : 'English'}</button>
+        ${canInstall() ? `<button type="button" data-action="install">${icon('download')} აპის დაყენება</button>` : ''}
         <button type="button" data-action="signout">${icon('logout')} გამოსვლა</button>
       </div>`;
     $('#theme-select').value = theme;
@@ -2087,7 +2099,7 @@
     });
   }
 
-  window.App = { S, H, views, aptSection, contactSection, isManager, isAdmin, isAgent, refresh, render, renderShell, go, route, toUrl, taskHref, closeTaskOverlay, upsertLocal, logEvent, loadMore,
+  window.App = { emptyInline: (text) => `<p class="empty-inline">${esc(text)}</p>`, S, H, views, aptSection, contactSection, isManager, isAdmin, isAgent, refresh, render, renderShell, go, route, toUrl, taskHref, closeTaskOverlay, upsertLocal, logEvent, loadMore,
     openCommissionCalculator, openMatchmaker, openSocialPostGenerator, setTheme, setNavMode,
     openDocChooser: (...args) => ensureChunk('/app/views-docs.js', 'დოკუმენტები').then(() => window.App.openDocChooser?.(...args)),
     openPresentation: (...args) => ensureViewLoaded('apartments').then(() => window.App.openPresentation?.(...args)),
@@ -2122,10 +2134,71 @@
     }, { passive: true });
   })();
 
+  // ---------------------------------------------------------------------------
+  // Installed app: install button, update notice, offline state, home screen hint, icon badge
+  // ---------------------------------------------------------------------------
+  const isStandalone = () => matchMedia('(display-mode: standalone), (display-mode: window-controls-overlay)').matches || navigator.standalone === true;
+  let installEvent = null;
+  const canInstall = () => !!installEvent && !isStandalone();
+  async function installApp() {
+    if (!installEvent) return;
+    installEvent.prompt();
+    const { outcome } = await installEvent.userChoice.catch(() => ({}));
+    if (outcome === 'accepted') installEvent = null;
+    renderUserPanel();
+  }
+  window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); installEvent = e; if (S.user && $('#user-panel')) renderUserPanel(); });
+  window.addEventListener('appinstalled', () => { installEvent = null; toast('აპი დაყენებულია', { type: 'success' }); });
+  document.addEventListener('click', (e) => { if (e.target.closest('[data-action="install"]')) installApp(); });
+  // Help icons: hover shows the title; a tap (no hover on phones) shows it as a message.
+  document.addEventListener('click', (e) => { const tip = e.target.closest('.info-tip'); if (tip) toast(tip.getAttribute('title'), { type: 'info', timeout: 7000 }); });
+
+  // A newer version was downloaded in the background: offer it, never reload on our own.
+  navigator.serviceWorker?.addEventListener('message', (e) => {
+    if (e.data?.type === 'rigzea-update') toast('ახალი ვერსია მზადაა', { type: 'info', timeout: 20000, action: { label: 'განახლება', fn: () => location.reload() } });
+  });
+
+  // Offline: the saved data stays readable, a small pill says so, and data reloads when the connection returns.
+  (function offlineState() {
+    const root = document.documentElement;
+    let pill = null;
+    const sync = () => {
+      root.classList.toggle('is-offline', !navigator.onLine);
+      if (!navigator.onLine && !pill) { pill = document.createElement('div'); pill.className = 'offline-pill'; pill.setAttribute('role', 'status'); pill.innerHTML = `${icon('wifiOff', 15)}<span>ოფლაინ</span>`; document.body.appendChild(pill); }
+    };
+    window.addEventListener('offline', sync);
+    window.addEventListener('online', () => { sync(); if (S.data) { toast('კავშირი აღდგა', { type: 'success' }); refresh({ quiet: true }); } });
+    sync();
+  })();
+
+  // Safari on iPhone and iPad cannot offer installation itself: show the two steps once, from the second visit.
+  function maybeShowIosHint() {
+    const ios = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    if (!ios || isStandalone()) return;
+    let visits = 0;
+    try { if (localStorage.getItem('rigzea_ios_hint') === 'done') return; visits = Number(localStorage.getItem('rigzea_visits') || 0) + 1; localStorage.setItem('rigzea_visits', String(visits)); } catch { return; }
+    if (visits < 2) return;
+    setTimeout(() => {
+      if (!S.data || document.querySelector('dialog[open]')) return;
+      try { localStorage.setItem('rigzea_ios_hint', 'done'); } catch {}
+      R.dialog({ title: 'აპად დაყენება', sheet: true, body: `<div class="ios-list"><div class="ios-group">
+        <div class="ios-row"><span class="ios-tile" style="--t:#0d7f8f">${icon('share', 18)}</span><span class="ios-label">დააჭირე გაზიარებას</span></div>
+        <div class="ios-row"><span class="ios-tile" style="--t:#2f9e6b">${icon('addSquare', 18)}</span><span class="ios-label">მთავარ ეკრანზე დამატება</span></div></div></div>` });
+    }, 6000);
+  }
+
+  // Number of overdue tasks on the installed app's icon (where the device supports it).
+  function updateBadge() {
+    if (!navigator.setAppBadge || !S.data) return;
+    const n = navCounts().tasks?.n || 0;
+    (n ? navigator.setAppBadge(n) : navigator.clearAppBadge?.())?.catch?.(() => {});
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
     if (legacyRedirect()) return;
     rewriteLinks(document.body);
     hydrateIcons();
     boot();
+    maybeShowIosHint();
   });
 })();

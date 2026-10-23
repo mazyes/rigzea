@@ -2494,6 +2494,11 @@
     "მიუთითე მიზეზი.": "Enter a reason.",
     "ვერ ჩაიტვირთა გვერდის კოდი:": "Could not load the page code:",
     "გვერდის კოდი ვერ ჩაიტვირთა.": "The page code could not be loaded.",
+    "თანხები ლარშია. შეთავაზებული ხარჯი ითვლება მხოლოდ დადასტურების შემდეგ.": "Amounts are in lari. A proposed expense counts only after approval.",
+    "ამონაწერი ითვლის თვის შემოსავალს, ხარჯს და საკომისიოს. დასრულებისას მფლობელი შეტყობინებას მიიღებს.": "A statement adds up the month's income, expenses and commission. The owner is notified when it is finished.",
+    "მოწვეული ადამიანი დარეგისტრირდება ამავე ელფოსტით აქ:": "The invited person signs up with the same email at:",
+    "საქმის დამატება": "Add task",
+    "ხარჯის დამატება": "Add expense",
     "ჯავშანი": "Booking",
     "სწრაფი მოქმედებები": "Quick actions",
     "ბოლო ობიექტები": "Recent properties",
@@ -2745,7 +2750,7 @@
     [/^(\d+) ვადაგადაცილებული$/, function (m) { return m[1] + ' overdue'; }],
     [/^შეტყობინებები, (\d+) წაუკითხავი$/, function (m) { return 'Notifications, ' + m[1] + ' unread'; }],
     [/^(\S+), (\d+) (\S+)$/, function (m) { var w = WD.indexOf(m[1]), mo = MD.indexOf(m[3]); return w < 0 || mo < 0 ? null : WE[w] + ', ' + m[2] + ' ' + ME[mo]; }],
-    [/^(\d+) წევრი · სამუშაო ადგილი: (\d+) \/ (\d+) · .*$/, function (m) { return plural(m[1], 'member', 'members') + ' · seats: ' + m[2] + ' / ' + m[3] + ' · staff only see their assigned tasks from the phone.'; }],
+    [/^(\d+) წევრი · სამუშაო ადგილი: (\d+)(?: \/ (\d+))?(?: · .*)?$/, function (m) { return plural(m[1], 'member', 'members') + ' · seats: ' + m[2] + (m[3] ? ' / ' + m[3] : ''); }],
     [/^(\d+) ობიექტი პორტფოლიოში$/, function (m) { return plural(m[1], 'property', 'properties') + ' in portfolio'; }],
     [/^ფოტოები \((\d+)\)$/, function (m) { return 'Photos (' + m[1] + ')'; }],
     [/^(\S+) (\d{4})$/, function (m) { var mo = MD.indexOf(m[1]); return mo < 0 ? null : ME[mo] + ' ' + m[2]; }],
@@ -2868,12 +2873,12 @@
     if (r == null) {
       // "Prefix: rest" (activity and task lines)
       var pm = /^([^:]{2,30}): (.+)$/.exec(t);
-      if (pm && Object.prototype.hasOwnProperty.call(D, pm[1])) r = D[pm[1]] + ': ' + ((tr(pm[2]) || pm[2]).trim());
+      if (pm && Object.prototype.hasOwnProperty.call(D, pm[1])) r = D[pm[1]] + ': ' + ((tr(pm[2]) || (appPage && isUserText(pm[2]) ? translit(pm[2]) : pm[2])).trim());
     }
     if (r == null && t.indexOf(' · ') > 0) {
       // place · street · person: translate each part on its own
       var parts = t.split(' · '), outp = [];
-      for (var k = 0; k < parts.length; k++) { var x = tr(parts[k]); outp.push(x == null ? parts[k] : x.trim()); }
+      for (var k = 0; k < parts.length; k++) { var x = tr(parts[k]); outp.push(x == null ? (appPage && isUserText(parts[k]) ? translit(parts[k]) : parts[k]) : x.trim()); }
       if (!outp.some(function (x) { return /[ა-ჰ]/.test(x); })) r = outp.join(' · ');
     }
     if (r == null && appPage) {

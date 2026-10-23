@@ -1694,29 +1694,6 @@ test('30. with FORCE_NO_TRIAL a trial workspace is limited at once and card chec
   return page;
 });
 
-test('28. the service worker precaches the app shell under a content-named cache', async (browser) => {
-  const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
-  await page.goto(BASE + '/app/');
-  await page.getByRole('heading', { name: /გამარჯობა,/ }).waitFor();
-  const state = await page.evaluate(() => Promise.race([
-    navigator.serviceWorker.ready.then(() => 'ready'),
-    new Promise(r => setTimeout(() => r('timeout'), 15000)),
-  ]));
-  assert.strictEqual(state, 'ready', 'service worker became active');
-  const keys = await page.evaluate(() => caches.keys());
-  const mine = keys.filter(k => k.startsWith('rigzea-'));
-  assert.strictEqual(mine.length, 1, 'exactly one rigzea cache: ' + JSON.stringify(keys));
-  assert(/^rigzea-[0-9a-f]{12}$/.test(mine[0]), 'cache name is a content hash: ' + mine[0]);
-  const urls = await page.evaluate(async (name) => {
-    const cache = await caches.open(name);
-    return (await cache.keys()).map(r => new URL(r.url).pathname);
-  }, mine[0]);
-  for (const need of ['/js/supabase.js', '/js/plans.js', '/app/app.js', '/app/app.css']) {
-    assert(urls.includes(need), 'precached ' + need);
-  }
-  return page;
-});
-
 test('1t. phone category bar stays above headings and the new menu is in English', async (browser) => {
   const page = await newPage(browser, { viewport: PHONE, login: USERS.manager });
   await page.addInitScript(() => localStorage.setItem('rigzea_motion', 'off'));
@@ -1759,6 +1736,21 @@ test('1w. sign up that needs email confirmation shows the code step and signs in
   await page.keyboard.type('123456');
   await page.locator('#onboarding').waitFor({ timeout: 8000 }); // a new account has no workspace yet
   assert.deepStrictEqual(page.errors.filter(e => !/კოდი არასწორია/.test(e)), [], page.errors.join(' | ')); // the wrong code is logged on purpose
+});
+
+test('1x. the app opens offline from the service worker cache and says it is offline', async (browser) => {
+  const context = await browser.newContext({ viewport: DESKTOP, locale: 'ka-GE' }); // real service worker, real files
+  const page = await context.newPage();
+  await page.goto(BASE + '/app/');
+  await page.waitForFunction(() => navigator.serviceWorker.controller, null, { timeout: 8000 }).catch(() => {});
+  await page.reload();
+  await page.waitForFunction(async () => (await (await caches.open('rigzea-app-v3')).keys()).length > 8);
+  await context.setOffline(true);
+  await page.goto(BASE + '/app/tasks/');
+  await page.locator('#auth').waitFor({ state: 'visible' });
+  await page.locator('.offline-pill').waitFor();
+  assert.strictEqual(await page.evaluate(() => document.documentElement.classList.contains('is-offline')), true);
+  await context.close();
 });
 
 test('1u. English property inventory has no Georgian interface or user-content script', async (browser) => {

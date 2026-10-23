@@ -58,7 +58,7 @@ const { serve, launch, newPage } = require('./harness');
         return { error: { message: 'Test failure' } };
       };
     });
-    await page.locator('#form-signup input[name="name"]').fill('ტესტი');
+    await page.locator('#form-signup input[name="name"]').fill('ტესტი ტესტაძე');
     await page.locator('#form-signup input[name="email"]').fill('test@example.com');
     await page.locator('#signup-agree').check();
     await page.locator('#form-signup button[type="submit"]').click();

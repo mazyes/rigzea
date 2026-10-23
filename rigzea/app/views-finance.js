@@ -26,7 +26,7 @@
     const months = [...new Set([R.monthKey(), ...S.data.expenses.map(e => String(e.expense_date || '').slice(0, 7)), ...S.data.income.map(i => String(i.income_date || '').slice(0, 7))].filter(Boolean))].sort().reverse();
 
     $('#view').innerHTML = `
-      <div class="page-head"><div><h1>ფინანსები</h1><p class="page-sub">ყველა თანხა ლარშია. შეთავაზებული ხარჯი გაწეულ ხარჯად არ ითვლება, სანამ არ დადასტურდება და არ დაიხარჯება.</p></div>
+      <div class="page-head"><div><h1>ფინანსები</h1><p class="page-sub">თანხები ლარშია. შეთავაზებული ხარჯი ითვლება მხოლოდ დადასტურების შემდეგ.</p></div>
         <div class="page-actions"><button type="button" class="btn btn-ghost" id="f-export" title="ექსპორტი Excel/CSV">${icon('file', 16)} ექსპორტი</button><button type="button" class="btn btn-secondary" id="f-inc">+ შემოსავალი</button><button type="button" class="btn btn-primary" id="f-exp">${icon('plus', 16)} ხარჯი</button></div></div>
       <div class="toolbar">
         <select class="input" id="f-month" aria-label="თვე"><option value="">ყველა პერიოდი</option>${months.map(m => `<option value="${m}" ${ff.month === m ? 'selected' : ''}>${esc(App.monthLabel(m))}</option>`).join('')}</select>
@@ -270,7 +270,7 @@
   function renderStatements(root) {
     const list = S.data.statements.filter(s => (!ff.apt || s.apartment_id === ff.apt) && (!ff.month || s.month_period === ff.month));
     const cols = 'minmax(0,1.6fr) 140px 120px 120px 130px';
-    root.innerHTML = `<div class="toolbar"><button type="button" class="btn btn-primary btn-sm" id="st-new">ამონაწერის მომზადება</button><span class="small muted">ამონაწერი ითვლის თვის შემოსავალს, მფლობელზე დაკისრებულ ხარჯს და საკომისიოს. დასრულებისას მფლობელი შეტყობინებას მიიღებს.</span></div>
+    root.innerHTML = `<div class="toolbar"><button type="button" class="btn btn-primary btn-sm" id="st-new">ამონაწერის მომზადება</button><span class="info-tip" tabindex="0" role="note" title="ამონაწერი ითვლის თვის შემოსავალს, ხარჯს და საკომისიოს. დასრულებისას მფლობელი შეტყობინებას მიიღებს." aria-label="ამონაწერი ითვლის თვის შემოსავალს, ხარჯს და საკომისიოს. დასრულებისას მფლობელი შეტყობინებას მიიღებს.">${icon('info', 16)}</span></div>
       <section class="card">${list.length ? `<div class="rows"><div class="rows-head" style="--cols:${cols}"><span>ბინა</span><span>თვე</span><span class="cell-right">შემოსავალი</span><span class="cell-right">მფლობელს</span><span>სტატუსი</span></div>
         ${list.map(s => `<a class="row" href="#/finance/statement/${s.id}" style="--cols:${cols}"><span class="cell-main"><strong>${esc(H.aptName(s.apartment_id))}</strong><span>${esc(H.owner(s.owner_id)?.name || '')}</span></span><span class="cell-meta">${esc(App.monthLabel(s.month_period))}</span><span class="cell-meta cell-right num">${money(s.total_income)}</span><span class="cell-right num strong">${money(s.net_result)}</span><span class="cell-status">${R.badge(L.statement[s.status], L.statementTone[s.status])}</span></a>`).join('')}</div>`
       : `<div class="empty">${icon('file', 28)}<h3>ამონაწერი ჯერ არ არის</h3><p>თვიური ამონაწერი ითვლის შემოსავალს, ხარჯს, საკომისიოს და მესაკუთრის ანაზღაურებას.</p></div>`}</section>`;
