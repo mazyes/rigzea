@@ -2285,6 +2285,10 @@
   // Keep CRM wording independent of the public site.
   var appPage = /^\/app(?:\/|$)/.test(location.pathname);
   if (appPage) Object.assign(D, {
+    "ხელსაწყოები": "Tools",
+    "გარეგნობა": "Appearance",
+    "მუქი რეჟიმი": "Dark mode",
+    "კლიენტის სელექცია": "Property matching",
     "სწრაფი მოქმედებები": "Quick actions",
     "ბოლო ობიექტები": "Recent properties",
     "პირველი ნაბიჯები": "Getting started",

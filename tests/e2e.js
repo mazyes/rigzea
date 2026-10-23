@@ -1700,6 +1700,30 @@ test('28. the service worker precaches the app shell under a content-named cache
   return page;
 });
 
+test('1t. phone category bar stays above headings and the new menu is in English', async (browser) => {
+  const page = await newPage(browser, { viewport: PHONE, login: USERS.manager });
+  await page.addInitScript(() => localStorage.setItem('rigzea_motion', 'off'));
+  for (const width of [360, 560, 820]) {
+    await page.setViewportSize({ width, height: 844 });
+    for (const route of ['/app/deals/?type=sale', '/app/apartments/?type=rent']) {
+      await page.goto(BASE + route);
+      await page.locator('#view h1').waitFor();
+      await page.waitForFunction(() => !document.querySelector('#view.view-enter'));
+      const bar = await page.locator('#section-bar').boundingBox();
+      const heading = await page.locator('#view h1').boundingBox();
+      assert(bar && heading && bar.y + bar.height <= heading.y, `${width} ${route}: category bar covers heading`);
+    }
+  }
+  await page.evaluate(() => localStorage.setItem('rigzea_lang', 'en'));
+  await page.reload();
+  await page.locator('#view h1').waitFor();
+  await page.locator('#btn-more').click();
+  await page.getByRole('switch', { name: 'Dark mode', exact: true }).waitFor();
+  const menu = await page.locator('.ios-list').innerText();
+  for (const label of ['Tools', 'Appearance', 'Property matching']) assert(menu.includes(label), `Missing English menu label: ${label}`);
+  return page;
+});
+
 (async () => {
   const server = await serve();
   const browser = await launch();

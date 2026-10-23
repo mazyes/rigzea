@@ -1840,7 +1840,7 @@ a.row:active, button.row:active, .row.clickable:active, .sched-row:active, .noti
 @media (max-width: 380px) {
   .topbar .org-switch { display: none; }
 }
-#view .tabs, #view .chips, #view .seg, #section-bar { position: relative; } /* offsetLeft of the tabs is measured from here */
+#view .tabs, #view .chips, #view .seg { position: relative; } /* the section bar already uses sticky positioning */
 @media (max-width: 900px) {
   .dlg-sheet .dlg-head { align-items: center; padding: 6px 14px 10px 18px; }
   .dlg-sheet .dlg-head h2 { font-size: 24px; letter-spacing: -.025em; }
