@@ -896,13 +896,14 @@
     slideRailPill();
 
     // Phone: 4 primary workflows + More menu sheet.
-    const tab = (href, ic, label, active, count) => `<a href="${href}" ${active ? 'aria-current="page"' : ''}>${icon(ic, 20)}<span>${label}</span>${count ? `<span class="count ${count.danger ? 'count-danger' : ''}">${count.n}</span>` : ''}</a>`;
-    const inMore = ['tasks', 'chat', 'finance', 'team', 'settings'].includes(key);
+    const tab = (href, ic, label, active, count, id = '') => `<a href="${href}" ${id ? `data-tab="${id}"` : ''} ${active ? 'aria-current="page"' : ''}>${icon(ic, 20)}<span>${label}</span>${count ? `<span class="count ${count.danger ? 'count-danger' : ''}">${count.n}</span>` : ''}</a>`;
+    const inMore = ['tasks', 'finance', 'team', 'settings'].includes(key);
     $('#bottom-nav').innerHTML = tab('#/today', 'today', 'ჩემთვის', key === 'today')
       + tab('#/apartments', 'building', 'ობიექტები', key === 'apartments')
       + tab('#/deals', 'wallet', 'გარიგებები', key === 'deals', counts.deals)
       + tab('#/owners', 'user', 'კლიენტები', key === 'contacts', counts.contacts)
-      + `<button type="button" id="btn-more" ${inMore ? 'aria-current="page"' : ''}>${icon('menu', 20)}<span>მენიუ</span>${counts.tasks || counts.chat ? `<span class="count ${counts.tasks ? 'count-danger' : ''}">${(counts.tasks?.n || 0) + (counts.chat?.n || 0)}</span>` : ''}</button>`;
+      + tab('#/chat', 'chat', 'ჩატი', key === 'chat', counts.chat, 'chat')
+      + `<button type="button" id="btn-more" ${inMore ? 'aria-current="page"' : ''}>${icon('menu', 20)}<span>მენიუ</span>${counts.tasks ? `<span class="count count-danger">${counts.tasks.n}</span>` : ''}</button>`;
     $('#btn-more').onclick = openMoreSheet;
 
     // Phone: quick filter bar right above the content for list views
@@ -2276,7 +2277,7 @@
     const was = S.chatUnread;
     S.chatUnread = n;
     if (!was || !n) { renderShell(); return; } // a badge appears or disappears: draw the bars again
-    $$('[data-id="chat"] .count, [data-id="chat"] .topbar-tab-count, #btn-more .count').forEach(el => { if (el.closest('#btn-more')) el.textContent = String(n + (navCounts().tasks?.n || 0)); else el.textContent = String(n > 99 ? '99+' : n); });
+    $$('[data-id="chat"] .count, [data-id="chat"] .topbar-tab-count, [data-tab="chat"] .count').forEach(el => { el.textContent = String(n > 99 ? '99+' : n); });
   }
   let chatOrg = null, chatChannel = null, chatLive = false, chatTimer = 0;
   const chatEligible = () => ['owner', 'admin', 'manager', 'agent'].includes(S.member?.role);

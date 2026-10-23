@@ -2184,3 +2184,11 @@ html, body { overscroll-behavior-y: contain; }
 @keyframes chatPane { from { opacity: 0; transform: translate3d(24px, 0, 0); } to { opacity: 1; transform: none; } }
 .lite .msg-in, .lite .msg-react, .motion-off .msg-in { animation: none; }
 @media (prefers-reduced-motion: reduce) { .msg-in, .msg-react, .chat-main { animation: none !important; } }
+
+/* Six phone tabs now (Chat sits next to Menu): equal columns, a touch smaller labels on narrow phones */
+@media (max-width: 900px) {
+  .bottom-nav { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .bottom-nav a, .bottom-nav button { min-width: 0; padding-left: 0; padding-right: 0; }
+  .bottom-nav a > span:not(.count), .bottom-nav button > span:not(.count) { max-width: 100%; overflow: hidden; text-overflow: clip; }
+}
+@media (max-width: 380px) { .bottom-nav a, .bottom-nav button { font-size: 9px; letter-spacing: -.01em; } .bottom-nav { left: 8px; right: 8px; } }
