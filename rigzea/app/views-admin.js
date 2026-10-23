@@ -22,14 +22,50 @@
   let agentRole = null;
   function checkAgentRole() {
     agentRole = false;
-    sb.rpc('is_org_agent', { p_org: S.org.id }).then(({ error }) => { agentRole = !error; if (agentRole && App.route().name === 'team') App.render(); }, () => {});
+    sb.rpc('is_org_agent', { p_org: S.org.id }).then(({ error }) => { agentRole = !error; if (agentRole && App.route().name === 'team') addAgentOption(); }, () => {});
+  }
+
+  function invitationsCard() {
+    const pendingInv = (invitations || []).filter(i => i.status === 'pending');
+    return `<section class="card" id="t-inv-card"><div class="card-head"><h2>მოწვევები <span class="count">${pendingInv.length}</span></h2></div>
+        ${invitations === null ? '<div class="skeleton"><i></i><i></i></div>' : invitationsError ? `<div class="error-state"><p>მოწვევები ვერ ჩაიტვირთა. ${esc(R.friendlyError(invitationsError))}</p><button class="btn btn-secondary btn-sm" id="t-inv-retry">ხელახლა ცდა</button></div>`
+          : pendingInv.length ? `<div class="rows">${pendingInv.map(i => `<div class="row" style="--cols:minmax(0,1fr) 150px auto"><span class="cell-main"><strong>${esc(i.email)}</strong><span>გაიგზავნა ${esc(R.date(i.created_at))}</span></span><span class="cell-meta">${esc(L.role[i.role])}</span><span class="cell-actions">${App.isAdmin() ? `<button type="button" class="btn btn-ghost btn-sm" data-cancel-inv="${i.id}">გაუქმება</button>` : ''}</span></div>`).join('')}</div>`
+          : App.emptyInline('ღია მოწვევა არ არის.')}
+        <div class="card-foot">მოწვეული ადამიანი რეგისტრირდება მისამართზე <strong>${esc(location.origin)}/app/</strong> იმავე ელფოსტით. სამუშაო სივრცე ავტომატურად დაემატება. ელფოსტით ავტომატური გაგზავნა ჯერ არ არის ჩართული, ამიტომ ბმული თავად გაუგზავნე. <button type="button" class="link-btn" id="t-copy">ბმულის კოპირება</button></div>
+      </section>`
+  }
+
+  function bindInvitations() {
+    $$('[data-cancel-inv]').forEach(b => b.addEventListener('click', () => run(b, async () => {
+      await q(sb.from('invitations').update({ status: 'cancelled' }).eq('id', b.dataset.cancelInv));
+      await loadInvitations();
+      paintInvitations();
+    }, { success: 'მოწვევა გაუქმდა' })));
+    $('#t-copy')?.addEventListener('click', () => R.copyText(`${location.origin}/app/`, 'ბმული დაკოპირდა'));
+  }
+
+  // Only the invitations card changes when they arrive or one is cancelled, so the rest of the page keeps still.
+  function paintInvitations() {
+    const card = $('#t-inv-card');
+    if (!card) return App.render();
+    card.outerHTML = invitationsCard();
+    bindInvitations();
+  }
+
+  // The role list gains "agent" once the database answers; add it to the open page instead of redrawing it.
+  function addAgentOption() {
+    $$('select[data-role]').forEach(sel => {
+      if (sel.querySelector('option[value=agent]')) return;
+      const at = sel.querySelector('option[value=staff]');
+      const opt = new Option(L.role.agent, 'agent');
+      at ? sel.insertBefore(opt, at) : sel.appendChild(opt);
+    });
   }
 
   App.views.team = () => {
     if (agentRole === null) checkAgentRole();
-    if (invitations === null || invitationsOrg !== S.org.id) { invitations = null; loadInvitations().then(() => App.route().name === 'team' && App.render()); }
+    if (invitations === null || invitationsOrg !== S.org.id) { invitations = null; loadInvitations().then(() => { if (App.route().name === 'team') paintInvitations(); }); }
     const members = S.data.members.slice().sort((a, b) => (a.display_name || '').localeCompare(b.display_name || ''));
-    const pendingInv = (invitations || []).filter(i => i.status === 'pending');
     const cols = 'minmax(0,1.6fr) 170px minmax(0,1fr) 130px 160px';
     $('#view').innerHTML = `
       <div class="page-head"><div><h1>გუნდი</h1><p class="page-sub">${members.length} წევრი · სამუშაო ადგილი: ${App.seatsUsed()}${App.PLANS[App.planState().eff].seats === null ? '' : ' / ' + App.PLANS[App.planState().eff].seats} · თანამშრომლები ხედავენ მხოლოდ თავიანთ დანიშნულ საქმეებს ტელეფონიდან.</p></div>
@@ -45,15 +81,10 @@
             <span class="cell-meta" data-label="საქმე"><a href="#/tasks" data-filter-assignee="${m.id}">${open.length}</a>${overdue ? ` <span class="t-danger">(${overdue} ვადაგადაც.)</span>` : ''}</span>
             <span class="cell-actions">${App.isAdmin() && !self && m.role !== 'owner' ? `<button type="button" class="btn btn-ghost btn-sm" data-remove="${m.id}">გუნდიდან ამოშლა</button>` : ''}</span></div>`;
         }).join('')}</div></section>
-      <section class="card"><div class="card-head"><h2>მოწვევები <span class="count">${pendingInv.length}</span></h2></div>
-        ${invitations === null ? '<div class="skeleton"><i></i><i></i></div>' : invitationsError ? `<div class="error-state"><p>მოწვევები ვერ ჩაიტვირთა. ${esc(R.friendlyError(invitationsError))}</p><button class="btn btn-secondary btn-sm" id="t-inv-retry">ხელახლა ცდა</button></div>`
-          : pendingInv.length ? `<div class="rows">${pendingInv.map(i => `<div class="row" style="--cols:minmax(0,1fr) 150px auto"><span class="cell-main"><strong>${esc(i.email)}</strong><span>გაიგზავნა ${esc(R.date(i.created_at))}</span></span><span class="cell-meta">${esc(L.role[i.role])}</span><span class="cell-actions">${App.isAdmin() ? `<button type="button" class="btn btn-ghost btn-sm" data-cancel-inv="${i.id}">გაუქმება</button>` : ''}</span></div>`).join('')}</div>`
-          : App.emptyInline('ღია მოწვევა არ არის.')}
-        <div class="card-foot">მოწვეული ადამიანი რეგისტრირდება მისამართზე <strong>${esc(location.origin)}/app/</strong> იმავე ელფოსტით. სამუშაო სივრცე ავტომატურად დაემატება. ელფოსტით ავტომატური გაგზავნა ჯერ არ არის ჩართული, ამიტომ ბმული თავად გაუგზავნე. <button type="button" class="link-btn" id="t-copy">ბმულის კოპირება</button></div>
-      </section>`;
+      ${invitationsCard()}`;
 
     $('#t-invite')?.addEventListener('click', () => openInvite());
-    $('#t-copy').onclick = () => R.copyText(`${location.origin}/app/`, 'ბმული დაკოპირდა');
+    bindInvitations();
     $('#t-inv-retry')?.addEventListener('click', () => { invitations = null; App.render(); });
     $$('[data-filter-assignee]').forEach(a => a.addEventListener('click', (e) => { e.preventDefault(); App.setTaskFilter({ assignee: a.dataset.filterAssignee, status: 'active' }); App.go('#/tasks'); }));
     $$('[data-role]').forEach(sel => sel.addEventListener('change', () => {
@@ -75,11 +106,6 @@
         await App.refresh({ quiet: true });
       }, { success: 'წევრი ამოიშალა' });
     }));
-    $$('[data-cancel-inv]').forEach(b => b.addEventListener('click', () => run(b, async () => {
-      await q(sb.from('invitations').update({ status: 'cancelled' }).eq('id', b.dataset.cancelInv));
-      await loadInvitations();
-      App.render();
-    }, { success: 'მოწვევა გაუქმდა' })));
   };
 
   function openInvite() {
