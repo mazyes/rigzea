@@ -720,9 +720,10 @@
     };
   }
 
+  const TAB_ICONS = { deals: 'contract', finance: 'chart' }; // deals and finance would otherwise both show the wallet
   function navLinks(group, key, counts, cls = 'nav-item') {
     const countHtml = (c) => c ? `<span class="count ${c.danger ? 'count-danger' : ''}" title="${esc(c.label)}">${c.n}</span>` : '';
-    return group.items.map(n => `<a class="${cls}" href="${n.href}" ${key === n.id ? 'aria-current="page"' : ''}>${icon(n.icon)}<span>${n.label}</span>${countHtml(counts[n.id])}</a>`).join('');
+    return group.items.map(n => `<a class="${cls}" href="${n.href}" ${key === n.id ? 'aria-current="page"' : ''}>${icon(TAB_ICONS[n.id] || n.icon)}<span>${cls ? n.label.replace(/^ჩემი\s+/, '') : n.label}</span>${countHtml(counts[n.id])}</a>`).join('');
   }
 
   // The green pill is positioned from JS, never by a CSS transition, so it can not drift from the tabs.
@@ -801,7 +802,6 @@
     const counts = navCounts();
     const topNav = $('#topbar-nav');
     if (topNav) {
-      const TAB_ICONS = { deals: 'deal', finance: 'chart' }; // deals and finance would otherwise both show the wallet
       const topItems = navGroups().flatMap(g => g.items);
       const badgeOf = (c) => c ? `<span class="topbar-tab-count ${c.danger ? 'count-danger' : ''}" title="${esc(c.label)}">${c.n}</span>` : '';
       const sig = topItems.map(item => item.id).join();
@@ -825,7 +825,8 @@
       fitTopbarTabs();
     }
     $('#rail').innerHTML = navGroups().map(g => `${g.label ? `<div class="nav-group">${g.label}</div>` : ''}${navLinks(g, key, counts)}`).join('')
-      + `<div class="rail-foot">${S.data ? `${S.data.apartments.filter(a => a.status !== 'archived').length} ობიექტი · ${S.data.owners.length} კლიენტი · ${S.data.members.length} გუნდის წევრი` : ''}</div>`;
+      + `<div class="rail-foot"><button type="button" class="rail-lang" data-lang-toggle>${icon('globe', 16)}<span>${window.RLang?.lang === 'en' ? 'ქართული' : 'English'}</span></button><div class="rail-stats">${S.data ? `${S.data.apartments.filter(a => a.status !== 'archived').length} ობიექტი · ${S.data.owners.length} კლიენტი · ${S.data.members.length} გუნდის წევრი` : ''}</div></div>`;
+    slideRailPill();
 
     // Phone: 4 primary workflows + More menu sheet.
     const tab = (href, ic, label, active, count) => `<a href="${href}" ${active ? 'aria-current="page"' : ''}>${icon(ic, 20)}<span>${label}</span>${count ? `<span class="count ${count.danger ? 'count-danger' : ''}">${count.n}</span>` : ''}</a>`;
@@ -1054,16 +1055,46 @@
     if (open && which === 'user') renderUserPanel();
   }
 
+  // Left menu: a green highlight glides from the old item to the new one (the menu is rebuilt on every render).
+  let railPos = null;
+  function slideRailPill() {
+    const rail = $('#rail'), act = rail?.querySelector('.nav-item[aria-current="page"]');
+    if (!rail || !act || !rail.offsetWidth) { railPos = null; return; }
+    rail.insertAdjacentHTML('afterbegin', '<span class="rail-pill" aria-hidden="true"></span>');
+    const pill = rail.querySelector('.rail-pill');
+    const next = { y: act.offsetTop, h: act.offsetHeight };
+    const set = (q) => { pill.style.height = q.h + 'px'; pill.style.transform = `translateY(${q.y}px)`; };
+    const from = railPos && !R.calm() ? railPos : next;
+    pill.style.transition = 'none';
+    set(from);
+    void pill.offsetWidth;
+    pill.style.transition = '';
+    set(next);
+    railPos = next;
+  }
+  // Menu position: top bar or left side (desktop only, phones always use the bottom bar).
+  function setNavMode(mode) {
+    localStorage.setItem('rigzea_nav', mode);
+    document.documentElement.classList.toggle('nav-side', mode === 'side');
+    railPos = null;
+    renderShell();
+    fitTopbarTabs();
+  }
+
   function renderUserPanel() {
     const theme = localStorage.getItem('rigzea_theme') || 'system';
+    const navMode = localStorage.getItem('rigzea_nav') === 'side' ? 'side' : 'top';
     $('#user-panel').innerHTML = `<div class="popover-head"><div><strong>${esc(S.member?.display_name || '')}</strong><div class="small muted">${esc(S.user.email)}</div></div></div>
       <div class="menu-list">
         <label class="field" style="padding:4px 10px 8px"><span class="field-label">თემა</span>
           <select id="theme-select" class="input"><option value="system">სისტემის მიხედვით</option><option value="light">ღია</option><option value="dark">მუქი</option></select></label>
+        <div class="field" style="padding:4px 10px 8px"><span class="field-label">მენიუს მდებარეობა</span>
+          <div class="seg2" role="group" aria-label="მენიუს მდებარეობა"><button type="button" data-nav-mode="top" aria-pressed="${navMode === 'top'}">ზემოთ</button><button type="button" data-nav-mode="side" aria-pressed="${navMode === 'side'}">მარცხნივ</button></div></div>
         <button type="button" class="menu-lang" data-lang-toggle>${window.RLang?.lang === 'en' ? 'ქართული' : 'English'}</button>
         <button type="button" data-action="signout">${icon('logout')} გამოსვლა</button>
       </div>`;
     $('#theme-select').value = theme;
+    $$('[data-nav-mode]', $('#user-panel')).forEach(b => b.addEventListener('click', () => { setNavMode(b.dataset.navMode); renderUserPanel(); }));
     $('#theme-select').onchange = (e) => { localStorage.setItem('rigzea_theme', e.target.value); R.applyTheme(e.target.value); };
   }
 

@@ -1082,6 +1082,31 @@ test('1m. the plans list highlights the plan you are on', async (browser) => {
   return page;
 });
 
+test('1o. the menu can move to the left side and the English switch stays', async (browser) => {
+  const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
+  await page.goto(BASE + '/app/');
+  await page.locator('#topbar-nav .is-active').waitFor();
+  assert(await page.locator('#rail').isHidden(), 'left menu is off by default');
+  await page.locator('#btn-user').click();
+  await page.locator('[data-nav-mode="side"]').click();
+  await page.locator('#rail .nav-item').first().waitFor({ state: 'visible' });
+  assert(await page.locator('#topbar-nav').isHidden(), 'top menu is hidden in left mode');
+  assert.strictEqual(await page.locator('#rail .nav-item').count(), 8, 'all eight areas are in the left menu');
+  assert(await page.locator('#rail [data-lang-toggle]').isVisible(), 'English switch is in the left menu');
+  assert(await page.locator('#btn-lang').isVisible(), 'English switch is also in the top bar');
+  const right = await page.locator('#btn-user').boundingBox();
+  assert(right.x > 1100, `top bar buttons stay on the right: ${right.x}`);
+  await page.locator('#rail a[href="/app/deals/"]').click();
+  await page.waitForURL('**/app/deals/');
+  await page.waitForTimeout(800);
+  const hl = await page.evaluate(() => { const a = document.querySelector('#rail .nav-item[aria-current="page"]').getBoundingClientRect(), p = document.querySelector('#rail .rail-pill').getBoundingClientRect(); return Math.abs(a.top - p.top) + Math.abs(a.height - p.height); });
+  assert(hl < 1.5, `green highlight sits on the active item: ${hl}`);
+  await page.reload();
+  await page.locator('#rail .nav-item').first().waitFor({ state: 'visible' });
+  assert(await page.evaluate(() => document.documentElement.classList.contains('nav-side')), 'choice is remembered');
+  return page;
+});
+
 test('16. sales public listing: sales price, sqm price, no rental labels or internal owner data leak', async (browser) => {
   const page = await newPage(browser, { viewport: PHONE });
   await page.addInitScript(() => {
