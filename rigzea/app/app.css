@@ -1563,6 +1563,12 @@ html, body, button, input, select, textarea, option, optgroup, dialog, summary, 
 ::view-transition-old(root) { z-index: 1; }
 ::view-transition-new(root) { z-index: 2; }
 
+/* Phones: the same reveal, rising from below with a lighter blur (horizontal movement is clipped on a narrow screen) */
+@keyframes swipeInPhone { from { opacity: 0; transform: translate3d(0, 18px, 0); filter: blur(3px); } to { opacity: 1; transform: none; filter: none; } }
+@media (max-width: 900px) {
+  .view-enter :is(.page-head, .chips, .dash-kpi, .card:not(.card .card), .stats, .table-wrap) { animation-name: swipeInPhone; animation-duration: .5s; }
+}
+
 /* Low-end devices: transform and opacity only, no blur, no frosted glass, no big shadows */
 @keyframes swipeInLite { from { opacity: 0; transform: translate3d(0, 10px, 0); } to { opacity: 1; transform: none; } }
 .lite .view-enter :is(.page-head, .chips, .dash-kpi, .card:not(.card .card), .stats, .table-wrap) { animation-name: swipeInLite; animation-duration: .3s; animation-delay: calc(var(--i, 0) * 25ms); }

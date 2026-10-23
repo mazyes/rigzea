@@ -433,9 +433,9 @@
   // ---------------------------------------------------------------------------
   // Theme
   // ---------------------------------------------------------------------------
-  // Low-end devices (few cores, little memory, data saver) get the light motion set: no blur, no frosted glass.
+  // Weak devices (2 cores or less, 2 GB or less, data saver) get the light motion set: no blur, no frosted glass.
   const root = document.documentElement;
-  root.classList.toggle('lite', (navigator.hardwareConcurrency || 8) <= 4 || (navigator.deviceMemory || 8) <= 4 || !!navigator.connection?.saveData);
+  root.classList.toggle('lite', (navigator.hardwareConcurrency || 8) <= 2 || (navigator.deviceMemory || 8) <= 2 || !!navigator.connection?.saveData);
   const calm = () => matchMedia('(prefers-reduced-motion: reduce)').matches || root.classList.contains('lite');
 
   // `from` ({x, y}) makes the new theme spread out as a circle from that point (View Transitions).

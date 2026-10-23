@@ -996,6 +996,11 @@ test('1j. pages animate in, and only fade when the system asks for less motion',
   await page.goto(BASE + '/app/');
   await page.locator('#view .dash-kpi').first().waitFor();
   assert.strictEqual((await probe(page)).name, 'swipeIn', 'full reveal by default');
+  const phone = await newPage(browser, { viewport: PHONE, login: USERS.manager });
+  await phone.goto(BASE + '/app/');
+  await phone.locator('#view .dash-kpi').first().waitFor();
+  assert.strictEqual((await probe(phone)).name, 'swipeInPhone', 'phones get the reveal too');
+  await phone.context().close();
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto(BASE + '/app/');
   await page.locator('#view .dash-kpi').first().waitFor();
