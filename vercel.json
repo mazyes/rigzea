@@ -12,6 +12,9 @@
       "maxDuration": 60,
       "includeFiles": "rigzea/js/config.js"
     },
+    "api/invite-email.js": {
+      "includeFiles": "rigzea/js/config.js"
+    },
     "api/plan-email.js": {
       "includeFiles": "rigzea/js/config.js"
     },
