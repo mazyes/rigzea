@@ -990,6 +990,21 @@ test('1i. switching areas swaps the page in place without a reload', async (brow
   return page;
 });
 
+test('1j. pages animate in, and only fade when the system asks for less motion', async (browser) => {
+  const probe = (page) => page.evaluate(() => { const el = document.querySelector('#view .dash-kpi'); const cs = getComputedStyle(el); return { name: cs.animationName, duration: cs.animationDuration }; });
+  const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
+  await page.goto(BASE + '/app/');
+  await page.locator('#view .dash-kpi').first().waitFor();
+  assert.strictEqual((await probe(page)).name, 'swipeIn', 'full reveal by default');
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto(BASE + '/app/');
+  await page.locator('#view .dash-kpi').first().waitFor();
+  const reduced = await probe(page);
+  assert.strictEqual(reduced.name, 'fadeIn', 'fade only with reduced motion');
+  assert.strictEqual(reduced.duration, '0.4s', 'fade is not cut to zero length');
+  return page;
+});
+
 test('16. sales public listing: sales price, sqm price, no rental labels or internal owner data leak', async (browser) => {
   const page = await newPage(browser, { viewport: PHONE });
   await page.addInitScript(() => {
