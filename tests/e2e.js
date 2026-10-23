@@ -1161,6 +1161,44 @@ test('1q. settings > ინტერფეისი: theme, menu position, anima
   return page;
 });
 
+test('1r. phone menu is an iOS style sheet with a dark switch, language control and tools', async (browser) => {
+  const page = await newPage(browser, { viewport: { width: 390, height: 844 }, login: USERS.manager });
+  await page.goto(BASE + '/app/');
+  await page.locator('#btn-more').click();
+  await page.locator('dialog[open] .ios-list').waitFor();
+  await page.waitForTimeout(500);
+  assert.strictEqual(await page.locator('dialog[open] .dlg-body').evaluate(el => el.scrollTop), 0, 'sheet opens at the top');
+  assert.strictEqual(await page.locator('dialog[open] a.ios-row').count(), 8, 'all eight areas are listed');
+  const before = await page.evaluate(() => document.documentElement.dataset.theme);
+  await page.locator('dialog[open] .ios-switch').click();
+  await page.waitForFunction((b) => document.documentElement.dataset.theme !== b, before);
+  assert.strictEqual(await page.locator('#sheet-dark').isChecked(), before !== 'dark', 'the switch follows the theme');
+  assert.strictEqual(await page.locator('dialog[open] [data-sheet-lang][aria-pressed="true"]').getAttribute('data-sheet-lang'), 'ka', 'Georgian is the selected language');
+  await page.locator('dialog[open] [data-sheet-tool="calculator"]').click();
+  await page.locator('dialog[open]', { hasText: 'კალკულატორ' }).waitFor();
+  await page.keyboard.press('Escape');
+  assert(await page.locator('#btn-theme').isVisible(), 'theme button is visible in the phone top bar');
+  assert(await page.locator('#btn-lang').isVisible(), 'language button is visible in the phone top bar');
+  return page;
+});
+
+test('1s. a refresh starts at the top and tab strips scroll the selected tab into view', async (browser) => {
+  const page = await newPage(browser, { viewport: { width: 390, height: 844 }, login: USERS.manager });
+  await page.goto(BASE + '/app/settings/?id=export');
+  await page.locator('#view .tabs').waitFor();
+  await page.waitForTimeout(600);
+  const inside = await page.evaluate(() => { const b = document.querySelector('#view .tabs'), a = b.querySelector('[aria-selected="true"]').getBoundingClientRect(), r = b.getBoundingClientRect(); return a.left >= r.left - 1 && a.right <= r.right + 1; });
+  assert(inside, 'the selected tab is fully inside the strip');
+  await page.goto(BASE + '/app/apartments/');
+  await page.locator('#view .rows .row').first().waitFor();
+  await page.evaluate(() => window.scrollTo(0, 600));
+  await page.reload();
+  await page.locator('#view .rows .row').first().waitFor();
+  await page.waitForTimeout(500);
+  assert.strictEqual(await page.evaluate(() => window.scrollY), 0, 'refresh scrolls back to the top');
+  return page;
+});
+
 test('16. sales public listing: sales price, sqm price, no rental labels or internal owner data leak', async (browser) => {
   const page = await newPage(browser, { viewport: PHONE });
   await page.addInitScript(() => {

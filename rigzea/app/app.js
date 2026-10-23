@@ -750,6 +750,7 @@
   // Each tab gets its label's real width as --lw, so the label opens with a transition that ends exactly at the text
   // (a guessed max-width would make the tab finish early and the pill with it). Idle only: widths snap, no transition.
   function fitTopbarTabs() {
+    if (innerWidth <= 900) return; // the top menu is hidden on phones; measuring it only forced a layout
     const nav = $('#topbar-nav');
     if (!nav || pillRaf) return;
     const changes = [];
@@ -771,6 +772,11 @@
   function moveActiveTab(nav, key) {
     const prev = nav.querySelector('.topbar-tab.is-active'), next = nav.querySelector(`[data-id="${key}"]`);
     if (prev === next) return;
+    if (innerWidth <= 900) { // hidden menu on phones: switch the state only, measuring would force a layout
+      prev?.classList.remove('is-active'); prev?.removeAttribute('aria-current');
+      next?.classList.add('is-active'); next?.setAttribute('aria-current', 'page');
+      return;
+    }
     const label = tabLabel(next), from = pillBox, start = label ? label.offsetWidth : 0;
     const mark = (tab, on) => { tab?.classList.toggle('is-active', on); if (on) tab.setAttribute('aria-current', 'page'); else tab?.removeAttribute('aria-current'); };
     mark(prev, false); mark(next, true);
@@ -791,6 +797,13 @@
   }
   document.fonts?.ready.then(fitTopbarTabs);
   let fitQueued = false;
+  // Layout reads (menu fit, active tab scrolling) wait until the new page is in place and run once per frame,
+  // instead of forcing a full layout in the middle of every render.
+  function scheduleFit() {
+    if (fitQueued) return;
+    fitQueued = true;
+    requestAnimationFrame(() => { fitQueued = false; fitTopbarTabs(); centerActiveTabs(); });
+  }
   window.addEventListener('resize', () => {
     if (fitQueued) return;
     fitQueued = true;
@@ -822,7 +835,7 @@
         });
         moveActiveTab(topNav, key);
       }
-      fitTopbarTabs();
+      scheduleFit();
     }
     $('#rail').innerHTML = navGroups().map(g => `${g.label ? `<div class="nav-group">${g.label}</div>` : ''}${navLinks(g, key, counts)}`).join('')
       + `<div class="rail-foot"><button type="button" class="rail-lang" data-lang-toggle>${icon('globe', 16)}<span>${window.RLang?.lang === 'en' ? 'ქართული' : 'English'}</span></button><div class="rail-stats">${S.data ? `${S.data.apartments.filter(a => a.status !== 'archived').length} ობიექტი · ${S.data.owners.length} კლიენტი · ${S.data.members.length} გუნდის წევრი` : ''}</div></div>`;
@@ -911,15 +924,45 @@
     toast(`გადაერთე: ${o.name}`);
   }
 
+  // Phone menu: an iOS "Settings" style sheet with grouped rows, a dark mode switch and a language control.
+  const TILE = { today: '#0a8a63', apartments: '#0d7f8f', deals: '#d39213', contacts: '#8d62bd', tasks: '#cf4452', finance: '#2f9e6b', team: '#5b6b84', settings: '#6b7280' };
+  const SHEET_TOOLS = [['calculator', 'wallet', 'საკომისიოს კალკულატორი'], ['matchmaker', 'search', 'კლიენტის სელექცია'], ['social-post', 'sparkle', 'პოსტის გენერატორი'], ['templates', 'file', 'ხელშეკრულებები']];
   function openMoreSheet() {
     const key = navKey();
     const counts = navCounts();
+    const tile = (id, ic) => `<span class="ios-tile" style="--t:${TILE[id] || '#6b7280'}">${icon(ic, 18)}</span>`;
+    const countHtml = (c) => c ? `<span class="count ${c.danger ? 'count-danger' : ''}">${c.n}</span>` : '';
+    const group = (g) => `<div class="ios-group">${g.items.map(i => `<a class="ios-row" href="${i.href}" ${key === i.id ? 'aria-current="page"' : ''}>${tile(i.id, TAB_ICONS[i.id] || i.icon)}<span class="ios-label">${esc(i.label.replace(/^ჩემი\s+/, ''))}</span>${countHtml(counts[i.id])}${icon('chevronRight', 16)}</a>`).join('')}</div>`;
+    const dark = document.documentElement.dataset.theme === 'dark';
+    const en = window.RLang?.lang === 'en';
     R.dialog({
       title: 'მენიუ',
       sheet: true,
-      body: `<nav class="menu-list" style="padding:0">${navGroups().map(g => `${g.label ? `<div class="nav-group">${g.label}</div>` : ''}${navLinks(g, key, counts, '')}`).join('')}
-        <button type="button" data-action="signout">${icon('logout')} გამოსვლა</button></nav>`,
-      onOpen: (form, dlg) => $$('a', form).forEach(a => a.addEventListener('click', () => dlg.close())),
+      body: `<div class="ios-list">
+        ${navGroups().map(g => `${g.label ? `<div class="ios-group-title">${esc(g.label)}</div>` : ''}${group(g)}`).join('')}
+        <div class="ios-group-title">ხელსაწყოები</div>
+        <div class="ios-group">${SHEET_TOOLS.map(([id, ic, label]) => `<button type="button" class="ios-row" data-sheet-tool="${id}"><span class="ios-tile" style="--t:#2f9e6b">${icon(ic, 18)}</span><span class="ios-label">${label}</span>${icon('chevronRight', 16)}</button>`).join('')}</div>
+        <div class="ios-group-title">გარეგნობა</div>
+        <div class="ios-group">
+          <label class="ios-row"><span class="ios-tile" style="--t:#1f2937">${icon('moon', 18)}</span><span class="ios-label">მუქი რეჟიმი</span><span class="ios-switch"><input type="checkbox" role="switch" id="sheet-dark" ${dark ? 'checked' : ''} aria-label="მუქი რეჟიმი"><i></i></span></label>
+          <div class="ios-row"><span class="ios-tile" style="--t:#0d7f8f">${icon('globe', 18)}</span><span class="ios-label">ენა</span><span class="seg2 ios-seg" role="group" aria-label="ენა"><button type="button" data-sheet-lang="ka" aria-pressed="${!en}">ქართული</button><button type="button" data-sheet-lang="en" aria-pressed="${en}">English</button></span></div>
+        </div>
+        <div class="ios-group"><button type="button" class="ios-row ios-danger" data-action="signout">${icon('logout', 18)}<span class="ios-label">გამოსვლა</span></button></div>
+      </div>`,
+      onOpen: (form, dlg) => {
+        requestAnimationFrame(() => { const body = form.querySelector('.dlg-body'); if (body) body.scrollTop = 0; }); // focus must not leave the sheet scrolled down
+        $$('a.ios-row', form).forEach(a => a.addEventListener('click', () => dlg.close()));
+        $$('[data-sheet-tool]', form).forEach(b => b.addEventListener('click', () => { dlg.close(); $(`#tools-panel [data-tool="${b.dataset.sheetTool}"]`)?.click(); }));
+        $('#sheet-dark', form).addEventListener('change', (e) => {
+          const box = e.target.closest('.ios-switch').getBoundingClientRect();
+          setTheme(e.target.checked ? 'dark' : 'light', { x: box.left + box.width / 2, y: box.top + box.height / 2 });
+        });
+        $$('[data-sheet-lang]', form).forEach(b => b.addEventListener('click', () => {
+          if ((b.dataset.sheetLang === 'en') === en) return;
+          localStorage.setItem('rigzea_lang', b.dataset.sheetLang);
+          location.reload();
+        }));
+      },
     });
   }
 
@@ -953,6 +996,7 @@
       view(r);
       swipeIn(r.name);
       armFills(r.name);
+      if (!firstViewShown) { firstViewShown = true; window.scrollTo(0, 0); }
     } catch (err) {
       console.error(err);
       $('#view').innerHTML = `<div class="card"><div class="error-state"><p>გვერდის ჩვენება ვერ მოხერხდა: ${esc(err.message)}</p><a class="btn btn-secondary" href="#/today">მთავარზე დაბრუნება</a></div></div>`;
@@ -963,6 +1007,18 @@
   }
 
   let lastViewName = null;
+
+  // A refresh always starts at the top, and horizontal tab strips scroll the selected tab into view by themselves
+  // (the strip is rebuilt on every render, so it would otherwise snap back to its first tab).
+  if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+  let firstViewShown = false;
+  function centerActiveTabs() {
+    $$('#view .tabs, #view .chips, #view .seg, #section-bar').forEach((box) => {
+      if (box.scrollWidth <= box.clientWidth + 1) return;
+      const el = box.querySelector('[aria-selected="true"], [aria-pressed="true"], [aria-current="page"], .is-active');
+      if (el) box.scrollLeft = el.offsetLeft - (box.clientWidth - el.offsetWidth) / 2;
+    });
+  }
 
   // Blocks slide in from the right once per page, not on every re-render (filters, saves).
   let swipedView = null, enterTimer = 0;

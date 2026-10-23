@@ -1798,3 +1798,55 @@ a.row:active, button.row:active, .row.clickable:active, .sched-row:active, .noti
   .row > .cell-actions { justify-content: flex-start; }
   .page-head { flex-wrap: wrap; gap: 12px; }
 }
+
+/* ---- Phone: iOS-style menu sheet, floating tab bar, tidier top bar ---- */
+.ios-list { display: flex; flex-direction: column; gap: 6px; margin: -16px; padding: 12px 14px 20px; background: var(--bg); }
+.ios-group-title { padding: 14px 16px 4px; color: var(--muted); font-size: 12.5px; font-weight: 500; letter-spacing: .01em; }
+.ios-group { display: flex; flex-direction: column; overflow: hidden; border-radius: 16px; background: var(--surface); }
+.ios-row { position: relative; display: flex; align-items: center; gap: 12px; width: 100%; min-height: 52px; padding: 8px 14px; border: 0; background: none; color: var(--ink); font: inherit; font-size: 15.5px; text-align: left; text-decoration: none; cursor: pointer; transition: background-color .15s ease; }
+.ios-row + .ios-row::before { content: ""; position: absolute; top: 0; left: 56px; right: 0; border-top: .5px solid color-mix(in srgb, var(--ink) 16%, transparent); }
+.ios-row:active { background: color-mix(in srgb, var(--ink) 8%, transparent); }
+.ios-row > svg:last-child:not(.ios-tile svg) { flex: none; margin-left: auto; color: color-mix(in srgb, var(--ink) 35%, transparent); }
+.ios-row[aria-current="page"] .ios-label { color: var(--brand-ink); font-weight: 600; }
+.ios-tile { display: grid; flex: none; place-items: center; width: 30px; height: 30px; border-radius: 8px; background: var(--t, var(--brand)); color: #fff; }
+.ios-tile svg { stroke: #fff; }
+.ios-label { flex: 1; min-width: 0; }
+.ios-row .count { margin-left: auto; }
+.ios-row .count + svg { margin-left: 4px; }
+.ios-danger { color: var(--danger); }
+.ios-danger svg { color: var(--danger); }
+.ios-seg { flex: none; width: auto; min-width: 170px; }
+.ios-switch { position: relative; display: inline-block; flex: none; width: 51px; height: 31px; margin-left: auto; }
+.ios-switch input { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.ios-switch i { position: absolute; inset: 0; border-radius: 999px; background: color-mix(in srgb, var(--ink) 20%, transparent); transition: background-color .3s var(--ease); }
+.ios-switch i::after { content: ""; position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%; background: #fff; box-shadow: 0 3px 8px rgba(0, 0, 0, .25), 0 1px 1px rgba(0, 0, 0, .16); transition: transform .35s var(--spring); }
+.ios-switch input:checked + i { background: var(--brand); }
+.ios-switch input:checked + i::after { transform: translateX(20px); }
+.ios-switch input:focus-visible + i { outline: 2px solid var(--focus); outline-offset: 2px; }
+.dlg-sheet .dlg-head { border-bottom: 0; }
+
+@media (max-width: 900px) {
+  :root { --bottom-nav: 88px; }
+  .bottom-nav { left: 12px; right: 12px; bottom: calc(10px + env(safe-area-inset-bottom)); height: 66px; padding: 5px; gap: 2px; border: 1px solid color-mix(in srgb, var(--line) 60%, transparent); border-radius: 30px; box-shadow: 0 14px 34px -16px rgba(0, 0, 0, .4); }
+  .bottom-nav a, .bottom-nav button { justify-content: center; padding: 0 2px; border-radius: 24px; transition: background-color .3s var(--ease), color .2s ease, transform .3s var(--spring); }
+  .bottom-nav a:active, .bottom-nav button:active { transform: scale(.93); }
+  .bottom-nav [aria-current="page"] { background: color-mix(in srgb, var(--brand) 15%, transparent); color: var(--brand-ink); }
+  .bottom-nav .count { top: 5px; }
+  #btn-tools { display: none; }
+}
+@media (max-width: 600px) {
+  #btn-theme { display: inline-flex; }
+}
+@media (max-width: 380px) {
+  .topbar .org-switch { display: none; }
+}
+#view .tabs, #view .chips, #view .seg, #section-bar { position: relative; } /* offsetLeft of the tabs is measured from here */
+@media (max-width: 900px) {
+  .dlg-sheet .dlg-head { align-items: center; padding: 6px 14px 10px 18px; }
+  .dlg-sheet .dlg-head h2 { font-size: 24px; letter-spacing: -.025em; }
+  .dlg-sheet .dlg-head > div { flex: 1; }
+}
+
+/* Off-screen cards and list rows skip layout and paint until they are near the viewport (big win on phones) */
+.dash-lower .card, .dashboard-support .card, .dash-analytics .card:not(:first-child) { content-visibility: auto; contain-intrinsic-size: auto 300px; }
+.rows > .row { content-visibility: auto; contain-intrinsic-size: auto 64px; }
