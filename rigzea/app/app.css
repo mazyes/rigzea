@@ -2219,3 +2219,13 @@ html, body { overscroll-behavior-y: contain; }
 .lite #brand-bg :is(img, svg), .motion-off #brand-bg :is(img, svg) { animation: none; }
 @media (prefers-reduced-motion: reduce) { #brand-bg :is(img, svg) { animation: none; } #brand-bg .bb { transition: none; } }
 @media (max-width: 900px) { #brand-bg .bb-a { width: 78vmin; top: 12vmin; } #brand-bg .bb-b { display: none; } }
+
+/* Invitation link banner on the sign in and sign up screen */
+.invite-banner { display: flex; align-items: flex-start; gap: 12px; margin: 4px 0 16px; padding: 12px 14px; border: 1px solid color-mix(in srgb, var(--brand) 30%, var(--line)); border-radius: 14px; background: var(--brand-soft); color: var(--ink); animation: authIn .5s var(--ease) both; }
+.invite-banner[hidden] { display: none; }
+.invite-banner strong { display: block; font-size: 14.5px; line-height: 1.35; }
+.invite-banner small { display: block; margin-top: 3px; color: var(--ink-2); font-size: 12.5px; line-height: 1.45; }
+.invite-ico { display: grid; place-items: center; flex: none; width: 36px; height: 36px; border-radius: 50%; background: var(--brand); color: #fff; }
+.invite-banner.is-bad { border-color: color-mix(in srgb, var(--warn, #b45309) 40%, var(--line)); background: color-mix(in srgb, var(--warn, #b45309) 10%, var(--surface)); }
+.invite-banner.is-bad .invite-ico { background: var(--warn, #b45309); }
+.auth .field input[readonly] { background: var(--surface-2); color: var(--ink-2); cursor: not-allowed; }

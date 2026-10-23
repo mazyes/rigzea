@@ -204,6 +204,7 @@
             return { data: null, error: { message: 'duplicate key value violates unique constraint', code: '23505' } };
           }
           if (this.table === 'approvals' && !row.token) row.token = uuid().replace(/-/g, '');
+          if (this.table === 'invitations') { row.token = row.token || uuid().replace(/-/g, ''); row.expires_at = row.expires_at || new Date(Date.now() + 14 * 864e5).toISOString(); row.send_count = 0; }
           const err = this.table === 'tasks' ? taskTrigger(row, null) : this.table === 'expenses' ? expenseTrigger(row, null) : null;
           if (err) return { data: null, error: err };
           rows.push(row); out.push(row);
@@ -278,6 +279,39 @@
       return org.id;
     },
     accept_my_invitations() { return 0; },
+    // mirror supabase/patches/25_invites.sql
+    get_invitation({ p_token }) {
+      const i = T('invitations').find(x => x.token === p_token);
+      if (!i || !/^[0-9a-f]{32}$/.test(String(p_token))) return null;
+      const org = T('organizations').find(o => o.id === i.organization_id);
+      const by = T('organization_members').find(m => m.user_id === i.invited_by && m.organization_id === i.organization_id);
+      const state = i.status !== 'pending' ? i.status : (i.expires_at && i.expires_at <= now() ? 'expired' : 'pending');
+      return { email: i.email, role: i.role, org_name: org?.name, inviter: by?.display_name || null, state };
+    },
+    accept_invitation({ p_token }) {
+      if (!uid()) throw new Error('sign in first');
+      const i = T('invitations').find(x => x.token === p_token);
+      if (!i) throw new Error('invitation not found');
+      const email = (db.users.find(u => u.id === uid()) || {}).email;
+      if (String(i.email).toLowerCase() !== String(email).toLowerCase()) throw new Error('invitation is for another email');
+      const member = T('organization_members').find(m => m.organization_id === i.organization_id && m.user_id === uid());
+      if (i.status === 'accepted' && member) return { organization_id: i.organization_id, role: i.role, already: true };
+      if (i.status !== 'pending') throw new Error('invitation is ' + i.status);
+      if (i.expires_at && i.expires_at <= now()) throw new Error('invitation expired');
+      if (!member) T('organization_members').push({ id: uuid(), organization_id: i.organization_id, user_id: uid(), role: i.role, display_name: (db.users.find(u => u.id === uid()) || {}).name || String(email).split('@')[0], created_at: now() });
+      i.status = 'accepted';
+      return { organization_id: i.organization_id, role: i.role, already: false };
+    },
+    invitation_email_data({ p_id }) {
+      const i = T('invitations').find(x => x.id === p_id);
+      const meM = i && memberOf(i.organization_id);
+      if (!i || !meM || !['owner', 'admin'].includes(meM.role)) throw new Error('not allowed');
+      if (i.status !== 'pending') throw new Error('invitation is not pending');
+      if ((i.send_count || 0) >= 5) throw new Error('too many emails for this invitation');
+      if (i.last_sent_at && Date.now() - new Date(i.last_sent_at).getTime() < 30000) throw new Error('wait a moment before sending again');
+      i.send_count = (i.send_count || 0) + 1; i.last_sent_at = now();
+      return { email: i.email, role: i.role, token: i.token, org_name: T('organizations').find(o => o.id === i.organization_id)?.name, inviter: meM.display_name, expires_at: i.expires_at };
+    },
     is_platform_admin() { return T('platform_admins').some(x => x.user_id === uid() && !x.revoked_at); },
     list_platform_admins() {
       if (!rpcs.is_platform_admin()) throw { message: 'ამ მოქმედების უფლება არ გაქვს.', code: '42501' };

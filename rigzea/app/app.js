@@ -77,8 +77,68 @@
   let memberReady = null;
   let globalSearchReady = false;
 
+  // ---- invitation link: /app/?invite=<token> ---------------------------------------------------------------------------
+  // The token is remembered (this browser) until it is used, so it survives sign up, the confirmation email and a sign in.
+  const INVITE_RE = /^[0-9a-f]{32}$/;
+  function captureInvite() {
+    const t = new URLSearchParams(location.search).get('invite');
+    if (t && INVITE_RE.test(t)) {
+      try { localStorage.setItem('rigzea_invite', t); } catch { /* private mode: the link still works until the page closes */ window.__invite = t; }
+      const u = new URL(location.href); u.searchParams.delete('invite');
+      history.replaceState(null, '', u.pathname + u.search + u.hash);
+    }
+    try { return localStorage.getItem('rigzea_invite') || window.__invite || ''; } catch { return window.__invite || ''; }
+  }
+  const forgetInvite = () => { try { localStorage.removeItem('rigzea_invite'); } catch { /* nothing stored */ } window.__invite = ''; };
+
+  // Before sign in: say who invited whom, and prefill the email the invitation is for.
+  async function showInviteBanner(token) {
+    const box = $('#auth-invite');
+    if (!box) return;
+    const { data } = await sb.rpc('get_invitation', { p_token: token });
+    const state = data?.state || 'missing';
+    const role = data ? (L.role[data.role] || data.role) : '';
+    const messages = {
+      expired: 'ამ მოწვევის ვადა გაუვიდა. სთხოვე გამგზავნს ახალი ბმული.',
+      accepted: 'ეს მოწვევა უკვე გამოყენებულია. შედი შენს ანგარიშში.',
+      cancelled: 'ეს მოწვევა გაუქმებულია.',
+      missing: 'მოწვევა ვერ მოიძებნა. შეამოწმე ბმული.',
+    };
+    box.hidden = false;
+    box.classList.toggle('is-bad', state !== 'pending');
+    if (state === 'pending') {
+      box.innerHTML = `<span class="invite-ico">${icon('team', 20)}</span><div><strong>${esc(data.inviter || 'გუნდი')} გიწვევს „${esc(data.org_name)}“-ში</strong><small>როლი: ${esc(role)}. დარეგისტრირდი ან შედი ამ ელფოსტით: <b>${esc(data.email)}</b></small></div>`;
+      for (const f of ['#form-signup', '#form-signin']) {
+        const input = $(`${f} input[name=email]`);
+        if (input) { input.value = data.email; input.readOnly = f === '#form-signup'; input.dispatchEvent(new Event('input')); }
+      }
+    } else {
+      box.innerHTML = `<span class="invite-ico">${icon('alert', 20)}</span><div><strong>${esc(messages[state])}</strong></div>`;
+      forgetInvite();
+    }
+  }
+
+  // Signed in: join the workspace the link is for, but only when the signed in email is the invited one (the database checks it).
+  async function acceptInviteToken(token) {
+    const { data, error } = await sb.rpc('accept_invitation', { p_token: token });
+    if (!error && data?.organization_id) {
+      forgetInvite();
+      try { localStorage.setItem('rigzea_selected_org_id', data.organization_id); } catch { /* the first workspace opens instead */ }
+      return data.organization_id;
+    }
+    const m = String(error?.message || '');
+    if (/another email/.test(m)) {
+      toast(`ეს მოწვევა სხვა ელფოსტისთვისაა. ახლა შესული ხარ როგორც ${S.user.email}. გამოდი და შედი მოწვეული ელფოსტით.`, { type: 'error', timeout: 20000, action: { label: 'გამოსვლა', fn: () => signOut() } });
+      return null;
+    }
+    forgetInvite();
+    toast(/expired/.test(m) ? 'მოწვევის ვადა გაუვიდა. სთხოვე ახალი ბმული.' : /not found/.test(m) ? 'მოწვევა ვერ მოიძებნა.' : 'ეს მოწვევა უკვე აღარ არის აქტიური.', { type: 'error', timeout: 10000 });
+    return null;
+  }
+
   async function boot() {
     try {
+      const invite = captureInvite();
       const { data: { session } } = await sb.auth.getSession();
       S.user = session?.user || null;
       recovery = recovery || !!window.RIGZEA_RECOVERY;
@@ -86,11 +146,14 @@
         dataCache.clear(); // signed out some other way (staff app, expired session): drop saved data
         if (recovery) { recovery = false; window.RIGZEA_RECOVERY = false; showAuth('reset'); toast('აღდგენის ბმული ვადაგასულია ან უკვე გამოყენებულია. მოითხოვე ახალი.', { type: 'error', timeout: 9000 }); return; }
         const wantsSignin = /[#&?]signin\b/i.test(location.hash + location.search);
-        return showAuth(wantsSignin ? 'signin' : 'signup');
+        showAuth(wantsSignin ? 'signin' : 'signup');
+        if (invite) await showInviteBanner(invite).catch(() => {});
+        return;
       }
       if (recovery) return showAuth('newpass');
       chunkOrder(route().name).forEach(src => ensureChunk(src).catch(() => {})); // download the view code while the data loads, this area's file first
-      const handed = await dataCache.takeHandoff();
+      const joined = invite ? await acceptInviteToken(invite) : null;
+      const handed = joined ? null : await dataCache.takeHandoff();
       if (handed) {
         S.orgs = handed.handoff.orgs;
         S.org = S.orgs.find(o => o.id === handed.org) || null;
@@ -120,6 +183,7 @@
       if (!S.orgs.length) return showScreen('onboarding');
       if (S.member.role === 'staff') { location.replace('/staff/'); return; }
       enterShell();
+      if (joined) toast(`მოგესალმებით „${S.org?.name || ''}“-ში!`, { type: 'success' });
     } catch (err) {
       console.error(err);
       bootError(err);

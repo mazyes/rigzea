@@ -25,13 +25,35 @@
     sb.rpc('is_org_agent', { p_org: S.org.id }).then(({ error }) => { agentRole = !error; if (agentRole && App.route().name === 'team') addAgentOption(); }, () => {});
   }
 
+  // The private link for an invitation: it opens Rigzea, shows who invited you and joins the workspace after sign in.
+  const inviteLink = (inv) => `${location.origin}/app/?invite=${inv.token}`;
+  const untilText = (inv) => (inv.expires_at ? `მოქმედებს ${R.date(inv.expires_at)}-მდე` : '');
+
+  // Asks the server to email the invitation (it looks everything up itself). Resolves { ok, error }.
+  async function sendInviteEmail(id) {
+    try {
+      const { data: { session } } = await sb.auth.getSession();
+      const res = await fetch('/api/invite-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token || ''}` },
+        body: JSON.stringify({ invitation: id, lang: window.RLang?.lang === 'en' ? 'en' : 'ka' }),
+      });
+      const out = await res.json().catch(() => ({}));
+      return res.ok && out.ok ? { ok: true } : { ok: false, error: out.error || 'send' };
+    } catch { return { ok: false, error: 'network' }; }
+  }
+  const mailError = (code) => ({
+    wait: 'ცოტა ხანში სცადე ხელახლა.', limit: 'ამ მოწვევაზე წერილების ლიმიტი ამოიწურა. გაუგზავნე ბმული თავად.',
+    not_configured: 'ელფოსტის გაგზავნა ჯერ არ არის ჩართული.', not_pending: 'მოწვევა უკვე აღარ არის აქტიური.',
+  })[code] || 'წერილი ვერ გაიგზავნა.';
+
   function invitationsCard() {
     const pendingInv = (invitations || []).filter(i => i.status === 'pending');
     return `<section class="card" id="t-inv-card"><div class="card-head"><h2>მოწვევები <span class="count">${pendingInv.length}</span></h2></div>
         ${invitations === null ? '<div class="skeleton"><i></i><i></i></div>' : invitationsError ? `<div class="error-state"><p>მოწვევები ვერ ჩაიტვირთა. ${esc(R.friendlyError(invitationsError))}</p><button class="btn btn-secondary btn-sm" id="t-inv-retry">ხელახლა ცდა</button></div>`
-          : pendingInv.length ? `<div class="rows">${pendingInv.map(i => `<div class="row" style="--cols:minmax(0,1fr) 150px auto"><span class="cell-main"><strong>${esc(i.email)}</strong><span>გაიგზავნა ${esc(R.date(i.created_at))}</span></span><span class="cell-meta">${esc(L.role[i.role])}</span><span class="cell-actions">${App.isAdmin() ? `<button type="button" class="btn btn-ghost btn-sm" data-cancel-inv="${i.id}">გაუქმება</button>` : ''}</span></div>`).join('')}</div>`
+          : pendingInv.length ? `<div class="rows">${pendingInv.map(i => `<div class="row" style="--cols:minmax(0,1fr) 130px auto"><span class="cell-main"><strong>${esc(i.email)}</strong><span>გაიგზავნა ${esc(R.date(i.created_at))}${untilText(i) ? ` · ${esc(untilText(i))}` : ''}</span></span><span class="cell-meta">${esc(L.role[i.role])}</span><span class="cell-actions">${App.isAdmin() ? `<button type="button" class="icon-btn" data-copy-inv="${i.id}" title="ბმულის კოპირება" aria-label="ბმულის კოპირება: ${esc(i.email)}">${icon('link', 16)}</button><button type="button" class="icon-btn" data-resend-inv="${i.id}" title="წერილის ხელახლა გაგზავნა" aria-label="წერილის ხელახლა გაგზავნა: ${esc(i.email)}">${icon('mail', 16)}</button><button type="button" class="btn btn-ghost btn-sm" data-cancel-inv="${i.id}">გაუქმება</button>` : ''}</span></div>`).join('')}</div>`
           : App.emptyInline('ღია მოწვევა არ არის.')}
-        <div class="card-foot">მოწვეული ადამიანი დარეგისტრირდება ამავე ელფოსტით აქ: <strong>${esc(location.origin)}/app/</strong> <button type="button" class="icon-btn" id="t-copy" title="ბმულის კოპირება" aria-label="ბმულის კოპირება">${icon('copy', 16)}</button></div>
+        <div class="card-foot">წერილი იგზავნება ავტომატურად. ბმული პირადულია და მხოლოდ მოწვეული ელფოსტით მუშაობს.</div>
       </section>`
   }
 
@@ -41,7 +63,16 @@
       await loadInvitations();
       paintInvitations();
     }, { success: 'მოწვევა გაუქმდა' })));
-    $('#t-copy')?.addEventListener('click', () => R.copyText(`${location.origin}/app/`, 'ბმული დაკოპირდა'));
+    $$('[data-copy-inv]').forEach(b => b.addEventListener('click', () => {
+      const inv = (invitations || []).find(i => i.id === b.dataset.copyInv);
+      if (inv?.token) R.copyText(inviteLink(inv), 'მოწვევის ბმული დაკოპირდა');
+    }));
+    $$('[data-resend-inv]').forEach(b => b.addEventListener('click', () => run(b, async () => {
+      const r = await sendInviteEmail(b.dataset.resendInv);
+      if (!r.ok) throw new Error(mailError(r.error));
+      await loadInvitations();
+      paintInvitations();
+    }, { success: 'წერილი გაიგზავნა' })));
   }
 
   // Only the invitations card changes when they arrive or one is cancelled, so the rest of the page keeps still.
@@ -110,7 +141,7 @@
 
   function openInvite() {
     return R.dialog({
-      title: 'წევრის მოწვევა', submitLabel: 'მოწვევის შექმნა',
+      title: 'წევრის მოწვევა', submitLabel: 'მოწვევის გაგზავნა',
       body: `<div class="form-stack">
         <label class="field"><span class="field-label">ელფოსტა</span><input type="email" name="email" required data-error="ჩაწერე სწორი ელფოსტა." placeholder="name@example.ge" /></label>
         <div class="field"><span class="field-label">როლი</span><div class="choice-list">
@@ -123,10 +154,12 @@
         const email = v.email.trim().toLowerCase();
         if (v.role !== 'staff' && !App.guardLimit('seats')) return false;
         if ((invitations || []).some(i => i.status === 'pending' && i.email.toLowerCase() === email)) throw new Error('ამ ელფოსტაზე მოწვევა უკვე გაგზავნილია.');
-        await q(sb.from('invitations').insert({ organization_id: S.org.id, email, role: v.role, invited_by: S.user.id }));
+        const inv = await q(sb.from('invitations').insert({ organization_id: S.org.id, email, role: v.role, invited_by: S.user.id }).select().single());
+        const mail = await sendInviteEmail(inv.id);
         await loadInvitations();
-        App.render();
-        toast(`მოწვევა შეიქმნა: ${email}. გაუგზავნე რეგისტრაციის ბმული.`, { type: 'success', action: { label: 'ბმულის კოპირება', fn: () => R.copyText(`${location.origin}/app/`) } });
+        paintInvitations();
+        if (mail.ok) toast(`მოწვევა გაიგზავნა: ${email}`, { type: 'success' });
+        else toast(`მოწვევა შეიქმნა, მაგრამ ${mailError(mail.error).toLowerCase()}`, { type: 'info', timeout: 12000, action: { label: 'ბმულის კოპირება', fn: () => R.copyText(inviteLink(inv), 'მოწვევის ბმული დაკოპირდა') } });
       },
     });
   }

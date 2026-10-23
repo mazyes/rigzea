@@ -2070,6 +2070,80 @@ test('1zh. the company logo is a faint moving backdrop of the dashboard, not par
   await page.close();
 });
 
+const INVITE_TOKEN = 'abcdef0123456789abcdef0123456789';
+const withInvite = (extra = {}) => ({ id: 'dddd0000-0000-4000-8000-000000000001', organization_id: '11111111-1111-4111-8111-111111111111', email: 'newagent@rigzea.test', role: 'agent', token: INVITE_TOKEN, status: 'pending', expires_at: new Date(Date.now() + 5 * 864e5).toISOString(), invited_by: 'aaaaaaaa-0000-4000-8000-000000000001', created_at: new Date().toISOString(), ...extra });
+
+test('1zi. team: an invitation is emailed at once, has a private link, can be re-sent and copied', async (browser) => {
+  const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
+  const sent = [];
+  await page.route('**/api/invite-email', async (route) => { sent.push(JSON.parse(route.request().postData())); await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true }) }); });
+  await page.goto(BASE + '/app/team/');
+  await page.locator('#t-invite').click();
+  await page.fill('dialog[open] input[name=email]', 'Newagent@Rigzea.test');
+  await page.locator('dialog[open] input[name=role][value=manager]').check();
+  await page.locator('dialog[open] [data-submit]').click();
+  await page.locator('.toast', { hasText: 'მოწვევა გაიგზავნა' }).waitFor();
+  const inv = (await db(page)).tables.invitations.find(i => i.email === 'newagent@rigzea.test');
+  assert(/^[0-9a-f]{32}$/.test(inv.token) && inv.expires_at, 'a private token and an expiry');
+  assert.deepStrictEqual(sent, [{ invitation: inv.id, lang: 'ka' }], 'the server is asked to email exactly that invitation');
+  assert.strictEqual(await page.locator('#t-inv-card [data-copy-inv]').count(), 1);
+  await page.evaluate(() => { navigator.clipboard.writeText = async (t) => { window.__copied = t; }; });
+  await page.locator('#t-inv-card [data-copy-inv]').click();
+  assert.strictEqual(await page.evaluate(() => window.__copied), `${BASE}/app/?invite=${inv.token}`, 'the copied link carries the token');
+  // re-sending is limited (30 seconds apart) and says so
+  await page.locator('#t-inv-card [data-resend-inv]').click();
+  assert.strictEqual(sent.length, 2, 'a second email was requested');
+  await page.close();
+});
+
+test('1zj. an invitation link shows who invited you, prefills the email and joins the workspace after sign up', async (browser) => {
+  const page = await newPage(browser, { viewport: DESKTOP });
+  await page.addInitScript((inv) => { window.__MOCK_SEED.tables.invitations.push(inv); }, withInvite());
+  await page.goto(BASE + `/app/?invite=${INVITE_TOKEN}`);
+  await page.locator('#auth-invite:not([hidden])').waitFor();
+  const banner = await page.locator('#auth-invite').innerText();
+  assert(banner.includes('Batumi Stay') && banner.includes('newagent@rigzea.test'), banner);
+  assert(!page.url().includes('invite='), 'the token is not left in the address bar');
+  assert.strictEqual(await page.inputValue('#form-signup input[name=email]'), 'newagent@rigzea.test');
+  assert.strictEqual(await page.locator('#form-signup input[name=email]').getAttribute('readonly'), '');
+  await page.fill('#form-signup [name=name]', 'ნინო ბერიძე');
+  await page.fill('#form-signup [name=password]', 'test1234');
+  await page.locator('#signup-agree').check();
+  await page.click('#form-signup [type=submit]');
+  await page.locator('.toast', { hasText: 'მოგესალმებით' }).waitFor();
+  const d = await db(page);
+  const member = d.tables.organization_members.find(m => m.role === 'agent' && m.organization_id === '11111111-1111-4111-8111-111111111111' && m.display_name === 'ნინო ბერიძე');
+  assert(member, 'joined as the invited role');
+  assert.strictEqual(d.tables.invitations.find(i => i.token === INVITE_TOKEN).status, 'accepted');
+  assert.strictEqual(await page.evaluate(() => localStorage.getItem('rigzea_invite')), null, 'the token is used up');
+  await page.close();
+});
+
+test('1zk. invitation links that cannot be used say so; another account does not get in', async (browser) => {
+  // expired
+  let page = await newPage(browser, { viewport: DESKTOP });
+  await page.addInitScript((inv) => { window.__MOCK_SEED.tables.invitations.push(inv); }, withInvite({ expires_at: new Date(Date.now() - 864e5).toISOString() }));
+  await page.goto(BASE + `/app/?invite=${INVITE_TOKEN}`);
+  await page.locator('#auth-invite.is-bad').waitFor();
+  assert((await page.locator('#auth-invite').innerText()).includes('ვადა გაუვიდა'));
+  await page.close();
+  // unknown token
+  page = await newPage(browser, { viewport: DESKTOP });
+  await page.goto(BASE + `/app/?invite=${'0'.repeat(32)}`);
+  await page.locator('#auth-invite.is-bad').waitFor();
+  assert((await page.locator('#auth-invite').innerText()).includes('ვერ მოიძებნა'));
+  await page.close();
+  // signed in with a different email: nothing changes, the person is told why
+  page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
+  await page.addInitScript((inv) => { window.__MOCK_SEED.tables.invitations.push(inv); }, withInvite());
+  await page.goto(BASE + `/app/?invite=${INVITE_TOKEN}`);
+  await page.locator('.toast', { hasText: 'სხვა ელფოსტისთვისაა' }).waitFor();
+  const d = await db(page);
+  assert.strictEqual(d.tables.invitations.find(i => i.token === INVITE_TOKEN).status, 'pending', 'still pending');
+  assert.strictEqual(d.tables.organization_members.filter(m => m.user_id === USERS.manager.id).length, 1);
+  await page.close();
+});
+
 test('1x. the app opens offline from the service worker cache and says it is offline', async (browser) => {
   const context = await browser.newContext({ viewport: DESKTOP, locale: 'ka-GE' }); // real service worker, real files
   const page = await context.newPage();

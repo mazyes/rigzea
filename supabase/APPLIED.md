@@ -46,6 +46,7 @@ repo, and then aligned with the app by patches 06-09.
 | 22_backend_security_hardening | yes | migration `22_backend_security_hardening`, 2026-10-22 (dry run first; advisor: no new findings) |
 | 23_profile_branding | yes | migration `23_profile_branding`, 2026-10-23 (dry run first, rolled back; advisor: only the expected "signed-in users can run a SECURITY DEFINER function" note for `update_my_profile`, which checks `auth.uid()`) |
 | 24_chat | yes | migrations `24_chat` and `24_chat_revoke_trigger_functions`, 2026-10-23 (dry run first with owner, admin, manager, agent, staff and an outsider: every allow and deny as designed; realtime publication added for the three chat tables) |
+| 25_invites | yes | migration `25_invites`, 2026-10-23 (dry run first with admin, agent, wrong email, outsider and anonymous callers; get_invitation is public by design and returns only the invited address, role and workspace name for a secret 128 bit token) |
 
 ## Rules for new patches
 

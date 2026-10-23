@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import kisaStreamConfirm from '../api/kisa-stream-confirm.js';
 import kisaCheckout from '../api/kisa-checkout.js';
 import importListing from '../api/import-listing.js';
+import inviteEmail, { inviteContent } from '../api/invite-email.js';
 
 function response() {
   return {
@@ -98,6 +99,40 @@ try {
   assert.equal(proxyCalls, 1, 'a blocked site is read through the proxy when a key is set');
   assert.notEqual(proxiedImport.body.error, 'blocked', 'the proxy result is used instead of the block message');
   if (originalFirecrawl === undefined) delete process.env.FIRECRAWL_API_KEY; else process.env.FIRECRAWL_API_KEY = originalFirecrawl;
+
+  // Invitation email: the browser only names the invitation; address, role, token and names come from the database, which also rate limits.
+  process.env.RESEND_API_KEY = 'test-resend-key';
+  const invitation = '00000000-0000-4000-8000-0000000000aa';
+  const sentMail = [];
+  const rpcAnswer = (status, body) => new Response(JSON.stringify(body), { status });
+  let rpcMode = 'ok';
+  globalThis.fetch = async (url, init) => {
+    const value = String(url);
+    if (value.includes('/rpc/invitation_email_data')) {
+      if (rpcMode === 'forbidden') return rpcAnswer(400, { message: 'not allowed' });
+      if (rpcMode === 'soon') return rpcAnswer(400, { message: 'wait a moment before sending again' });
+      return rpcAnswer(200, { email: 'new@example.test', role: 'agent', token: 'a'.repeat(32), org_name: 'Batumi Stay', inviter: 'ნინო ბერიძე', expires_at: '2026-11-06T10:00:00Z' });
+    }
+    if (value.includes('api.resend.com')) { sentMail.push(JSON.parse(init.body)); return new Response(JSON.stringify({ id: 'mail-1' }), { status: 200 }); }
+    throw new Error('unexpected request ' + value);
+  };
+  const anon = await call(inviteEmail, { method: 'POST', headers: {}, body: { invitation } });
+  assert.equal(anon.statusCode, 401, 'no sign in, no email');
+  const bad = await call(inviteEmail, { method: 'POST', headers: { authorization: 'Bearer t' }, body: { invitation: 'not-an-id' } });
+  assert.equal(bad.statusCode, 400, 'only an invitation id is accepted');
+  const okMail = await call(inviteEmail, { method: 'POST', headers: { authorization: 'Bearer t' }, body: { invitation, lang: 'ka', to: 'attacker@example.test', token: 'x' } });
+  assert.equal(okMail.statusCode, 200);
+  assert.deepEqual(sentMail[0].to, ['new@example.test'], 'the address comes from the database, not the request');
+  assert(sentMail[0].html.includes('/app/?invite=' + 'a'.repeat(32)), 'the button carries the private token');
+  assert(sentMail[0].html.includes('Batumi Stay') && sentMail[0].text.includes('invite='), 'html and text versions');
+  assert(!/—/.test(sentMail[0].html + sentMail[0].text), 'no long dashes in the copy');
+  rpcMode = 'soon';
+  assert.equal((await call(inviteEmail, { method: 'POST', headers: { authorization: 'Bearer t' }, body: { invitation } })).statusCode, 429, 'sending again too soon is refused');
+  rpcMode = 'forbidden';
+  assert.equal((await call(inviteEmail, { method: 'POST', headers: { authorization: 'Bearer t' }, body: { invitation } })).statusCode, 403, 'someone who is not an admin of that workspace gets nothing');
+  assert.equal(sentMail.length, 1, 'no email was sent for the refused requests');
+  const en = inviteContent({ lang: 'en', inviter: 'Nino', org: 'Batumi Stay', role: 'staff', token: 'b'.repeat(32), expires_at: '2026-11-06T10:00:00Z' });
+  assert(en.subject.includes('Batumi Stay') && en.content.list.some(t => /tasks/i.test(t)), 'English variant, role specific');
 
   console.log('Backend security tests passed.');
 } finally {
