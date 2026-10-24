@@ -189,4 +189,54 @@ html[data-page="faq"] .lx-nav-link[href="/faq/"] {
   width: 36px; height: 36px; padding: 0; margin-bottom: 20px; border-radius: 12px;
   background: var(--la-brand-soft); color: var(--la-brand-ink); font-size: 14px; font-weight: 700; line-height: 1; text-align: center;
 }
-@media (max-width: 560px) { .lx-home .lx-step-index { margin: 0 auto 12px; } }
+@media (max-width: 700px) {
+  .lx-home .lx-step-index { width: 30px; height: 30px; margin: 0 0 8px; font-size: 13px; border-radius: 10px; }
+  :root .lx-steps-grid-3 > .lx-step-card, :root .lx-steps-grid-3 > .lx-step-card:first-child { padding: 16px; }
+}
+@media (max-width: 560px) { .lx-home .lx-step-index { margin: 0 auto 10px; } }
+
+/* ---- Hero: label above the headline, a larger product window ---- */
+:root .lx-hero-eyebrow, :root[data-theme="light"] .lx-hero-eyebrow {
+  align-self: center; margin: 0; padding: 6px 14px; border: 0; border-radius: 999px; box-shadow: none;
+  background: var(--la-brand-soft); color: var(--la-brand-ink); font-size: 13.5px; font-weight: 600; text-align: center;
+}
+.lx-hero-desc { max-width: 680px; margin-inline: auto; }
+@media (min-width: 901px) {
+  .lx-hero-shot { max-width: 1180px; }
+  .lx-shot { max-height: 700px; }
+}
+
+/* ---- Problem list (replaces the long workday paragraphs) ---- */
+.lx-problem-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.lx-problem-list li { display: grid; gap: 4px; padding: 16px 20px; border: 1px solid var(--la-line); border-radius: 16px; background: var(--la-surface); }
+.lx-problem-list strong { color: var(--la-ink); font-size: 17px; font-weight: 600; line-height: 1.4; }
+.lx-problem-list span { color: var(--la-ink-2); font-size: 15.5px; line-height: 1.6; }
+
+/* ---- Product showcase: real screens next to what they do ---- */
+.lx-showcase-section { padding: 72px 0 40px; }
+.lx-showcase-list { display: grid; gap: 64px; margin-top: 40px; }
+.lx-showcase-row { display: grid; gap: 24px; }
+.lx-showcase-copy { display: grid; grid-template-columns: minmax(0, 6fr) minmax(0, 5fr); gap: 4px 48px; align-items: center; }
+.lx-showcase-copy h3 { grid-column: 1; }
+.lx-showcase-copy p { grid-column: 1; }
+.lx-showcase-copy ul { grid-column: 2; grid-row: 1 / span 2; }
+.lx-showcase-copy h3 { font-size: clamp(22px, 2.2vw, 28px); margin: 0 0 10px; color: var(--la-ink); }
+.lx-showcase-copy p { margin: 0 0 14px; color: var(--la-ink-2); font-size: 16.5px; line-height: 1.65; }
+.lx-showcase-copy ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.lx-showcase-copy li { position: relative; padding-left: 24px; color: var(--la-ink); font-size: 15.5px; line-height: 1.5; }
+.lx-showcase-copy li::before { content: ""; position: absolute; left: 2px; top: .5em; width: 9px; height: 9px; border-radius: 50%; background: var(--la-brand-ink); }
+.lx-showcase-shot { margin: 0; border: 1px solid var(--la-line); border-radius: 20px; overflow: hidden; background: var(--la-surface); box-shadow: 0 30px 60px -38px rgba(0, 0, 0, .45); }
+.lx-sc-pic { display: block; }
+.lx-sc-img { display: block; width: 100%; height: auto; }
+.lx-sc-light { display: none; }
+:root[data-theme="light"] .lx-sc-light { display: block; }
+:root[data-theme="light"] .lx-sc-dark { display: none; }
+@media (max-width: 700px) { .lx-sc-img { aspect-ratio: 780 / 1050; object-fit: cover; object-position: top; } }
+@media (max-width: 900px) {
+  .lx-showcase-section { padding: 48px 0 24px; }
+  .lx-showcase-list { gap: 40px; }
+  .lx-showcase-row { gap: 16px; }
+  .lx-showcase-copy { grid-template-columns: 1fr; }
+  .lx-showcase-copy ul { grid-column: 1; grid-row: auto; margin-top: 4px; }
+  .lx-showcase-shot { border-radius: 16px; }
+}

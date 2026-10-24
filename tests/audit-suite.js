@@ -159,7 +159,7 @@ async function runAudit() {
         assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `${theme}: horizontal overflow`);
         await page.screenshot({ path: path.join(require('os').tmpdir(), `rigzea-landing-${theme}-mobile.png`) });
       }
-      assert.strictEqual(await page.locator('main > section').count(), 5);
+      assert.strictEqual(await page.locator('main > section').count(), 6);
       assert.strictEqual(await page.locator('.lx-story-section').count(), 1);
       assert.strictEqual(await page.locator('#features-grid, #pricing-grid, .lx-faq-accordion, .lx-comparison-grid').count(), 0);
       assert.strictEqual(await page.locator('.lx-hero-shot img').count(), 2);
