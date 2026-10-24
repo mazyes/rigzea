@@ -182,3 +182,11 @@ html[data-page="faq"] .lx-nav-link[href="/faq/"] {
   color: #ffffff; font-weight: 600;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .3), 0 8px 18px -8px rgba(4, 120, 87, .75);
 }
+
+/* Step numbers: a centered light green number in a soft green square (beats the home page's plain block rule) */
+.lx-home .lx-step-index {
+  display: flex; align-items: center; justify-content: center; align-self: flex-start;
+  width: 36px; height: 36px; padding: 0; margin-bottom: 20px; border-radius: 12px;
+  background: var(--la-brand-soft); color: var(--la-brand-ink); font-size: 14px; font-weight: 700; line-height: 1; text-align: center;
+}
+@media (max-width: 560px) { .lx-home .lx-step-index { margin: 0 auto 12px; } }
