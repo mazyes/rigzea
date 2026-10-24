@@ -240,3 +240,31 @@ html[data-page="faq"] .lx-nav-link[href="/faq/"] {
   .lx-showcase-copy ul { grid-column: 1; grid-row: auto; margin-top: 4px; }
   .lx-showcase-shot { border-radius: 16px; }
 }
+
+/* In-page links land below the sticky menu; smooth scrolling only when motion is allowed */
+#product, #how-it-works { scroll-margin-top: 84px; }
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+
+/* Mid-width laptops: five menu links and the trial button share one row without pushing the page sideways */
+@media (min-width: 901px) and (max-width: 1240px) {
+  .lx-nav-links { gap: 2px; }
+  .lx-nav-link { padding: 0 10px; font-size: 13.5px; }
+  .lx-header-actions { gap: 6px; }
+  .lx-theme-toggle { width: 44px; height: 44px; }
+  .lx-header-cta, .lx-header-signin { padding: 0 12px; font-size: 13px; }
+  .lx-brand { font-size: 19px; }
+}
+@media (min-width: 901px) and (max-width: 1140px) {
+  .lx-nav-link { padding: 0 8px; font-size: 13px; }
+  .lx-header-inner { gap: 10px; }
+}
+/* Georgian labels are wider: below 1000px the brand shows its icon only so the menu keeps its words */
+@media (min-width: 901px) and (max-width: 1000px) {
+  .lx-brand > span { display: none; }
+}
+@media (min-width: 901px) and (max-width: 940px) {
+  .lx-nav-link { padding: 0 6px; font-size: 12.5px; }
+  .lx-header-cta { padding: 0 10px; font-size: 12.5px; }
+}
+.lx-header-inner { gap: 16px; }
+@media (min-width: 1241px) { .lx-nav-link { padding: 0 14px; } }

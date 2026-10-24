@@ -7,7 +7,7 @@ async function run() {
   try {
     const page = await newPage(browser);
     await page.goto('http://localhost:4190/');
-    assert.strictEqual(await page.locator('#lx-story-title').innerText(), 'ერთი ბინა. თავიდან ბოლომდე.');
+    assert.strictEqual(await page.locator('#lx-story-title').innerText(), 'ერთი ბინა, სამი ხედვა.');
     assert.strictEqual(await page.getByRole('tab').count(), 3);
     assert.strictEqual(await page.locator('#lx-story-panel-agent').isVisible(), true);
     assert.strictEqual(await page.locator('#lx-story-panel-owner').isVisible(), false);
