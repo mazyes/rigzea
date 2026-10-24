@@ -32,7 +32,7 @@ async function run() {
     const english = await newPage(browser);
     await english.addInitScript(() => localStorage.setItem('rigzea_lang', 'en'));
     await english.goto('http://localhost:4190/');
-    await english.waitForFunction(() => document.documentElement.lang === 'en' && document.querySelector('#lx-story-title')?.textContent === 'One apartment. From start to finish.');
+    await english.waitForFunction(() => document.documentElement.lang === 'en' && document.querySelector('#lx-story-title')?.textContent === 'One apartment, three views.');
     assert.strictEqual(await english.getByRole('tab', { name: 'Owner' }).count(), 1);
     await english.getByRole('tab', { name: 'Client' }).click();
     assert.strictEqual(await english.locator('#lx-story-panel-client').isVisible(), true);

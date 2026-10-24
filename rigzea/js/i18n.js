@@ -53,7 +53,7 @@
 "დაიწყე 14-დღიანი საცდელი": "Start the 14-day trial",
 "ნახე დემო": "View the demo",
 "პროდუქტი": "Product",
-"ერთი ბინა, სამი ხედვა.": "One property, three views.",
+"ერთი ბინა, სამი ხედვა.": "One apartment, three views.",
 "აგენტი მართავს ობიექტს, მესაკუთრე პასუხობს თანხმობის მოთხოვნას, კლიენტი კი ხედავს მხოლოდ გაზიარებულ გვერდს. შეარჩიე ხედი და ნახე, რას ხედავს თითოეული.": "The agent manages the property, the owner answers approval requests, and the client sees only the shared page. Pick a view and see what each one sees.",
 "კიდევ რას მოიცავს Rigzea": "What else Rigzea includes",
 "მობილური სამუშაო სივრცე, ძიება, ფინანსები და შეხსენებები.": "A mobile workspace, search, finances and reminders.",
