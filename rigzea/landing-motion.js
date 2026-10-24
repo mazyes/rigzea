@@ -49,7 +49,7 @@
     items.forEach((it) => {
       const b = document.createElement('button');
       b.type = 'button';
-      b.setAttribute('aria-label', it.querySelector('h3')?.textContent.trim() || String(items.indexOf(it) + 1));
+      b.setAttribute('aria-label', it.querySelector('h2, h3')?.textContent.trim() || String(items.indexOf(it) + 1));
       b.setAttribute('aria-controls', track.id);
       b.addEventListener('click', () => go(it, true));
       dots.appendChild(b);
@@ -59,10 +59,15 @@
       b.setAttribute('aria-pressed', String(k === i));
     });
     // Track horizontal position even when tall cards extend beyond the viewport.
+    let scrollRaf = 0;
     track.addEventListener('scroll', () => {
-      const left = track.getBoundingClientRect().left;
-      const distances = items.map(it => Math.abs(it.getBoundingClientRect().left - left));
-      setActive(distances.indexOf(Math.min(...distances)));
+      if (scrollRaf) return;
+      scrollRaf = requestAnimationFrame(() => {
+        scrollRaf = 0;
+        const left = track.getBoundingClientRect().left;
+        const distances = items.map(it => Math.abs(it.getBoundingClientRect().left - left));
+        setActive(distances.indexOf(Math.min(...distances)));
+      });
     }, { passive: true });
     // pricing opens on the most popular plan
     const start = Math.max(0, items.findIndex((it) => it.classList.contains('featured')));

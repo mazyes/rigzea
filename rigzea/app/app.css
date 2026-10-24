@@ -107,8 +107,23 @@ img { max-width: 100%; display: block; }
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+    transition-property: background-color, border-color, color, fill, stroke, opacity, box-shadow, outline-color !important;
+    transition-duration: 120ms !important;
+    transition-timing-function: ease !important;
     scroll-behavior: auto !important;
+  }
+  html {
+    scroll-behavior: auto !important;
+  }
+  .no-anim, .no-anim * {
+    transition: none !important;
+  }
+  .btn.is-busy::after {
+    animation: none !important;
+  }
+  .skeleton i {
+    animation: none !important;
+    opacity: .75 !important;
   }
 }
 
@@ -1638,7 +1653,7 @@ html, body, button, input, select, textarea, option, optgroup, dialog, summary, 
 .topbar .topbar-tab:hover { background: color-mix(in srgb, var(--ink) 6%, transparent); }
 .topbar .topbar-tab.is-active, .topbar .topbar-tab[aria-current="page"], .topbar .topbar-tab.is-active:hover { background: none; color: #fff; }
 .topbar .topbar-tab.is-active .topbar-tab-count { background: rgba(255, 255, 255, .28); color: #fff; }
-.nav-pill { position: absolute; z-index: 0; left: 0; top: 4px; bottom: 4px; width: 0; border-radius: 999px; background: var(--brand); box-shadow: 0 8px 18px -8px color-mix(in srgb, var(--brand) 75%, transparent); transition: transform .55s var(--spring), width .55s var(--spring); will-change: transform, width; }
+.nav-pill { position: absolute; z-index: 0; left: 0; top: 4px; bottom: 4px; width: 0; border-radius: 999px; background: var(--brand); box-shadow: 0 8px 18px -8px color-mix(in srgb, var(--brand) 75%, transparent); transition: transform .55s var(--spring), width .55s var(--spring); }
 .topbar .icon-btn, .topbar .search-trigger, .topbar .topbar-tools-btn, .topbar #btn-new-task {
   width: 42px; height: 42px; min-width: 42px; min-height: 42px; padding: 0; justify-content: center; border-radius: 50%;
   border: 1px solid color-mix(in srgb, var(--line) 70%, transparent); background: var(--surface); color: var(--ink);
@@ -1677,7 +1692,7 @@ html, body, button, input, select, textarea, option, optgroup, dialog, summary, 
 /* The pill is moved by app.js every frame (it follows the live tab), so it has no transition of its own.
    The new label opens and the old one closes with one duration and curve; --lw is the label's real width. */
 .topbar .topbar-nav { --nav-ease: cubic-bezier(.32, .72, 0, 1); }
-.nav-pill { transition: opacity .25s ease; will-change: transform, width; }
+.nav-pill { transition: opacity .25s ease; }
 .topbar .topbar-tab > span:not(.topbar-tab-count) { transition: max-width .5s var(--nav-ease), margin .5s var(--nav-ease), opacity .3s ease; }
 .topbar .topbar-tab.is-active > span:not(.topbar-tab-count), .topbar.tabs-compact .topbar-tab.is-active > span:not(.topbar-tab-count) { max-width: var(--lw, 130px); }
 .topbar .topbar-tab { transition: color .3s ease, background-color .2s, transform .35s var(--spring), padding .5s var(--nav-ease); }
@@ -2010,7 +2025,7 @@ a.row:active, button.row:active, .row.clickable:active, .sched-row:active, .noti
 }
 
 /* Shared sliding highlight (see syncPills in js/core.js): tab strips, chips, segments, sign in tabs, bottom bar */
-.pill { position: absolute; left: 0; top: 0; z-index: 0; width: 0; height: 0; box-sizing: border-box; opacity: 0; pointer-events: none; will-change: transform, width; transition: transform .5s var(--spring), width .5s var(--spring), height .4s var(--ease), opacity .2s ease; }
+.pill { position: absolute; left: 0; top: 0; z-index: 0; width: 0; height: 0; box-sizing: border-box; opacity: 0; pointer-events: none; transition: transform .5s var(--spring), width .5s var(--spring), height .4s var(--ease), opacity .2s ease; }
 .pill-snap { transition: none !important; }
 :is(.tabs, .seg2, .chips, .auth-tabs).pill-ready { position: relative; }
 .pill-ready > :not(.pill) { position: relative; z-index: 1; }
@@ -2025,7 +2040,7 @@ a.row:active, button.row:active, .row.clickable:active, .sched-row:active, .noti
 .bottom-nav.pill-ready [aria-current="page"] { background: none; }
 .lite .pill, .motion-off .pill { transition: none; }
 @media (prefers-reduced-motion: reduce) { .pill { transition: none; } }
-.info-tip { display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; color: var(--muted); cursor: help; transition: background-color .2s ease, color .2s ease; }
+.info-tip { position: relative; display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; color: var(--muted); cursor: help; transition: background-color .2s ease, color .2s ease; }
 .info-tip:hover, .info-tip:focus-visible { background: var(--hover); color: var(--ink); }
 .card-foot .icon-btn { vertical-align: middle; margin-left: 4px; }
 
@@ -2143,7 +2158,7 @@ html, body { overscroll-behavior-y: contain; }
 .msg.is-failed .msg-bubble { border-color: var(--danger); }
 .msg-fail { color: var(--danger); font-size: 12px; }
 .msg-seen { color: var(--muted); font-size: 11px; }
-.msg-more { flex: none; display: grid; place-items: center; width: 28px; height: 28px; border: 0; border-radius: 50%; background: none; color: var(--muted); cursor: pointer; opacity: 0; transition: opacity .15s ease, background-color .2s ease; }
+.msg-more { position: relative; flex: none; display: grid; place-items: center; width: 28px; height: 28px; border: 0; border-radius: 50%; background: none; color: var(--muted); cursor: pointer; opacity: 0; transition: opacity .15s ease, background-color .2s ease; }
 .msg:hover .msg-more, .msg-more:focus-visible { opacity: 1; }
 .msg-more:hover { background: var(--hover); }
 .msg-quote { display: flex; flex-direction: column; gap: 1px; width: 100%; margin: 0 0 5px; padding: 4px 8px; border: 0; border-left: 3px solid var(--brand); border-radius: 8px; background: color-mix(in srgb, currentColor 9%, transparent); color: inherit; font: inherit; font-size: 12.5px; text-align: left; cursor: pointer; }
@@ -2156,7 +2171,7 @@ html, body { overscroll-behavior-y: contain; }
 .msg-file strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
 .msg-file small { opacity: .7; font-size: 11px; }
 .msg-reacts { display: flex; flex-wrap: wrap; gap: 4px; }
-.msg-react { display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0 8px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); font-size: 13px; cursor: pointer; animation: reactPop .35s var(--spring); transition: background-color .2s ease, transform .25s var(--spring); }
+.msg-react { position: relative; display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0 8px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); font-size: 13px; cursor: pointer; animation: reactPop .35s var(--spring); transition: background-color .2s ease, transform .25s var(--spring); }
 .msg-react span { font-size: 11.5px; color: var(--muted); }
 .msg-react.is-mine { border-color: var(--brand); background: var(--brand-soft); }
 .msg-react:active { transform: scale(.92); }
@@ -2221,6 +2236,10 @@ html, body { overscroll-behavior-y: contain; }
   .chat-jump { bottom: 78px; }
   .chat-back { display: inline-grid; }
   .msg-more { opacity: .55; }
+  .msg-more::after { content: ''; position: absolute; inset: -4px; }
+  .chat-chip button::after { content: ''; position: absolute; inset: -11px; }
+  .info-tip::after { content: ''; position: absolute; inset: -8px; }
+  .msg-react::after { content: ''; position: absolute; inset: -6px; }
   .msg-col { max-width: 84%; }
   body:has(.chat[data-pane="conv"]) .bottom-nav, body:has(.chat[data-pane="conv"]) .page-refresh-dock { display: none; }
   body:has(.chat[data-pane="conv"]) .topbar-user { display: none; }
