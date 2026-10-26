@@ -131,12 +131,13 @@ export default async function handler(req, res) {
   let out = html;
   if (found) {
     const meta = buildMeta(data, pageUrl, whiteLabel);
-    out = out.replace(/<title>[\s\S]*?<\/title>/, `<title>${esc(meta.title)}</title>\n  ${meta.tags}`);
+    // Replacer functions: a string replacement would expand $' or $& typed in listing text.
+    out = out.replace(/<title>[\s\S]*?<\/title>/, () => `<title>${esc(meta.title)}</title>\n  ${meta.tags}`);
   } else {
     res.statusCode = 404;
     out = out.replace(/<title>[\s\S]*?<\/title>/, '<title>განცხადება ვერ მოიძებნა</title>\n  <meta name="robots" content="noindex" />');
   }
-  out = out.replace('</head>', `  ${boot}\n</head>`);
+  out = out.replace('</head>', () => `  ${boot}\n</head>`);
   // Only found listings are cached at the CDN (shared HTML has no per-user data); 60s staleness is fine because
   // edits and unpublishing show within a minute. Not found / unpublished is never cached, so publishing shows at once.
   res.setHeader('Cache-Control', found ? 'public, max-age=0, s-maxage=60, stale-while-revalidate=300' : 'no-store');

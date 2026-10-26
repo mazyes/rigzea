@@ -153,6 +153,15 @@ try {
   const en = inviteContent({ lang: 'en', inviter: 'Nino', org: 'Batumi Stay', role: 'staff', token: 'b'.repeat(32), expires_at: '2026-11-06T10:00:00Z' });
   assert(en.subject.includes('Batumi Stay') && en.content.list.some(t => /tasks/i.test(t)), 'English variant, role specific');
 
+  // Public listing page: "$'" or "$&" in listing text must stay literal, not paste page HTML into it.
+  const tricky = "Sea view $' and $& and $`";
+  globalThis.fetch = async () => new Response(JSON.stringify({ success: true, apartment: { id: 'apt-1', slug: 'sea-1', name: "Flat $'", description: tricky } }), { status: 200 });
+  const listingRes = { statusCode: 200, headers: {}, body: '', setHeader(k, v) { this.headers[k] = v; }, end(b) { this.body = b; } };
+  await (await import('../api/p.js')).default({ query: { ref: 'sea-1' } }, listingRes);
+  assert.equal(listingRes.body.split('</html>').length, 2, 'the page is not duplicated into the listing data');
+  assert(listingRes.body.includes(JSON.stringify(tricky)), 'listing text is injected as written');
+  assert(listingRes.body.includes("<title>Flat $&#39; · Rigzea</title>"), 'title keeps the dollar sign');
+
   console.log('Backend security tests passed.');
 } finally {
   globalThis.fetch = originalFetch;
