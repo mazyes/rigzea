@@ -128,7 +128,8 @@
     }
     const m = String(error?.message || '');
     if (/another email/.test(m)) {
-      toast(`ეს მოწვევა სხვა ელფოსტისთვისაა. ახლა შესული ხარ როგორც ${S.user.email}. გამოდი და შედი მოწვეული ელფოსტით.`, { type: 'error', timeout: 20000, action: { label: 'გამოსვლა', fn: () => signOut() } });
+      forgetInvite();
+      toast(`ეს მოწვევა სხვა ელფოსტისთვისაა. ახლა შესული ხარ როგორც ${S.user.email}. გამოდი და შედი მოწვეული ელფოსტით.`, { type: 'error', timeout: 20000, action: { label: 'გამოსვლა', fn: () => { try { localStorage.setItem('rigzea_invite', token); } catch {} signOut(); } } });
       return null;
     }
     forgetInvite();
@@ -240,6 +241,7 @@
 
 
   function bindForm(form, handler) {
+    if (!form) return;
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const btn = form.querySelector('[type=submit]');
@@ -429,11 +431,9 @@
     return rows;
   }
 
-  // Fetches everything the workspace shows for one organization. Throws on failure.
-  async function fetchData(org, includeSearchData = false) {
-    const totals = {};
-    const area = route().name;
-    const needs = new Set(includeSearchData
+  // The optional data sets an area needs on top of apartments, owners and open tasks.
+  function areaNeeds(area, includeSearchData = false) {
+    return new Set(includeSearchData
       ? ['closedTasks', 'approvals', 'expenses', 'income', 'reservations', 'repairs', 'deals']
       : area === 'today'
       ? ['closedTasks', 'approvals', 'expenses', 'income', 'reservations', 'events', 'repairs', 'deals', 'statements']
@@ -446,6 +446,12 @@
             : area === 'finance'
               ? ['expenses', 'income', 'statements']
               : new Set());
+  }
+
+  // Fetches everything the workspace shows for one organization. Throws on failure.
+  async function fetchData(org, includeSearchData = false) {
+    const totals = {};
+    const needs = areaNeeds(route().name, includeSearchData);
     const warnings = {};
     const optional = (name, factory) => needs.has(name)
       ? Promise.resolve().then(async () => {
@@ -476,7 +482,7 @@
       optional('deals', () => take(totals, 'deals', sb.from('deals').select('*', { count: 'exact' }).eq('organization_id', org).order('created_at', { ascending: false }).limit(S.limits.deals))),
     ]);
     const tasks = [...openTasks, ...closedTasks].sort((a, b) => String(a.due_date || '~').localeCompare(String(b.due_date || '~')));
-    return { totals, warnings, data: { apartments, owners, tasks, approvals, expenses, income, reservations, events, members, notifications, statements, repairs, deals } };
+    return { totals, warnings, loaded: needs, data: { apartments, owners, tasks, approvals, expenses, income, reservations, events, members, notifications, statements, repairs, deals } };
   }
 
   // Loads the selected organization's data into S. `pending` is a fetchData() already in flight.
@@ -485,9 +491,10 @@
     S.loading = true;
     S.loadError = null;
     try {
-      const { data, totals, warnings } = await (pending || fetchData(org));
+      const { data, totals, warnings, loaded } = await (pending || fetchData(org));
       if (S.org?.id !== org) return; // switched organization while this was loading
       S.data = data;
+      S.loaded = loaded;
       S.totals = totals;
       S.loadWarnings = warnings;
       globalSearchReady = searchAll;
@@ -683,7 +690,7 @@
   const PAGE_ROUTES = location.pathname.startsWith('/app/');
   const AREAS = ['today', 'tasks', 'apartments', 'owners', 'deals', 'finance', 'team', 'settings', 'chat'];
   // Same labels scripts/stamp-assets.mjs puts in each page's <title>.
-  const AREA_TITLES = { today: 'მთავარი', tasks: 'საქმეები', apartments: 'ბინები', owners: 'კონტაქტები', deals: 'გარიგებები', finance: 'ფინანსები', team: 'გუნდი', settings: 'პარამეტრები' };
+  const AREA_TITLES = { today: 'მთავარი', tasks: 'საქმეები', apartments: 'ბინები', owners: 'კონტაქტები', deals: 'გარიგებები', finance: 'ფინანსები', team: 'გუნდი', settings: 'პარამეტრები', chat: 'ჩატი' };
   const areaPath = (name) => `/app/${name === 'today' ? '' : name + '/'}`;
   function toUrl(hash) {
     if (!PAGE_ROUTES) return '#' + String(hash).replace(/^#/, '');
@@ -721,7 +728,9 @@
     const next = new URL(String(target).startsWith('#') ? toUrl(target) : target, location.origin);
     // Every view script is loaded in-page (ALL_CHUNKS) and the data is in memory, so another area
     // swaps in place too; a full page load is only the fallback while nothing is loaded yet.
-    if (next.pathname === location.pathname || (S.data && S.org)) {
+    // Only optional data the current load fetched is in memory; another area that needs more loads its page.
+    const inMemory = S.data && S.org && S.loaded && [...areaNeeds(parseUrl(next).name)].every(n => S.loaded.has(n));
+    if (next.pathname === location.pathname || inMemory) {
       const url = next.pathname + next.search;
       if (url !== location.pathname + location.search) history[replace ? 'replaceState' : 'pushState'](null, '', url);
       onRoute();
@@ -959,16 +968,32 @@
       + `<div class="rail-foot"><button type="button" class="rail-lang" data-lang-toggle>${icon('globe', 16)}<span>${window.RLang?.lang === 'en' ? 'ქართული' : 'English'}</span></button><div class="rail-stats">${S.data ? `${S.data.apartments.filter(a => a.status !== 'archived').length} ობიექტი · ${S.data.owners.length} კლიენტი · ${S.data.members.length} გუნდის წევრი` : ''}</div></div>`;
     slideRailPill();
 
-    // Phone: 4 primary workflows + More menu sheet.
-    const tab = (href, ic, label, active, count, id = '') => `<a href="${href}" ${id ? `data-tab="${id}"` : ''} ${active ? 'aria-current="page"' : ''}>${icon(ic, 20)}<span>${label}</span>${count ? `<span class="count ${count.danger ? 'count-danger' : ''}">${count.n}</span>` : ''}</a>`;
+    // Phone: 4 primary workflows + More menu sheet, icons only. The elements stay between renders (like the top menu), so the
+    // open tab grows and the old one shrinks with a transition; the bar itself never changes size.
     const inMore = ['tasks', 'finance', 'team', 'settings'].includes(key);
-    $('#bottom-nav').innerHTML = tab('#/today', 'today', 'ჩემთვის', key === 'today')
-      + tab('#/apartments', 'building', 'ობიექტები', key === 'apartments')
-      + tab('#/deals', 'wallet', 'გარიგებები', key === 'deals', counts.deals)
-      + tab('#/owners', 'user', 'კლიენტები', key === 'contacts', counts.contacts)
-      + tab('#/chat', 'chat', 'ჩატი', key === 'chat', counts.chat, 'chat')
-      + `<button type="button" id="btn-more" ${inMore ? 'aria-current="page"' : ''}>${icon('menu', 20)}<span>მენიუ</span>${counts.tasks ? `<span class="count count-danger">${counts.tasks.n}</span>` : ''}</button>`;
-    $('#btn-more').onclick = openMoreSheet;
+    const bnItems = [
+      ['today', '#/today', 'today', 'ჩემთვის', key === 'today'],
+      ['apartments', '#/apartments', 'building', 'ობიექტები', key === 'apartments'],
+      ['deals', '#/deals', 'wallet', 'გარიგებები', key === 'deals', counts.deals],
+      ['contacts', '#/owners', 'user', 'კლიენტები', key === 'contacts', counts.contacts],
+      ['chat', '#/chat', 'chat', 'ჩატი', key === 'chat', counts.chat],
+      ['more', null, 'menu', 'მენიუ', inMore, counts.tasks && { ...counts.tasks, danger: true }],
+    ];
+    const bn = $('#bottom-nav');
+    if (!bn.dataset.built) {
+      bn.dataset.built = '1';
+      bn.innerHTML = bnItems.map(([id, href, ic, label]) => (href
+        ? `<a href="${href}" data-bn="${id}" ${id === 'chat' ? 'data-tab="chat"' : ''} aria-label="${label}" title="${label}">${icon(ic, 22)}</a>`
+        : `<button type="button" id="btn-more" data-bn="${id}" aria-label="${label}" title="${label}">${icon(ic, 22)}</button>`)).join('');
+      $('#btn-more').onclick = openMoreSheet;
+    }
+    bn.style.gridTemplateColumns = bnItems.map(i => (i[4] ? '1.7fr' : '1fr')).join(' ');
+    bnItems.forEach(([id, , , , active, count]) => {
+      const el = bn.querySelector(`[data-bn="${id}"]`);
+      if (active) el.setAttribute('aria-current', 'page'); else el.removeAttribute('aria-current');
+      el.querySelector(':scope > .count')?.remove();
+      if (count) el.insertAdjacentHTML('beforeend', `<span class="count ${count.danger ? 'count-danger' : ''}">${count.n}</span>`);
+    });
 
     // Phone: quick filter bar right above the content for list views
     const bar = $('#section-bar');
@@ -1007,11 +1032,12 @@
 
     // Organization switcher
     const sw = $('#org-switch');
+    const logoHtml = S.org?.logo_url ? `<img class="org-logo" src="${esc(S.org.logo_url)}" alt="" />` : '';
     if (S.orgs.length > 1) {
-      sw.innerHTML = `<label class="sr-only" for="org-select">სამუშაო სივრცე</label><select id="org-select">${S.orgs.map(o => `<option value="${o.id}" ${o.id === S.org.id ? 'selected' : ''}>${esc(o.name)}</option>`).join('')}</select>`;
+      sw.innerHTML = `${logoHtml}<label class="sr-only" for="org-select">სამუშაო სივრცე</label><select id="org-select">${S.orgs.map(o => `<option value="${o.id}" ${o.id === S.org.id ? 'selected' : ''}>${esc(o.name)}</option>`).join('')}</select>`;
       $('#org-select').onchange = (e) => switchOrg(e.target.value);
     } else {
-      sw.innerHTML = `<span class="org-static" title="სამუშაო სივრცე">${esc(S.org.name)}</span>`;
+      sw.innerHTML = `${logoHtml}<span class="org-static" title="სამუშაო სივრცე">${esc(S.org?.name || '')}</span>`;
     }
 
     renderPlanBanner();
@@ -1119,7 +1145,6 @@
     updateBadge();
     maybeShowWelcome();
     ensureChat();
-    syncBrandBg(r.name);
     const view = views[r.name];
     if (!view) {
       renderLoading();
@@ -1378,9 +1403,10 @@
           draw();
           const org = S.org.id;
           try {
-            const { data, totals, warnings } = await fetchData(org, true);
+            const { data, totals, warnings, loaded } = await fetchData(org, true);
             if (S.org?.id !== org) return;
             S.data = data;
+            S.loaded = loaded;
             S.totals = totals;
             S.loadWarnings = warnings;
             globalSearchReady = true;
@@ -2333,44 +2359,6 @@
     }, 6000);
   }
 
-  // The company logo as a soft, slowly drifting backdrop of the dashboard. It follows the pointer a little and the page scroll
-  // a little (two copies at different depths), stays very faint and sits behind every card. Nothing moves with reduced motion.
-  let brandBgRaf = 0, brandBgBound = false;
-  function syncBrandBg(name) {
-    let el = $('#brand-bg');
-    if (name !== 'today') { el?.remove(); return; }
-    // the company's own logo, or Rigzea's mark (grey in light mode, green in dark mode) until one is uploaded
-    const url = S.org?.logo_url || '';
-    const mode = url ? 'custom' : 'default';
-    if (el && el.dataset.mode !== mode) { el.remove(); el = null; }
-    if (!el) {
-      el = document.createElement('div');
-      el.id = 'brand-bg';
-      el.dataset.mode = mode;
-      el.classList.toggle('is-default', mode === 'default');
-      el.setAttribute('aria-hidden', 'true');
-      const art = mode === 'custom' ? '<img alt="" />' : icon('logo', 600);
-      el.innerHTML = `<span class="bb bb-a">${art}</span><span class="bb bb-b">${art}</span>`;
-      $('#shell').prepend(el);
-      requestAnimationFrame(() => el.classList.add('is-on'));
-    }
-    if (url) $$('img', el).forEach(img => { if (img.getAttribute('src') !== url) img.src = url; });
-    if (brandBgBound) return;
-    brandBgBound = true;
-    const move = (e) => {
-      if (brandBgRaf || R.calm()) return;
-      brandBgRaf = requestAnimationFrame(() => {
-        brandBgRaf = 0;
-        const bg = $('#brand-bg');
-        if (!bg) return;
-        if (e) { bg.style.setProperty('--px', ((e.clientX / innerWidth - .5) * 2).toFixed(3)); bg.style.setProperty('--py', ((e.clientY / innerHeight - .5) * 2).toFixed(3)); }
-        bg.style.setProperty('--sy', String(Math.min(scrollY, 1200)));
-      });
-    };
-    window.addEventListener('pointermove', (e) => { if (e.pointerType !== 'touch') move(e); }, { passive: true });
-    window.addEventListener('scroll', () => move(null), { passive: true });
-  }
-
   // Chat: unread count for the badge and one realtime subscription per workspace. The conversation screens live in
   // views-chat.js; this part works on every page so the badge stays right wherever the person is.
   S.chatUnread = 0;
@@ -2407,6 +2395,8 @@
     // if the socket is blocked (some company networks), look for news every 30 seconds instead
     chatTimer = setInterval(() => { if (!chatLive && document.visibilityState === 'visible') { window.dispatchEvent(new Event('rigzea-refresh')); refreshChatUnread(); } }, 30000);
     refreshChatUnread();
+    // Load the conversations quietly in the background so opening Chat is instant.
+    setTimeout(() => ensureViewLoaded('chat').then(() => App.chatWarm?.()).catch(() => {}), 1500);
   }
 
   // Number of overdue tasks on the installed app's icon (where the device supports it).

@@ -123,15 +123,16 @@
     const activeCount = deals.filter(d => OPEN_STAGES.includes(d.stage)).length;
     const title = dealSection === 'sale' ? 'გაყიდვის გარიგებები' : dealSection === 'rental' ? 'გაქირავების გარიგებები' : 'გარიგებები და საკომისიო';
 
+    const docsTab = tab === 'documents';
     $('#view').innerHTML = `
       <div class="page-head">
         <div>
-          <h1>${title}</h1>
-          <p class="page-sub muted">${activeCount} აქტიური გარიგება${dealSection ? '' : ' · გაყიდვები და გაქირავება'}</p>
+          <h1>${docsTab ? 'ხელშეკრულებები და რეესტრი' : title}</h1>
+          <p class="page-sub muted">${docsTab ? 'შაბლონები, შენახული დოკუმენტები და საჯარო რეესტრის შემოწმება' : `${activeCount} აქტიური გარიგება${dealSection ? '' : ' · გაყიდვები და გაქირავება'}`}</p>
         </div>
         <div class="page-actions">
-          <button type="button" class="btn btn-secondary" id="btn-matchmaker">${icon('sparkle', 16)} ბინების შერჩევა</button>
-          <button type="button" class="btn btn-primary" id="btn-deal-new">${icon('plus', 16)} ახალი გარიგება</button>
+          ${docsTab ? `<button type="button" class="btn btn-primary" id="btn-doc-new">${icon('plus', 16)} ახალი ხელშეკრულება</button>` : `<button type="button" class="btn btn-secondary" id="btn-matchmaker">${icon('sparkle', 16)} ბინების შერჩევა</button>
+          <button type="button" class="btn btn-primary" id="btn-deal-new">${icon('plus', 16)} ახალი გარიგება</button>`}
         </div>
       </div>
       <div class="tabs" role="tablist">
@@ -142,8 +143,11 @@
       </div>
       <div id="deals-body"></div>`;
 
-    $('#btn-deal-new').onclick = () => openDealForm(null, dealSection ? { deal_type: dealSection } : {});
-    $('#btn-matchmaker').onclick = () => openMatchmakerModal();
+    if (docsTab) $('#btn-doc-new').onclick = () => App.openDocChooser({});
+    else {
+      $('#btn-deal-new').onclick = () => openDealForm(null, dealSection ? { deal_type: dealSection } : {});
+      $('#btn-matchmaker').onclick = () => openMatchmakerModal();
+    }
 
     if (tab === 'commissions') renderCommissions();
     else if (tab === 'selections') renderSelections();
@@ -476,7 +480,7 @@
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
               <label style="display:flex;align-items:center;gap:8px;font-weight:700;cursor:pointer;margin:0">
                 <input type="checkbox" id="deal-cobroker-toggle" ${hasPartner ? 'checked' : ''} />
-                <span>${icon('handshake', 14)} პარტნიორ აგენტთან გარიგება (Co-Broking)</span>
+                <span style="display:inline-flex;align-items:center;gap:6px">${icon('handshake', 18)} პარტნიორ აგენტთან გარიგება (Co-Broking)</span>
               </label>
               <div class="seg" id="cb-quick-split" style="margin:0">
                 <button type="button" class="btn btn-ghost btn-sm" data-cb-set="50">50/50</button>
@@ -1794,7 +1798,7 @@
   // Shared with views-docs.js (presentation and sale contract templates).
   App.dealsUtil = { fmtMoney, convert, listingUrl, LEASE_CSS };
   App.amenityLabel = (k) => AMENITIES[k]?.[0] || k;
-  App.openLeasePreview = (d, a) => openLeasePreview(d, a);
+  App.openLeasePreview = (d, a, row) => openLeasePreview(d, a, row);
 
   function printLease(d, mode, title) {
     const w = window.open('', '_blank');
@@ -1808,19 +1812,21 @@
     w.document.close();
   }
 
-  App.openLeaseAgreementGenerator = async (apartment, deal = null) => {
+  // `contract` is a saved row: the form opens with its data and saving updates that same row.
+  App.openLeaseAgreementGenerator = async (apartment, deal = null, contract = null) => {
     if (!App.guardFeature('contracts')) return;
-    let a = apartment || (deal?.apartment_id ? H.apt(deal.apartment_id) : null);
-    let dl = deal;
-    let last = null;
-    try {
+    let a = apartment || H.apt(contract ? contract.apartment_id : deal?.apartment_id) || null;
+    let dl = deal || (contract ? H.deal(contract.deal_id) : null) || null;
+    let last = null, lastRow = null;
+    if (!contract) try {
       let query = sb.from('contracts').select('*').eq('organization_id', S.org.id);
       if (dl?.id) query = query.eq('deal_id', dl.id);
       else if (a?.id) query = query.eq('apartment_id', a.id);
       else query = null;
       if (query) {
         const { data } = await query.order('created_at', { ascending: false }).limit(1);
-        last = data?.[0]?.data || null;
+        lastRow = data?.[0] || null;
+        last = lastRow?.data || null;
       }
     } catch { last = null; }
 
@@ -1844,11 +1850,14 @@
     // A previous contract of the same deal is this lease's draft: reuse all of it. One from the same
     // apartment belongs to an earlier tenant: keep landlord, property and terms, never their personal data or dates.
     const TENANT_KEYS = /^(tenant_|meter_)|^(contract_date|start_date|end_date|inventory_notes|acceptance_notes)$/;
-    const reuse = last && !dl?.id ? Object.fromEntries(Object.entries(last).filter(([k]) => !TENANT_KEYS.test(k))) : (last || {});
+    const reuse = contract ? contract.data : last && !dl?.id ? Object.fromEntries(Object.entries(last).filter(([k]) => !TENANT_KEYS.test(k))) : (last || {});
     const d = {
       ...getDefaults(a, dl),
       ...reuse,
     };
+    // Rarely changed fields stay folded; they open by themselves when they hold a value (`vsDefault`: when they differ from the default).
+    const filled = (keys, vsDefault) => keys.some(k => String(d[k] ?? '').trim() !== '' && (!vsDefault || String(d[k]) !== String(getDefaults(a, dl)[k] ?? '')));
+    const more = (title, keys, inner, vsDefault = false) => `<details class="form-more span-2" ${filled(keys, vsDefault) ? 'open' : ''}><summary>${title}</summary><div class="form-grid">${inner}</div></details>`;
     const f = (name, label, opts = {}) => `<label class="field ${opts.span ? 'span-2' : ''}"><span class="field-label">${label}</span>${opts.textarea
       ? `<textarea name="${name}" rows="${opts.rows || 2}" ${opts.required ? 'required' : ''} placeholder="${esc(opts.ph || '')}">${esc(d[name] || '')}</textarea>`
       : `<input name="${name}" type="${opts.type || 'text'}" ${opts.required ? `required data-error="${esc(opts.err || 'შეავსე სავალდებულო ველები.')}"` : ''} ${opts.attrs || ''} value="${esc(d[name] ?? '')}" placeholder="${esc(opts.ph || '')}" />`}${opts.hint ? `<span class="field-hint">${opts.hint}</span>` : ''}</label>`;
@@ -1860,51 +1869,53 @@
       title: 'ქირავნობის ხელშეკრულება (სამოქალაქო კოდექსი)',
       subtitle: a?.name || dl?.client_name || 'ორენოვანი შაბლონი',
       wide: true,
-      submitLabel: 'ხელშეკრულების შედგენა',
+      submitLabel: contract ? 'ცვლილებების შენახვა' : 'ხელშეკრულების შედგენა',
       body: `
+        ${lastRow ? `<div class="notice small">${icon('alert', 14)} ამ ${dl?.id ? 'გარიგებისთვის' : 'ბინისთვის'} ხელშეკრულება უკვე შენახულია (${esc(R.date(lastRow.created_at))}). <button type="button" class="link-btn small" id="lease-edit-existing">არსებულის რედაქტირება</button> ან შეავსე ახალი ქვემოთ.</div>` : ''}
         <div class="notice small">${icon('shield', 14)} ქირავნობის შაბლონი (სსკ 531–575). მოიცავს დეპოზიტს, პირგასამტეხლოს და მიღება-ჩაბარების აქტს მრიცხველებით. ხელმოწერამდე გადაამოწმე იურისტთან.</div>
         <div class="form-section"><div class="form-section-title">საიდან შევავსო</div><div class="form-grid">
-          <label class="field"><span class="field-label">გარიგება</span><select id="lease-deal"><option value="">არ არის არჩეული</option>${deals.map(x => `<option value="${x.id}" ${x.id === dl?.id ? 'selected' : ''}>${esc(x.client_name)}${x.apartment_id ? ' · ' + esc(H.aptName(x.apartment_id)) : ''}</option>`).join('')}</select></label>
-          <label class="field"><span class="field-label">ობიექტი</span><select id="lease-apt"><option value="">არ არის არჩეული</option>${apts.map(x => `<option value="${x.id}" ${x.id === a?.id ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select></label>
+          <label class="field"><span class="field-label">გარიგება</span><select id="lease-deal" ${contract ? 'disabled' : ''}><option value="">არ არის არჩეული</option>${deals.map(x => `<option value="${x.id}" ${x.id === dl?.id ? 'selected' : ''}>${esc(x.client_name)}${x.apartment_id ? ' · ' + esc(H.aptName(x.apartment_id)) : ''}</option>`).join('')}</select></label>
+          <label class="field"><span class="field-label">ობიექტი</span><select id="lease-apt" ${contract ? 'disabled' : ''}><option value="">არ არის არჩეული</option>${apts.map(x => `<option value="${x.id}" ${x.id === a?.id ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select></label>
         </div></div>
         <div class="form-section"><div class="form-section-title">გამქირავებელი</div><div class="form-grid">
           ${f('landlord_name', 'სახელი, გვარი', { required: true, err: 'მიუთითე გამქირავებლის სახელი და გვარი.' })}${f('landlord_id', 'პირადი ნომერი', { attrs: 'inputmode="numeric" maxlength="20"' })}
-          ${f('landlord_address', 'მისამართი')}${f('landlord_phone', 'ტელეფონი', { type: 'tel' })}
-          ${f('landlord_bank', 'საბანკო ანგარიში (IBAN)', { span: true, hint: 'საქართველოს ბანკი, თიბისი და ა.შ.' })}
+          ${more('დამატებითი: მისამართი, ტელეფონი, ანგარიში', ['landlord_address', 'landlord_phone', 'landlord_bank'], `${f('landlord_address', 'მისამართი')}${f('landlord_phone', 'ტელეფონი', { type: 'tel' })}
+          ${f('landlord_bank', 'საბანკო ანგარიში (IBAN)', { span: true, hint: 'საქართველოს ბანკი, თიბისი და ა.შ.' })}`)}
         </div></div>
         <div class="form-section"><div class="form-section-title">დამქირავებელი</div><div class="form-grid">
           ${f('tenant_name', 'სახელი, გვარი', { required: true, err: 'მიუთითე დამქირავებლის სახელი და გვარი.' })}${f('tenant_id', 'პირადი ნომერი / პასპორტი', { attrs: 'maxlength="20"' })}
-          ${f('tenant_address', 'მისამართი')}${f('tenant_phone', 'ტელეფონი', { type: 'tel' })}
+          ${more('დამატებითი: მისამართი, ტელეფონი', ['tenant_address', 'tenant_phone'], `${f('tenant_address', 'მისამართი')}${f('tenant_phone', 'ტელეფონი', { type: 'tel' })}`)}
         </div></div>
         <div class="form-section"><div class="form-section-title">ბინა</div><div class="form-grid">
           ${f('property_address', 'ბინის მისამართი', { span: true, required: true, err: 'მიუთითე ბინის მისამართი.' })}
-          ${f('cadastral_code', 'საკადასტრო კოდი', { ph: '00.00.00.000.000.00.000' })}${f('area_sqm', 'ფართობი (მ²)', { type: 'number', attrs: 'min="1" step="0.1"' })}
-          ${f('city', 'ხელშეკრულების დადების ქალაქი')}${f('contract_date', 'ხელშეკრულების თარიღი', { type: 'date' })}
+          ${f('contract_date', 'ხელშეკრულების თარიღი', { type: 'date', required: true, err: 'მიუთითე ხელშეკრულების თარიღი.' })}${f('city', 'ხელშეკრულების დადების ქალაქი')}
+          ${more('დამატებითი: საკადასტრო კოდი, ფართობი', ['cadastral_code', 'area_sqm'], `${f('cadastral_code', 'საკადასტრო კოდი', { ph: '00.00.00.000.000.00.000' })}${f('area_sqm', 'ფართობი (მ²)', { type: 'number', attrs: 'min="1" step="0.1"' })}`)}
         </div></div>
         <div class="form-section"><div class="form-section-title">ვადა, ქირა და პირგასამტეხლო</div><div class="form-grid">
           ${f('start_date', 'დაწყების თარიღი', { type: 'date', required: true, err: 'მიუთითე ხელშეკრულების დაწყების თარიღი.' })}${f('end_date', 'დასრულების თარიღი', { type: 'date', required: true, err: 'მიუთითე ხელშეკრულების დასრულების თარიღი.' })}
           <label class="field"><span class="field-label">ყოველთვიური ქირა</span><div class="input-pair"><input name="rent" type="number" min="0" step="10" required data-error="მიუთითე ქირის ოდენობა." value="${esc(d.rent ?? '')}" />
             <select name="currency" aria-label="ვალუტა"><option value="USD" ${d.currency !== 'GEL' ? 'selected' : ''}>USD</option><option value="GEL" ${d.currency === 'GEL' ? 'selected' : ''}>GEL</option></select></div></label>
-          ${f('pay_day', 'გადახდის ბოლო რიცხვი', { type: 'number', attrs: 'min="1" max="31"', hint: 'თვის რომელ რიცხვამდე (მაგ. 1 ან 5)' })}
           ${f('deposit', 'საგარანტიო დეპოზიტი', { type: 'number', attrs: 'min="0" step="10"', hint: 'ცარიელი ან 0: დეპოზიტის გარეშე' })}
-          ${f('penalty_pct', 'პირგასამტეხლო დღეზე (%)', { type: 'number', attrs: 'min="0" step="0.01" max="5"', hint: 'ნაგულისხმევი: 0.1% დღეში (სსკ 417-420)' })}
-          ${f('notice_days', 'შეწყვეტის შეტყობინება (დღე)', { type: 'number', attrs: 'min="0" max="365"', hint: 'ნაგულისხმევი: 30 დღე' })}
+          ${f('pay_day', 'გადახდის ბოლო რიცხვი', { type: 'number', attrs: 'min="1" max="31"', hint: 'თვის რომელ რიცხვამდე (მაგ. 1 ან 5)' })}
+          ${more('დამატებითი: პირგასამტეხლო და შეწყვეტა', ['penalty_pct', 'notice_days'], `${f('penalty_pct', 'პირგასამტეხლო დღეზე (%)', { type: 'number', attrs: 'min="0" step="0.01" max="5"', hint: 'ნაგულისხმევი: 0.1% დღეში (სსკ 417-420)' })}
+          ${f('notice_days', 'შეწყვეტის შეტყობინება (დღე)', { type: 'number', attrs: 'min="0" max="365"', hint: 'ნაგულისხმევი: 30 დღე' })}`, true)}
         </div></div>
         <div class="form-section"><div class="form-section-title">სარგებლობის პირობები</div><div class="form-grid">
           <label class="field"><span class="field-label">შინაური ცხოველი</span><select name="pets"><option value="no" ${d.pets !== 'yes' ? 'selected' : ''}>დაუშვებელია (თანხმობის გარეშე)</option><option value="yes" ${d.pets === 'yes' ? 'selected' : ''}>დასაშვებია</option></select></label>
           <label class="field"><span class="field-label">კომუნალური გადასახადები</span><select name="utilities" id="lease-util"><option value="tenant" ${d.utilities === 'tenant' ? 'selected' : ''}>იხდის დამქირავებელი</option><option value="landlord" ${d.utilities === 'landlord' ? 'selected' : ''}>შედის ქირაში (იხდის გამქირავებელი)</option><option value="custom" ${d.utilities === 'custom' ? 'selected' : ''}>სხვა პირობა</option></select></label>
           <div class="span-2" id="lease-util-note" ${d.utilities === 'custom' ? '' : 'hidden'}>${f('utilities_note', 'კომუნალურის პირობა', { textarea: true, ph: 'მაგ.: ელექტროენერგიას და გაზს იხდის დამქირავებელი, ინტერნეტს, გამქირავებელი' })}</div>
-          ${f('extra_terms', 'დამატებითი პირობები', { textarea: true, span: true, rows: 2, hint: 'არასავალდებულო. ცალკე მუხლად დაემატება.' })}
+          ${more('დამატებითი პირობები', ['extra_terms'], f('extra_terms', 'დამატებითი პირობები', { textarea: true, span: true, rows: 2, hint: 'არასავალდებულო. ცალკე მუხლად დაემატება.' }))}
         </div></div>
         <div class="form-section"><div class="form-section-title">დანართი N1: მიღება-ჩაბარების აქტი</div><div class="form-grid">
           ${f('keys_count', 'გასაღებების რაოდენობა (კომპლექტი)', { type: 'number', attrs: 'min="1" max="10"', hint: 'ნაგულისხმევი: 2' })}
-          ${f('meter_electricity', 'ელექტროენერგიის მრიცხველი (საწყისი)', { ph: 'მაგ.: 12450 კვტ/სთ' })}
+          ${more('დამატებითი: მრიცხველები და მდგომარეობა', ['meter_electricity', 'meter_gas', 'meter_water', 'inventory_notes', 'acceptance_notes'], `${f('meter_electricity', 'ელექტროენერგიის მრიცხველი (საწყისი)', { ph: 'მაგ.: 12450 კვტ/სთ' })}
           ${f('meter_gas', 'ბუნებრივი აირის მრიცხველი (საწყისი)', { ph: 'მაგ.: 3120 მ³' })}
           ${f('meter_water', 'წყლის მრიცხველი (საწყისი)', { ph: 'მაგ.: 450 მ³' })}
           ${f('inventory_notes', 'ავეჯი, ტექნიკა და მდგომარეობა', { textarea: true, span: true, rows: 2, ph: 'ტელევიზორი, მაცივარი, სარეცხი მანქანა, კონდიციონერი... (დატოვე ცარიელი ზოგადი ტექსტისთვის)' })}
-          ${f('acceptance_notes', 'შენიშვნები მიღებისას / ხარვეზები', { textarea: true, span: true, rows: 2, ph: 'არსებული ხარვეზები (თუ არის), ან დატოვე ცარიელი' })}
+          ${f('acceptance_notes', 'შენიშვნები მიღებისას / ხარვეზები', { textarea: true, span: true, rows: 2, ph: 'არსებული ხარვეზები (თუ არის), ან დატოვე ცარიელი' })}`)}
         </div></div>`,
-      onOpen: (form) => {
+      onOpen: (form, dlg) => {
+        $('#lease-edit-existing', form)?.addEventListener('click', () => { dlg.close(); setTimeout(() => App.openLeaseAgreementGenerator(null, null, lastRow), 0); });
         const refill = () => {
           dl = H.deal($('#lease-deal', form)?.value) || null;
           a = H.apt($('#lease-apt', form)?.value) || null;
@@ -1931,18 +1942,23 @@
         util?.addEventListener('change', () => { $('#lease-util-note', form).hidden = util.value !== 'custom'; });
       },
       onSubmit: async (_f, v) => {
-        if (v.start_date && v.end_date && v.end_date <= v.start_date) throw new Error('დასრულების თარიღი დაწყების თარიღის შემდეგ უნდა იყოს.');
+        if (!v.contract_date) throw new Error('მიუთითე ხელშეკრულების თარიღი.');
+        if (!(Number(v.rent) > 0)) throw new Error('მიუთითე ქირის ოდენობა.');
+        if (v.end_date <= v.start_date) throw new Error('დასრულების თარიღი დაწყების თარიღის შემდეგ უნდა იყოს.');
         const data = { ...v, rent: Number(v.rent), deposit: v.deposit === '' ? '' : Number(v.deposit) };
-        const row = await App.insertOnce('contracts', { id: R.uuid(), organization_id: S.org.id, apartment_id: a?.id || null, deal_id: dl?.id || null, data, created_by: S.user.id });
+        // Editing sends only `data`: the owner, creator and links of a saved contract never change.
+        const row = contract
+          ? await q(sb.from('contracts').update({ data }).eq('id', contract.id).select().single())
+          : await App.insertOnce('contracts', { id: R.uuid(), organization_id: S.org.id, apartment_id: a?.id || null, deal_id: dl?.id || null, data, created_by: S.user.id });
         App.invalidateDocs?.();
         try { localStorage.setItem('rigzea_lease_done', '1'); } catch { /* private mode */ }
-        toast('ხელშეკრულება შენახულია', { type: 'success' });
-        setTimeout(() => openLeasePreview(row.data || data, a), 0);
+        toast(contract ? 'ცვლილებები შენახულია' : 'ხელშეკრულება შენახულია', { type: 'success' });
+        setTimeout(() => openLeasePreview(row.data || data, a, row), 0);
       },
     });
   };
 
-  function openLeasePreview(d, a) {
+  function openLeasePreview(d, a, row = null) {
     let mode = (window.RLang && window.RLang.lang === 'en') ? 'en' : 'dual';
     const titleName = a?.name || d.property_address || 'ბინა';
     return R.dialog({
@@ -1955,11 +1971,13 @@
           <div class="seg" role="radiogroup" aria-label="ენა">
             ${[['dual', 'ორენოვანი'], ['ka', 'ქართული'], ['en', 'English']].map(([k, l]) => `<label><input type="radio" name="lease-mode" value="${k}" ${k === mode ? 'checked' : ''} /><span>${l}</span></label>`).join('')}
           </div>
+          ${row ? `<button type="button" class="btn btn-secondary" id="btn-edit-lease">${icon('edit', 16)} რედაქტირება</button>` : ''}
           <button type="button" class="btn btn-primary" id="btn-print-lease">${icon('printer', 16)} ბეჭდვა / PDF</button>
         </div>
         <p class="small muted lease-hint">${icon('alert', 13)} შაბლონი არ ცვლის იურიდიულ კონსულტაციას. ხელმოწერამდე ტექსტი იურისტს აჩვენე.</p>
         <div class="lease-paper" id="lease-paper">${leaseHtml(d, mode)}</div>`,
-      onOpen: (form) => {
+      onOpen: (form, dlg) => {
+        $('#btn-edit-lease', form)?.addEventListener('click', () => { dlg.close(); setTimeout(() => App.openLeaseAgreementGenerator(null, null, row), 0); });
         $$('input[name="lease-mode"]', form).forEach(i => i.addEventListener('change', () => { mode = i.value; $('#lease-paper', form).innerHTML = leaseHtml(d, mode); }));
         $('#btn-print-lease', form).onclick = () => printLease(d, mode, `ხელშეკრულება · ${titleName}`);
       },

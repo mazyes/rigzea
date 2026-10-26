@@ -54,7 +54,7 @@ Failed e2e tests save a screenshot to the OS temp dir (`rigzea-fail-<n>.png`).
 ## Deploy and environment
 
 Vercel env vars (Production): `SUPABASE_SERVICE_ROLE_KEY`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`,
-`CRON_SECRET`, `RESEND_API_KEY`. Optional: `FIRECRAWL_API_KEY` (lets the listing import read MyHome.ge and SS.ge, which block Vercel's datacenter IPs with a Cloudflare challenge; without it the import shows the manual-entry message), `APP_BASE_URL` (default https://rigzea.com), `EMAIL_FROM`,
+`CRON_SECRET`, `RESEND_API_KEY`, `KISA_CLIENT_ID` + `KISA_CLIENT_SECRET` (card checkout; without them it answers `payment_provider_not_configured`). Optional: `KISA_API_URL` (default https://www.kisa.ge), `FIRECRAWL_API_KEY` (lets the listing import read MyHome.ge and SS.ge, which block Vercel's datacenter IPs with a Cloudflare challenge; without it the import shows the manual-entry message), `APP_BASE_URL` (default https://rigzea.com), `EMAIL_FROM`,
 `SUPABASE_URL` + `SUPABASE_ANON_KEY` (set both or neither; otherwise read from `rigzea/js/config.js`).
 List names with `npx vercel env ls`. See `.env.example`.
 

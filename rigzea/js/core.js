@@ -215,7 +215,7 @@
     sparkle: '<path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2 2M16 16l2 2M6 18l2-2M16 8l2-2"/>',
     logo: '<g transform="translate(12 11.5) scale(1.2) translate(-12 -11.5)"><path d="M4 12L12 5L16.5 9"/><path d="M6.5 6.5V9.8"/><path d="M8.5 14.5L12 18L20 10"/></g>',
     eye: '<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>',
-    whatsapp: '<path d="M17.6 6.3a9 9 0 0 0-14.7 10L2 22l5.8-1.5a9 9 0 0 0 4.2 1.1h.1a9 9 0 0 0 9-9 9 9 0 0 0-3.5-6.3zM12 19.9a7.5 7.5 0 0 1-3.8-1l-.3-.2-3.4.9.9-3.3-.2-.4a7.5 7.5 0 1 1 13.9-3.9 7.5 7.5 0 0 1-7.1 7.9z"/>',
+    whatsapp: '<path fill="currentColor" stroke="none" d="M17.5 6.5A7.8 7.8 0 0 0 12 4.2C7.7 4.2 4.2 7.7 4.2 12c0 1.4.4 2.7 1.1 3.9L4 20l4.2-1.1c1.1.6 2.4 1 3.8 1 4.3 0 7.8-3.5 7.8-7.8 0-2.1-.8-4-2.3-5.6zM12 18.5c-1.2 0-2.4-.3-3.4-.9l-.2-.1-2.5.7.7-2.5-.2-.3c-.7-1-1.1-2.2-1.1-3.4 0-3.6 2.9-6.5 6.5-6.5 1.7 0 3.4.7 4.6 1.9s1.9 2.9 1.9 4.6c0 3.6-2.9 6.5-6.5 6.5zm3.6-4.9c-.2-.1-1.2-.6-1.4-.7-.2-.1-.3-.1-.5.1s-.5.7-.6.8c-.1.2-.3.2-.5.1-.2-.1-.9-.3-1.8-1.1-.7-.6-1.1-1.4-1.3-1.6-.1-.2 0-.4.1-.5.1-.1.2-.2.3-.4.1-.1.1-.2.2-.4 0-.1 0-.3 0-.4s-.5-1.2-.7-1.6c-.2-.4-.4-.3-.5-.3h-.5c-.2 0-.5.1-.7.3-.2.3-.9.9-.9 2.1s.9 2.4 1 2.6c.1.2 1.8 2.8 4.4 3.9.6.3 1.1.4 1.5.6.6.2 1.2.2 1.7.1.5-.1 1.6-.7 1.8-1.3.2-.7.2-1.2.2-1.3-.1-.2-.2-.3-.4-.4z"/>',
     telegram: '<path d="m22 2-20 8 7 3 2 7 4-5 5 4 2-17zM9 13l9-7-7.5 8.5L9 18v-5z"/>',
     shield: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
     card: '<rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/>',
@@ -225,7 +225,7 @@
     bolt: '<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>',
     spark: '<path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/>',
     infinity: '<path d="M12 12c-2-2.67-4-4-6-4a4 4 0 1 0 0 8c2 0 4-1.33 6-4Zm0 0c2 2.67 4 4 6 4a4 4 0 0 0 0-8c-2 0-4 1.33-6 4Z"/>',
-    handshake: '<path d="m11 17 2 2a1 1 0 0 0 1.4 0l4.3-4.3a1 1 0 0 0 0-1.4l-3-3"/><path d="m18 10 3-3a2 2 0 0 0 0-2.8l-1.2-1.2a2 2 0 0 0-2.8 0l-5 5"/><path d="m2 14 5 5a2 2 0 0 0 2.8 0l1.2-1.2a2 2 0 0 0 0-2.8l-3-3"/>',
+    handshake: '<g transform="scale(0.03)" fill="currentColor" stroke="none"><path d="M593.5 96Q603.5 95 607.5 100L791 283.5 799 293.5 800 302.5 796 310.5 718.5 388 710.5 392 705.5 392Q695.9 389.1 690.5 382L658 416.5Q649.6 428.1 645 443.5L631 464.5 590 507.5Q598 514.5 602 525.5L604 532.5 605 543.5 602 558.5Q597.5 570.5 588.5 578L577 585.5 582 602.5 582 613.5Q578.2 635.2 563.5 646 Q552.6 656.1 531.5 656L520.5 654 512.5 650Q507.2 660.7 498.5 668L481.5 677 476.5 678 460.5 678 449.5 674Q444.4 686.4 434.5 694 Q422.8 704.8 399.5 704L387.5 701 374.5 693 184 502.5 169 480.5Q163.3 463.2 154 449.5L122.5 417 111.5 426 101.5 427 94.5 423 4 332.5Q-1 328.5 0 318.5L5 309.5 192.5 122Q196.5 117 206.5 118L214.5 122 305 212.5Q310 216.5 309 226.5L307 231.5 298 241.5 308.5 251Q314.9 245.9 324.5 244L456.5 244 457.5 243 466.5 243 478.5 239 489.5 232 515 206.5 507 197.5 504 190.5 504 186.5 508 177.5 585.5 100 593.5 96ZM597 135L544 189 709 352 761 300 597 135ZM204 157L39 322 106 388 270 224 204 157ZM539 229L508 259Q493 271 471 275L466 276 330 276 328 277 323 283Q323 297 330 304Q337 312 350 314L393 314 396 315 401 318 446 363 457 365 465 365 466 366 489 366 490 365 502 364 514 360 528 389Q510 398 482 398L567 484 604 447 614 433 626 407 633 396 668 360 539 229ZM276 264L145 394 177 427 183 435 192 451 200 470 207 480 398 670 403 672 408 672 416 668 420 661Q422 653 419 650L317 548 314 542Q313 533 316 529Q320 523 328 521L333 521 341 525 437 621 461 644 466 646Q473 647 477 644 483 636Q485 627 482 624L374 516 371 510 371 503 375 494 384 490Q393 489 398 493L525 620 530 623 542 622 548 616 550 609 548 601L427 480L424 473 424 468L427 461L438 454Q447 454 452 458L549 555 553 557Q562 559 566 555L572 547Q574 538 570 534L383 346 347 346Q345 344 341 345 325 342 315 333 302 323 295 308L291 293 291 280 276 264Z"/><path d="M198.5 207Q210.6 206.9 215 214.5Q218.7 218.8 217 228.5L215 232.5L186.5 261Q182.2 264.7 172.5 263L163 255.5Q160.1 251.9 161 244.5L165 236.5L190.5 211 198.5 207Z"/><path d="M115.5 289Q129.5 287.5 134 295.5Q137.1 299.9 136 308.5L133 314.5L114.5 333Q110.2 336.7 100.5 335L91 327.5Q88.1 323.9 89 316.5L94 307.5L109.5 292 115.5 289Z"/></g>',
     contract: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="m9 14.5 2 2 4-4.5"/>',
   };
   const icon = (name, size = 18) => `<svg class="icon" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${name === 'logo' ? '2.4' : '1.8'}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name] || ''}</svg>`;
@@ -515,6 +515,26 @@
     pill.style.height = b.h + 'px';
     pill.style.opacity = '1';
   }
+  // The phone bar's tabs change width while they open and close, so the pill follows the new tab's live box every frame
+  // and the blend progress comes from that tab's own width: it uses the very same curve and is on the tab at the end.
+  function glidePill(root, pill, on) {
+    cancelAnimationFrame(root._pillRaf);
+    const live = () => ({ x: on.offsetLeft, y: on.offsetTop, w: on.offsetWidth, h: on.offsetHeight });
+    const from = root._pillBox, w0 = on.offsetWidth;
+    pill.classList.add('pill-snap');
+    if (!from || calm()) { root._pillBox = live(); placePill(pill, root._pillBox); return; }
+    const cs = getComputedStyle(root), cols = root.style.gridTemplateColumns.split(' ').map(parseFloat);
+    const inner = root.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - (parseFloat(cs.columnGap) || 0) * (cols.length - 1);
+    const w1 = inner * cols[[...root.children].filter(c => c !== pill).indexOf(on)] / cols.reduce((a, b) => a + b, 0), t0 = performance.now();
+    const tick = () => {
+      if (!on.isConnected) return;
+      const b = live(), p = Math.abs(w1 - w0) > 1 ? Math.min(1, Math.max(0, (b.w - w0) / (w1 - w0))) : 1;
+      root._pillBox = { x: from.x + (b.x - from.x) * p, y: b.y, w: from.w + (b.w - from.w) * p, h: b.h };
+      placePill(pill, root._pillBox);
+      if (performance.now() - t0 < 700 && p < 1) root._pillRaf = requestAnimationFrame(tick); else { root._pillBox = live(); placePill(pill, root._pillBox); }
+    };
+    tick();
+  }
   function syncPills() {
     pillQueued = false;
     const force = pillForce; pillForce = false;
@@ -537,11 +557,12 @@
           void pill.offsetWidth; // commit the starting spot, then let the move below animate
           pill.classList.remove('pill-snap');
         }
-        placePill(pill, box);
+        if (rootSel === '.bottom-nav') glidePill(root, pill, on);
+        else placePill(pill, box);
         pillMemory.set(key, box);
         if (root._pillOn) pillRo?.unobserve(root._pillOn);
         root._pillOn = on;
-        pillRo?.observe(on);
+        if (rootSel !== '.bottom-nav') pillRo?.observe(on);
       });
     }
   }
@@ -557,6 +578,11 @@
     schedulePills(true);
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initPills); else initPills();
+
+  // Prevent unintended zoom gestures in standalone PWA / mobile browser
+  document.addEventListener('gesturestart', (e) => e.preventDefault(), { passive: false });
+  document.addEventListener('gesturechange', (e) => e.preventDefault(), { passive: false });
+  document.addEventListener('gestureend', (e) => e.preventDefault(), { passive: false });
 
   // ---------------------------------------------------------------------------
   // Pictures for profiles and logos: checked by content (not just the file name), decoded in the browser and

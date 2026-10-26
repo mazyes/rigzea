@@ -9,6 +9,13 @@
 
   const ROLES = ['owner', 'admin', 'manager', 'agent'];
   const EMOJI = ['👍', '❤️', '😂', '🎉', '🙏', '👀'];
+  const PICKER = ['😀','😃','😄','😁','😆','😅','😂','🤣','😊','😍','🥰','😘','😎','🤔','😢','😭','😡','🥳','👍','👎','👏','🙌','🙏','❤️','🧡','💛','💚','💙','💜','🖤','💯','🔥','✨','🎉','👀','💪','🤝','✅','❌','🏠','🏡','🔑','📍','📷','📎','💬','👋','☀️'];
+  const EMOJI_ICON = '<svg class="chat-emoji-svg" width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">'
+    + '<circle cx="12" cy="12" r="9.5" stroke="currentColor" stroke-width="2"/>'
+    + '<line x1="8.5" y1="8.5" x2="8.5" y2="11.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>'
+    + '<line x1="15.5" y1="8.5" x2="15.5" y2="11.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>'
+    + '<path d="M7.5 14.5c1.2 2.8 7.8 2.8 9 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>'
+    + '</svg>';
   const PAGE = 50;
   const MAX_FILES = 5, MAX_BYTES = 10 * 1024 * 1024;
   const FILE_OK = /^(image\/(png|jpe?g|webp|gif)|application\/pdf|application\/(msword|vnd\.openxmlformats-officedocument\.(wordprocessingml\.document|spreadsheetml\.sheet|presentationml\.presentation)|vnd\.ms-excel)|text\/plain)$/;
@@ -17,6 +24,7 @@
   const st = { org: null, channels: [], members: [], msgs: new Map(), reacts: new Map(), hasMore: new Map(), unread: new Map(), active: null, ready: false, loading: null, openedAt: new Map() };
   const draft = { text: '', files: [], replyTo: null, editing: null };
   const urlCache = new Map(); // storage path -> { url, until }
+  const reacting = new Set();
   const me = () => S.user.id;
   const canChat = () => ROLES.includes(S.member?.role);
 
@@ -29,7 +37,15 @@
     return `<span class="avatar avatar-sm ${cls}">${p.avatar ? `<img src="${esc(p.avatar)}" alt="" />` : esc(p.name.trim().charAt(0).toUpperCase())}</span>`;
   };
   const chanOf = (id) => st.channels.find(c => c.id === id);
-  const otherOf = (ch) => st.members.filter(m => m.channel_id === ch.id && m.user_id !== me()).map(m => m.user_id)[0] || null;
+  const otherOf = (ch) => {
+    const fromMembers = st.members.filter(m => m.channel_id === ch.id && m.user_id !== me()).map(m => m.user_id)[0];
+    if (fromMembers) return fromMembers;
+    if (ch.kind === 'direct' && ch.dm_key) {
+      const parts = ch.dm_key.split(':');
+      return parts.find(u => u !== me()) || null;
+    }
+    return null;
+  };
   const titleOf = (ch) => (ch.kind === 'company' ? 'კომპანიის ჩატი' : person(otherOf(ch)).name);
   const msgsOf = (id) => st.msgs.get(id) || [];
   const lastOf = (id) => { const l = msgsOf(id); return l[l.length - 1] || null; };
@@ -54,7 +70,7 @@
   const linkify = (text) => esc(text).replace(/(https?:\/\/[^\s<]+[^\s<.,;:!?)\]])/g, (u) => {
     const raw = u.replace(/&amp;/g, '&');
     const safe = R.safeUrl(raw);
-    return safe ? `<a href="${esc(safe)}" target="_blank" rel="noopener noreferrer">${u}</a>` : u;
+    return safe ? `<a href="${safe}" target="_blank" rel="noopener noreferrer">${u}</a>` : u;
   });
 
   // ---- data -------------------------------------------------------------------------------------------------------
@@ -74,8 +90,8 @@
       const have = msgsOf(ch.id), got = fresh.get(ch.id) || [];
       // keep older pages already loaded, replace the recent window with the server's version
       const oldest = got[0]?.created_at;
-      st.msgs.set(ch.id, [...(oldest ? have.filter(m => m.created_at < oldest) : []), ...got]);
-      if (!st.hasMore.has(ch.id)) st.hasMore.set(ch.id, got.length >= PAGE);
+      st.msgs.set(ch.id, got.length ? [...have.filter(m => !m._pending && !m._failed && m.created_at < oldest), ...got, ...have.filter(m => m._pending || m._failed)] : have);
+      if (!st.hasMore.has(ch.id)) st.hasMore.set(ch.id, true); // the global recent window cannot tell whether a channel has older messages
     }
     st.unread = new Map(unread.map(u => [u.channel_id, Number(u.unread)]));
     st.ready = true;
@@ -86,8 +102,8 @@
   async function loadReactions(ids) {
     const need = ids.filter(id => !st.reacts.has(id));
     if (!need.length) return;
+    const rows = await q(sb.from('chat_reactions').select('*').in('message_id', need));
     need.forEach(id => st.reacts.set(id, []));
-    const rows = await q(sb.from('chat_reactions').select('*').in('message_id', need)).catch(() => []);
     rows.forEach(r => st.reacts.get(r.message_id)?.push(r));
   }
 
@@ -214,10 +230,12 @@
     const head = $('#chat-head');
     if (!head) return;
     if (!ch) { head.innerHTML = ''; return; }
-    const sub = ch.kind === 'company' ? `${st.members.filter(m => m.channel_id === ch.id).length} წევრი` : esc(L_role(person(otherOf(ch)).role));
+    const otherId = otherOf(ch);
+    const otherRole = otherId ? person(otherId).role : null;
+    const sub = ch.kind === 'company' ? `${st.members.filter(m => m.channel_id === ch.id).length} წევრი` : esc(L_role(otherRole) || '');
     head.innerHTML = `<a class="icon-btn chat-back" href="#/chat" aria-label="უკან">${icon('back', 18)}</a>
-      ${ch.kind === 'company' ? `<span class="avatar chat-av-company">${icon('team', 18)}</span>` : avatar(otherOf(ch), 'avatar-lg')}
-      <div class="chat-head-text"><strong>${esc(titleOf(ch))}</strong><small>${sub}</small></div>`;
+      ${ch.kind === 'company' ? `<span class="avatar chat-av-company">${icon('team', 18)}</span>` : avatar(otherId, 'avatar-lg')}
+      <div class="chat-head-text"><strong>${esc(titleOf(ch))}</strong>${sub ? `<small>${sub}</small>` : ''}</div>`;
   }
   const L_role = (r) => R.L?.role?.[r] || '';
 
@@ -226,7 +244,7 @@
   const toBottom = (smooth = false) => { const s = scroller(); if (s) s.scrollTo({ top: s.scrollHeight, behavior: smooth && !R.calm() ? 'smooth' : 'auto' }); };
   const nearBottom = () => { const s = scroller(); return !s || s.scrollHeight - s.scrollTop - s.clientHeight < 90; };
 
-  function drawConversation({ keepScroll = false } = {}) {
+  function drawConversation({ keepScroll = false, prepended = false } = {}) {
     const ch = chanOf(st.active);
     const root = $('#chat-root');
     if (!root) return;
@@ -235,10 +253,11 @@
     const box = $('#chat-msgs'), comp = $('#chat-composer');
     if (!ch) { box.innerHTML = '<div class="chat-empty">' + icon('chat', 34) + '<p>აირჩიე საუბარი</p></div>'; comp.hidden = true; return; }
     comp.hidden = false;
-    const prevTop = box.scrollTop, prevH = box.scrollHeight;
+    const wasNearBottom = nearBottom(), prevTop = box.scrollTop, prevH = box.scrollHeight;
     const more = st.hasMore.get(ch.id) ? `<button type="button" class="chat-older" id="chat-older">უფრო ძველი შეტყობინებები</button>` : '';
     box.innerHTML = `${more}${messagesHtml(ch)}`;
-    if (keepScroll) box.scrollTop = prevTop + (box.scrollHeight - prevH); else toBottom();
+    if (keepScroll && (!wasNearBottom || prepended)) box.scrollTop = prevTop + (box.scrollHeight - prevH);
+    else toBottom();
     hydrateFiles(box);
     drawDraft();
   }
@@ -247,7 +266,8 @@
   function appendMessage(m) {
     const ch = chanOf(m.channel_id);
     const box = scroller();
-    if (!ch || !box || st.active !== ch.id) return;
+    if (!ch || !box || st.active !== ch.id) return false;
+    const follow = nearBottom();
     const list = msgsOf(ch.id), i = list.findIndex(x => x.id === m.id);
     const prev = list[i - 1] || null;
     if (!prev || dayKey(prev.created_at) !== dayKey(m.created_at)) box.insertAdjacentHTML('beforeend', `<div class="chat-day"><span>${esc(dayLabel(m.created_at))}</span></div>`);
@@ -255,8 +275,9 @@
     const el = box.lastElementChild;
     el.classList.add('msg-in');
     hydrateFiles(el);
-    if (stick || m.sender_id === me()) toBottom(true);
+    if (follow || m.sender_id === me()) toBottom();
     else $('#chat-jump')?.classList.add('is-on');
+    return follow;
   }
   function patchMessage(m) {
     const ch = chanOf(m.channel_id);
@@ -265,7 +286,10 @@
     const list = msgsOf(ch.id), prev = list[list.findIndex(x => x.id === m.id) - 1] || null;
     const tmp = document.createElement('div');
     tmp.innerHTML = msgHtml(m, prev, ch);
+    const box = scroller(), above = el.getBoundingClientRect().top < box.getBoundingClientRect().top;
+    const height = box.scrollHeight;
     el.replaceWith(tmp.firstElementChild);
+    if (above) box.scrollTop += box.scrollHeight - height;
     hydrateFiles(scroller());
   }
 
@@ -329,7 +353,7 @@
   }
   async function retry(id) {
     const msg = msgsOf(st.active).find(x => x.id === id);
-    if (!msg) return;
+    if (!msg || msg._pending || !msg._failed) return;
     msg._failed = false; msg._pending = true; patchMessage(msg);
     await deliver(msg);
   }
@@ -349,17 +373,29 @@
     if (error) { Object.assign(msg, old); patchMessage(msg); drawList(); toast(R.friendlyError(error), { type: 'error' }); }
   }
   async function toggleReaction(id, emoji) {
+    const key = id + ':' + emoji;
+    if (reacting.has(key)) return;
     const msg = msgsOf(st.active).find(x => x.id === id);
     if (!msg || msg.deleted_at) return;
+    reacting.add(key);
     const list = st.reacts.get(id) || (st.reacts.set(id, []), st.reacts.get(id));
     const mine = list.findIndex(r => r.user_id === me() && r.emoji === emoji);
     const row = { message_id: id, channel_id: msg.channel_id, organization_id: msg.organization_id, user_id: me(), emoji };
     if (mine >= 0) list.splice(mine, 1); else list.push({ ...row, created_at: new Date().toISOString() });
     patchMessage(msg);
-    const { error } = mine >= 0
-      ? await sb.from('chat_reactions').delete().eq('message_id', id).eq('user_id', me()).eq('emoji', emoji)
-      : await sb.from('chat_reactions').insert(row);
-    if (error && error.code !== '23505') { toast(R.friendlyError(error), { type: 'error' }); await loadReactions([]); }
+    let error;
+    try {
+      ({ error } = mine >= 0
+        ? await sb.from('chat_reactions').delete().eq('message_id', id).eq('user_id', me()).eq('emoji', emoji)
+        : await sb.from('chat_reactions').insert(row));
+    } catch (e) { error = e; }
+    reacting.delete(key);
+    if (error && error.code !== '23505') {
+      if (mine >= 0) list.splice(mine, 0, row);
+      else { const i = list.findIndex(r => r.user_id === me() && r.emoji === emoji); if (i >= 0) list.splice(i, 1); }
+      patchMessage(msg);
+      toast(R.friendlyError(error), { type: 'error' });
+    }
   }
 
   // message menu: reply, react, edit, copy, delete (shown according to who the person is; the database decides too)
@@ -378,8 +414,11 @@
       ${own || admin ? `<button type="button" role="menuitem" class="is-danger" data-m="delete">${icon('trash', 16)} წაშლა</button>` : ''}`;
     document.body.appendChild(el);
     const r = anchor.getBoundingClientRect(), w = el.offsetWidth, h = el.offsetHeight;
-    el.style.left = Math.max(8, Math.min(innerWidth - w - 8, r.right - w)) + 'px';
-    el.style.top = (r.bottom + h + 8 > innerHeight ? Math.max(8, r.top - h - 4) : r.bottom + 4) + 'px';
+    const view = window.visualViewport;
+    const left = view?.offsetLeft || 0, top = view?.offsetTop || 0;
+    const right = left + (view?.width || innerWidth), bottom = top + (view?.height || innerHeight);
+    el.style.left = Math.max(left + 8, Math.min(right - w - 8, r.right - w)) + 'px';
+    el.style.top = (r.bottom + h + 8 > bottom ? Math.max(top + 8, r.top - h - 4) : r.bottom + 4) + 'px';
     requestAnimationFrame(() => el.classList.add('is-open'));
     el.addEventListener('click', (e) => {
       const b = e.target.closest('button');
@@ -401,7 +440,10 @@
   }
 
   async function newChat() {
-    const people = (S.data.members || []).filter(m => m.user_id !== me() && ROLES.includes(m.role));
+    const seen = new Set();
+    const people = (S.data?.members || [])
+      .filter(m => m.user_id && m.user_id !== me() && ROLES.includes(m.role) && !seen.has(m.user_id) && seen.add(m.user_id))
+      .sort((a, b) => (a.display_name || '').localeCompare(b.display_name || ''));
     const dlg = R.dialog({
       title: 'ახალი შეტყობინება', sheet: true,
       body: `<div class="ios-list"><div class="ios-group">${people.map(m => `<button type="button" class="ios-row" data-person="${m.user_id}">${avatar(m.user_id)}<span class="ios-label"><strong>${esc(m.display_name || 'უსახელო')}</strong><small class="muted">${esc(L_role(m.role))}</small></span>${icon('chevronRight', 16)}</button>`).join('') || '<p class="empty-inline">სხვა წევრი ჯერ არ არის.</p>'}</div></div>`,
@@ -430,7 +472,7 @@
         if (list.some(x => x.id === m.id)) return; // our own message, already shown
         st.msgs.set(m.channel_id, [...list, m]);
         const viewing = st.active === m.channel_id && document.visibilityState === 'visible' && !!$('#chat-root');
-        if (viewing) { appendMessage(m); if (m.sender_id !== me() && nearBottom()) { sb.rpc('chat_mark_read', { p_channel: m.channel_id }); } else if (m.sender_id !== me()) st.unread.set(m.channel_id, (st.unread.get(m.channel_id) || 0) + 1); }
+        if (viewing) { const followed = appendMessage(m); if (m.sender_id !== me() && followed) { sb.rpc('chat_mark_read', { p_channel: m.channel_id }); } else if (m.sender_id !== me()) st.unread.set(m.channel_id, (st.unread.get(m.channel_id) || 0) + 1); }
         else if (m.sender_id !== me()) st.unread.set(m.channel_id, (st.unread.get(m.channel_id) || 0) + 1);
         publishUnread(); drawList();
       } else if (d.eventType === 'UPDATE') {
@@ -439,23 +481,24 @@
       }
     } else if (d.table === 'chat_reactions') {
       const r = d.eventType === 'DELETE' ? d.old : d.new;
-      if (!r || r.user_id === me()) return;
+      if (!r) return;
       const list = st.reacts.get(r.message_id);
       if (!list) return;
       if (d.eventType === 'INSERT') { if (!list.some(x => x.user_id === r.user_id && x.emoji === r.emoji)) list.push(r); }
       else { const i = list.findIndex(x => x.user_id === r.user_id && x.emoji === r.emoji); if (i >= 0) list.splice(i, 1); }
-      const msg = Object.values(Object.fromEntries(st.msgs)).flat().find(x => x.id === r.message_id);
+      const msg = [...st.msgs.values()].flat().find(x => x.id === r.message_id);
       if (msg) patchMessage(msg);
     } else if (d.table === 'chat_channel_members') {
       const cm = d.new;
       if (!cm?.channel_id) return;
       const i = st.members.findIndex(x => x.channel_id === cm.channel_id && x.user_id === cm.user_id);
       if (i >= 0) st.members[i] = { ...st.members[i], ...cm }; else st.members.push(cm);
+      if (!chanOf(cm.channel_id)) { load().then(drawList); }
       if (cm.user_id !== me() && st.active === cm.channel_id) { const last = [...msgsOf(cm.channel_id)].reverse().find(x => x.sender_id === me() && !x.deleted_at); if (last) patchMessage(last); } // the "seen" mark moves
     }
   }
   window.addEventListener('rigzea-chat', onRealtime);
-  window.addEventListener('rigzea-refresh', () => { if ($('#chat-root')) load().then(() => { drawList(); drawConversation({ keepScroll: true }); }); });
+  window.addEventListener('rigzea-refresh', () => { if ($('#chat-root')) load().then(() => { drawList(); drawConversation({ keepScroll: true }); }).catch(err => toast(R.friendlyError(err), { type: 'error' })); });
 
   // ---- the page -----------------------------------------------------------------------------------------------------
   async function openChannel(id) {
@@ -467,14 +510,15 @@
     if (!ch) return;
     // load the newest page if only a thin slice is in memory, and the reactions for what is shown
     if (msgsOf(id).length < PAGE && st.hasMore.get(id) !== false) {
-      const rows = await q(sb.from('chat_messages').select('*').eq('channel_id', id).order('created_at', { ascending: false }).limit(PAGE)).catch(() => []);
+      const rows = await q(sb.from('chat_messages').select('*').eq('channel_id', id).order('created_at', { ascending: false }).limit(PAGE));
       st.hasMore.set(id, rows.length >= PAGE);
       const have = new Map(msgsOf(id).map(m => [m.id, m]));
       rows.forEach(m => have.set(m.id, m));
       st.msgs.set(id, [...have.values()].sort((a, b) => a.created_at.localeCompare(b.created_at)));
     }
-    await loadReactions(msgsOf(id).map(m => m.id));
-    if (st.active === id) { drawConversation(); markRead(id); }
+    try { await loadReactions(msgsOf(id).map(m => m.id)); }
+    catch (err) { toast(R.friendlyError(err), { type: 'error' }); }
+    if (st.active === id) { drawConversation({ keepScroll: true }); markRead(id); }
   }
 
   function build() {
@@ -495,8 +539,10 @@
             <button type="button" class="icon-btn" id="chat-attach" aria-label="ფაილის მიმაგრება" title="ფაილის მიმაგრება">${icon('paperclip', 20)}</button>
             <input type="file" id="chat-file" hidden multiple accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt" />
             <textarea id="chat-input" rows="1" maxlength="4000" placeholder="დაწერე შეტყობინება" aria-label="შეტყობინება"></textarea>
+            <button type="button" class="icon-btn chat-emoji-toggle" id="chat-emoji-toggle" aria-label="ემოჯი" aria-expanded="false" aria-controls="chat-emoji">${EMOJI_ICON}</button>
             <button type="submit" class="chat-send" id="chat-send" aria-label="გაგზავნა" disabled>${icon('send', 18)}</button>
           </div>
+          <div class="chat-emoji-picker" id="chat-emoji" hidden role="group" aria-label="ემოჯი">${PICKER.map(e => `<button type="button" data-emoji="${e}" aria-label="${e}">${e}</button>`).join('')}</div>
         </form>
       </section>
     </div>`;
@@ -507,9 +553,22 @@
   function fit() {
     const root = $('#chat-root');
     if (!root) return;
-    root.style.height = innerWidth > 900 ? Math.max(460, innerHeight - (root.getBoundingClientRect().top + window.scrollY) - 20) + 'px' : '';
+    if (innerWidth > 900) {
+      root.style.height = Math.max(460, innerHeight - (root.getBoundingClientRect().top + window.scrollY) - 20) + 'px';
+      root.style.removeProperty('--chat-visible-top');
+      root.style.removeProperty('--chat-visible-height');
+      return;
+    }
+    root.style.height = '';
+    const view = window.visualViewport;
+    const top = document.querySelector('.shell .topbar')?.getBoundingClientRect().bottom || 0;
+    const visibleTop = Math.max(top, view?.offsetTop || 0);
+    root.style.setProperty('--chat-visible-top', visibleTop + 'px');
+    root.style.setProperty('--chat-visible-height', Math.max(0, (view?.height || innerHeight) + (view?.offsetTop || 0) - visibleTop) + 'px');
   }
   window.addEventListener('resize', fit);
+  window.visualViewport?.addEventListener('resize', fit);
+  window.visualViewport?.addEventListener('scroll', fit);
 
   function bind() {
     const root = $('#chat-root');
@@ -518,6 +577,7 @@
     $('#chat-head').addEventListener('click', (e) => { if (e.target.closest('.chat-back')) { e.preventDefault(); App.go('#/chat'); } });
     $('#chat-find').addEventListener('input', drawList);
     $('#chat-list').addEventListener('click', (e) => {
+      if (e.target.closest('[data-chat-retry]')) { st.ready = false; App.views.chat({ id: st.active }); return; }
       const a = e.target.closest('[data-ch]');
       if (!a) return;
       e.preventDefault();
@@ -532,7 +592,8 @@
     $('#chat-jump').onclick = () => toBottom(true);
     box.addEventListener('click', async (e) => {
       const t = e.target;
-      if (t.closest('#chat-older')) { const btn = t.closest('#chat-older'); btn.disabled = true; await loadOlder(st.active); drawConversation({ keepScroll: true }); return; }
+      if (t.closest('[data-chat-retry]')) { st.ready = false; App.views.chat({ id: st.active }); return; }
+      if (t.closest('#chat-older')) { const btn = t.closest('#chat-older'); btn.disabled = true; try { await loadOlder(st.active); drawConversation({ keepScroll: true, prepended: true }); } catch (err) { btn.disabled = false; toast(R.friendlyError(err), { type: 'error' }); } return; }
       const more = t.closest('[data-more]');
       if (more) { openMenu(more.dataset.more, more); return; }
       const react = t.closest('[data-react]');
@@ -546,7 +607,21 @@
     });
     box.addEventListener('contextmenu', (e) => { const m = e.target.closest('.msg'); const b = m?.querySelector('[data-more]'); if (b) { e.preventDefault(); openMenu(m.dataset.id, b); } });
     const input = $('#chat-input');
-    input.addEventListener('input', () => { draft.text = input.value; autosize(input); $('#chat-send').disabled = !(draft.text.trim() || draft.files.length); });
+    input.addEventListener('input', () => { draft.text = input.value; autosize(input); $('#chat-send').disabled = !(draft.text.trim() || draft.files.length); if (stick) toBottom(); });
+    $('#chat-emoji-toggle').onclick = () => {
+      const picker = $('#chat-emoji'), toggle = $('#chat-emoji-toggle');
+      picker.hidden = !picker.hidden;
+      toggle.setAttribute('aria-expanded', String(!picker.hidden));
+      if (!picker.hidden) input.blur();
+      if (stick) toBottom();
+    };
+    $('#chat-emoji').onclick = (e) => {
+      const emoji = e.target.closest('[data-emoji]')?.dataset.emoji;
+      if (!emoji) return;
+      const start = input.selectionStart, end = input.selectionEnd;
+      input.setRangeText(emoji, start, end, 'end');
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    };
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && innerWidth > 900) { e.preventDefault(); if (!$('#chat-send').disabled) sendMessage(); }
       if (e.key === 'Escape' && (draft.replyTo || draft.editing)) { if (draft.editing) draft.text = ''; draft.replyTo = null; draft.editing = null; drawDraft(); }
@@ -579,6 +654,8 @@
   }
 
   App.chatReady = () => st.ready;
+  // Called shortly after the app opens, so the first visit to Chat already has its conversations in memory.
+  App.chatWarm = () => { if (canChat() && !st.ready) load().catch(() => {}); };
   App.views.chat = (r) => {
     if (!canChat()) { $('#view').innerHTML = '<div class="card"><div class="empty-inline">ჩატი ხელმისაწვდომია მფლობელის, ადმინისტრატორის, მენეჯერისა და აგენტისთვის.</div></div>'; return; }
     const fast = $('#chat-root')?.isConnected && $('#chat-root').dataset.org === S.org.id;
@@ -596,6 +673,11 @@
       if (!id) drawConversation();
     };
     if (fast && st.active === want && st.ready) return;
-    start().catch(err => { console.error(err); $('#chat-msgs') && ($('#chat-msgs').innerHTML = `<div class="error-state"><p>ჩატი ვერ ჩაიტვირთა. ${esc(R.friendlyError(err))}</p></div>`); });
+    start().catch(err => {
+      console.error(err);
+      const html = '<div class="error-state"><p>ჩატი ვერ ჩაიტვირთა.</p><button type="button" data-chat-retry>ხელახლა ცდა</button></div>';
+      if ($('#chat-list')) $('#chat-list').innerHTML = html;
+      if ($('#chat-msgs')) $('#chat-msgs').innerHTML = html;
+    });
   };
 })();

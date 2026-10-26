@@ -9,3 +9,6 @@ skills/
 .github/
 .claude/
 .impeccable/
+
+# EGM contract READMEs are repo docs, not site content
+rigzea/**/README.md

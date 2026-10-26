@@ -593,23 +593,43 @@ rigzea.com/p/vake-loft-42`
       setSplitPosition(percent, false);
     }
 
-    function onPointerUp() {
+    let activePointerId = null;
+
+    function onPointerUp(e) {
       if (isSplitDragging) {
         isSplitDragging = false;
         splitHandle.classList.remove('is-dragging');
+        const pid = (e && typeof e.pointerId === 'number') ? e.pointerId : activePointerId;
+        if (pid !== null && splitHandle.releasePointerCapture) {
+          try {
+            if (splitHandle.hasPointerCapture && splitHandle.hasPointerCapture(pid)) {
+              splitHandle.releasePointerCapture(pid);
+            }
+          } catch (_) {}
+        }
+        activePointerId = null;
         window.removeEventListener('pointermove', onPointerMove);
         window.removeEventListener('pointerup', onPointerUp);
+        window.removeEventListener('pointercancel', onPointerUp);
         window.removeEventListener('touchmove', onPointerMove);
         window.removeEventListener('touchend', onPointerUp);
+        window.removeEventListener('touchcancel', onPointerUp);
+        window.removeEventListener('blur', onPointerUp);
       }
     }
 
     splitHandle.addEventListener('pointerdown', (e) => {
       e.preventDefault();
       isSplitDragging = true;
+      activePointerId = e.pointerId;
       splitHandle.classList.add('is-dragging');
+      if (e.pointerId && splitHandle.setPointerCapture) {
+        try { splitHandle.setPointerCapture(e.pointerId); } catch (_) {}
+      }
       window.addEventListener('pointermove', onPointerMove);
       window.addEventListener('pointerup', onPointerUp);
+      window.addEventListener('pointercancel', onPointerUp);
+      window.addEventListener('blur', onPointerUp);
     });
 
     splitStage.addEventListener('pointerdown', (e) => {
@@ -625,6 +645,8 @@ rigzea.com/p/vake-loft-42`
       splitHandle.classList.add('is-dragging');
       window.addEventListener('touchmove', onPointerMove, { passive: true });
       window.addEventListener('touchend', onPointerUp);
+      window.addEventListener('touchcancel', onPointerUp);
+      window.addEventListener('blur', onPointerUp);
     }, { passive: true });
 
     // Mode preset buttons

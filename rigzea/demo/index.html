@@ -3,7 +3,7 @@
 <html lang="ka">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="theme-color" content="#0a5c44" />
   <title>Rigzea</title>
   <meta name="description" content="სცადე რიგზეა რეგისტრაციის გარეშე: ბინები ფოტოებით, ჭკვიანი ბმულები, კლიენტისთვის ბინების შერჩევა, პოსტები, ორენოვანი ხელშეკრულება და საკომისიოები." />
@@ -52,6 +52,16 @@
           <a class="btn btn-secondary btn-block" href="/demo/"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:6px"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>სცადე დემო (რეგისტრაციის გარეშე)</a>
         </div>
         <p class="auth-foot">უკვე გაქვს ანგარიში? <button type="button" class="link-btn" data-auth="signin">შესვლა</button></p>
+      </form>
+
+      <form id="form-check" class="form-stack" novalidate hidden>
+        <div><h1>შეამოწმე ელფოსტა</h1><p class="page-sub">დადასტურების წერილი გაიგზავნა მისამართზე <strong id="check-email"></strong>. გახსენი ბმული ან ჩაწერე წერილში მითითებული კოდი.</p></div>
+        <div class="form-error" role="alert" hidden></div>
+        <div class="otp" id="otp" role="group" aria-label="დადასტურების კოდი">
+          <input class="otp-box" inputmode="numeric" autocomplete="one-time-code" maxlength="1" aria-label="ციფრი 1" /><input class="otp-box" inputmode="numeric" maxlength="1" aria-label="ციფრი 2" /><input class="otp-box" inputmode="numeric" maxlength="1" aria-label="ციფრი 3" /><input class="otp-box" inputmode="numeric" maxlength="1" aria-label="ციფრი 4" /><input class="otp-box" inputmode="numeric" maxlength="1" aria-label="ციფრი 5" /><input class="otp-box" inputmode="numeric" maxlength="1" aria-label="ციფრი 6" />
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">დადასტურება და გაგრძელება</button>
+        <p class="auth-foot"><button type="button" class="link-btn" id="otp-resend">კოდის ხელახლა გაგზავნა</button> · <button type="button" class="link-btn" data-auth="signup">არასწორი ელფოსტა?</button></p>
       </form>
 
       <form id="form-reset" class="form-stack" novalidate hidden>
@@ -169,5 +179,6 @@
   <script src="/app/views-docs.js"></script>
   <script src="/app/views-finance.js"></script>
   <script src="/app/views-admin.js"></script>
+  <script src="/app/views-chat.js"></script>
 </body>
 </html>

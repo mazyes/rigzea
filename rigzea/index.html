@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ka">
+<html lang="ka" data-page="home">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -51,6 +51,7 @@
   <!-- English dictionary loads only for English visitors; Georgian visitors only get the toggle -->
   <script>(function(){var en=false;try{en=localStorage.getItem('rigzea_lang')==='en'}catch(e){}window.RLang={lang:en?'en':'ka'};if(en){var s=document.createElement('script');s.src='/js/i18n.js';document.head.appendChild(s);return}document.addEventListener('click',function(e){if(!(e.target.closest&&e.target.closest('[data-lang-toggle]')))return;try{localStorage.setItem('rigzea_lang','en')}catch(x){}location.reload()})})()</script>
   <link rel="stylesheet" href="landing-luxury.css?v=692174e5" />
+  <link rel="stylesheet" href="landing-app.css?v=1" />
 <link rel="stylesheet" href="/js/site-tools.css?v=2d31c4da" />
 <link rel="stylesheet" href="/story.css?v=5a9879f0" />
 </head>
@@ -80,13 +81,14 @@
 
         <nav class="lx-nav-links" id="main-nav" aria-label="მთავარი მენიუ">
           <a class="lx-nav-link" href="/#how-it-works">როგორ მუშაობს</a>
+          <a class="lx-nav-link" href="/#product">პროდუქტი</a>
           <a class="lx-nav-link" href="/features/">უპირატესობები</a>
           <a class="lx-nav-link" href="/pricing/">ნაკრები</a>
           <a class="lx-nav-link" href="/faq/">კითხვები</a>
           <div class="lx-mobile-menu-actions">
-            <a class="lx-btn lx-btn-primary" href="/signup/" style="width:100%;justify-content:center;">გამოცადე უფასოდ</a>
+            <a class="lx-btn lx-btn-primary" href="/signup/" style="width:100%;justify-content:center;">დაიწყე 14-დღიანი საცდელი</a>
             <a class="lx-btn lx-btn-secondary" href="/signin/" style="width:100%;justify-content:center;">შესვლა</a>
-            <a class="lx-btn lx-btn-ghost" href="/demo/" style="width:100%;justify-content:center;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:6px"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>ნახე ცოცხალი დემო</a>
+            <a class="lx-btn lx-btn-ghost" href="/demo/" style="width:100%;justify-content:center;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:6px"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>ნახე დემო</a>
           </div>
         </nav>
 
@@ -94,7 +96,7 @@
           <button type="button" class="lx-theme-toggle lx-lang-toggle" data-lang-toggle aria-label="English">EN</button>
           <button type="button" class="lx-theme-toggle" id="theme-toggle" aria-label="თემის შეცვლა"><svg class="ic-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/></svg><svg class="ic-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></button>
           <a class="lx-btn lx-btn-secondary lx-btn-sm lx-header-signin" href="/signin/">შესვლა</a>
-          <a class="lx-btn lx-btn-primary lx-btn-sm lx-header-cta" href="/signup/">გამოცადე უფასოდ</a>
+          <a class="lx-btn lx-btn-primary lx-btn-sm lx-header-cta" href="/signup/">დაიწყე 14-დღიანი საცდელი</a>
           <button type="button" class="lx-mobile-toggle" aria-label="მენიუს გახსნა"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></button>
         </div>
       </div>
@@ -105,28 +107,27 @@
       <section class="lx-hero lx-hero--center">
         <div class="lx-hero-glow" aria-hidden="true"></div>
         <div class="lx-container">
-          <div class="lx-hero-copy">
-
+                    <div class="lx-hero-copy">
+            <p class="lx-hero-eyebrow">უძრავი ქონების აგენტებისა და სააგენტოებისთვის</p>
             <h1 class="lx-hero-title">
               ყველაფერი რიგზეა.<br/>
-              <span>მართე შენი საქმე ერთ სივრცეში.</span>
+              <span>ბინები, კლიენტები და გარიგებები ერთ სივრცეში.</span>
             </h1>
-
             <p class="lx-hero-desc">
-              გადმოიტანე განცხადება MyHome-დან და გაუზიარე კლიენტს შენი ბრენდირებული გვერდი მესაკუთრის ნომრის გარეშე.
+              ცხრილებისა და ჩატების ნაცვლად გაქვს ერთი სამუშაო სივრცე: ბინები, მესაკუთრეები, კლიენტები, საქმეები და ხელშეკრულებები ერთ ადგილას. კლიენტს კი უგზავნი ბმულს შენი სახელით, მესაკუთრის ნომრის გარეშე.
             </p>
 
             <div class="lx-hero-actions">
-              <a class="lx-btn lx-btn-primary" href="/signup/">გამოცადე 14 დღე უფასოდ</a>
+              <a class="lx-btn lx-btn-primary" href="/signup/">დაიწყე 14-დღიანი საცდელი</a>
               <a class="lx-video-btn" href="/demo/">
                 <span class="lx-video-btn-icon" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg></span>
-                <span>ნახე ცოცხალი დემო</span>
+                <span>ნახე დემო</span>
               </a>
             </div>
 
             <div class="lx-social-proof">
               <div class="lx-social-proof-text">
-                <strong>14 დღე უფასოდ</strong> · ბარათი არ გჭირდება
+                ბარათი არ გჭირდება · ყველა ფუნქცია 14 დღით ღიაა
               </div>
             </div>
           </div>
@@ -144,11 +145,12 @@
 
       <section class="lx-workday-section" aria-labelledby="workday-title">
         <div class="lx-container lx-workday-layout">
-          <h2 id="workday-title">შენი დრო<br />კლიენტებს დაუთმე.</h2>
-          <div class="lx-workday-copy">
-            <p>დილა მშვიდად დაგეგმე: გადაავლე თვალი დღის საქმეებს და ნახე, რა გელოდება. შეხვედრებს შორის გადაამოწმე საჭირო დეტალები, მონიშნე შემდეგი ნაბიჯი და გააგრძელე იქიდან, სადაც გაჩერდი.</p>
-            <p>დღის ბოლოს იცოდე, რა დაასრულე და რას უნდა მიუბრუნდე ხვალ. მეტი დრო დაგრჩეს კლიენტის მოსასმენად, ბინის საჩვენებლად და შემდეგი შეხვედრისთვის.</p>
-          </div>
+          <h2 id="workday-title">ნაკლები ქაოსი,<br />მეტი დრო კლიენტისთვის.</h2>
+          <ul class="lx-problem-list">
+            <li><strong>ბინის მონაცემები ყველგან გაქვს გაფანტული.</strong><span>ფოტოები, ფასი, მესაკუთრე და ისტორია ერთ ბარათშია.</span></li>
+            <li><strong>კლიენტს ათეულობით ფოტოს უგზავნი.</strong><span>ერთი ბმული ან PDF საკმარისია: შენი სახელით, ლოგოთი და მესაკუთრის ნომრის გარეშე.</span></li>
+            <li><strong>ხელშეკრულებას ყოველ ჯერზე ხელით ავსებ.</strong><span>ქართულ-ინგლისური შაბლონი ბინისა და გარიგების მონაცემებით თავად ივსება.</span></li>
+          </ul>
         </div>
       </section>
 
@@ -162,28 +164,62 @@
           <div class="lx-steps-grid-3">
             <div class="lx-step-card">
               <span class="lx-step-index">01</span>
-              <h3>ჩასვი MyHome / SS.ge ბმული</h3>
-              <p>HD ფოტოები, ფართობი და პარამეტრები რამდენიმე წამში გადმოიტანე შენს პირად გვერდზე.</p>
+              <h3>ჩასვი MyHome ან SS.ge ბმული</h3>
+              <p>ფოტოები, ფართობი და პარამეტრები ავტომატურად შემოდის ბინის ბარათში. გამოქვეყნებამდე ყველაფერს ამოწმებ.</p>
             </div>
             <div class="lx-step-card">
               <span class="lx-step-index">02</span>
-              <h3>გაუგზავნე კლიენტს ერთი ბმული ან PDF</h3>
-              <p>კლიენტი ხსნის სუფთა გვერდს შენი სახელით, ლოგოთი და პირდაპირი WhatsApp ღილაკით.</p>
+              <h3>გაუგზავნე კლიენტს ბმული ან PDF</h3>
+              <p>კლიენტი ხსნის გვერდს შენი სახელით, ლოგოთი და WhatsApp ღილაკით.</p>
             </div>
             <div class="lx-step-card">
               <span class="lx-step-index">03</span>
-              <h3>აკონტროლე ნახვები და საკომისიო</h3>
-              <p>მიიღე შეტყობინება, როცა კლიენტი ბმულს გახსნის, და დაბეჭდე KA/EN ხელშეკრულება 1 კლიკით.</p>
+              <h3>აკონტროლე ნახვები და გარიგება</h3>
+              <p>შეტყობინებას იღებ, როცა კლიენტი ბმულს გახსნის. გარიგებას ეტაპებად მართავ.</p>
             </div>
           </div>
         </div>
       </section>
 
+      <section class="lx-showcase-section" id="product" aria-labelledby="showcase-title">
+        <div class="lx-container">
+          <div class="lx-section-header lx-split-header">
+            <h2 id="showcase-title">ნახე, როგორ გამოიყურება შიგნიდან</h2>
+            <p>ეკრანები Rigzea-ს რეალური სამუშაო სივრციდანაა. სახელები და მონაცემები საილუსტრაციოა.</p>
+          </div>
+          <div class="lx-showcase-list">
+            <article class="lx-showcase-row">
+              <div class="lx-showcase-copy">
+                <h3>ბინები ერთ სიაში</h3>
+                <p>ფილტრავ ტიპისა და სტატუსის მიხედვით და სიაშივე ხედავ მესაკუთრეს, ფასს და აქტიურ საქმეებს.</p>
+                <ul><li>ბინას ამატებ განცხადების ბმულით, Excel-იდან ან ხელით</li><li>ყველა ობიექტს აქვს მესაკუთრე, საქმეები და ისტორია</li></ul>
+              </div>
+              <figure class="lx-showcase-shot"><picture class="lx-sc-pic lx-sc-dark"><source media="(max-width: 700px)" srcset="/img/showcase-m-apartments-dark.webp" width="780" height="1688" /><img class="lx-sc-img" src="/img/showcase-apartments-dark.webp" width="2560" height="1360" alt="Rigzea-ს ობიექტების სია: მესაკუთრე, ფასი, სტატუსი და აქტიური საქმეები" loading="lazy" /></picture><picture class="lx-sc-pic lx-sc-light"><source media="(max-width: 700px)" srcset="/img/showcase-m-apartments-light.webp" width="780" height="1688" /><img class="lx-sc-img" src="/img/showcase-apartments-light.webp" width="2560" height="1360" alt="Rigzea-ს ობიექტების სია: მესაკუთრე, ფასი, სტატუსი და აქტიური საქმეები" loading="lazy" /></picture></figure>
+            </article>
+            <article class="lx-showcase-row">
+              <div class="lx-showcase-copy">
+                <h3>გარიგებები ეტაპებად</h3>
+                <p>ახალი მოთხოვნიდან დახურულ გარიგებამდე, საკომისიოს ჯამებით ერთ დაფაზე.</p>
+                <ul><li>გაყიდვისა და ქირის გარიგებებს ცალ-ცალკე ფილტრავ</li><li>საკომისიოს ჯამები ჩანს დოლარში ან ლარში</li></ul>
+              </div>
+              <figure class="lx-showcase-shot"><picture class="lx-sc-pic lx-sc-dark"><source media="(max-width: 700px)" srcset="/img/showcase-m-deals-dark.webp" width="780" height="1688" /><img class="lx-sc-img" src="/img/showcase-deals-dark.webp" width="2560" height="1600" alt="Rigzea-ს გარიგებების დაფა ეტაპებისა და საკომისიოს ჯამებით" loading="lazy" /></picture><picture class="lx-sc-pic lx-sc-light"><source media="(max-width: 700px)" srcset="/img/showcase-m-deals-light.webp" width="780" height="1688" /><img class="lx-sc-img" src="/img/showcase-deals-light.webp" width="2560" height="1600" alt="Rigzea-ს გარიგებების დაფა ეტაპებისა და საკომისიოს ჯამებით" loading="lazy" /></picture></figure>
+            </article>
+            <article class="lx-showcase-row">
+              <div class="lx-showcase-copy">
+                <h3>ორენოვანი ხელშეკრულება</h3>
+                <p>ქირავნობის ხელშეკრულება ივსება ბინისა და გარიგების მონაცემებით. ბეჭდავ ან PDF-ად ინახავ.</p>
+                <ul><li>ქართულ, ინგლისურ ან ორივე ენაზე ერთად</li><li>მიღება-ჩაბარების აქტი მრიცხველების ჩანაწერით</li><li>შაბლონი არ ცვლის იურიდიულ კონსულტაციას</li></ul>
+              </div>
+              <figure class="lx-showcase-shot"><picture class="lx-sc-pic lx-sc-dark"><source media="(max-width: 700px)" srcset="/img/showcase-m-contract-dark.webp" width="780" height="1688" /><img class="lx-sc-img" src="/img/showcase-contract-dark.webp" width="2560" height="1600" alt="Rigzea-ს ქართულ-ინგლისური ქირავნობის ხელშეკრულება" loading="lazy" /></picture><picture class="lx-sc-pic lx-sc-light"><source media="(max-width: 700px)" srcset="/img/showcase-m-contract-light.webp" width="780" height="1688" /><img class="lx-sc-img" src="/img/showcase-contract-light.webp" width="2560" height="1600" alt="Rigzea-ს ქართულ-ინგლისური ქირავნობის ხელშეკრულება" loading="lazy" /></picture></figure>
+            </article>
+          </div>
+        </div>
+      </section>
       <section class="lx-story-section" aria-labelledby="lx-story-title">
         <div class="lx-container">
           <div class="lx-story-intro">
-            <h2 id="lx-story-title">ერთი ბინა. თავიდან ბოლომდე.</h2>
-            <p>შეარჩიე ხედი: აგენტის სამუშაო სივრცე, მესაკუთრის თანხმობის ბმული ან კლიენტისთვის გაზიარებული გვერდი. სამივე ერთ ობიექტს უკავშირდება.</p>
+            <h2 id="lx-story-title">ერთი ბინა, სამი ხედვა.</h2>
+            <p>აგენტი მართავს ობიექტს, მესაკუთრე პასუხობს თანხმობის მოთხოვნას, კლიენტი კი ხედავს მხოლოდ გაზიარებულ გვერდს. შეარჩიე ხედი და ნახე, რას ხედავს თითოეული.</p>
           </div>
 
           <div class="lx-story-preview" data-story-root>
@@ -270,10 +306,11 @@
       <section class="lx-final-cta-section">
         <div class="lx-container">
           <div class="lx-final-cta-box">
-            <h2>შენი გარიგებებიც რიგზე იყოს.</h2>
-            <p>შექმენი შენი პირველი ჭკვიანი ბმული და ნახე, როგორ გაგიმარტივდება კლიენტებთან მუშაობა პირველივე დღიდან.</p>
+            <h2>დაალაგე ბინები, კლიენტები და გარიგებები ერთ სივრცეში.</h2>
+            <p>დარეგისტრირდი, დაამატე პირველი ბინა და გაუგზავნე კლიენტს ბმული. 14 დღის განმავლობაში ყველა ფუნქცია ღიაა და ბარათი არ გჭირდება.</p>
             <div style="display:flex;gap:14px;flex-wrap:wrap;justify-content:center">
-              <a class="lx-btn lx-btn-primary" href="/signup/">გამოცადე უფასოდ</a>
+              <a class="lx-btn lx-btn-primary" href="/signup/">დაიწყე 14-დღიანი საცდელი</a>
+              <a class="lx-btn lx-btn-secondary" href="/demo/">ნახე დემო</a>
             </div>
           </div>
         </div>
@@ -298,6 +335,7 @@
 
         <div class="lx-footer-links">
           <a href="/#how-it-works">როგორ მუშაობს</a>
+          <a href="/#product">პროდუქტი</a>
           <a href="/features/">უპირატესობები</a>
 
           <a href="/pricing/">ნაკრები</a>
@@ -320,7 +358,7 @@
 
   <!-- Sticky Mobile Thumb Bar (shows when scrolled past Hero on mobile) -->
   <aside class="lx-mobile-thumb-bar" id="mobile-thumb-bar" aria-label="სწრაფი მოქმედებები">
-    <a class="lx-thumb-btn lx-thumb-btn-primary" href="/signup/">გამოცადე უფასოდ</a>
+    <a class="lx-thumb-btn lx-thumb-btn-primary" href="/signup/">დაიწყე 14-დღიანი საცდელი</a>
     <a class="lx-thumb-btn lx-thumb-btn-secondary" href="/demo/"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg> დემო</a>
   </aside>
 

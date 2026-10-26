@@ -173,10 +173,18 @@
     // An agent manages only their own profile, security and interface; company settings are for owners, admins and managers.
     if (App.isAgent()) tabs.splice(0, tabs.length, ...tabs.filter(t => ['profile', 'security', 'ui'].includes(t[0])));
     const tab = tabs.some(t => t[0] === r.id) ? r.id : 'profile';
+    // Navigation groups: the labels show in the desktop side rail and are hidden in the phone tab strip.
+    const GROUPS = [['პირადი', ['profile', 'security', 'ui']], ['სამუშაო სივრცე', ['org', 'plan']], ['მონაცემები', ['import', 'export']], ['პლატფორმა', ['platform']]];
+    const nav = GROUPS.map(([g, ids]) => {
+      const items = tabs.filter(t => ids.includes(t[0]));
+      return items.length ? `<span class="tab-group" aria-hidden="true">${g}</span>${items.map(([id, label, href]) => `<a class="tab" role="tab" href="${href}" aria-selected="${tab === id}">${label}</a>`).join('')}` : '';
+    }).join('');
     $('#view').innerHTML = `
       <div class="page-head"><div><h1>პარამეტრები</h1></div></div>
-      <div class="tabs" role="tablist">${tabs.map(([id, label, href]) => `<a class="tab" role="tab" href="${href}" aria-selected="${tab === id}">${label}</a>`).join('')}</div>
-      <div id="s-body"></div>`;
+      <div class="settings-shell">
+        <div class="tabs settings-tabs" role="tablist">${nav}</div>
+        <div id="s-body"></div>
+      </div>`;
     const body = $('#s-body');
     if (tab === 'profile') return renderProfileTab(body);
     if (tab === 'security') return renderSecurityTab(body);
@@ -203,7 +211,7 @@
       ['density', 'სიმჭიდროვე', 'კომპაქტური რეჟიმი ნაკლებ ადგილს იკავებს.', [['regular', 'ჩვეულებრივი'], ['compact', 'კომპაქტური']],
         () => ls('rigzea_density', 'regular'), (v) => { localStorage.setItem('rigzea_density', v); R.applyPrefs(); }],
     ];
-    root.innerHTML = `<section class="card" style="max-width:760px"><div class="card-body">
+    root.innerHTML = `<section class="card"><div class="card-body">
       ${PREFS.map(([key, title, hint, opts]) => `<div class="ui-pref"><div class="ui-pref-text"><strong>${title}</strong><div class="field-hint">${hint}</div></div>
         <div class="seg2" role="group" aria-label="${title}" data-pref="${key}">${opts.map(([v, label]) => `<button type="button" data-v="${v}" aria-pressed="false">${label}</button>`).join('')}</div></div>`).join('')}
       <div class="ui-pref"><div class="ui-pref-text field-hint">მხოლოდ ამ მოწყობილობაზე. ენა არ იცვლება.</div><button type="button" class="btn btn-secondary btn-sm" id="ui-reset">ნაგულისხმევზე დაბრუნება</button></div>
@@ -286,7 +294,7 @@
   function renderProfileTab(root) {
     const me = S.member || {};
     const email = S.user.email || '';
-    root.innerHTML = `<section class="card" style="max-width:640px"><div class="card-head"><h2>ჩემი პროფილი</h2><span class="badge">${esc(L.role[me.role] || '')}</span></div><div class="card-body">
+    root.innerHTML = `<section class="card"><div class="card-head"><h2>ჩემი პროფილი</h2><span class="badge">${esc(L.role[me.role] || '')}</span></div><div class="card-body">
       <form id="s-profile" class="form-grid" novalidate>
         <div class="form-error span-2" role="alert" hidden></div>
         <div class="field span-2"><span class="field-label">პროფილის სურათი</span><div id="p-pick"></div></div>
@@ -328,7 +336,7 @@
   function renderSecurityTab(root) {
     const hasPassword = (S.user.app_metadata?.providers || ['email']).includes('email');
     const last = S.user.last_sign_in_at ? R.dateTime(S.user.last_sign_in_at) : null;
-    root.innerHTML = `<section class="card" style="max-width:640px;margin-bottom:16px"><div class="card-head"><h2>პაროლი</h2></div><div class="card-body">
+    root.innerHTML = `<section class="card" style="margin-bottom:16px"><div class="card-head"><h2>პაროლი</h2></div><div class="card-body">
       <form id="s-pass" class="form-grid" novalidate>
         <div class="form-error span-2" role="alert" hidden></div>
         ${hasPassword ? '<label class="field span-2"><span class="field-label">მიმდინარე პაროლი</span><input type="password" name="current" autocomplete="current-password" required /></label>' : '<p class="muted span-2" style="margin:0">შესვლა Google-ით ხდება. შეგიძლია პაროლიც დაიყენო.</p>'}
@@ -336,7 +344,7 @@
         <label class="field"><span class="field-label">გაიმეორე პაროლი</span><input type="password" name="again" autocomplete="new-password" minlength="8" required /></label>
         <div class="span-2"><button type="submit" class="btn btn-primary">პაროლის შეცვლა</button></div>
       </form></div></section>
-      <section class="card" style="max-width:640px"><div class="card-head"><h2>მოწყობილობები</h2></div><div class="card-body">
+      <section class="card"><div class="card-head"><h2>მოწყობილობები</h2></div><div class="card-body">
         <p class="muted" style="margin-top:0">${last ? `ბოლო შესვლა: ${esc(last)}. ` : ''}ამ მოწყობილობის სესია რჩება.</p>
         <div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn btn-secondary" id="s-others">${icon('logout', 16)} გამოსვლა სხვა მოწყობილობებიდან</button><button type="button" class="btn btn-ghost" id="s-all">გამოსვლა ყველგან</button></div>
       </div></section>`;
@@ -375,7 +383,7 @@
     const o = S.org;
     const admin = App.isAdmin();
     const canProfile = App.can('profile'), canBrand = App.can('whitelabel');
-    root.innerHTML = `<section class="card" style="max-width:640px;margin-bottom:16px"><div class="card-body">
+    root.innerHTML = `<section class="card" style="margin-bottom:16px"><div class="card-body">
       ${admin ? '' : '<div class="notice" style="margin-bottom:14px">კომპანიის მონაცემებს ცვლის მხოლოდ ადმინისტრატორი.</div>'}
       <form id="s-org" class="form-grid" novalidate>
         <div class="form-error span-2" role="alert" hidden></div>
@@ -385,7 +393,7 @@
         <label class="field"><span class="field-label">საკონტაქტო ელფოსტა</span><input name="contact_email" type="email" value="${esc(o.contact_email || '')}" ${admin ? '' : 'disabled'} /></label>
         ${admin ? '<div class="span-2"><button type="submit" class="btn btn-primary">შენახვა</button></div>' : ''}
       </form></div></section>
-    <section class="card" style="max-width:640px" id="brand-card"><div class="card-head"><h2>ბრენდინგი</h2></div><div class="card-body">
+    <section class="card" id="brand-card"><div class="card-head"><h2>ბრენდინგი</h2></div><div class="card-body">
       <p class="muted" style="margin-top:0">ჩანს კლიენტისთვის გაზიარებულ გვერდებზე.</p>
       ${!canProfile ? `<div class="notice notice-warn" style="margin-bottom:14px"><span>ბრენდინგი ხელმისაწვდომია „${esc(App.PLANS.pro.name)}“ პაკეტიდან. ფერისა და White-label ბრენდირებისთვის საჭიროა „${esc(App.PLANS.agency.name)}“.</span> <button type="button" class="btn btn-secondary btn-sm" id="b-upgrade">პაკეტების ნახვა</button></div>` : ''}
       <form id="s-brand" class="form-grid" novalidate>
@@ -463,13 +471,13 @@
     else if (st.lapsed) status = `<span class="t-warn">პაკეტის ვადა ამოიწურა ${esc(R.date(st.end))}-ს. ანგარიში უფასო პაკეტზეა, შენი მონაცემები ადგილზეა.</span>`;
     else if (st.trial) status = st.end ? `ყველა ფუნქცია ღიაა ${esc(R.date(st.end))}-მდე (დარჩენილია ${st.daysLeft} დღე).` : 'ყველა ფუნქცია ღიაა.';
     else status = st.end ? `აქტიურია ${esc(R.date(st.end))}-მდე (დარჩენილია ${st.daysLeft} დღე).` : 'აქტიურია.';
-    root.innerHTML = `<section class="card" style="max-width:900px;margin-bottom:16px"><div class="card-head"><h2>შენი პაკეტი: ${esc(planName)}</h2></div><div class="card-body form-stack">
+    root.innerHTML = `<section class="card" style="margin-bottom:16px"><div class="card-head"><h2>შენი პაკეტი: ${esc(planName)}</h2></div><div class="card-body form-stack">
       <p style="margin:0">${status}</p>
       ${paused ? `<div class="notice notice-warn" id="plan-paused"><span>აქტიური ობიექტი პაკეტის ლიმიტს აღემატება: ${st.plan.apartments} ყველაზე ძველი ობიექტის საჯარო ბმული მუშაობს, დანარჩენი ${paused} შეჩერებულია. ობიექტები არ წაშლილა: ბმულები დაბრუნდება, როცა უფრო დიდ პაკეტს აირჩევ ან ზედმეტ ობიექტებს დაარქივებ.</span></div>` : ''}
       <div class="form-grid">${meter('აქტიური ობიექტი', apts, st.plan.apartments)}${meter('სამუშაო ადგილი', seats, st.plan.seats)}</div>
       <div><span class="field-label">ფუნქციები</span><ul class="plan-features" style="list-style:none;padding:0;margin:6px 0 0;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:6px;font-size:13px">${Object.entries(App.FEATURE_LABEL).map(([k, l]) => App.can(k) ? `<li class="t-ok">${esc(l)}</li>` : `<li class="muted">${esc(l)}</li>`).join('')}</ul></div>
     </div></section>
-    <section class="card" style="max-width:900px"><div class="card-head"><h2>პაკეტები</h2></div><div class="card-body">
+    <section class="card"><div class="card-head"><h2>პაკეტები</h2></div><div class="card-body">
       ${App.planCardsHtml(st.key === 'trial' ? 'pro' : null, st.trial ? 'trial' : st.noTrial ? null : st.eff)}
       <p class="plan-contact">პაკეტის გასააქტიურებლად მოგვწერე WhatsApp-ში ან დარეკე <a href="tel:${App.CONTACT.phone}">${App.CONTACT.phone}</a>. გადახდის შემდეგ პაკეტს იმავე დღეს ჩავრთავთ.</p>
       <div class="plan-cta"><a class="btn btn-primary" href="${esc(App.waLink())}" target="_blank" rel="noopener">${icon('whatsapp', 16)} მოგვწერე WhatsApp-ში</a></div>
@@ -610,14 +618,18 @@
 
   const EXPENSE_STATUS = { proposed: 'შეთავაზებული', approved: 'დადასტურებული', declined: 'უარყოფილი', incurred: 'გაწეული', paid: 'გადახდილი' };
   const yn = (v) => v ? 'კი' : 'არა';
-  const dealOut = (d) => ({ client_name: d.client_name, client_phone: d.client_phone, client_email: d.client_email, apartment: d.apartment_id ? H.aptName(d.apartment_id) : '', stage: L.dealStage[d.stage] || d.stage, deal_amount: d.deal_amount, currency: d.currency, commission_percent: d.commission_percent, owner_bonus: d.owner_bonus, partner_agent: d.partner_agent, partner_phone: d.partner_phone, cobroker_split: d.cobroker_split, target_move_in: d.target_move_in, notes: d.notes });
-  const aptOut = (a) => ({ name: a.name, address: a.address, unit_number: a.unit_number, city: a.city, owner: H.owner(a.owner_id)?.name || '', door_code: a.door_code, wifi_name: a.wifi_name, wifi_password: a.wifi_password, commission_pct: a.commission_pct, rooms: a.rooms, district: a.district, floor: a.floor, area_sqm: a.area_sqm, monthly_rent: a.monthly_rent, currency: a.currency, pets_allowed: yn(a.pets_allowed), lease_end: a.lease_end, agent_phone: a.agent_phone });
-  const expOut = (e) => ({ apartment: H.aptName(e.apartment_id), amount: e.amount, expense_date: e.expense_date, description: e.description, category: L.expenseCategory[e.category] || e.category, status: EXPENSE_STATUS[e.status] || e.status, vendor: e.vendor });
+  // While Settings exports it looks names up in the full lists it just fetched, not in the capped page data.
+  let exportNames = null;
+  const aptNm = (id) => (exportNames ? exportNames.apt.get(id) ?? 'ბინა წაშლილია' : H.aptName(id));
+  const ownNm = (id) => (exportNames ? exportNames.owner.get(id) || '' : H.owner(id)?.name || '');
+  const dealOut = (d) => ({ client_name: d.client_name, client_phone: d.client_phone, client_email: d.client_email, apartment: d.apartment_id ? aptNm(d.apartment_id) : '', stage: L.dealStage[d.stage] || d.stage, deal_amount: d.deal_amount, currency: d.currency, commission_percent: d.commission_percent, owner_bonus: d.owner_bonus, partner_agent: d.partner_agent, partner_phone: d.partner_phone, cobroker_split: d.cobroker_split, target_move_in: d.target_move_in, notes: d.notes });
+  const aptOut = (a) => ({ name: a.name, address: a.address, unit_number: a.unit_number, city: a.city, owner: ownNm(a.owner_id), door_code: a.door_code, wifi_name: a.wifi_name, wifi_password: a.wifi_password, commission_pct: a.commission_pct, rooms: a.rooms, district: a.district, floor: a.floor, area_sqm: a.area_sqm, monthly_rent: a.monthly_rent, currency: a.currency, pets_allowed: yn(a.pets_allowed), lease_end: a.lease_end, agent_phone: a.agent_phone });
+  const expOut = (e) => ({ apartment: aptNm(e.apartment_id), amount: e.amount, expense_date: e.expense_date, description: e.description, category: L.expenseCategory[e.category] || e.category, status: EXPENSE_STATUS[e.status] || e.status, vendor: e.vendor });
   const ownOut = (o) => ({ name: o.name, phone: o.phone, email: o.email, payout_account: o.payout_account, notes: o.notes });
   // Same column order as the matching importer so an export can be edited and re-imported.
   const setFor = (kind, name, list, out) => { const cols = IMPORTS[kind].columns; return { name, file: kind, headers: cols.map(c => c[1]), rows: list.map(x => { const o = out(x); return cols.map(([k]) => o[k] ?? ''); }) }; };
 
-  const incomeSet = (list) => ({ name: 'შემოსავალი', file: 'income', headers: ['ბინა', 'თანხა', 'თარიღი', 'წყარო', 'აღწერა'], rows: list.map(i => [H.aptName(i.apartment_id), i.amount, i.income_date, i.source, i.description || '']) });
+  const incomeSet = (list) => ({ name: 'შემოსავალი', file: 'income', headers: ['ბინა', 'თანხა', 'თარიღი', 'წყარო', 'აღწერა'], rows: list.map(i => [aptNm(i.apartment_id), i.amount, i.income_date, i.source, i.description || '']) });
   const exportSets = {
     apartments: () => setFor('apartments', 'ბინები', S.data.apartments, aptOut),
     owners: () => setFor('owners', 'მფლობელები', S.data.owners, ownOut),
@@ -625,16 +637,57 @@
     income: (list = S.data.income) => incomeSet(list),
     deals: () => setFor('deals', 'გარიგებები', S.data.deals || [], dealOut),
   };
-  function renderExportTab(root) {
-    const d = S.data;
-    const items = [['apartments', 'ბინები', d.apartments.length], ['owners', 'მფლობელები', d.owners.length], ['deals', 'გარიგებები', (d.deals || []).length], ['expenses', 'ხარჯები', d.expenses.length], ['income', 'შემოსავალი', d.income.length]];
-    root.innerHTML = `<section class="card" style="max-width:640px"><div class="card-body form-stack">
+  // Settings does not preload deals, expenses or income and the page data is capped, so the export
+  // counts and downloads come straight from the database (paged, under the member's own access).
+  const EXPORT_KINDS = [['apartments', 'ბინები', 'name', true], ['owners', 'მფლობელები', 'name', true], ['deals', 'გარიგებები', 'created_at', false], ['expenses', 'ხარჯები', 'expense_date', false], ['income', 'შემოსავალი', 'income_date', false]];
+  async function fetchAllRows(table, orderBy, asc) {
+    const rows = [];
+    for (let from = 0; ; from += 1000) {
+      const { data, error } = await sb.from(table).select('*').eq('organization_id', S.org.id).order(orderBy, { ascending: asc }).order('id').range(from, from + 999);
+      if (error) throw error;
+      rows.push(...data);
+      if (data.length < 1000) return rows;
+    }
+  }
+  async function buildExportSets(keys) {
+    const lists = {};
+    await Promise.all(EXPORT_KINDS.filter(([k]) => keys.includes(k) || k === 'apartments' || k === 'owners').map(async ([k, , by, asc]) => { lists[k] = await fetchAllRows(k, by, asc); }));
+    exportNames = { apt: new Map(lists.apartments.map(a => [a.id, a.name])), owner: new Map(lists.owners.map(o => [o.id, o.name])) };
+    try {
+      const make = { apartments: () => setFor('apartments', 'ბინები', lists.apartments, aptOut), owners: () => setFor('owners', 'მფლობელები', lists.owners, ownOut), deals: () => setFor('deals', 'გარიგებები', lists.deals, dealOut), expenses: () => exportSets.expenses(lists.expenses), income: () => exportSets.income(lists.income) };
+      return keys.map(k => make[k]());
+    } finally { exportNames = null; }
+  }
+  async function renderExportTab(root) {
+    root.innerHTML = '<div class="skeleton" aria-label="იტვირთება"><i></i><i></i><i></i></div>';
+    let items;
+    try {
+      items = await Promise.all(EXPORT_KINDS.map(async ([k, label]) => {
+        const { count, error } = await sb.from(k).select('id', { count: 'exact', head: true }).eq('organization_id', S.org.id);
+        if (error) throw error;
+        return [k, label, count || 0];
+      }));
+    } catch (err) {
+      console.error(err);
+      root.innerHTML = `<div class="error-state"><p>მონაცემები ვერ ჩაიტვირთა. ${esc(R.friendlyError(err))}</p><button type="button" class="btn btn-primary" id="x-retry">${icon('refresh', 16)} ხელახლა ცდა</button></div>`;
+      $('#x-retry', root).onclick = () => renderExportTab(root);
+      return;
+    }
+    if (!root.isConnected) return;
+    root.innerHTML = `<section class="card"><div class="card-body form-stack">
       <p class="muted" style="margin:0">ჩამოტვირთე მონაცემები Excel/CSV ფორმატში.${App.can('export') ? '' : ` ექსპორტი ხელმისაწვდომია „${esc(App.PLANS.top.name)}“ პაკეტიდან.`}</p>
-      <div class="rows">${items.map(([k, label, n]) => `<div class="row" style="--cols:minmax(0,1fr) auto"><span class="cell-main"><strong>${label}</strong><span>${n} ჩანაწერი</span></span><span class="cell-actions"><button type="button" class="btn btn-secondary btn-sm" data-export="${k}" ${n ? '' : 'disabled'}>${App.can('export') ? 'ჩამოტვირთვა' : 'ჩამოტვირთვა'}</button></span></div>`).join('')}</div>
+      <div class="rows">${items.map(([k, label, n]) => `<div class="row" style="--cols:minmax(0,1fr) auto"><span class="cell-main"><strong>${label}</strong><span>${n} ჩანაწერი</span></span><span class="cell-actions"><button type="button" class="btn btn-secondary btn-sm" data-export="${k}" ${n ? '' : 'disabled'}>ჩამოტვირთვა</button></span></div>`).join('')}</div>
       <div><button type="button" class="btn btn-primary" id="x-all">${icon('file', 16)} ყველაფრის ჩამოტვირთვა (Excel)</button></div>
     </div></section>`;
-    $$('[data-export]', root).forEach(b => b.addEventListener('click', () => exportDialog({ title: 'ექსპორტი', base: 'rigzea-' + b.dataset.export, sets: [exportSets[b.dataset.export]()] })));
-    $('#x-all').onclick = () => exportDialog({ title: 'ყველაფრის ექსპორტი', base: 'rigzea', sets: items.filter(i => i[2]).map(i => exportSets[i[0]]()) });
+    const start = async (btn, title, base, keys) => {
+      if (!App.guardFeature('export')) return;
+      btn.disabled = true;
+      try { exportDialog({ title, base, sets: await buildExportSets(keys) }); }
+      catch (err) { console.error(err); toast(R.friendlyError(err), { type: 'error' }); }
+      finally { btn.disabled = false; }
+    };
+    $$('[data-export]', root).forEach(b => b.addEventListener('click', () => start(b, 'ექსპორტი', 'rigzea-' + b.dataset.export, [b.dataset.export])));
+    $('#x-all').onclick = (e) => start(e.currentTarget, 'ყველაფრის ექსპორტი', 'rigzea', items.filter(i => i[2]).map(i => i[0]));
   }
   App.exportDialog = exportDialog;
   App.exportApartments = () => exportDialog({ base: 'rigzea-apartments', sets: [exportSets.apartments()] });

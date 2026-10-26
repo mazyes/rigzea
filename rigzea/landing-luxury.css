@@ -530,7 +530,7 @@ body.luxury-theme::before {
   justify-content: space-between;
 }
 
-.lx-bento-card-header h3 {
+.lx-bento-card-header :is(h2, h3) {
   font-size: 24px;
   font-weight: 700;
   color: var(--lx-text-white);
@@ -1627,7 +1627,7 @@ body.lx-modal-open {
     opacity: 1;
   }
 
-  .lx-bento-card h3,
+  .lx-bento-card :is(h2, h3),
   .lx-plan-name,
   .lx-plan-amount {
     color: #0f172a;
@@ -1844,7 +1844,8 @@ p, li { text-wrap: pretty; }
   border-color: rgba(4, 120, 87, 0.55);
   box-shadow: 0 30px 70px -24px rgba(0, 0, 0, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
-.lx-plan-name { font-size: 18px; letter-spacing: -0.01em; }
+:root .lx-plan-name,
+:root main h2.lx-plan-name { font-size: 18px; letter-spacing: -0.01em; }
 .lx-plan-desc { color: var(--lx-text-muted); min-height: 3em; }
 .lx-plan-price-row { margin: 18px 0 2px; }
 .lx-plan-amount { font-size: 38px; font-weight: 700; font-variant-numeric: tabular-nums; }
@@ -1928,7 +1929,7 @@ p, li { text-wrap: pretty; }
   
   
   .lx-bento-card { min-width: calc(100vw - 40px); width: calc(100vw - 40px); border-radius: var(--lx-r-lg); }
-  .lx-bento-card-header h3 { font-size: 21px; }
+  .lx-bento-card-header :is(h2, h3) { font-size: 21px; }
 
   
   
@@ -2842,7 +2843,7 @@ h1, h2, h3 { line-height: 1.12; letter-spacing: -0.02em; }
 .lx-bento-12 .lx-bento-card {
   display: flex; flex-direction: column; gap: 20px; height: 100%; min-height: 0; padding: 28px; border-radius: 20px;
 }
-.lx-bento-12 .lx-bento-card-header h3 { font-size: clamp(22px, 2.2vw, 28px); }
+.lx-bento-12 .lx-bento-card-header :is(h2, h3) { font-size: clamp(22px, 2.2vw, 28px); }
 :root:not([data-theme="light"]) .lx-bento-preview-stage {
   background: #0b0b0d; border: 1px solid rgba(255, 255, 255, .05); border-radius: 14px; padding: 16px; margin-top: auto;
   --lx-obsidian-card: rgba(18, 18, 21, .82); --lx-border-subtle: rgba(255, 255, 255, .07); --lx-border-medium: rgba(255, 255, 255, .14);
@@ -2911,7 +2912,7 @@ h1, h2, h3 { line-height: 1.12; letter-spacing: -0.02em; }
 .lx-bento-12 .lx-bento-preview-stage { min-width: 0; overflow: hidden; }
 
 /* Hardcoded white headings inside restored-light cards */
-:root[data-theme="light"] :is(.lx-step-card h3, .lx-bento-card-header h3, .lx-comparison-title-box h3, .lx-faq-question, .lx-pricing-card:not(.featured) .lx-plan-name, .lx-pricing-card:not(.featured) .lx-plan-amount, .lx-prop-title) { color: #0F172A; }
+:root[data-theme="light"] :is(.lx-step-card h3, .lx-bento-card-header :is(h2, h3), .lx-comparison-title-box h3, .lx-faq-question, .lx-pricing-card:not(.featured) .lx-plan-name, .lx-pricing-card:not(.featured) .lx-plan-amount, .lx-prop-title) { color: #0F172A; }
 :root[data-theme="light"] .lx-step-card p, :root[data-theme="light"] .lx-faq-answer, :root[data-theme="light"] .lx-faq-item p { color: #475569; }
 :root[data-theme="light"] .lx-pricing-card:not(.featured) :is(.lx-plan-desc, .lx-plan-period, li) { color: #475569; }
 :root[data-theme="light"] .lx-card-rigzea-way :is(.lx-points-list li, .lx-points-list strong) { color: #0F172A; }
@@ -3375,7 +3376,7 @@ pre, code, kbd, samp, textarea, input, select, button { font-family: var(--lx-fo
 :root #features-grid .lx-demo > :first-child { margin-top: 0; }
 :root #features-grid .lx-demo > :last-child { margin-bottom: 0; }
 :root #features-grid .lx-bento-card-header { gap: 8px; padding: 24px 28px 28px; }
-:root #features-grid .lx-bento-card-header h3 { margin: 0; font-size: clamp(19px, 1.6vw, 22px); line-height: 1.25; color: var(--fc-title); }
+:root #features-grid .lx-bento-card-header :is(h2, h3) { margin: 0; font-size: clamp(19px, 1.6vw, 22px); line-height: 1.25; color: var(--fc-title); }
 :root #features-grid .lx-bento-card-header p { margin: 0; font-size: 15px; line-height: 1.55; color: var(--fc-text); max-width: 46ch; }
 /* inner mock boxes sit flat inside the panel */
 :root #features-grid .lx-demo :is(.lx-import-preview-box, .lx-lease-preview, .lx-post-preview) { background: transparent; border: 0; box-shadow: none; padding: 0; }
@@ -3383,7 +3384,7 @@ pre, code, kbd, samp, textarea, input, select, button { font-family: var(--lx-fo
   :root #features-grid .lx-bento-preview-stage { min-height: 0; padding: 20px 16px 0; }
   :root #features-grid .lx-demo { padding: 14px 14px 16px; border-radius: 16px 16px 0 0; }
   :root #features-grid .lx-bento-card-header { padding: 18px 20px 22px; }
-  :root #features-grid .lx-bento-card-header h3 { font-size: 18px; }
+  :root #features-grid .lx-bento-card-header :is(h2, h3) { font-size: 18px; }
   :root #features-grid .lx-bento-card-header p { font-size: 14px; }
 }
 
@@ -3453,7 +3454,8 @@ html[lang="en"] :is(h1, h2, h3, .lx-nav-link, .lx-badge, .lx-btn, .lx-plan-name,
 }
 .lx-agency-infinity svg { width: 100%; height: 100%; display: block; }
 
-.lx-agency-card-left .lx-plan-name {
+:root .lx-agency-card-left .lx-plan-name,
+:root main .lx-agency-card-left h2.lx-plan-name {
   font-size: 24px;
   font-weight: 700;
   color: #fff;
@@ -3629,3 +3631,9 @@ html[lang="en"] :is(h1, h2, h3, .lx-nav-link, .lx-badge, .lx-btn, .lx-plan-name,
 /* Home: sections and steps flow without divider lines; spacing alone separates them. */
 .lx-home :is(.lx-how-it-works-section, .lx-how-it-works-header, .lx-story-section) { border: 0; }
 .luxury-theme.lx-home .lx-steps-grid-3 > .lx-step-card { border: 0; }
+
+/* Phones: footer links, buttons and the billing switch reach the 44px touch size */
+@media (max-width: 900px) {
+  .lx-footer-links a { display: inline-flex; align-items: center; min-height: 44px; }
+  .lx-btn, .lx-billing-toggle-pill button { min-height: 44px; }
+}

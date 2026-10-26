@@ -41,7 +41,7 @@ async function colors(page, selectors) {
     for (const theme of ['dark', 'light']) {
       await page.evaluate(t => { document.documentElement.dataset.theme = t; }, theme);
       await page.waitForTimeout(350); // Measure the selected theme after existing color transitions settle.
-      const measurements = await colors(page, ['.st-cookie', '.st-accept', '.st-actions button', '.st-search-button', '.lx-hero-desc', '.lx-nav-link', '.lx-workday-copy p', '.lx-step-card p', '.lx-footer-copy', '.lx-footer-links a', '.lx-footer-legal a', '.lx-story-intro h2', '.lx-story-tab[aria-selected="false"]']);
+      const measurements = await colors(page, ['.st-cookie', '.st-accept', '.st-actions button', '.st-search-button', '.lx-hero-desc', '.lx-nav-link', '.lx-problem-list span', '.lx-showcase-copy p', '.lx-step-card p', '.lx-footer-copy', '.lx-footer-links a', '.lx-footer-legal a', '.lx-story-intro h2', '.lx-story-tab[aria-selected="false"]']);
       for (const item of measurements) assert(item.text >= 4.5, `${theme} ${item.selector}: text contrast ${item.text}`);
       // The ring sits outside the control, against the surrounding surface.
       const surface = (await colors(page, ['.st-cookie']))[0];
@@ -54,7 +54,7 @@ async function colors(page, selectors) {
     }
     await page.getByRole('button', { name: 'არ ვეთანხმები', exact: true }).click();
     assert.equal(await page.locator('.st-progress, .lx-progress').count(), 1);
-    assert.equal(await page.locator('main > section').count(), 5);
+    assert.equal(await page.locator('main > section').count(), 6);
     assert.equal(await page.locator('.lx-story-section').count(), 1);
     assert.equal(await page.locator('#features-grid, #pricing-grid, #faq, #comparison, #tour-modal-backdrop').count(), 0);
     assert.deepEqual(await page.locator('a[href^="#"]').evaluateAll(links => links.filter(a => a.hash && !document.getElementById(a.hash.slice(1))).map(a => a.hash)), []);

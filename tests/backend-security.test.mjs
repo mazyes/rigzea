@@ -60,6 +60,25 @@ try {
   assert.equal(checkout.body.error, 'payment_provider_not_configured');
   assert.equal(checkoutFetches.length, 2, 'no payment record or provider request is created');
 
+  // The callback URL KISA receives must not need a redirect (trailingSlash answers /api/x with a 308).
+  process.env.KISA_CLIENT_ID = 'test-client';
+  process.env.KISA_CLIENT_SECRET = 'test-secret';
+  let createPayment = null;
+  globalThis.fetch = async (url, init) => {
+    const value = String(url);
+    const json = (body) => new Response(JSON.stringify(body), { status: 200 });
+    if (value.includes('/auth/v1/user')) return json({ id: 'user-1' });
+    if (value.includes('/organization_members?')) return json([{ role: 'owner' }]);
+    if (value.endsWith('/rest/v1/payments')) return json([{ id: 'pay-1' }]);
+    if (value.includes('/auth/token')) return json({ accessToken: 'kisa-token' });
+    if (value.includes('/create-payment')) { createPayment = JSON.parse(init.body); return json({ url: 'https://pay.example.test/x', orderId: 'order-1' }); }
+    if (value.includes('/rest/v1/payments?')) return json([]);
+    throw new Error('unexpected request ' + value);
+  };
+  const paid = await call(kisaCheckout, { method: 'POST', headers: { authorization: 'Bearer test-user-token' }, body: { orgId: '00000000-0000-4000-8000-000000000001', plan: 'starter' } });
+  assert.equal(paid.statusCode, 200, 'checkout returns the provider URL');
+  assert.match(createPayment.callbackUrl, /\/api\/kisa-webhook\/\?token=[\w-]{20,}$/, 'callback URL has the trailing slash Vercel expects');
+
   globalThis.fetch = async (url) => {
     const value = String(url);
     if (value.includes('/auth/v1/user')) return new Response(JSON.stringify({ id: 'user-1' }), { status: 200 });
@@ -133,6 +152,15 @@ try {
   assert.equal(sentMail.length, 1, 'no email was sent for the refused requests');
   const en = inviteContent({ lang: 'en', inviter: 'Nino', org: 'Batumi Stay', role: 'staff', token: 'b'.repeat(32), expires_at: '2026-11-06T10:00:00Z' });
   assert(en.subject.includes('Batumi Stay') && en.content.list.some(t => /tasks/i.test(t)), 'English variant, role specific');
+
+  // Public listing page: "$'" or "$&" in listing text must stay literal, not paste page HTML into it.
+  const tricky = "Sea view $' and $& and $`";
+  globalThis.fetch = async () => new Response(JSON.stringify({ success: true, apartment: { id: 'apt-1', slug: 'sea-1', name: "Flat $'", description: tricky } }), { status: 200 });
+  const listingRes = { statusCode: 200, headers: {}, body: '', setHeader(k, v) { this.headers[k] = v; }, end(b) { this.body = b; } };
+  await (await import('../api/p.js')).default({ query: { ref: 'sea-1' } }, listingRes);
+  assert.equal(listingRes.body.split('</html>').length, 2, 'the page is not duplicated into the listing data');
+  assert(listingRes.body.includes(JSON.stringify(tricky)), 'listing text is injected as written');
+  assert(listingRes.body.includes("<title>Flat $&#39; · Rigzea</title>"), 'title keeps the dollar sign');
 
   console.log('Backend security tests passed.');
 } finally {

@@ -231,6 +231,26 @@ test('6. owner sees confirmation only after the server records the decision', as
   return page;
 });
 
+test('6b. names and photo links on the public approval page cannot inject markup', async (browser) => {
+  const page = await newPage(browser, { viewport: PHONE });
+  await page.goto(BASE + '/approve/?token=tok-pending-1');
+  await page.locator('h1', { hasText: 'ონკანის გამოცვლა' }).waitFor();
+  await page.evaluate(() => {
+    const d = JSON.parse(localStorage.getItem('rigzea_mockdb'));
+    const ap = d.tables.approvals.find(a => a.token === 'tok-pending-1');
+    d.tables.owners.find(o => o.id === ap.owner_id).name = '<img id="xss-owner" src=x>';
+    d.tables.organizations.find(o => o.id === ap.organization_id).name = '<b id="xss-org">Org</b>';
+    ap.photos = ['javascript:alert(1)'];
+    localStorage.setItem('rigzea_mockdb', JSON.stringify(d));
+  });
+  await page.reload();
+  await page.locator('h1', { hasText: 'ონკანის გამოცვლა' }).waitFor();
+  assert.strictEqual(await page.locator('#xss-owner, #xss-org').count(), 0, 'names are shown as text');
+  assert(/<img id="xss-owner"/.test(await page.locator('#ap').innerText()), 'the name is still visible');
+  assert.strictEqual(await page.locator('a.photo').getAttribute('href'), '#', 'a non-http photo link is neutralised');
+  return page;
+});
+
 test('7. manager records an expense with a receipt and sees it once', async (browser) => {
   const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
   await page.goto(BASE + '/app/finance/');
@@ -1300,7 +1320,7 @@ test('17. navigation: rentals and sales sections scope apartments, contacts and 
     assert(sw <= w, `${hash} overflows: ${sw} > ${w}`);
     assert.strictEqual(await phone.locator('#section-bar a').count(), tabCount[hash.slice(2).split('?')[0]], `${hash} shows the section tabs`);
   }
-  assert.strictEqual((await phone.locator('#bottom-nav [aria-current="page"]').innerText()).trim(), 'გარიგებები');
+  assert.strictEqual(await phone.locator('#bottom-nav [aria-current="page"]').getAttribute('aria-label'), 'გარიგებები');
   await phone.goto(BASE + '/app/owners/');
   await phone.locator('#section-bar a[href="/app/owners/?type=seller"]').click();
   await phone.getByRole('heading', { name: 'გამყიდველები', exact: true }).waitFor();
@@ -1419,6 +1439,7 @@ test('20. documents: PDF presentation templates, auto-filled sale contract, regi
   await dlg.locator('input[name=buyer_name]').fill('ნიკა ბერიძე');
   await dlg.locator('input[name=price]').fill('120000');
   await dlg.locator('input[name=deposit_amount]').fill('5000');
+  await dlg.locator('input[name=final_date]').fill('2030-01-01');
   await dlg.locator('[data-submit]').click();
   const paper = page.locator('dialog[open] #doc-paper');
   await paper.waitFor();
@@ -1875,9 +1896,10 @@ test('1zc. chat: write, reply, edit, react, attach, delete (own and as owner) wi
   await page.goto(BASE + '/app/chat/');
   await page.locator('#chat-input').waitFor();
   assert.strictEqual(await page.locator('#chat-head strong').innerText(), 'კომპანიის ჩატი', 'the company chat opens first');
-  await chatIncoming(page, 'გამარჯობა გუნდო! https://rigzea.com');
+  await chatIncoming(page, 'გამარჯობა გუნდო! https://rigzea.com/p/?a=1&b=2');
   await page.locator('.msg', { hasText: 'გამარჯობა გუნდო' }).waitFor();
   assert.strictEqual(await page.locator('.msg-text a[href^="https://rigzea.com"]').count(), 1, 'links are clickable');
+  assert.strictEqual(await page.locator('.msg-text a[href^="https://rigzea.com"]').getAttribute('href'), 'https://rigzea.com/p/?a=1&b=2', 'a link with & opens the same address');
   // write
   await page.fill('#chat-input', 'მოვალ 15:00-ზე');
   await page.keyboard.press('Enter');
@@ -1996,6 +2018,71 @@ test('1ze. chat permissions are enforced by the data layer, not the screen', asy
   await page.close();
 });
 
+test('1zde. private chats between CRM roles: owner, admin, manager, agent; picker excludes staff; direct routing', async (browser) => {
+  const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
+  await page.goto(BASE + '/app/');
+  await page.getByRole('heading', { name: /გამარჯობა,/ }).waitFor();
+  await page.evaluate(({ CH }) => {
+    const d = JSON.parse(localStorage.getItem('rigzea_mockdb'));
+    const org = d.tables.chat_channels.find(c => c.id === CH).organization_id;
+    const now = new Date().toISOString();
+    const members = [
+      { id: 'bbbbbbbb-0000-4000-8000-000000000010', organization_id: org, user_id: 'aaaaaaaa-0000-4000-8000-000000000010', role: 'admin', display_name: 'დავით ადმინი', created_at: now },
+      { id: 'bbbbbbbb-0000-4000-8000-000000000020', organization_id: org, user_id: 'aaaaaaaa-0000-4000-8000-000000000020', role: 'manager', display_name: 'სალომე მენეჯერი', created_at: now },
+      { id: 'bbbbbbbb-0000-4000-8000-000000000030', organization_id: org, user_id: 'aaaaaaaa-0000-4000-8000-000000000030', role: 'agent', display_name: 'გიორგი აგენტი', created_at: now },
+      { id: 'bbbbbbbb-0000-4000-8000-000000000040', organization_id: org, user_id: 'aaaaaaaa-0000-4000-8000-000000000040', role: 'agent', display_name: 'ლუკა აგენტი', created_at: now },
+    ];
+    members.forEach(m => {
+      d.tables.organization_members.push(m);
+      d.tables.chat_channel_members.push({ channel_id: CH, organization_id: org, user_id: m.user_id, last_read_at: now, joined_at: now });
+      d.users.push({ id: m.user_id, email: `${m.role}@test.ge`, password: 'test', name: m.display_name });
+    });
+    localStorage.setItem('rigzea_mockdb', JSON.stringify(d));
+  }, { CH: CHAT_CH });
+
+  await page.goto(BASE + '/app/chat/');
+  await page.locator('#chat-input').waitFor();
+  await page.click('#chat-new');
+  await page.locator('dialog[open]').waitFor();
+  const pickerLabels = await page.locator('dialog[open] [data-person]').evaluateAll(btns => btns.map(b => b.innerText.replace(/\s+/g, ' ').trim()));
+  assert(!pickerLabels.some(t => t.includes('მარიამ კაპანაძე') || t.includes('ტექნიკოსი')), 'staff accounts excluded from conversation picker');
+  assert(pickerLabels.some(t => t.includes('დავით ადმინი') && t.includes('ადმინისტრატორი')), 'admin shown');
+  assert(pickerLabels.some(t => t.includes('სალომე მენეჯერი') && t.includes('მენეჯერი')), 'manager shown');
+  assert(pickerLabels.some(t => t.includes('გიორგი აგენტი') && t.includes('აგენტი')), 'agent 1 shown');
+  assert(pickerLabels.some(t => t.includes('ლუკა აგენტი') && t.includes('აგენტი')), 'agent 2 shown');
+
+  await page.locator('dialog[open] [data-person="aaaaaaaa-0000-4000-8000-000000000030"]').click();
+  await page.locator('#chat-head strong', { hasText: 'გიორგი აგენტი' }).waitFor();
+  assert.strictEqual(await page.locator('#chat-head small').innerText(), 'აგენტი');
+  await page.fill('#chat-input', 'გიორგი, ახალი ობიექტი შეამოწმე');
+  await page.keyboard.press('Enter');
+  await page.locator('.msg.is-own', { hasText: 'ახალი ობიექტი შეამოწმე' }).waitFor();
+
+  const rpcResults = await page.evaluate(async () => {
+    const sb = R.sb, org = App.S.org.id;
+    const res = {};
+    const roles = {
+      owner: 'aaaaaaaa-0000-4000-8000-000000000001',
+      admin: 'aaaaaaaa-0000-4000-8000-000000000010',
+      manager: 'aaaaaaaa-0000-4000-8000-000000000020',
+      agent1: 'aaaaaaaa-0000-4000-8000-000000000030',
+      agent2: 'aaaaaaaa-0000-4000-8000-000000000040',
+      staff: 'aaaaaaaa-0000-4000-8000-000000000002',
+    };
+    res.toAdmin = (await sb.rpc('chat_open_direct', { p_org: org, p_other: roles.admin })).data;
+    res.toManager = (await sb.rpc('chat_open_direct', { p_org: org, p_other: roles.manager })).data;
+    res.toAgent = (await sb.rpc('chat_open_direct', { p_org: org, p_other: roles.agent1 })).data;
+    res.toStaffError = (await sb.rpc('chat_open_direct', { p_org: org, p_other: roles.staff })).error?.message;
+    return res;
+  });
+  assert(rpcResults.toAdmin, 'direct chat with admin created');
+  assert(rpcResults.toManager, 'direct chat with manager created');
+  assert(rpcResults.toAgent, 'direct chat with agent created');
+  assert(/cannot use chat/.test(rpcResults.toStaffError), 'direct chat with staff rejected');
+
+  await page.close();
+});
+
 test('1zf. chat on a phone: list, conversation, back; bottom bar steps aside; nothing overflows', async (browser) => {
   const page = await newPage(browser, { viewport: PHONE, login: USERS.manager });
   await page.goto(BASE + '/app/');
@@ -2017,6 +2104,107 @@ test('1zf. chat on a phone: list, conversation, back; bottom bar steps aside; no
   assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'no overflow in the conversation');
   await page.locator('.chat-back').click();
   await page.waitForFunction(() => document.querySelector('#chat-root').dataset.pane === 'list');
+  await page.close();
+});
+
+test('1zfa. mobile chat follows the visible viewport, keeps scroll, and handles emoji and failed reactions', async (browser) => {
+  const page = await newPage(browser, { viewport: PHONE, login: USERS.manager });
+  await page.goto(BASE + '/app/chat/');
+  await page.locator('.chat-item').first().click();
+  await page.locator('#chat-input').waitFor({ state: 'visible' });
+  await page.evaluate(() => {
+    const view = window.visualViewport;
+    Object.defineProperty(view, 'height', { configurable: true, value: 430 });
+    view.dispatchEvent(new Event('resize'));
+  });
+  const layout = await page.evaluate(() => {
+    const root = document.querySelector('#chat-root').getBoundingClientRect();
+    const head = document.querySelector('#chat-head').getBoundingClientRect();
+    const composer = document.querySelector('#chat-composer').getBoundingClientRect();
+    const history = document.querySelector('#chat-msgs').getBoundingClientRect();
+    const main = document.querySelector('.chat-main').getBoundingClientRect();
+    const style = getComputedStyle(document.querySelector('#chat-root'));
+    const mainStyle = getComputedStyle(document.querySelector('.chat-main'));
+    return { top: root.top, bottom: root.bottom, display: style.display, padding: style.padding, mainMargin: mainStyle.margin, mainTransform: mainStyle.transform, mainTop: main.top, mainBottom: main.bottom, mainHeight: main.height, head: head.top, history: history.height, composer: composer.bottom };
+  });
+  assert(layout.top <= layout.head && layout.history > 0, 'header and history stay inside the chat');
+  assert(layout.bottom <= 431 && layout.composer <= 431, 'composer stays above the emulated keyboard: ' + JSON.stringify(layout));
+  await page.locator('#chat-emoji-toggle').click();
+  await page.locator('#chat-emoji [data-emoji="🏠"]').click();
+  assert.strictEqual(await page.inputValue('#chat-input'), '🏠');
+  await page.fill('#chat-input', 'პირველი\nმეორე');
+  assert(await page.locator('#chat-input').evaluate(el => el.getBoundingClientRect().height > 42), 'multiline input grows');
+  await page.locator('#chat-emoji-toggle').click();
+  await page.locator('#chat-send').click();
+  await page.locator('.msg.is-own', { hasText: 'პირველი' }).waitFor();
+  await page.waitForFunction(() => !document.querySelector('.msg.is-pending'));
+  const msg = page.locator('.msg.is-own', { hasText: 'პირველი' });
+  await fail(page, 'insert:chat_reactions');
+  await msg.locator('[data-more]').click();
+  await page.locator('.chat-menu [data-m-react="👍"]').click();
+  await page.waitForFunction(() => !document.querySelector('.msg-react.is-mine'));
+  assert.strictEqual((await db(page)).tables.chat_reactions.length, 0, 'failed reaction rolls back');
+  await page.evaluate(() => {
+    delete window.visualViewport.height;
+    window.visualViewport.dispatchEvent(new Event('resize'));
+  });
+  assert(await page.evaluate(() => document.querySelector('#chat-root').getBoundingClientRect().bottom > 700), 'closed keyboard restores height');
+  assert((await page.evaluate(() => document.fonts.load('24px "Rigzea Emoji"', '👍'))).length > 0, 'chat emoji font loads');
+  for (const viewport of [{ width: 320, height: 640 }, { width: 393, height: 852 }, { width: 740, height: 375 }]) {
+    await page.setViewportSize(viewport);
+    await page.waitForFunction(() => document.querySelector('#chat-root').getBoundingClientRect().bottom <= window.visualViewport.height + 1);
+    const bounds = await page.evaluate(() => ({
+      composer: document.querySelector('#chat-composer').getBoundingClientRect().bottom,
+      width: document.documentElement.scrollWidth,
+      visible: window.visualViewport.height,
+      overflow: [...document.querySelectorAll('#chat-root *')].filter(el => el.getBoundingClientRect().right > innerWidth + 1).slice(0, 4).map(el => el.className),
+      outside: [...document.querySelectorAll('body *')].filter(el => el.getBoundingClientRect().right > innerWidth + 1).slice(0, 5).map(el => el.className),
+    }));
+    assert(bounds.composer <= bounds.visible + 1, 'composer fits ' + JSON.stringify(viewport) + ': ' + JSON.stringify(bounds));
+    assert(bounds.width <= viewport.width, 'no horizontal overflow at ' + viewport.width + ': ' + JSON.stringify(bounds));
+  }
+  await page.close();
+});
+
+test('1zfb. older and incoming chat messages preserve a reader’s position', async (browser) => {
+  const page = await newPage(browser, { viewport: PHONE, login: USERS.manager });
+  await page.goto(BASE + '/app/');
+  await page.getByRole('heading', { name: /გამარჯობა,/ }).waitFor();
+  await page.evaluate((CH) => {
+    const d = JSON.parse(localStorage.getItem('rigzea_mockdb'));
+    const org = d.tables.chat_channels.find(c => c.id === CH).organization_id;
+    for (let i = 0; i < 210; i++) d.tables.chat_messages.push({
+      id: 'dddd0000-0000-4000-8000-' + String(i).padStart(12, '0'),
+      channel_id: CH, organization_id: org, sender_id: 'aaaaaaaa-0000-4000-8000-000000000001',
+      body: 'შეტყობინება ' + i, attachments: [], reply_to: null, created_at: new Date(Date.now() - (210 - i) * 60000).toISOString(),
+      edited_at: null, deleted_at: null,
+    });
+    localStorage.setItem('rigzea_mockdb', JSON.stringify(d));
+  }, CHAT_CH);
+  await page.goto(BASE + '/app/chat/');
+  await page.locator('.chat-item').first().click();
+  await page.locator('.msg').first().waitFor();
+  await page.locator('#chat-msgs').evaluate(el => { el.scrollTop = 350; });
+  const before = await page.locator('#chat-msgs').evaluate(el => ({ top: el.scrollTop, height: el.scrollHeight, client: el.clientHeight }));
+  await chatIncoming(page, 'ახალი შეტყობინება');
+  await page.locator('.msg', { hasText: 'ახალი შეტყობინება' }).waitFor();
+  const after = await page.locator('#chat-msgs').evaluate(el => ({ top: el.scrollTop, height: el.scrollHeight, client: el.clientHeight }));
+  assert(Math.abs(after.top - before.top) < 3, 'incoming message leaves older reading position in place');
+  await page.locator('#chat-older').click();
+  await page.waitForFunction(() => document.querySelectorAll('#chat-msgs .msg').length > 190);
+  const older = await page.locator('#chat-msgs').evaluate(el => ({ top: el.scrollTop, height: el.scrollHeight, client: el.clientHeight }));
+  assert(older.top > after.top, 'prepending older messages keeps the same content in view: ' + JSON.stringify({ before, after, older }));
+  await page.close();
+});
+
+test('1zfc. a failed chat load can be retried on a phone', async (browser) => {
+  const page = await newPage(browser, { viewport: PHONE, login: USERS.manager });
+  await page.goto(BASE + '/app/');
+  await page.getByRole('heading', { name: /გამარჯობა,/ }).waitFor();
+  await fail(page, 'select:chat_channels');
+  await page.goto(BASE + '/app/chat/');
+  await page.locator('#chat-list [data-chat-retry]').click();
+  await page.locator('.chat-item').first().waitFor();
   await page.close();
 });
 
@@ -2171,6 +2359,211 @@ test('1u. English property inventory has no Georgian interface or user-content s
   assert(!attrs.some(v => /[ა-ჰ]/.test(v)), 'English inventory attributes contain Georgian: ' + attrs.filter(v => /[ა-ჰ]/.test(v)).join(' | '));
   const text = await page.locator('#view').textContent();
   assert(text.includes('Saburtalo') && text.includes('Tbilisi'), 'Georgian proper names and addresses are romanized');
+  return page;
+});
+
+
+// ---- Settings export, Settings layout and saved contracts ----
+const ORG = '11111111-1111-4111-8111-111111111111';
+// The seed only exists on a first visit, so a later navigation must not trip over it.
+const seedContracts = (page, rows) => page.addInitScript((rows) => { const t = window.__MOCK_SEED?.tables; if (t) (t.contracts ||= []).push(...rows); }, rows);
+const savedDeposit = (i, extra = {}) => ({ id: 'cccccccc-0000-4000-8000-' + String(i).padStart(12, '0'), organization_id: ORG, apartment_id: null, deal_id: null, created_by: USERS.manager.id, created_at: new Date(Date.now() - i * 60000).toISOString(),
+  data: { doc_type: 'deposit', owner_name: 'გამყიდველი ' + i, owner_id: '', buyer_name: 'მყიდველი ' + i, property_address: 'თბილისი, ვაკე', contract_date: '2026-10-01', price: 100000, currency: 'USD', deposit_amount: 5000, final_date: '2026-12-01', extra_terms: '' }, ...extra });
+const savedLease = (i) => ({ id: 'cccccccc-0000-4000-8000-' + String(i).padStart(12, '0'), organization_id: ORG, apartment_id: null, deal_id: null, created_by: USERS.manager.id, created_at: new Date(Date.now() - i * 60000).toISOString(),
+  data: { landlord_name: 'გამქირავებელი', tenant_name: 'დამქირავებელი', property_address: 'თბილისი, საბურთალო', contract_date: '2026-10-01', start_date: '2026-10-01', end_date: '2027-09-30', rent: 800, currency: 'USD', deposit: 800, pay_day: '5', penalty_pct: '0.1', notice_days: '30', keys_count: '2', pets: 'no', utilities: 'tenant' } });
+
+test('1zq. settings export counts and downloads every record, not the few loaded for the page', async (browser) => {
+  const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
+  await page.addInitScript(([org]) => {
+    const t = window.__MOCK_SEED.tables;
+    for (let i = 0; i < 1100; i++) t.expenses.push({ id: 'ee000000-0000-4000-8000-' + String(i).padStart(12, '0'), organization_id: org, apartment_id: null, amount: 10 + i, expense_date: '2026-03-01', description: 'ხარჯი ' + i, category: 'other', status: 'incurred', created_at: new Date().toISOString() });
+    for (let i = 0; i < 3; i++) t.income.push({ id: 'ff000000-0000-4000-8000-' + String(i).padStart(12, '0'), organization_id: org, apartment_id: null, amount: 100 + i, income_date: '2026-03-02', source: 'rent', created_at: new Date().toISOString() });
+  }, [ORG]);
+  await page.goto(BASE + '/app/settings/?id=export');
+  const row = (label) => page.locator('#s-body .row', { hasText: label });
+  const tables = (await db(page)).tables;
+  const nExp = tables.expenses.length, nInc = tables.income.length;
+  assert(nExp > 1000, 'more expenses than one fetch page');
+  await row('ხარჯები').locator(`text=${nExp} ჩანაწერი`).waitFor();
+  assert((await row('შემოსავალი').innerText()).includes(`${nInc} ჩანაწერი`), 'income count comes from the database');
+  await row('ხარჯები').locator('[data-export]').click();
+  const dlg = page.locator('dialog[open]');
+  await dlg.locator(`text=${nExp} ჩანაწერი`).waitFor();
+  await dlg.locator('input[name=format][value=csv]').check({ force: true });
+  const [download] = await Promise.all([page.waitForEvent('download'), dlg.locator('[data-submit]').click()]);
+  const csv = require('fs').readFileSync(await download.path(), 'utf8').trim().split(/\r?\n/);
+  assert.strictEqual(csv.length, nExp + 1, 'header plus every expense, past the 500 loaded for a page');
+  return page;
+});
+
+test('1zl. settings: grouped side navigation on desktop, tab strip on a phone, nothing overflows', async (browser) => {
+  const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
+  await page.goto(BASE + '/app/settings/');
+  await page.locator('.settings-tabs .tab').first().waitFor();
+  const boxes = await page.locator('.settings-tabs .tab').evaluateAll(els => els.map(e => { const r = e.getBoundingClientRect(); return [Math.round(r.left), Math.round(r.top)]; }));
+  assert(boxes.length >= 7, 'every tab is still there');
+  assert(boxes.every(b => b[0] === boxes[0][0]) && boxes[1][1] > boxes[0][1], 'tabs stack in a vertical rail on desktop');
+  assert.deepStrictEqual(await page.locator('.settings-tabs .tab-group').allInnerTexts(), ['პირადი', 'სამუშაო სივრცე', 'მონაცემები']);
+  for (const id of ['profile', 'security', 'ui', 'org', 'plan', 'import', 'export']) {
+    await page.goto(BASE + '/app/settings/?id=' + id);
+    await page.locator('.settings-tabs .tab[aria-selected=true]').waitFor();
+    assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), id + ' fits on desktop');
+  }
+  await page.setViewportSize(PHONE);
+  for (const id of ['profile', 'org', 'plan', 'export']) {
+    await page.goto(BASE + '/app/settings/?id=' + id);
+    await page.locator('.settings-tabs .tab[aria-selected=true]').waitFor();
+    assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), id + ' fits on a phone');
+    assert.strictEqual(await page.locator('.settings-tabs .tab-group').first().isVisible(), false, 'group labels are hidden in the phone strip');
+  }
+  return page;
+});
+
+test('1zm. contracts: own heading and actions, count with load more past 50', async (browser) => {
+  const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
+  await seedContracts(page, Array.from({ length: 120 }, (_, i) => savedDeposit(i + 1)));
+  await page.goto(BASE + '/app/deals/?id=documents');
+  assert.strictEqual((await page.locator('#view h1').innerText()).trim(), 'ხელშეკრულებები და რეესტრი');
+  assert.strictEqual(await page.locator('#btn-deal-new').count(), 0, 'deal actions are not offered on the contracts page');
+  assert.strictEqual(await page.locator('#btn-doc-new').count(), 1);
+  await page.locator('#doc-count', { hasText: '50 / 120' }).waitFor();
+  assert.strictEqual(await page.locator('[data-saved]').count(), 50);
+  await page.locator('#doc-more').click();
+  await page.locator('#doc-count', { hasText: '100 / 120' }).waitFor();
+  await page.locator('#doc-more').click();
+  await page.locator('#doc-count', { hasText: '120 / 120' }).waitFor();
+  assert.strictEqual(await page.locator('[data-saved]').count(), 120);
+  assert.strictEqual(await page.locator('#doc-more').count(), 0, 'no button once everything is shown');
+  return page;
+});
+
+test('1zn. contracts: a saved document and a saved lease are edited in place, bad dates are refused', async (browser) => {
+  const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
+  await seedContracts(page, [savedDeposit(1), savedLease(2)]);
+  await page.goto(BASE + '/app/deals/?id=documents');
+  await page.locator('[data-saved]').first().waitFor();
+  const before = (await db(page)).tables.contracts.map(c => ({ id: c.id, created_by: c.created_by, organization_id: c.organization_id }));
+
+  // sale document: the deposit must stay below the price, then a valid edit updates the same row
+  await page.locator('[data-saved]', { hasText: 'ბეს / წინარე' }).click();
+  await page.locator('dialog[open] #btn-edit-doc').click();
+  const dlg = page.locator('dialog[open]');
+  await dlg.locator('input[name=deposit_amount]').waitFor();
+  assert.strictEqual(await dlg.locator('input[name=price]').inputValue(), '100000', 'the saved values fill the form');
+  await dlg.locator('input[name=deposit_amount]').fill('100000');
+  await dlg.locator('[data-submit]').click();
+  await dlg.locator('.form-error', { hasText: 'ბეს ოდენობა ფასზე ნაკლები' }).waitFor();
+  assert.strictEqual((await db(page)).tables.contracts.find(c => c.id === before[0].id).data.deposit_amount, 5000, 'nothing saved');
+  await dlg.locator('input[name=deposit_amount]').fill('7000');
+  await dlg.locator('[data-submit]').click();
+  await page.locator('dialog[open] #doc-paper').waitFor();
+  let rows = (await db(page)).tables.contracts;
+  assert.strictEqual(rows.length, 2, 'no duplicate row');
+  assert.strictEqual(String(rows.find(c => c.id === before[0].id).data.deposit_amount), '7000');
+  await page.keyboard.press('Escape');
+
+  // lease: the end date must come after the start date
+  await page.locator('[data-saved]', { hasText: 'დამქირავებელი' }).click();
+  await page.locator('dialog[open] #btn-edit-lease').click();
+  const lease = page.locator('dialog[open]');
+  await lease.locator('input[name=rent]').waitFor();
+  await lease.locator('input[name=end_date]').fill('2026-09-01');
+  await lease.locator('[data-submit]').click();
+  await lease.locator('.form-error', { hasText: 'დასრულების თარიღი' }).waitFor();
+  await lease.locator('input[name=end_date]').fill('2027-10-31');
+  await lease.locator('input[name=rent]').fill('950');
+  await lease.locator('[data-submit]').click();
+  await page.locator('dialog[open] #lease-paper').waitFor();
+  rows = (await db(page)).tables.contracts;
+  assert.strictEqual(rows.length, 2, 'still no duplicate');
+  assert.strictEqual(rows.find(c => c.id === before[1].id).data.rent, 950);
+  assert.deepStrictEqual(rows.map(c => ({ id: c.id, created_by: c.created_by, organization_id: c.organization_id })), before, 'owner, creator and organization never change');
+  page.errors.splice(0); // the refused saves above are logged by the dialog on purpose
+  return page;
+});
+
+test('1zo. contracts: an agent sees and edits only the contracts they created', async (browser) => {
+  const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
+  const other = savedDeposit(2, { created_by: 'bbbbbbbb-0000-4000-8000-0000000000aa' });
+  await seedContracts(page, [savedDeposit(1), other]);
+  await page.goto(BASE + '/app/');
+  await page.getByRole('heading', { name: /გამარჯობა,/ }).waitFor();
+  await page.evaluate((me) => {
+    const d = JSON.parse(localStorage.getItem('rigzea_mockdb'));
+    d.tables.organization_members.find(m => m.user_id === me).role = 'agent';
+    localStorage.setItem('rigzea_mockdb', JSON.stringify(d));
+  }, USERS.manager.id);
+  await page.goto(BASE + '/app/deals/?id=documents');
+  await page.locator('#doc-count', { hasText: '1 / 1' }).waitFor();
+  assert.strictEqual(await page.locator('[data-saved]').count(), 1, 'only the agent\'s own contract is listed');
+  // the mock mirrors the contracts policies; this is the client side of the rule, the real RLS is not covered here
+  const hit = await page.evaluate(async (id) => { const r = await R.sb.from('contracts').update({ data: { hacked: true } }).eq('id', id).select(); return r.data; }, other.id);
+  assert.deepStrictEqual(hit, [], 'another person\'s contract cannot be updated');
+  assert.strictEqual(String((await db(page)).tables.contracts.find(c => c.id === other.id).data.hacked), 'undefined');
+  return page;
+});
+
+test('1zp. contracts on a phone: no overflow, optional fields are folded', async (browser) => {
+  const page = await newPage(browser, { viewport: PHONE, login: USERS.manager });
+  await seedContracts(page, [savedDeposit(1), savedLease(2)]);
+  await page.goto(BASE + '/app/deals/?id=documents');
+  await page.locator('[data-saved]').first().waitFor();
+  assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'documents page fits');
+  await page.locator('[data-doc="lease"]').click();
+  const dlg = page.locator('dialog[open]');
+  await dlg.locator('input[name=landlord_name]').waitFor();
+  assert(await dlg.locator('details.form-more').count() >= 4, 'optional lease fields are in folded sections');
+  assert.strictEqual(await dlg.locator('details.form-more[open]').count(), 0, 'all folded for a new lease');
+  assert.strictEqual(await dlg.locator('input[name=meter_gas]').isVisible(), false);
+  assert(await dlg.evaluate(el => el.scrollWidth <= el.clientWidth + 1), 'the form does not overflow');
+  await dlg.locator('[data-submit]').click(); // required names are empty: the message shows and nothing is saved
+  await dlg.locator('.form-error:not([hidden])').waitFor();
+  assert.strictEqual((await db(page)).tables.contracts.length, 2);
+  return page;
+});
+
+test('1zr. the narrowest phone (320px) and landscape never scroll sideways; section tabs are 44px tall', async (browser) => {
+  const page = await newPage(browser, { viewport: { width: 320, height: 640 }, login: USERS.manager });
+  for (const url of ['/app/', '/app/tasks/', '/app/apartments/', '/app/deals/?id=documents', '/app/settings/?id=org', '/app/chat/']) {
+    await page.goto(BASE + url);
+    await page.locator('#view h1, .chat').first().waitFor();
+    await page.waitForTimeout(150);
+    assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), url + ' scrolls sideways at 320px');
+  }
+  await page.goto(BASE + '/app/apartments/');
+  const tabs = page.locator('a.section-tab');
+  await tabs.first().waitFor({ state: 'visible' });
+  await page.waitForFunction(() => document.querySelector('a.section-tab')?.getBoundingClientRect().height > 0);
+  assert(await page.evaluate(() => document.querySelector('a.section-tab').getBoundingClientRect().height >= 44), 'section tabs reach the 44px touch size');
+  await page.setViewportSize({ width: 740, height: 360 });
+  await page.goto(BASE + '/app/settings/?id=profile');
+  await page.locator('#view h1').waitFor();
+  assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'landscape phone fits');
+  return page;
+});
+
+test('1zs. switching from Contacts or Finance to Chat renders the new page once, not the old one again first', async (browser) => {
+  const page = await newPage(browser, { viewport: PHONE, login: USERS.manager });
+  for (const from of ['owners', 'finance']) {
+    await page.goto(BASE + `/app/${from}/`);
+    await page.locator('#view h1').first().waitFor();
+    await page.waitForTimeout(2200);
+    await page.evaluate(() => { window.__draws = []; new MutationObserver(ms => ms.forEach(m => { if (m.addedNodes.length) window.__draws.push(document.querySelector('#view .chat') ? 'chat' : 'other'); })).observe(document.querySelector('#view'), { childList: true }); });
+    await page.locator('#bottom-nav [data-bn="chat"]').click();
+    await page.locator('#chat-root').waitFor();
+    await page.waitForTimeout(600);
+    assert.deepStrictEqual(await page.evaluate(() => window.__draws), ['chat'], `${from} -> chat drew something else first`);
+  }
+  return page;
+});
+
+test('1zt. moving to another area in the same tab shows that area\'s data, not an empty list', async (browser) => {
+  const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
+  await page.goto(BASE + '/app/apartments/');
+  await page.locator('#view h1').first().waitFor();
+  await page.evaluate(() => window.App.go('#/finance'));
+  await page.waitForURL('**/app/finance/');
+  await page.waitForFunction(() => !window.App.S.loading && (window.App.S.data?.income || []).length > 0, null, { timeout: 8000 });
   return page;
 });
 
