@@ -2536,6 +2536,16 @@ test('1zs. switching from Contacts or Finance to Chat renders the new page once,
   return page;
 });
 
+test('1zt. moving to another area in the same tab shows that area\'s data, not an empty list', async (browser) => {
+  const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
+  await page.goto(BASE + '/app/apartments/');
+  await page.locator('#view h1').first().waitFor();
+  await page.evaluate(() => window.App.go('#/finance'));
+  await page.waitForURL('**/app/finance/');
+  await page.waitForFunction(() => !window.App.S.loading && (window.App.S.data?.income || []).length > 0, null, { timeout: 8000 });
+  return page;
+});
+
 (async () => {
   const server = await serve();
   const browser = await launch();

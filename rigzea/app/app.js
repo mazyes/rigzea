@@ -431,11 +431,9 @@
     return rows;
   }
 
-  // Fetches everything the workspace shows for one organization. Throws on failure.
-  async function fetchData(org, includeSearchData = false) {
-    const totals = {};
-    const area = route().name;
-    const needs = new Set(includeSearchData
+  // The optional data sets an area needs on top of apartments, owners and open tasks.
+  function areaNeeds(area, includeSearchData = false) {
+    return new Set(includeSearchData
       ? ['closedTasks', 'approvals', 'expenses', 'income', 'reservations', 'repairs', 'deals']
       : area === 'today'
       ? ['closedTasks', 'approvals', 'expenses', 'income', 'reservations', 'events', 'repairs', 'deals', 'statements']
@@ -448,6 +446,12 @@
             : area === 'finance'
               ? ['expenses', 'income', 'statements']
               : new Set());
+  }
+
+  // Fetches everything the workspace shows for one organization. Throws on failure.
+  async function fetchData(org, includeSearchData = false) {
+    const totals = {};
+    const needs = areaNeeds(route().name, includeSearchData);
     const warnings = {};
     const optional = (name, factory) => needs.has(name)
       ? Promise.resolve().then(async () => {
@@ -478,7 +482,7 @@
       optional('deals', () => take(totals, 'deals', sb.from('deals').select('*', { count: 'exact' }).eq('organization_id', org).order('created_at', { ascending: false }).limit(S.limits.deals))),
     ]);
     const tasks = [...openTasks, ...closedTasks].sort((a, b) => String(a.due_date || '~').localeCompare(String(b.due_date || '~')));
-    return { totals, warnings, data: { apartments, owners, tasks, approvals, expenses, income, reservations, events, members, notifications, statements, repairs, deals } };
+    return { totals, warnings, loaded: needs, data: { apartments, owners, tasks, approvals, expenses, income, reservations, events, members, notifications, statements, repairs, deals } };
   }
 
   // Loads the selected organization's data into S. `pending` is a fetchData() already in flight.
@@ -487,9 +491,10 @@
     S.loading = true;
     S.loadError = null;
     try {
-      const { data, totals, warnings } = await (pending || fetchData(org));
+      const { data, totals, warnings, loaded } = await (pending || fetchData(org));
       if (S.org?.id !== org) return; // switched organization while this was loading
       S.data = data;
+      S.loaded = loaded;
       S.totals = totals;
       S.loadWarnings = warnings;
       globalSearchReady = searchAll;
@@ -723,7 +728,9 @@
     const next = new URL(String(target).startsWith('#') ? toUrl(target) : target, location.origin);
     // Every view script is loaded in-page (ALL_CHUNKS) and the data is in memory, so another area
     // swaps in place too; a full page load is only the fallback while nothing is loaded yet.
-    if (next.pathname === location.pathname || (S.data && S.org)) {
+    // Only optional data the current load fetched is in memory; another area that needs more loads its page.
+    const inMemory = S.data && S.org && S.loaded && [...areaNeeds(parseUrl(next).name)].every(n => S.loaded.has(n));
+    if (next.pathname === location.pathname || inMemory) {
       const url = next.pathname + next.search;
       if (url !== location.pathname + location.search) history[replace ? 'replaceState' : 'pushState'](null, '', url);
       onRoute();
@@ -1396,9 +1403,10 @@
           draw();
           const org = S.org.id;
           try {
-            const { data, totals, warnings } = await fetchData(org, true);
+            const { data, totals, warnings, loaded } = await fetchData(org, true);
             if (S.org?.id !== org) return;
             S.data = data;
+            S.loaded = loaded;
             S.totals = totals;
             S.loadWarnings = warnings;
             globalSearchReady = true;
