@@ -47,13 +47,13 @@ to Firecrawl (listing import proxy). There is no local `/api` with `npm run dev`
 | --- | --- | --- | --- |
 | `/api/p` | GET | none (anon key) | Serves `rigzea/p/index.html` with Open Graph tags and `window.__RIGZEA_LISTING__` injected from `get_public_listing`. Also exports `buildMeta`. |
 | `/api/import-listing` | POST `{ url, org }` | user JWT | Reads one listing page and returns `{ ok, listing }` for the new-property form. |
-| `/api/telegram` | GET, POST | `X-Telegram-Bot-Api-Secret-Token` header | Telegram webhook: link codes, `/today`, `/apartments`, `/renewals`, `/help`, and Georgian free text to tasks. |
+| `/api/telegram` | GET (health check, no auth), POST | POST: `X-Telegram-Bot-Api-Secret-Token` header | Telegram webhook: link codes, `/today`, `/apartments`, `/renewals`, `/help`, and Georgian free text to tasks. |
 | `/api/cron-reminders` | GET, POST | `Authorization: Bearer $CRON_SECRET` | Daily job: lease renewal and overdue alerts, then Telegram delivery. |
 | `/api/link-event` | POST `{ ref, kind, visitor, selection }` | none | Counts a public link view or contact click and notifies linked Telegram chats. |
 | `/api/invite-email` | POST `{ invitation, lang }` | user JWT | Sends a team invitation email. Also exports `inviteContent()`. |
 | `/api/plan-email` | POST `{ org }` | user JWT (platform admin) | Sends the plan activation email after `admin_set_org_plan`. |
 | `/api/kisa-checkout` | POST `{ orgId, plan }` | user JWT (owner or admin) | Creates a pending payment and a KISA checkout session; returns `{ checkoutUrl, orderId, paymentId }`. |
-| `/api/kisa-webhook` | POST `?token=` | per-payment callback token | KISA payment callback; activates a 30-day subscription and emails a receipt. |
+| `/api/kisa-webhook/` | POST `?token=`, header `X-Kisa-Event: payment.callback` | per-payment callback token | KISA payment callback; activates a 30-day subscription and emails a receipt. |
 | `/api/kisa-stream-confirm` | POST | none | Retired: always answers 410 (browser donation events cannot prove payment). |
 | `/api/client-error` | POST `{ kind, path, file, line, column }` | same-origin `Origin` | Logs sanitized client error locations only. |
 
@@ -61,7 +61,10 @@ Supabase RPCs used: `get_public_listing`, `my_org_has_feature`, `register_import
 `consume_telegram_link_code`, `get_linked_telegram_org`, `get_telegram_apartments`, `get_telegram_renewals`,
 `telegram_create_task_record`, `scan_lease_renewals`, `scan_alerts`, `pending_telegram_notifications`,
 `mark_telegram_sent`, `close_stale_telegram_notifications`, `track_link_event_notify`,
-`invitation_email_data`, `admin_list_orgs`, `activate_org_subscription`. Tables touched directly:
+`invitation_email_data`, `admin_list_orgs`, `activate_org_subscription`. User JWTs arrive as `Authorization: Bearer <token>`; `import-listing` and `kisa-checkout` check them
+against `/auth/v1/user`, `invite-email` and `plan-email` pass them straight to the RPC. With
+`trailingSlash: true` in `vercel.json`, a path without the trailing slash gets a 308 redirect first.
+Tables touched directly:
 `payments` (service role), `organization_members` (caller JWT).
 
 ## Invariants
@@ -70,23 +73,29 @@ Supabase RPCs used: `get_public_listing`, `my_org_has_feature`, `register_import
   from different sources.
 - Secrets come only from env vars (`SUPABASE_SERVICE_ROLE_KEY`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`,
   `CRON_SECRET`, `RESEND_API_KEY`, `KISA_CLIENT_ID`, `KISA_CLIENT_SECRET`, optional `FIRECRAWL_API_KEY`,
-  `KISA_API_URL`, `EMAIL_FROM`). Missing config answers 500 or 503, not a fake auth error.
+  `KISA_API_URL`, `EMAIL_FROM`). Missing secrets mostly answer 500 or 503; exceptions: the cron route answers
+  401 before checking config, and an unreachable Supabase Auth or feature check in `import-listing`,
+  `invite-email` and `plan-email` surfaces as 401 or 403.
 - Shared secrets (cron bearer, Telegram header, KISA callback token hash) are compared with `timingSafeEqual`.
   The cron route authenticates before checking any other config.
 - Browser input never decides who gets an email or which plan is active: recipients, roles, plans and
   tokens are read from the database (`invitation_email_data`, `admin_list_orgs`, `payments`).
 - Calls on behalf of a user use the caller's JWT (`callRpcAs` or a bearer header) so RLS applies; the
   service-role key is used only for server-owned work (Telegram, cron, link events, payments).
-- `import-listing` only fetches the three allowed hosts, follows redirects only on the same site (max 4 hops),
-  caps the page at 3 MB and the direct fetch at 8 s, requires a signed-in user whose workspace has the
+- `import-listing` only fetches the three allowed hosts, follows redirects only on the same site (4 requests,
+  so at most 3 redirects), caps the page at 3 MB and the direct fetch at 8 s (the Firecrawl path, used for
+  MyHome.ge and SS.ge when `FIRECRAWL_API_KEY` is set, has no redirect check, a 6 MB cap and a 35 s timeout), requires a signed-in user whose workspace has the
   `import` feature, and charges `register_import` (10 per hour) only after the URL is validated.
 - `kisa-webhook` activates only a `pending` payment that matches `provider_order_id`, the token hash, the
-  metadata ids, the amount (in cents) and the currency; a repeated callback returns `already_completed`.
+  amount (in cents), and the metadata ids and currency when the callback sends them; a repeated callback returns `already_completed`.
 - `kisa-checkout` stores the KISA `orderId` on the payment row before returning the checkout URL, and marks
   the row `failed` on any provider error.
-- Everything interpolated into Telegram HTML, email HTML or the listing page goes through an escape helper;
-  the injected listing JSON escapes `<`, U+2028 and U+2029.
-- `client-error` never logs message text, stacks or user data, and rejects bodies over 2 KB.
+- User and database text interpolated into Telegram HTML, email HTML or the listing page goes through an
+  escape helper: `_lib.esc` (`&`, `<`, `>`; no quotes, so not safe inside attributes on its own), the
+  quote-escaping variants in `_email.js` and `p.js`. Server-made values (`BASE_APP_URL`, approval tokens,
+  amounts, dates) go in unescaped. The listing page is assembled with replacer functions, and the
+  injected listing JSON escapes `<`, U+2028 and U+2029.
+- `client-error` never logs message text, stacks or user data, and rejects bodies whose `Content-Length` header is over 2 KB.
 - The Telegram webhook always answers 200 after a valid secret (errors are logged), so Telegram does not
   retry. Raw UUID linking is refused; only one-time codes link a chat.
 - User-facing messages are Georgian and must not use the em dash character.

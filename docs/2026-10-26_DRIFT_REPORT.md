@@ -43,3 +43,11 @@ generated from the code today, so this report covers the docs that existed befor
 ## PERFORMANCE_PLAN.md
 
 - See the Goldfish review in the audit summary (claims checked against code after commit `9cbedcf`).
+
+## Resolution (same day)
+
+- Fixed: KISA env vars added to CLAUDE.md and AGENTS.md (plus the FIRECRAWL line in AGENTS.md);
+  `KISA_WEBHOOK_SECRET` removed from `.env.example`; stale `background.js` comment; `api/README.md`
+  claims narrowed to what the code does; `PERFORMANCE_PLAN.md` rechecked against the code.
+- Open: which KISA base URL is right (`.env.example` now leaves it empty and notes both);
+  `schema.sql` refresh needs `SUPABASE_ACCESS_TOKEN`; `rigzea/site.js` and the extension zip left as they are.
