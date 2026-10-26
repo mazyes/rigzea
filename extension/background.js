@@ -1,5 +1,5 @@
 // Receives a listing from the Rigzea page, remembers it per target site and opens the posting form.
-// The post-form URLs are best guesses: confirm them while logged in (see README).
+// Post-form URLs were mapped on the live sites on 2026-10-16 (see README).
 const FORMS = {
   ss: 'https://home.ss.ge/ka/udzravi-qoneba/create',
   myhome: 'https://statements.myhome.ge/ka/statement/create?referrer=myhome',
