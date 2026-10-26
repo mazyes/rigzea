@@ -60,6 +60,25 @@ try {
   assert.equal(checkout.body.error, 'payment_provider_not_configured');
   assert.equal(checkoutFetches.length, 2, 'no payment record or provider request is created');
 
+  // The callback URL KISA receives must not need a redirect (trailingSlash answers /api/x with a 308).
+  process.env.KISA_CLIENT_ID = 'test-client';
+  process.env.KISA_CLIENT_SECRET = 'test-secret';
+  let createPayment = null;
+  globalThis.fetch = async (url, init) => {
+    const value = String(url);
+    const json = (body) => new Response(JSON.stringify(body), { status: 200 });
+    if (value.includes('/auth/v1/user')) return json({ id: 'user-1' });
+    if (value.includes('/organization_members?')) return json([{ role: 'owner' }]);
+    if (value.endsWith('/rest/v1/payments')) return json([{ id: 'pay-1' }]);
+    if (value.includes('/auth/token')) return json({ accessToken: 'kisa-token' });
+    if (value.includes('/create-payment')) { createPayment = JSON.parse(init.body); return json({ url: 'https://pay.example.test/x', orderId: 'order-1' }); }
+    if (value.includes('/rest/v1/payments?')) return json([]);
+    throw new Error('unexpected request ' + value);
+  };
+  const paid = await call(kisaCheckout, { method: 'POST', headers: { authorization: 'Bearer test-user-token' }, body: { orgId: '00000000-0000-4000-8000-000000000001', plan: 'starter' } });
+  assert.equal(paid.statusCode, 200, 'checkout returns the provider URL');
+  assert.match(createPayment.callbackUrl, /\/api\/kisa-webhook\/\?token=[\w-]{20,}$/, 'callback URL has the trailing slash Vercel expects');
+
   globalThis.fetch = async (url) => {
     const value = String(url);
     if (value.includes('/auth/v1/user')) return new Response(JSON.stringify({ id: 'user-1' }), { status: 200 });

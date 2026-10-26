@@ -122,7 +122,8 @@ export default async function handler(req, res) {
   // 4. KISA API interaction
   const successRedirectUrl = `${BASE_APP_URL}/app/settings/?payment=success&plan=${encodeURIComponent(planId)}`;
   const failRedirectUrl = `${BASE_APP_URL}/app/settings/?payment=failed`;
-  const callbackUrl = `${BASE_APP_URL.replace(/\/$/, '')}/api/kisa-webhook?token=${encodeURIComponent(callbackToken)}`;
+  // Trailing slash: vercel.json trailingSlash answers /api/kisa-webhook with a 308 that KISA may not follow on POST.
+  const callbackUrl = `${BASE_APP_URL.replace(/\/$/, '')}/api/kisa-webhook/?token=${encodeURIComponent(callbackToken)}`;
 
   try {
     // Step 4.1: Get access token from KISA
