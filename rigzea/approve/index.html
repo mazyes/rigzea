@@ -182,12 +182,12 @@
       }
 
       show(`<div class="card"><div class="card-body form-stack">
-        <div><p class="muted">${t.reqBy(owner.name, org.name)}</p>
+        <div><p class="muted">${t.reqBy(esc(owner.name || ''), esc(org.name || ''))}</p>
           <h1 style="font-size:20px;margin-top:6px">${esc(title || t.expense)}</h1>
           <div class="ap-amount">${money(a.amount)}</div>
           <p class="muted">${esc(apt.name || '')}${apt.city ? ', ' + esc(apt.city) : ''} · ${t.reqAt} ${esc(R.dateTime(a.created_at))}</p></div>
         ${details ? `<div><div class="section-title">${t.details}</div><p style="white-space:pre-wrap">${esc(details)}</p></div>` : ''}
-        ${photos.length ? `<div class="photos">${photos.map(u => `<a class="photo" href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u)}" alt="Photo" /></a>`).join('')}</div>` : ''}
+        ${photos.length ? `<div class="photos">${photos.map(u => `<a class="photo" href="${R.safeUrl(u)}" target="_blank" rel="noopener"><img src="${esc(u)}" alt="Photo" /></a>`).join('')}</div>` : ''}
         ${a.response_note && a.status !== 'pending' ? `<p class="muted">${t.comment}: „${esc(a.response_note)}“</p>` : ''}
         ${action}
         ${contact ? `<p class="small muted">${t.callPrompt} ${contact}</p>` : ''}

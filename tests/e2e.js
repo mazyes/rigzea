@@ -231,6 +231,26 @@ test('6. owner sees confirmation only after the server records the decision', as
   return page;
 });
 
+test('6b. names and photo links on the public approval page cannot inject markup', async (browser) => {
+  const page = await newPage(browser, { viewport: PHONE });
+  await page.goto(BASE + '/approve/?token=tok-pending-1');
+  await page.locator('h1', { hasText: 'ონკანის გამოცვლა' }).waitFor();
+  await page.evaluate(() => {
+    const d = JSON.parse(localStorage.getItem('rigzea_mockdb'));
+    const ap = d.tables.approvals.find(a => a.token === 'tok-pending-1');
+    d.tables.owners.find(o => o.id === ap.owner_id).name = '<img id="xss-owner" src=x>';
+    d.tables.organizations.find(o => o.id === ap.organization_id).name = '<b id="xss-org">Org</b>';
+    ap.photos = ['javascript:alert(1)'];
+    localStorage.setItem('rigzea_mockdb', JSON.stringify(d));
+  });
+  await page.reload();
+  await page.locator('h1', { hasText: 'ონკანის გამოცვლა' }).waitFor();
+  assert.strictEqual(await page.locator('#xss-owner, #xss-org').count(), 0, 'names are shown as text');
+  assert(/<img id="xss-owner"/.test(await page.locator('#ap').innerText()), 'the name is still visible');
+  assert.strictEqual(await page.locator('a.photo').getAttribute('href'), '#', 'a non-http photo link is neutralised');
+  return page;
+});
+
 test('7. manager records an expense with a receipt and sees it once', async (browser) => {
   const page = await newPage(browser, { viewport: DESKTOP, login: USERS.manager });
   await page.goto(BASE + '/app/finance/');
