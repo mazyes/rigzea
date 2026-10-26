@@ -1896,9 +1896,10 @@ test('1zc. chat: write, reply, edit, react, attach, delete (own and as owner) wi
   await page.goto(BASE + '/app/chat/');
   await page.locator('#chat-input').waitFor();
   assert.strictEqual(await page.locator('#chat-head strong').innerText(), 'კომპანიის ჩატი', 'the company chat opens first');
-  await chatIncoming(page, 'გამარჯობა გუნდო! https://rigzea.com');
+  await chatIncoming(page, 'გამარჯობა გუნდო! https://rigzea.com/p/?a=1&b=2');
   await page.locator('.msg', { hasText: 'გამარჯობა გუნდო' }).waitFor();
   assert.strictEqual(await page.locator('.msg-text a[href^="https://rigzea.com"]').count(), 1, 'links are clickable');
+  assert.strictEqual(await page.locator('.msg-text a[href^="https://rigzea.com"]').getAttribute('href'), 'https://rigzea.com/p/?a=1&b=2', 'a link with & opens the same address');
   // write
   await page.fill('#chat-input', 'მოვალ 15:00-ზე');
   await page.keyboard.press('Enter');

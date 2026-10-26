@@ -70,7 +70,7 @@
   const linkify = (text) => esc(text).replace(/(https?:\/\/[^\s<]+[^\s<.,;:!?)\]])/g, (u) => {
     const raw = u.replace(/&amp;/g, '&');
     const safe = R.safeUrl(raw);
-    return safe ? `<a href="${esc(safe)}" target="_blank" rel="noopener noreferrer">${u}</a>` : u;
+    return safe ? `<a href="${safe}" target="_blank" rel="noopener noreferrer">${u}</a>` : u;
   });
 
   // ---- data -------------------------------------------------------------------------------------------------------
